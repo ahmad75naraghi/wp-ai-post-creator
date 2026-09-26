@@ -12,23 +12,50 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Thin, dependency-free client for OpenAI-compatible endpoints.
+ *
+ * An instance is bound to ONE connection (see AIPC_Connections): base URL,
+ * API key, models and request parameters all come from that connection, so
+ * different pipeline steps can talk to different providers.
  */
 final class AIPC_API_Client {
 
 	/**
-	 * Plugin settings.
+	 * The connection this client talks to.
 	 *
 	 * @var array
 	 */
-	private $settings;
+	private $conn;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param array|null $settings Optional settings override (tests).
+	 * @param array|null $connection Connection data (falls back to the default connection).
 	 */
-	public function __construct( $settings = null ) {
-		$this->settings = $settings ? $settings : AIPC_Settings::all();
+	public function __construct( $connection = null ) {
+		if ( ! is_array( $connection ) || empty( $connection ) ) {
+			$connection = AIPC_Connections::get_default();
+		}
+		$defaults = array(
+			'id'              => '',
+			'name'            => '',
+			'base_url'        => '',
+			'api_key'         => '',
+			'chat_model'      => 'gpt-4o-mini',
+			'image_model'     => 'dall-e-3',
+			'temperature'     => 0.7,
+			'max_tokens'      => 4000,
+			'request_timeout' => 120,
+		);
+		$this->conn = wp_parse_args( is_array( $connection ) ? $connection : array(), $defaults );
+	}
+
+	/**
+	 * The connection name (for logs).
+	 *
+	 * @return string
+	 */
+	public function name() {
+		return isset( $this->conn['name'] ) ? (string) $this->conn['name'] : '';
 	}
 
 	/**
@@ -37,7 +64,7 @@ final class AIPC_API_Client {
 	 * @return bool
 	 */
 	public function is_configured() {
-		return ! empty( $this->settings['api_key'] ) && ! empty( $this->settings['api_base_url'] );
+		return ! empty( $this->conn['base_url'] );
 	}
 
 	/**
@@ -46,7 +73,7 @@ final class AIPC_API_Client {
 	 * @return string
 	 */
 	public function base_url() {
-		$base = rtrim( trim( (string) $this->settings['api_base_url'] ), '/' );
+		$base = rtrim( trim( (string) $this->conn['base_url'] ), '/' );
 		$host = (string) wp_parse_url( $base, PHP_URL_HOST );
 		$path = (string) wp_parse_url( $base, PHP_URL_PATH );
 		if ( 'api.openai.com' === $host && ( '' === $path || '/' === $path ) ) {
@@ -66,14 +93,19 @@ final class AIPC_API_Client {
 	 */
 	private function request( $path, $body = null, $timeout = null, $attempt = 0 ) {
 		$url  = $this->base_url() . $path;
+		$headers = array(
+			'Content-Type' => 'application/json',
+			'Accept'       => 'application/json',
+		);
+		// Local providers (Ollama, LM Studio) work without a key.
+		if ( '' !== (string) $this->conn['api_key'] ) {
+			$headers['Authorization'] = 'Bearer ' . $this->conn['api_key'];
+		}
+
 		$args = array(
 			'method'  => null === $body ? 'GET' : 'POST',
-			'timeout' => $timeout ? (int) $timeout : max( 15, (int) $this->settings['request_timeout'] ),
-			'headers' => array(
-				'Authorization' => 'Bearer ' . $this->settings['api_key'],
-				'Content-Type'  => 'application/json',
-				'Accept'        => 'application/json',
-			),
+			'timeout' => $timeout ? (int) $timeout : max( 15, (int) $this->conn['request_timeout'] ),
+			'headers' => $headers,
 			'user-agent' => 'wp-ai-post-creator/' . AIPC_VERSION . ' (WordPress)',
 		);
 		if ( null !== $body ) {
@@ -170,17 +202,17 @@ final class AIPC_API_Client {
 		}
 
 		$body = array(
-			'model'    => ! empty( $opts['model'] ) ? $opts['model'] : $this->settings['chat_model'],
+			'model'    => ! empty( $opts['model'] ) ? $opts['model'] : $this->conn['chat_model'],
 			'messages' => array_values( $messages ),
 		);
 
 		if ( isset( $opts['temperature'] ) ) {
 			$body['temperature'] = (float) $opts['temperature'];
 		} else {
-			$body['temperature'] = (float) $this->settings['temperature'];
+			$body['temperature'] = (float) $this->conn['temperature'];
 		}
 
-		$max_tokens = isset( $opts['max_tokens'] ) ? (int) $opts['max_tokens'] : (int) $this->settings['max_tokens'];
+		$max_tokens = isset( $opts['max_tokens'] ) ? (int) $opts['max_tokens'] : (int) $this->conn['max_tokens'];
 		if ( $max_tokens > 0 ) {
 			$body['max_tokens'] = $max_tokens;
 		}
@@ -253,12 +285,14 @@ final class AIPC_API_Client {
 			return array(
 				'data'  => $data,
 				'usage' => isset( $res2['usage'] ) ? $res2['usage'] : array(),
+				'model' => isset( $res2['model'] ) ? $res2['model'] : '',
 			);
 		}
 
 		return array(
 			'data'  => $data,
 			'usage' => isset( $res['usage'] ) ? $res['usage'] : array(),
+			'model' => isset( $res['model'] ) ? $res['model'] : '',
 		);
 	}
 
@@ -296,8 +330,8 @@ final class AIPC_API_Client {
 			return new WP_Error( 'aipc_config', __( 'API key or endpoint is not configured.', 'wp-ai-post-creator' ) );
 		}
 
-		$model = ! empty( $opts['model'] ) ? $opts['model'] : $this->settings['image_model'];
-		$size  = ! empty( $opts['size'] ) ? $opts['size'] : $this->settings['image_size'];
+		$model = ! empty( $opts['model'] ) ? $opts['model'] : $this->conn['image_model'];
+		$size  = ! empty( $opts['size'] ) ? $opts['size'] : AIPC_Settings::get( 'image_size' );
 
 		$body = array(
 			'model'  => $model,

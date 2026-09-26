@@ -16,6 +16,9 @@ if ( empty( $aipc_settings['delete_on_uninstall'] ) ) {
 
 delete_option( 'aipc_settings' );
 delete_option( 'aipc_jobs' );
+delete_option( 'aipc_connections' );
+delete_option( 'aipc_steps' );
+delete_option( 'aipc_stats' );
 
 // Remove plugin meta from all posts.
 global $wpdb;

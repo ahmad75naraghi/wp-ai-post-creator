@@ -76,15 +76,39 @@ if ( is_wp_error( $activate_result ) ) {
 	exit( 1 );
 }
 
-// Point the plugin at the mock provider + a site prompt.
+// Global settings (no provider fields anymore — they live in connections).
 update_option( 'aipc_settings', array_merge( AIPC_Settings::defaults(), array(
-	'api_key'       => 'sk-mock-key',
-	'api_base_url'  => 'https://mock.invalid/v1',
-	'chat_model'    => 'mock-mini',
-	'image_model'   => 'dall-e-3',
 	'content_language' => 'fa',
-	'site_prompt'   => 'یک وبلاگ فارسی درباره باغبانی خانگی و کشاورزی شهری برای مبتدیان.',
+	'site_prompt'      => 'یک وبلاگ فارسی درباره باغبانی خانگی و کشاورزی شهری برای مبتدیان.',
 ) ) );
+
+// Two connections: one for chat, one dedicated to images.
+$chat_conn = AIPC_Connections::save( array(
+	'name'            => 'Chat Mock',
+	'base_url'        => 'https://mock.invalid/v1',
+	'api_key'         => 'sk-chat-key',
+	'chat_model'      => 'mock-mini',
+	'image_model'     => 'dall-e-3',
+	'is_default'      => 1,
+) );
+$image_conn = AIPC_Connections::save( array(
+	'name'            => 'Image Mock',
+	'base_url'        => 'https://images.invalid/v1',
+	'api_key'         => 'sk-image-key',
+	'chat_model'      => 'mock-mini',
+	'image_model'     => 'dall-e-3',
+) );
+
+// Per-step configuration: images use the image connection; custom FAQ prompt.
+AIPC_Steps::save_all( array(
+	'image' => array( 'connection' => $image_conn['id'] ),
+	'faq'   => array(
+		'connection' => '',
+		'prompt'     => 'FAQ-QUESTIONS-CUSTOM For the article "{{title}}", write 4-5 FAQ questions a reader would also ask (the "People also ask" style).' . "\n"
+			. 'Return ONLY this JSON object, everything in {{lang}}:' . "\n"
+			. '{"faq_heading": "short H2 heading for the FAQ block, in {{lang}}", "items": [{"q": "question", "a": "1-3 sentence answer"}]}',
+	),
+) );
 
 // Categories for the agent to choose from.
 foreach ( array( 'باغبانی', 'آشپزی', 'فناوری' ) as $aipc_cat ) {
@@ -97,8 +121,11 @@ echo json_encode( array(
 	'installed'      => true,
 	'user_id'        => $result['user_id'],
 	'active_plugins' => get_option( 'active_plugins' ),
-	'model'          => AIPC_Settings::get( 'chat_model' ),
-	'site_prompt'    => AIPC_Settings::get( 'site_prompt' ),
+	'connections'    => AIPC_Connections::all_for_ui(),
+	'chat_conn'      => $chat_conn['id'],
+	'image_conn'     => $image_conn['id'],
+	'faq_custom'     => AIPC_Steps::has_custom_prompt( 'faq' ),
+	'image_step'     => AIPC_Steps::get( 'image' )['connection'],
 	'categories'     => wp_list_pluck( get_categories( array( 'hide_empty' => false ) ), 'name' ),
 	'php'            => PHP_VERSION,
 	'gd'             => extension_loaded( 'gd' ),

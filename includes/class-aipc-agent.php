@@ -11,6 +11,9 @@
  *   → faq → seo (Rank Math summary) → image (from topic + summary)
  *   → finalize (always saves a draft)
  *
+ * Every step can use its OWN AI connection and prompt template — both are
+ * managed from the admin (AIPC_Connections + AIPC_Steps).
+ *
  * @package wp-ai-post-creator
  */
 
@@ -22,7 +25,8 @@ defined( 'ABSPATH' ) || exit;
 final class AIPC_Agent {
 
 	const OPTION        = 'aipc_jobs';
-	const MAX_JOBS      = 8;
+	const STATS_OPTION  = 'aipc_stats';
+	const MAX_JOBS      = 30;
 	const STALE_SECONDS = 86400;
 
 	/**
@@ -33,11 +37,11 @@ final class AIPC_Agent {
 	private static $instance = null;
 
 	/**
-	 * API client.
+	 * API clients keyed by connection id.
 	 *
-	 * @var AIPC_API_Client|null
+	 * @var array
 	 */
-	private $client = null;
+	private $clients = array();
 
 	/**
 	 * Get the shared instance.
@@ -51,16 +55,116 @@ final class AIPC_Agent {
 		return self::$instance;
 	}
 
+	/* ---------------------------------------------------------------------
+	 * Connections & prompts
+	 * ------------------------------------------------------------------- */
+
 	/**
-	 * API client (lazy).
+	 * Resolve the connection a step must use (step override → default).
 	 *
-	 * @return AIPC_API_Client
+	 * @param string $step Logical step id (e.g. 'plan', 'image').
+	 * @return array Connection data.
+	 * @throws Exception When nothing is configured.
 	 */
-	private function client() {
-		if ( null === $this->client ) {
-			$this->client = new AIPC_API_Client();
+	private function resolve_connection( $step ) {
+		$cfg  = AIPC_Steps::get( $step );
+		$conn = null;
+
+		if ( ! empty( $cfg['connection'] ) ) {
+			$conn = AIPC_Connections::get( $cfg['connection'] );
 		}
-		return $this->client;
+		if ( ! $conn ) {
+			$conn = AIPC_Connections::get_default();
+		}
+
+		/**
+		 * Filter the connection used by a step.
+		 *
+		 * @param array|null $conn Connection data.
+		 * @param string     $step Logical step id.
+		 */
+		$conn = apply_filters( 'aipc_step_connection', $conn, $step );
+
+		if ( ! $conn || empty( $conn['base_url'] ) ) {
+			throw new Exception( __( 'No AI connection is configured yet. Add one under AI Post Creator → Connections.', 'wp-ai-post-creator' ) );
+		}
+
+		return $conn;
+	}
+
+	/**
+	 * Cached API client for a step's connection.
+	 *
+	 * @param string $step Logical step id.
+	 * @return AIPC_API_Client
+	 * @throws Exception When nothing is configured.
+	 */
+	private function client_for( $step ) {
+		$conn = $this->resolve_connection( $step );
+		$key  = $conn['id'] ? $conn['id'] : md5( wp_json_encode( $conn ) );
+
+		if ( ! isset( $this->clients[ $key ] ) ) {
+			$this->clients[ $key ] = new AIPC_API_Client( $conn );
+		}
+		return $this->clients[ $key ];
+	}
+
+	/**
+	 * Render a step prompt template with its placeholder values.
+	 *
+	 * @param string $step Logical step id.
+	 * @param array  $args Placeholder values.
+	 * @return string
+	 */
+	private function render_prompt( $step, array $args ) {
+		$template = AIPC_Steps::prompt_for( $step );
+
+		/**
+		 * Filter the prompt template before placeholders are replaced.
+		 *
+		 * @param string $template Prompt template.
+		 * @param string $step     Logical step id.
+		 * @param array  $args     Placeholder values.
+		 */
+		$template = apply_filters( 'aipc_step_prompt', $template, $step, $args );
+
+		return strtr( $template, $args );
+	}
+
+	/**
+	 * Global placeholder values shared by every step.
+	 *
+	 * @param array $job Job.
+	 * @return array
+	 */
+	private function global_args( array $job ) {
+		$tones = AIPC_Settings::tones();
+		$tone  = isset( $tones[ $job['args']['tone'] ] ) ? $tones[ $job['args']['tone'] ] : 'professional';
+
+		$site = trim( (string) AIPC_Settings::get( 'site_prompt' ) );
+		if ( '' !== $site ) {
+			$site_prompt = ' SITE CONTEXT — what this website is about (every topic, title and sentence must fit this): ' . $site;
+		} else {
+			$site_prompt = '';
+		}
+
+		return array(
+			'{{lang}}'        => AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] ),
+			'{{tone}}'        => $tone,
+			'{{site_prompt}}' => $site_prompt,
+			'{{extra}}'       => trim( (string) AIPC_Settings::get( 'system_prompt_extra' ) ),
+		);
+	}
+
+	/**
+	 * The system prompt, rendered from the 'system' template.
+	 *
+	 * @param array $job Job.
+	 * @return string
+	 */
+	private function system_prompt( array $job ) {
+		$p = $this->render_prompt( 'system', $this->global_args( $job ) );
+		return apply_filters( 'aipc_system_prompt', $p, $job );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -101,6 +205,44 @@ final class AIPC_Agent {
 		$jobs = $this->all_jobs();
 		$id   = (string) $id;
 		return isset( $jobs[ $id ] ) && is_array( $jobs[ $id ] ) ? $jobs[ $id ] : null;
+	}
+
+	/**
+	 * All jobs, newest first (for the logs screen).
+	 *
+	 * @return array
+	 */
+	public function get_all_jobs() {
+		$jobs = $this->all_jobs();
+		uasort( $jobs, function ( $a, $b ) {
+			return (int) $b['created'] - (int) $a['created'];
+		} );
+		return $jobs;
+	}
+
+	/**
+	 * Delete one job (from the logs screen).
+	 *
+	 * @param string $id Job id.
+	 * @return bool
+	 */
+	public function delete_job( $id ) {
+		$jobs = $this->all_jobs();
+		if ( ! isset( $jobs[ (string) $id ] ) ) {
+			return false;
+		}
+		unset( $jobs[ (string) $id ] );
+		$this->save_all_jobs( $jobs );
+		return true;
+	}
+
+	/**
+	 * Clear all jobs/logs.
+	 *
+	 * @return void
+	 */
+	public function clear_jobs() {
+		$this->save_all_jobs( array() );
 	}
 
 	/**
@@ -153,6 +295,68 @@ final class AIPC_Agent {
 	}
 
 	/* ---------------------------------------------------------------------
+	 * Usage stats
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Read the aggregate stats.
+	 *
+	 * @return array
+	 */
+	public static function stats() {
+		$stats = get_option( self::STATS_OPTION, array() );
+		$defaults = array(
+			'jobs'              => 0,
+			'done'              => 0,
+			'error'             => 0,
+			'cancelled'         => 0,
+			'calls'             => 0,
+			'prompt_tokens'     => 0,
+			'completion_tokens' => 0,
+			'by_connection'     => array(),
+		);
+		return wp_parse_args( is_array( $stats ) ? $stats : array(), $defaults );
+	}
+
+	/**
+	 * Record a finished job into the aggregate stats (once per job).
+	 *
+	 * @param array $job Job (by ref).
+	 * @return void
+	 */
+	private function record_stats( array &$job ) {
+		if ( ! empty( $job['stats_recorded'] ) ) {
+			return;
+		}
+		$job['stats_recorded'] = 1;
+
+		$stats = self::stats();
+		$stats['jobs']++;
+		if ( isset( $stats[ $job['status'] ] ) ) {
+			$stats[ $job['status'] ]++;
+		}
+		$stats['calls']             += (int) $job['usage']['calls'];
+		$stats['prompt_tokens']     += (int) $job['usage']['prompt'];
+		$stats['completion_tokens'] += (int) $job['usage']['completion'];
+
+		foreach ( (array) $job['calls'] as $call ) {
+			$name = isset( $call['conn'] ) && '' !== $call['conn'] ? $call['conn'] : __( 'Unknown connection', 'wp-ai-post-creator' );
+			if ( ! isset( $stats['by_connection'][ $name ] ) ) {
+				$stats['by_connection'][ $name ] = array( 'calls' => 0, 'prompt_tokens' => 0, 'completion_tokens' => 0 );
+			}
+			$stats['by_connection'][ $name ]['calls']++;
+			$stats['by_connection'][ $name ]['prompt_tokens']     += (int) $call['pt'];
+			$stats['by_connection'][ $name ]['completion_tokens'] += (int) $call['ct'];
+		}
+
+		if ( false === get_option( self::STATS_OPTION, false ) ) {
+			add_option( self::STATS_OPTION, $stats, '', false );
+		} else {
+			update_option( self::STATS_OPTION, $stats );
+		}
+	}
+
+	/* ---------------------------------------------------------------------
 	 * Job lifecycle
 	 * ------------------------------------------------------------------- */
 
@@ -201,6 +405,10 @@ final class AIPC_Agent {
 	 * @return array|WP_Error Job or error.
 	 */
 	public function create_job( $topic, $args = array() ) {
+		if ( ! AIPC_Connections::get_default() ) {
+			return new WP_Error( 'aipc_config', __( 'No AI connection is configured yet. Add one under AI Post Creator → Connections.', 'wp-ai-post-creator' ) );
+		}
+
 		$topic = trim( wp_strip_all_tags( (string) $topic ) );
 		if ( mb_strlen( $topic ) > 400 ) {
 			$topic = mb_substr( $topic, 0, 400 );
@@ -215,7 +423,7 @@ final class AIPC_Agent {
 			'status'     => 'running',
 			'topic'      => $topic,
 			'args'       => $this->sanitize_args( $args, $s ),
-			'model'      => $s['chat_model'],
+			'model'      => '',
 			'cursor'     => 0,
 			'steps'      => array(
 				array( 'id' => 'plan', 'label' => __( 'Category & topic selection', 'wp-ai-post-creator' ), 'status' => 'pending' ),
@@ -223,10 +431,16 @@ final class AIPC_Agent {
 			),
 			'data'       => array(),
 			'usage'      => array( 'prompt' => 0, 'completion' => 0, 'calls' => 0 ),
+			'calls'      => array(),
+			'timings'    => array(),
 			'log'        => array(),
 			'post_id'    => 0,
 			'error'      => null,
+			'stats_recorded' => 0,
 		);
+
+		$default_conn = AIPC_Connections::get_default();
+		$job['model'] = $default_conn['chat_model'];
 
 		if ( '' !== $topic ) {
 			$this->log( $job, sprintf(
@@ -238,9 +452,12 @@ final class AIPC_Agent {
 			$this->log( $job, __( 'Agent started — the topic will be invented from the site prompt.', 'wp-ai-post-creator' ), 'info' );
 		}
 		$this->log( $job, sprintf(
-			/* translators: 1: model name, 2: tone, 3: length. */
-			__( 'Setup — model: %1$s · tone: %2$s · length: %3$s', 'wp-ai-post-creator' ),
-			$job['model'], $job['args']['tone'], $job['args']['length']
+			/* translators: 1: connection name, 2: model name, 3: tone, 4: length. */
+			__( 'Setup — default connection: %1$s (%2$s) · tone: %3$s · length: %4$s', 'wp-ai-post-creator' ),
+			$default_conn['name'],
+			$default_conn['chat_model'],
+			$job['args']['tone'],
+			$job['args']['length']
 		), 'info' );
 
 		$this->save_job( $job );
@@ -262,6 +479,7 @@ final class AIPC_Agent {
 		if ( 'running' === $job['status'] || 'error' === $job['status'] ) {
 			$job['status'] = 'cancelled';
 			$this->log( $job, __( 'Agent cancelled by user.', 'wp-ai-post-creator' ), 'warn' );
+			$this->record_stats( $job );
 			$this->save_job( $job );
 		}
 		return $job;
@@ -325,10 +543,9 @@ final class AIPC_Agent {
 		}
 		set_transient( $lock_key, 1, 600 );
 
-		// Give slow steps room to finish.
+		// Give slow steps room to finish (retries included).
 		if ( function_exists( 'set_time_limit' ) ) {
-			$timeout = (int) AIPC_Settings::get( 'request_timeout' );
-			@set_time_limit( max( 180, ( $timeout + 90 ) * 3 ) );
+			@set_time_limit( 600 );
 		}
 
 		$step = isset( $job['steps'][ $job['cursor'] ] ) ? $job['steps'][ $job['cursor'] ] : null;
@@ -337,9 +554,13 @@ final class AIPC_Agent {
 			return $this->client_state( $job, $since );
 		}
 
+		$logical = ( 0 === strpos( $step['id'], 'section_' ) ) ? 'section' : $step['id'];
+
 		$max_attempts = (int) apply_filters( 'aipc_step_attempts', 3, $job, $step['id'] );
 		$attempt      = 0;
 		$passed       = false;
+		$last_error   = null;
+		$t0           = microtime( true );
 
 		while ( ! $passed && $attempt < $max_attempts ) {
 			$attempt++;
@@ -347,18 +568,22 @@ final class AIPC_Agent {
 				$this->run_step( $job, $step['id'] );
 				$passed = true;
 			} catch ( Exception $e ) {
+				$last_error = $e->getMessage();
 				if ( $attempt < $max_attempts ) {
 					$this->log( $job, sprintf(
 						/* translators: 1: attempt number, 2: total attempts, 3: error message. */
 						__( 'Attempt %1$d/%2$d failed (%3$s) — retrying…', 'wp-ai-post-creator' ),
 						$attempt,
 						$max_attempts,
-						$e->getMessage()
+						$last_error
 					), 'warn' );
 					$this->save_job( $job );
 				}
 			}
 		}
+
+		// Step timing (all attempts).
+		$job['timings'][ $step['id'] ] = (int) round( ( microtime( true ) - $t0 ) * 1000 );
 
 		if ( ! $passed ) {
 			$idx = $job['cursor'];
@@ -368,13 +593,14 @@ final class AIPC_Agent {
 			$job['status'] = 'error';
 			$job['error']  = array(
 				'step'    => $step['id'],
-				'message' => $e->getMessage(),
+				'message' => $last_error,
 			);
 			$this->log( $job, sprintf(
 				/* translators: %s: error message. */
 				__( 'Step failed: %s', 'wp-ai-post-creator' ),
-				$e->getMessage()
+				$last_error
 			), 'error' );
+			$this->record_stats( $job );
 			$this->save_job( $job );
 			delete_transient( $lock_key );
 			return $this->client_state( $job, $since );
@@ -447,101 +673,118 @@ final class AIPC_Agent {
 	}
 
 	/* ---------------------------------------------------------------------
-	 * Prompt helpers
+	 * AI request helpers (per-step connection + prompt + call log)
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * The site prompt (what this site is about), if set.
+	 * Record one API call in the job log.
 	 *
-	 * @return string
+	 * @param array  $job   Job (by ref).
+	 * @param string $step  Logical step id.
+	 * @param string $conn  Connection name.
+	 * @param string $model Model used.
+	 * @param array  $usage {prompt_tokens, completion_tokens}.
+	 * @param float  $ms    Duration in milliseconds.
+	 * @param bool   $ok    Success flag.
+	 * @param string $err   Error message.
+	 * @return void
 	 */
-	private function site_prompt() {
-		$site = trim( (string) AIPC_Settings::get( 'site_prompt' ) );
-		if ( '' === $site ) {
-			return '';
-		}
-		return 'SITE CONTEXT — what this website is about (every topic, title and sentence must fit this): ' . $site;
+	private function record_call( array &$job, $step, $conn, $model, $usage, $ms, $ok = true, $err = '' ) {
+		$job['calls'][] = array(
+			'step'    => $step,
+			'label'   => isset( $job['steps'][ $job['cursor'] ]['label'] ) ? $job['steps'][ $job['cursor'] ]['label'] : $step,
+			'conn'    => $conn,
+			'model'   => $model,
+			'pt'      => is_array( $usage ) && isset( $usage['prompt_tokens'] ) ? (int) $usage['prompt_tokens'] : 0,
+			'ct'      => is_array( $usage ) && isset( $usage['completion_tokens'] ) ? (int) $usage['completion_tokens'] : 0,
+			'ms'      => (int) round( $ms ),
+			'ok'      => $ok ? 1 : 0,
+			'err'     => $ok ? '' : mb_substr( (string) $err, 0, 300 ),
+			't'       => time(),
+		);
 	}
 
 	/**
-	 * Base system prompt.
+	 * Current step label (for call logs).
 	 *
 	 * @param array $job Job.
 	 * @return string
 	 */
-	private function system_prompt( array $job ) {
-		$tones = AIPC_Settings::tones();
-		$tone  = isset( $tones[ $job['args']['tone'] ] ) ? $tones[ $job['args']['tone'] ] : 'professional';
-		$lang  = AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] );
-
-		$p = 'You are an expert blog writer, copywriter and SEO specialist. '
-			. 'You produce original, accurate, engaging and well-structured content. '
-			. 'Never mention that you are an AI. Never invent statistics, quotes or sources. '
-			. 'Write in ' . $lang . '. Overall tone: ' . $tone . '.';
-
-		$site = $this->site_prompt();
-		if ( '' !== $site ) {
-			$p .= ' ' . $site;
-		}
-
-		$extra = trim( (string) AIPC_Settings::get( 'system_prompt_extra' ) );
-		if ( '' !== $extra ) {
-			$p .= ' ' . $extra;
-		}
-
-		return apply_filters( 'aipc_system_prompt', $p, $job );
+	private function current_label( array $job ) {
+		return isset( $job['steps'][ $job['cursor'] ]['label'] ) ? $job['steps'][ $job['cursor'] ]['label'] : '';
 	}
 
 	/**
-	 * JSON chat wrapper that stores usage and throws on failure.
+	 * JSON chat wrapper bound to a step's connection and prompt template.
 	 *
 	 * @param array  $job  Job (by ref).
-	 * @param string $user User prompt.
-	 * @param array  $opts Chat options.
+	 * @param string $step Logical step id.
+	 * @param array  $args Placeholder values.
+	 * @param array  $opts Extra chat options.
 	 * @return array Decoded JSON.
 	 * @throws Exception On failure.
 	 */
-	private function ask_json( array &$job, $user, $opts = array() ) {
+	private function ask_json( array &$job, $step, array $args = array(), $opts = array() ) {
+		$client = $this->client_for( $step );
+		$conn   = $this->resolve_connection( $step );
+
 		$messages = array(
 			array(
 				'role'    => 'system',
 				'content' => $this->system_prompt( $job ) . ' Respond ONLY with a single valid JSON object — no markdown fences, no commentary.',
 			),
-			array( 'role' => 'user', 'content' => $user ),
+			array( 'role' => 'user', 'content' => $this->render_prompt( $step, $args ) ),
 		);
-		$messages = apply_filters( 'aipc_messages', $messages, $job );
+		$messages = apply_filters( 'aipc_messages', $messages, $job, $step );
 
-		$res = $this->client()->chat_json( $messages, $opts );
+		$t0  = microtime( true );
+		$res = $client->chat_json( $messages, $opts );
+		$ms  = ( microtime( true ) - $t0 ) * 1000;
+
 		if ( is_wp_error( $res ) ) {
+			$this->record_call( $job, $step, $conn['name'], $conn['chat_model'], array(), $ms, false, $res->get_error_message() );
 			throw new Exception( $res->get_error_message() );
 		}
+
+		$this->record_call( $job, $step, $conn['name'], $res['model'], $res['usage'], $ms );
 		$this->add_usage( $job, $res['usage'] );
 		return $res['data'];
 	}
 
 	/**
-	 * HTML chat wrapper: strips fences, sanitizes, enforces a minimum length.
+	 * HTML chat wrapper bound to a step's connection and prompt template.
 	 *
 	 * @param array  $job      Job (by ref).
-	 * @param string $user     User prompt.
+	 * @param string $step     Logical step id.
+	 * @param array  $args     Placeholder values.
+	 * @param array  $opts     Extra chat options.
 	 * @param int    $min_word Minimum word count.
 	 * @return string HTML.
 	 * @throws Exception On failure.
 	 */
-	private function ask_html( array &$job, $user, $opts = array(), $min_word = 30 ) {
+	private function ask_html( array &$job, $step, array $args = array(), $opts = array(), $min_word = 30 ) {
+		$client = $this->client_for( $step );
+		$conn   = $this->resolve_connection( $step );
+
 		$messages = array(
 			array(
 				'role'    => 'system',
 				'content' => $this->system_prompt( $job ) . ' Respond with raw HTML fragments only — no markdown, no code fences, no commentary.',
 			),
-			array( 'role' => 'user', 'content' => $user ),
+			array( 'role' => 'user', 'content' => $this->render_prompt( $step, $args ) ),
 		);
-		$messages = apply_filters( 'aipc_messages', $messages, $job );
+		$messages = apply_filters( 'aipc_messages', $messages, $job, $step );
 
-		$res = $this->client()->chat( $messages, $opts );
+		$t0  = microtime( true );
+		$res = $client->chat( $messages, $opts );
+		$ms  = ( microtime( true ) - $t0 ) * 1000;
+
 		if ( is_wp_error( $res ) ) {
+			$this->record_call( $job, $step, $conn['name'], $conn['chat_model'], array(), $ms, false, $res->get_error_message() );
 			throw new Exception( $res->get_error_message() );
 		}
+
+		$this->record_call( $job, $step, $conn['name'], $res['model'], $res['usage'], $ms );
 		$this->add_usage( $job, $res['usage'] );
 
 		$html = trim( $res['content'] );
@@ -620,7 +863,6 @@ final class AIPC_Agent {
 		$lang = AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] );
 		$spec = AIPC_Settings::length_specs( $job['args']['length'] );
 
-		// The categories the agent MUST choose from.
 		$categories = get_categories( array(
 			'taxonomy'   => 'category',
 			'hide_empty' => false,
@@ -636,42 +878,33 @@ final class AIPC_Agent {
 		}
 
 		$site = trim( (string) AIPC_Settings::get( 'site_prompt' ) );
-		if ( '' === $site ) {
-			$site = '(No site prompt configured — write for a general audience.)';
-		}
+		$site_context = ( '' !== $site )
+			? $site
+			: __( '(No site prompt configured — write for a general audience.)', 'wp-ai-post-creator' );
 
-		$topic_part = ( '' !== $job['topic'] )
-			? 'The user suggests this topic: "' . $job['topic'] . '" — build the article around it, adapted to the site context.'
-			: 'No topic given — invent the single best topic yourself. It must fit the site context AND the chosen category.';
+		$topic_hint = ( '' !== $job['topic'] )
+			? sprintf(
+				/* translators: %s: user topic. */
+				__( 'The user suggests this topic: "%s" — build the article around it, adapted to the site context.', 'wp-ai-post-creator' ),
+				$job['topic']
+			)
+			: __( 'No topic given — invent the single best topic yourself. It must fit the site context AND the chosen category.', 'wp-ai-post-creator' );
 
-		$prompt = 'SITE CONTEXT: ' . $site . "\n\n"
-			. "CATEGORIES (existing post categories of this website):\n"
-			. $cat_lines . "\n"
-			. $topic_part . "\n\n"
-			. 'You are planning a blog article (~' . $spec['words'] . ' words) written in ' . $lang . ".\n"
-			. "STEP 1: choose the ONE best-fitting category from the list above — you MUST use its exact name.\n"
-			. "STEP 2: decide the topic and a compelling SEO title for it.\n\n"
-			. 'Return ONLY this JSON object (values in ' . $lang . " unless noted):\n"
-			. "{\n"
-			. '  "category": "exact category name copied from the list", ' . "\n"
-			. '  "title": "compelling SEO title, max 60 characters, in ' . $lang . '", ' . "\n"
-			. '  "title_options": ["one alternative title, in ' . $lang . '"], ' . "\n"
-			. '  "topic_brief": "2-3 sentences describing what the article will cover, in ' . $lang . '", ' . "\n"
-			. '  "audience": "target audience, one sentence, in ' . $lang . '", ' . "\n"
-			. '  "intent": "the main search intent, in ' . $lang . '", ' . "\n"
-			. '  "primary_keyword": "main keyword, in ' . $lang . '", ' . "\n"
-			. '  "secondary_keywords": ["4-8 related keywords, in ' . $lang . '"], ' . "\n"
-			. '  "angle": "a unique angle that makes this article stand out, one sentence, in ' . $lang . '", ' . "\n"
-			. '  "toc_title": "short label for the table of contents, in ' . $lang . '" ' . "\n"
-			. '}';
+		$args = array(
+			'{{site_context}}' => $site_context,
+			'{{categories}}'   => trim( $cat_lines ),
+			'{{topic_hint}}'   => $topic_hint,
+			'{{words}}'        => (string) $spec['words'],
+			'{{sections}}'     => (string) $spec['sections'],
+			'{{lang}}'         => $lang,
+		);
 
-		$data = $this->ask_json( $job, $prompt );
+		$data = $this->ask_json( $job, 'plan', $args );
 
 		if ( empty( $data['title'] ) || ! is_string( $data['title'] ) ) {
 			throw new Exception( __( 'The plan did not include a title. Please retry.', 'wp-ai-post-creator' ) );
 		}
 
-		// The chosen category must exist on the site.
 		$chosen_id = 0;
 		$chosen_name = isset( $data['category'] ) ? trim( (string) $data['category'] ) : '';
 		if ( '' !== $chosen_name ) {
@@ -742,17 +975,17 @@ final class AIPC_Agent {
 		$spec = AIPC_Settings::length_specs( $job['args']['length'] );
 		$lang = AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] );
 
-		$prompt = 'Working title: "' . $plan['title'] . "\"\n"
-			. 'Topic brief: ' . ( isset( $plan['topic_brief'] ) ? $plan['topic_brief'] : '' ) . "\n"
-			. 'Primary keyword: ' . ( isset( $plan['primary_keyword'] ) ? $plan['primary_keyword'] : '' ) . "\n"
-			. 'Angle: ' . ( isset( $plan['angle'] ) ? $plan['angle'] : '' ) . "\n\n"
-			. 'Create the outline for a ~' . $spec['words'] . ' word article with exactly ' . $spec['sections'] . " main sections.\n"
-			. 'The introduction and conclusion are handled separately — do NOT include them.' . "\n"
-			. "Order sections logically for the reader.\n"
-			. "Return ONLY this JSON object:\n"
-			. '{"sections": [{"heading": "section heading (H2 level, in ' . $lang . ', no numbering)", "brief": "2-3 sentences describing exactly what this section must cover"}]}';
+		$args = array(
+			'{{title}}'           => $plan['title'],
+			'{{topic_brief}}'     => isset( $plan['topic_brief'] ) ? (string) $plan['topic_brief'] : '',
+			'{{primary_keyword}}' => isset( $plan['primary_keyword'] ) ? (string) $plan['primary_keyword'] : '',
+			'{{angle}}'           => isset( $plan['angle'] ) ? (string) $plan['angle'] : '',
+			'{{words}}'           => (string) $spec['words'],
+			'{{sections}}'        => (string) $spec['sections'],
+			'{{lang}}'            => $lang,
+		);
 
-		$data     = $this->ask_json( $job, $prompt );
+		$data     = $this->ask_json( $job, 'outline', $args );
 		$sections = array();
 
 		if ( ! empty( $data['sections'] ) && is_array( $data['sections'] ) ) {
@@ -773,7 +1006,6 @@ final class AIPC_Agent {
 
 		$job['data']['outline'] = $sections;
 
-		// Extend the manifest with the content steps.
 		$new_steps   = array();
 		$new_steps[] = array( 'id' => 'intro', 'label' => __( 'Introduction', 'wp-ai-post-creator' ), 'status' => 'pending' );
 		foreach ( $sections as $i => $section ) {
@@ -817,21 +1049,16 @@ final class AIPC_Agent {
 	 */
 	private function step_intro( array &$job ) {
 		$plan = $job['data']['plan'];
-		$lang = AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] );
 
-		$prompt = 'Write the INTRODUCTION for the article "' . $plan['title'] . "\".\n"
-			. 'Topic brief: ' . ( isset( $plan['topic_brief'] ) ? $plan['topic_brief'] : $job['topic'] ) . "\n"
-			. 'Primary keyword: ' . ( isset( $plan['primary_keyword'] ) ? $plan['primary_keyword'] : '' ) . "\n"
-			. 'Target audience: ' . ( isset( $plan['audience'] ) ? $plan['audience'] : '' ) . "\n\n"
-			. "Requirements:\n"
-			. '- 80-140 words, 1-2 paragraphs, written in ' . $lang . "\n"
-			. "- Hook the reader in the first sentence\n"
-			. "- Include the primary keyword naturally\n"
-			. "- Briefly state what the reader will learn\n"
-			. "- Use only <p> tags — no headings, no lists\n"
-			. 'HTML fragment only.';
+		$args = array(
+			'{{title}}'           => $plan['title'],
+			'{{topic_brief}}'     => isset( $plan['topic_brief'] ) ? (string) $plan['topic_brief'] : $job['topic'],
+			'{{primary_keyword}}' => isset( $plan['primary_keyword'] ) ? (string) $plan['primary_keyword'] : '',
+			'{{audience}}'        => isset( $plan['audience'] ) ? (string) $plan['audience'] : '',
+			'{{lang}}'            => AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] ),
+		);
 
-		$html = $this->ask_html( $job, $prompt, array(), 40 );
+		$html = $this->ask_html( $job, 'intro', $args, array(), 40 );
 
 		$job['data']['content']['intro'] = $html;
 		$this->log( $job, sprintf(
@@ -863,26 +1090,31 @@ final class AIPC_Agent {
 		$per_words = max( 120, (int) round( $spec['words'] / ( $total + 2 ) ) );
 		$keywords  = isset( $plan['secondary_keywords'] ) ? $plan['secondary_keywords'] : array();
 
-		$prev = '';
+		$keywords_block = '';
+		if ( ! empty( $keywords ) ) {
+			$keywords_block = 'SECONDARY KEYWORDS (weave in if relevant): ' . implode( ', ', array_slice( $keywords, 0, 4 ) ) . "\n";
+		}
+
+		$prev_block = '';
 		if ( $i > 0 && isset( $job['data']['content']['sections'][ $i - 1 ] ) ) {
 			$prev = wp_strip_all_tags( $job['data']['content']['sections'][ $i - 1 ] );
 			$prev = mb_substr( trim( preg_replace( '/\s+/u', ' ', $prev ) ), -220 );
+			$prev_block = "PREVIOUS SECTION ENDS WITH: …" . $prev . "\n(maintain flow — do not repeat information)\n";
 		}
 
-		$prompt = 'You are writing section ' . ( $i + 1 ) . ' of ' . $total . ' for the article "' . $plan['title'] . "\".\n\n"
-			. 'SECTION HEADING: ' . $section['heading'] . "\n"
-			. 'WHAT TO COVER: ' . $section['brief'] . "\n"
-			. 'TARGET LENGTH: about ' . $per_words . " words\n"
-			. 'PRIMARY KEYWORD (use once, naturally): ' . ( isset( $plan['primary_keyword'] ) ? $plan['primary_keyword'] : '' ) . "\n"
-			. ( ! empty( $keywords ) ? 'SECONDARY KEYWORDS (weave in if relevant): ' . implode( ', ', array_slice( $keywords, 0, 4 ) ) . "\n" : '' )
-			. ( '' !== $prev ? "PREVIOUS SECTION ENDS WITH: …" . $prev . "\n(maintain flow — do not repeat information)\n" : '' )
-			. "\nRULES:\n"
-			. "- Do NOT repeat the section heading — start directly with the content\n"
-			. "- You may use <h3>/<h4> subheadings, <p>, <ul>, <ol>, <table>, <blockquote>, <strong>, <em>\n"
-			. "- Be specific and useful; no filler, no generic fluff\n"
-			. 'HTML fragment only.';
+		$args = array(
+			'{{index}}'           => (string) ( $i + 1 ),
+			'{{total}}'           => (string) $total,
+			'{{title}}'           => $plan['title'],
+			'{{section_heading}}' => $section['heading'],
+			'{{section_brief}}'   => $section['brief'],
+			'{{per_words}}'       => (string) $per_words,
+			'{{primary_keyword}}' => isset( $plan['primary_keyword'] ) ? (string) $plan['primary_keyword'] : '',
+			'{{keywords_block}}'  => $keywords_block,
+			'{{prev_block}}'      => $prev_block,
+		);
 
-		$html = $this->ask_html( $job, $prompt, array(), 40 );
+		$html = $this->ask_html( $job, 'section', $args, array(), 40 );
 
 		$job['data']['content']['sections'][ $i ] = $html;
 		$this->log( $job, sprintf(
@@ -903,22 +1135,19 @@ final class AIPC_Agent {
 	 */
 	private function step_conclusion( array &$job ) {
 		$plan = $job['data']['plan'];
-		$lang = AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] );
 
 		$headings = '';
 		foreach ( $job['data']['outline'] as $section ) {
 			$headings .= '- ' . $section['heading'] . "\n";
 		}
 
-		$prompt = 'Write the CONCLUSION for the article "' . $plan['title'] . "\".\n"
-			. "The article covered:\n" . $headings
-			. "\nRequirements:\n"
-			. '- Start with a single <h2> heading in ' . $lang . " (e.g. the local word for \"Conclusion\")\n"
-			. "- Then 1-2 paragraphs (100-160 words total)\n"
-			. "- Summarize the key takeaways, then end with a clear call to action (comment, share, or read a related article)\n"
-			. 'HTML fragment only.';
+		$args = array(
+			'{{title}}'    => $plan['title'],
+			'{{headings}}' => trim( $headings ),
+			'{{lang}}'     => AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] ),
+		);
 
-		$html = $this->ask_html( $job, $prompt, array(), 40 );
+		$html = $this->ask_html( $job, 'conclusion', $args, array(), 40 );
 
 		$job['data']['content']['conclusion'] = $html;
 		$this->log( $job, sprintf(
@@ -932,20 +1161,15 @@ final class AIPC_Agent {
 	/**
 	 * Step: the copywriting / SEO / originality revision pass.
 	 *
-	 * Sends the whole assembled draft body back to the model and requires the
-	 * revised version to keep the exact same structure (intro + N <h2>
-	 * sections + a final <h2> conclusion) so it can be re-split safely.
-	 *
 	 * @param array $job Job (by ref).
 	 * @return void
 	 * @throws Exception On failure.
 	 */
 	private function step_copywrite( array &$job ) {
-		$d   = $job['data'];
+		$d    = $job['data'];
 		$plan = $d['plan'];
 		$n    = count( $d['outline'] );
 
-		// Assemble the draft body (same shape the final post uses).
 		$draft = isset( $d['content']['intro'] ) ? trim( $d['content']['intro'] ) : '';
 		foreach ( $d['outline'] as $i => $section ) {
 			$sec   = isset( $d['content']['sections'][ $i ] ) ? trim( $d['content']['sections'][ $i ] ) : '';
@@ -957,22 +1181,17 @@ final class AIPC_Agent {
 
 		$orig_words = self::count_words( $draft );
 
-		$prompt = 'COPYWRITING & SEO REVISION PASS.' . "\n"
-			. 'Below is the draft body of the article "' . $plan['title'] . '". Improve it as a professional copywriter and SEO editor:' . "\n"
-			. "- COPYWRITING: sharper hooks, clearer flow, more persuasive and specific wording, remove filler and repetition.\n"
-			. "- SEO: natural use of the primary keyword '" . ( isset( $plan['primary_keyword'] ) ? $plan['primary_keyword'] : '' ) . "', better subheading phrasing, stronger topic sentences.\n"
-			. "- ORIGINALITY: rephrase anything that reads like generic boilerplate or copied phrasing — the final text must be original and pass as human-written.\n\n"
-			. 'STRICT FORMAT RULES (the pipeline breaks without them):' . "\n"
-			. '- Return ONLY the article body as raw HTML.' . "\n"
-			. '- Structure: an introduction with NO <h2> heading, then exactly ' . $n . ' main sections each starting with its own <h2> heading, then ONE final <h2> conclusion block. Total: exactly ' . ( $n + 1 ) . " <h2> headings.\n"
-			. "- Do not add or remove sections, do not merge them; no TOC, no FAQ, no title tag.\n"
-			. "- Keep the same language and overall meaning; keep it approximately the same length.\n\n"
-			. 'DRAFT:' . "\n" . $draft;
+		$args = array(
+			'{{title}}'           => $plan['title'],
+			'{{primary_keyword}}' => isset( $plan['primary_keyword'] ) ? (string) $plan['primary_keyword'] : '',
+			'{{sections}}'        => (string) $n,
+			'{{draft}}'           => $draft,
+		);
 
-		$opts = array( 'max_tokens' => min( 16000, max( (int) AIPC_Settings::get( 'max_tokens' ), 6000 ) ) );
-		$revised = $this->ask_html( $job, $prompt, $opts, 150 );
+		$conn   = $this->resolve_connection( 'copywrite' );
+		$opts   = array( 'max_tokens' => min( 16000, max( (int) $conn['max_tokens'], 6000 ) ) );
+		$revised = $this->ask_html( $job, 'copywrite', $args, $opts, 150 );
 
-		// Split the revised body back into pieces.
 		$parts = preg_split( '/(?=<h2\b)/i', $revised, -1, PREG_SPLIT_NO_EMPTY );
 		$parts = array_values( array_filter( array_map( 'trim', $parts ), function ( $part ) {
 			return '' !== $part;
@@ -987,8 +1206,8 @@ final class AIPC_Agent {
 			throw new Exception( __( 'The revision came back much shorter than the draft. Retrying.', 'wp-ai-post-creator' ) );
 		}
 
-		$intro      = trim( array_shift( $parts ) );       // Before the first <h2>.
-		$conclusion = trim( array_pop( $parts ) );         // Last <h2> block (keeps its heading).
+		$intro      = trim( array_shift( $parts ) );
+		$conclusion = trim( array_pop( $parts ) );
 
 		if ( count( $parts ) !== $n ) {
 			throw new Exception( __( 'The revision lost the article structure. Retrying.', 'wp-ai-post-creator' ) );
@@ -1027,13 +1246,13 @@ final class AIPC_Agent {
 	 */
 	private function step_faq( array &$job ) {
 		$plan = $job['data']['plan'];
-		$lang = AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] );
 
-		$prompt = 'For the article "' . $plan['title'] . '", write 4-5 FAQ questions a reader would also ask (the "People also ask" style).' . "\n"
-			. 'Return ONLY this JSON object, everything in ' . $lang . ":\n"
-			. '{"faq_heading": "short H2 heading for the FAQ block, in ' . $lang . '", "items": [{"q": "question", "a": "1-3 sentence answer"}]}';
+		$args = array(
+			'{{title}}' => $plan['title'],
+			'{{lang}}'  => AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] ),
+		);
 
-		$data = $this->ask_json( $job, $prompt );
+		$data = $this->ask_json( $job, 'faq', $args );
 
 		$items = array();
 		if ( ! empty( $data['items'] ) && is_array( $data['items'] ) ) {
@@ -1073,22 +1292,15 @@ final class AIPC_Agent {
 	 */
 	private function step_seo( array &$job ) {
 		$plan  = $job['data']['plan'];
-		$lang  = AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] );
 		$intro = isset( $job['data']['content']['intro'] ) ? mb_substr( wp_strip_all_tags( $job['data']['content']['intro'] ), 0, 300 ) : '';
 
-		$prompt = 'SEO metadata + Rank Math summary for the article "' . $plan['title'] . "\".\n"
-			. 'Opening of the article: ' . $intro . "\n\n"
-			. 'Generate SEO metadata. The meta_description is THE summary used for Rank Math — it must be compelling and contain the primary keyword.' . "\n"
-			. 'Return ONLY this JSON object:' . "\n"
-			. "{\n"
-			. '  "meta_title": "SEO title, max 60 characters, in ' . $lang . '", ' . "\n"
-			. '  "meta_description": "meta description / Rank Math summary, max 155 characters, includes the primary keyword, in ' . $lang . '", ' . "\n"
-			. '  "slug": "english-url-friendly-slug — lowercase English words separated by hyphens, max 6 words", ' . "\n"
-			. '  "excerpt": "post excerpt, max 160 characters, in ' . $lang . '", ' . "\n"
-			. '  "tags": ["5-8 short tag words, in ' . $lang . '"] ' . "\n"
-			. '}';
+		$args = array(
+			'{{title}}' => $plan['title'],
+			'{{intro}}' => $intro,
+			'{{lang}}'  => AIPC_Settings::language_name( $job['args']['language'], $job['args']['language_custom'] ),
+		);
 
-		$data = $this->ask_json( $job, $prompt );
+		$data = $this->ask_json( $job, 'seo', $args );
 
 		if ( empty( $data['meta_title'] ) || empty( $data['meta_description'] ) ) {
 			throw new Exception( __( 'SEO metadata was incomplete. Please retry.', 'wp-ai-post-creator' ) );
@@ -1150,15 +1362,12 @@ final class AIPC_Agent {
 		$plan    = $job['data']['plan'];
 		$summary = isset( $job['data']['seo']['meta_description'] ) ? $job['data']['seo']['meta_description'] : '';
 
-		$ask = 'Create a JSON object with one key "prompt": a detailed image-generation prompt (max 60 words) '
-			. 'for a professional featured/hero blog image. '
-			. 'Article title: "' . $plan['title'] . '". '
-			. ( '' !== $summary ? 'Article summary: "' . $summary . '". ' : '' )
-			. 'Style: modern, editorial, visually striking, high quality. '
-			. 'CRITICAL: the image must contain NO text, NO words, NO letters, NO watermarks. '
-			. 'Describe the scene only. JSON only.';
+		$args = array(
+			'{{title}}'   => $plan['title'],
+			'{{summary}}' => $summary,
+		);
 
-		$data = $this->ask_json( $job, $ask );
+		$data    = $this->ask_json( $job, 'image_prompt', $args );
 		$iprompt = ! empty( $data['prompt'] ) ? (string) $data['prompt'] : $plan['title'];
 
 		$this->log( $job, sprintf(
@@ -1167,9 +1376,15 @@ final class AIPC_Agent {
 			mb_substr( $iprompt, 0, 120 )
 		), 'info' );
 
-		$image = $this->client()->image( $iprompt );
+		$client = $this->client_for( 'image' );
+		$conn   = $this->resolve_connection( 'image' );
+
+		$t0    = microtime( true );
+		$image = $client->image( $iprompt );
+		$ms    = ( microtime( true ) - $t0 ) * 1000;
 
 		if ( is_wp_error( $image ) ) {
+			$this->record_call( $job, 'image', $conn['name'], $conn['image_model'], array(), $ms, false, $image->get_error_message() );
 			$this->log( $job, sprintf(
 				/* translators: %s: error message. */
 				__( 'Image generation failed (%s) — continuing without a featured image.', 'wp-ai-post-creator' ),
@@ -1179,9 +1394,12 @@ final class AIPC_Agent {
 			return;
 		}
 
+		$this->record_call( $job, 'image', $conn['name'], $conn['image_model'], array(), $ms, true );
+		$job['usage']['calls']++;
+
 		$bits = ! empty( $image['bits'] ) ? $image['bits'] : '';
 		if ( '' === $bits && ! empty( $image['url'] ) ) {
-			$bits = $this->client()->download( $image['url'] );
+			$bits = $client->download( $image['url'] );
 			if ( is_wp_error( $bits ) ) {
 				$this->log( $job, __( 'Could not download the generated image — continuing without one.', 'wp-ai-post-creator' ), 'warn' );
 				$this->advance( $job, 'skipped' );
@@ -1260,6 +1478,7 @@ final class AIPC_Agent {
 			$job['usage']['completion']
 		), 'success' );
 
+		$this->record_stats( $job );
 		$this->advance( $job );
 	}
 

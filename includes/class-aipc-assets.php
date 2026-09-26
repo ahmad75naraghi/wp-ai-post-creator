@@ -28,11 +28,18 @@ final class AIPC_Assets {
 	 * @return void
 	 */
 	public static function enqueue( $hook ) {
-		$plugin_pages = array( 'toplevel_page_aipc', 'ai-post-creator_page_aipc-settings' );
+		$plugin_pages = array(
+			'toplevel_page_aipc'                    => 'agent',
+			'ai-post-creator_page_aipc-connections' => 'connections',
+			'ai-post-creator_page_aipc-prompts'     => 'prompts',
+			'ai-post-creator_page_aipc-logs'        => 'logs',
+			'ai-post-creator_page_aipc-settings'    => 'settings',
+		);
 
-		if ( ! in_array( $hook, $plugin_pages, true ) ) {
+		if ( ! isset( $plugin_pages[ $hook ] ) ) {
 			return;
 		}
+		$screen = $plugin_pages[ $hook ];
 
 		wp_enqueue_style(
 			'aipc-admin',
@@ -41,7 +48,7 @@ final class AIPC_Assets {
 			AIPC_VERSION
 		);
 
-		if ( 'toplevel_page_aipc' === $hook ) {
+		if ( 'agent' === $screen ) {
 			wp_enqueue_script(
 				'aipc-agent',
 				AIPC_PLUGIN_URL . 'assets/admin-agent.js',
@@ -50,15 +57,15 @@ final class AIPC_Assets {
 				true
 			);
 			self::inline_data( 'aipc-agent', self::data_for_agent() );
-		} else {
+		} elseif ( 'connections' === $screen ) {
 			wp_enqueue_script(
-				'aipc-settings',
-				AIPC_PLUGIN_URL . 'assets/admin-settings.js',
+				'aipc-connections',
+				AIPC_PLUGIN_URL . 'assets/admin-connections.js',
 				array(),
 				AIPC_VERSION,
 				true
 			);
-			self::inline_data( 'aipc-settings', self::data_for_settings() );
+			self::inline_data( 'aipc-connections', self::data_for_connections() );
 		}
 	}
 
@@ -86,19 +93,20 @@ final class AIPC_Assets {
 	 * @return array
 	 */
 	private static function data_for_agent() {
-		$s = AIPC_Settings::all();
+		$s    = AIPC_Settings::all();
+		$conn = AIPC_Connections::get_default();
 
 		return array(
-			'restUrl'      => esc_url_raw( rest_url( 'aipc/v1/' ) ),
-			'nonce'        => wp_create_nonce( 'wp_rest' ),
-			'model'        => $s['chat_model'],
-			'provider'     => (string) wp_parse_url( $s['api_base_url'], PHP_URL_HOST ),
-			'hasKey'       => (bool) $s['api_key'],
+			'restUrl'       => esc_url_raw( rest_url( 'aipc/v1/' ) ),
+			'nonce'         => wp_create_nonce( 'wp_rest' ),
+			'model'         => $conn ? $conn['chat_model'] : '',
+			'provider'      => $conn ? (string) wp_parse_url( $conn['base_url'], PHP_URL_HOST ) : '',
+			'hasConnection' => (bool) $conn,
 			'hasSitePrompt' => (bool) trim( (string) $s['site_prompt'] ),
-			'tones'        => AIPC_Settings::tones(),
-			'lengths'      => AIPC_Settings::lengths(),
-			'languages'    => AIPC_Settings::languages(),
-			'defaults'     => array(
+			'tones'         => AIPC_Settings::tones(),
+			'lengths'       => AIPC_Settings::lengths(),
+			'languages'     => AIPC_Settings::languages(),
+			'defaults'      => array(
 				'tone'     => $s['default_tone'],
 				'length'   => $s['default_length'],
 				'language' => $s['content_language'],
@@ -106,7 +114,7 @@ final class AIPC_Assets {
 				'faq'      => (bool) $s['add_faq'],
 				'toc'      => (bool) $s['add_toc'],
 			),
-			'i18n'         => array(
+			'i18n'          => array(
 				'starting'      => __( 'Starting the agent…', 'wp-ai-post-creator' ),
 				'planning'      => __( 'Planning…', 'wp-ai-post-creator' ),
 				'working'       => __( 'The agent is working — keep this tab open.', 'wp-ai-post-creator' ),
@@ -115,9 +123,9 @@ final class AIPC_Assets {
 				'failed'        => __( 'The agent stopped with an error. You can retry the failed step.', 'wp-ai-post-creator' ),
 				'cancelConfirm' => __( 'Cancel the agent? The current progress will be kept but nothing new will run.', 'wp-ai-post-creator' ),
 				'cancelled'     => __( 'Agent cancelled.', 'wp-ai-post-creator' ),
-				'noKeyTitle'    => __( 'No API key configured', 'wp-ai-post-creator' ),
-				'noKeyBody'     => __( 'Add your OpenAI-compatible API key in the settings to start generating posts.', 'wp-ai-post-creator' ),
-				'goToSettings'  => __( 'Open settings', 'wp-ai-post-creator' ),
+				'noKeyTitle'    => __( 'No AI connection configured', 'wp-ai-post-creator' ),
+				'noKeyBody'     => __( 'Add an OpenAI-compatible connection (URL + API key) to start generating posts.', 'wp-ai-post-creator' ),
+				'goToSettings'  => __( 'Open connections', 'wp-ai-post-creator' ),
 				'words'         => __( 'words', 'wp-ai-post-creator' ),
 				'tokens'        => __( 'tokens', 'wp-ai-post-creator' ),
 				'sec'           => __( 's', 'wp-ai-post-creator' ),
@@ -126,11 +134,11 @@ final class AIPC_Assets {
 	}
 
 	/**
-	 * Data for the settings page.
+	 * Data for the connections page.
 	 *
 	 * @return array
 	 */
-	private static function data_for_settings() {
+	private static function data_for_connections() {
 		return array(
 			'restUrl' => esc_url_raw( rest_url( 'aipc/v1/' ) ),
 			'nonce'   => wp_create_nonce( 'wp_rest' ),
@@ -143,8 +151,6 @@ final class AIPC_Assets {
 				'loadingModels' => __( 'Loading models…', 'wp-ai-post-creator' ),
 				'modelsOk'      => __( '%d models loaded — pick one in the list.', 'wp-ai-post-creator' ),
 				'modelsFail'    => __( 'Could not load the model list:', 'wp-ai-post-creator' ),
-				'show'          => __( 'Show', 'wp-ai-post-creator' ),
-				'hide'          => __( 'Hide', 'wp-ai-post-creator' ),
 			),
 		);
 	}

@@ -3,7 +3,7 @@
  * Plugin Name:       AI Post Creator
  * Plugin URI:        https://github.com/ahmad75naraghi/wp-ai-post-creator
  * Description:       Agent-style AI content engine. Connect any OpenAI-compatible API (OpenAI, OpenRouter, Groq, DeepSeek, Ollama, LM Studio …) and generate complete, SEO-optimized posts from scratch — outline to featured image — with a live agent console.
- * Version:           1.1.0
+ * Version:           1.2.0
  * Requires at least: 5.7
  * Requires PHP:      7.4
  * Author:            Ahmad Naraghi
@@ -16,12 +16,14 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AIPC_VERSION', '1.1.0' );
+define( 'AIPC_VERSION', '1.2.0' );
 define( 'AIPC_PLUGIN_FILE', __FILE__ );
 define( 'AIPC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AIPC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-settings.php';
+require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-connections.php';
+require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-steps.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-api-client.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-agent.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-post-builder.php';
@@ -36,6 +38,8 @@ require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-assets.php';
  */
 function aipc_boot() {
 	load_plugin_textdomain( 'wp-ai-post-creator', false, dirname( plugin_basename( AIPC_PLUGIN_FILE ) ) . '/languages' );
+
+	AIPC_Connections::maybe_migrate();
 
 	AIPC_Admin::register();
 	AIPC_Assets::register();
@@ -59,6 +63,9 @@ function aipc_action_links( $links ) {
 	array_unshift(
 		$links,
 		'<a href="' . esc_url( admin_url( 'admin.php?page=aipc' ) ) . '">' . esc_html__( 'New AI Post', 'wp-ai-post-creator' ) . '</a>',
+		'<a href="' . esc_url( admin_url( 'admin.php?page=aipc-connections' ) ) . '">' . esc_html__( 'Connections', 'wp-ai-post-creator' ) . '</a>',
+		'<a href="' . esc_url( admin_url( 'admin.php?page=aipc-prompts' ) ) . '">' . esc_html__( 'Prompts & Steps', 'wp-ai-post-creator' ) . '</a>',
+		'<a href="' . esc_url( admin_url( 'admin.php?page=aipc-logs' ) ) . '">' . esc_html__( 'Logs', 'wp-ai-post-creator' ) . '</a>',
 		'<a href="' . esc_url( admin_url( 'admin.php?page=aipc-settings' ) ) . '">' . esc_html__( 'Settings', 'wp-ai-post-creator' ) . '</a>'
 	);
 	return $links;

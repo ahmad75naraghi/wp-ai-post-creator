@@ -1,0 +1,176 @@
+<?php
+/**
+ * Connections management page.
+ *
+ * @package wp-ai-post-creator
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+$aipc_conns    = AIPC_Connections::all();
+$aipc_editing  = null;
+$aipc_edit_id  = isset( $_GET['edit'] ) ? sanitize_key( wp_unslash( $_GET['edit'] ) ) : '';
+$aipc_msg      = isset( $_GET['aipc_msg'] ) ? sanitize_key( wp_unslash( $_GET['aipc_msg'] ) ) : '';
+
+if ( '' !== $aipc_edit_id ) {
+	$aipc_editing = AIPC_Connections::get( $aipc_edit_id );
+}
+
+/**
+ * Render one connection form (add or edit).
+ *
+ * @param array|null $conn Connection being edited (null = add form).
+ * @return void
+ */
+function aipc_connection_form( $conn ) {
+	$editing = is_array( $conn );
+	?>
+	<form class="aipc-conn-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<?php wp_nonce_field( 'aipc_save_connection' ); ?>
+		<input type="hidden" name="action" value="aipc_save_connection" />
+		<input type="hidden" name="id" value="<?php echo esc_attr( $editing ? $conn['id'] : '' ); ?>" />
+
+		<h3><?php echo $editing ? esc_html__( 'Edit connection', 'wp-ai-post-creator' ) : esc_html__( 'Add a new connection', 'wp-ai-post-creator' ); ?></h3>
+
+		<div class="aipc-grid">
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Name', 'wp-ai-post-creator' ); ?></label>
+				<input type="text" class="aipc-input" name="name" required
+					placeholder="<?php esc_attr_e( 'e.g. OpenAI · Groq · Local Ollama', 'wp-ai-post-creator' ); ?>"
+					value="<?php echo esc_attr( $editing ? $conn['name'] : '' ); ?>" />
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'API base URL', 'wp-ai-post-creator' ); ?></label>
+				<input type="url" class="aipc-input code" name="base_url" required
+					placeholder="https://api.openai.com/v1"
+					value="<?php echo esc_attr( $editing ? $conn['base_url'] : '' ); ?>" />
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'API key', 'wp-ai-post-creator' ); ?></label>
+				<input type="password" class="aipc-input" name="api_key" autocomplete="new-password"
+					placeholder="<?php echo $editing && ! empty( $conn['api_key'] ) ? esc_attr__( '••••• (saved — leave empty to keep)', 'wp-ai-post-creator' ) : esc_attr__( 'sk-… (any value for Ollama/LM Studio)', 'wp-ai-post-creator' ); ?>"
+					value="" />
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Chat model', 'wp-ai-post-creator' ); ?></label>
+				<input type="text" class="aipc-input code" name="chat_model" list="<?php echo esc_attr( 'aipc-models-' . ( $editing ? $conn['id'] : 'new' ) ); ?>"
+					value="<?php echo esc_attr( $editing ? $conn['chat_model'] : 'gpt-4o-mini' ); ?>" />
+				<datalist id="<?php echo esc_attr( 'aipc-models-' . ( $editing ? $conn['id'] : 'new' ) ); ?>"></datalist>
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Image model', 'wp-ai-post-creator' ); ?></label>
+				<input type="text" class="aipc-input code" name="image_model"
+					value="<?php echo esc_attr( $editing ? $conn['image_model'] : 'dall-e-3' ); ?>" />
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Temperature', 'wp-ai-post-creator' ); ?></label>
+				<input type="number" class="aipc-input" name="temperature" min="0" max="2" step="0.1"
+					value="<?php echo esc_attr( $editing ? $conn['temperature'] : 0.7 ); ?>" />
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Max tokens per step', 'wp-ai-post-creator' ); ?></label>
+				<input type="number" class="aipc-input" name="max_tokens" min="256" max="16000" step="64"
+					value="<?php echo esc_attr( $editing ? $conn['max_tokens'] : 4000 ); ?>" />
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Timeout (seconds)', 'wp-ai-post-creator' ); ?></label>
+				<input type="number" class="aipc-input" name="request_timeout" min="15" max="600" step="5"
+					value="<?php echo esc_attr( $editing ? $conn['request_timeout'] : 120 ); ?>" />
+			</div>
+		</div>
+
+		<p>
+			<label class="aipc-check">
+				<input type="checkbox" name="is_default" value="1" <?php checked( $editing && ! empty( $conn['is_default'] ) ); ?> />
+				<?php esc_html_e( 'Use as the default connection', 'wp-ai-post-creator' ); ?>
+			</label>
+		</p>
+
+		<div class="aipc-actions">
+			<button type="submit" class="button button-primary"><?php esc_html_e( 'Save connection', 'wp-ai-post-creator' ); ?></button>
+			<button type="button" class="button aipc-btn-test" data-target="<?php echo esc_attr( ( $editing ? $conn['id'] : 'new' ) ); ?>"><?php esc_html_e( 'Test connection', 'wp-ai-post-creator' ); ?></button>
+			<button type="button" class="button aipc-btn-models" data-target="<?php echo esc_attr( ( $editing ? $conn['id'] : 'new' ) ); ?>"><?php esc_html_e( 'Load models from provider', 'wp-ai-post-creator' ); ?></button>
+			<span class="aipc-inline-status" aria-live="polite"></span>
+		</div>
+	</form>
+	<?php
+}
+?>
+<div class="wrap aipc-wrap">
+
+	<div class="aipc-header">
+		<div class="aipc-logo" aria-hidden="true">🔌</div>
+		<div class="aipc-header-text">
+			<h1><?php esc_html_e( 'AI Connections', 'wp-ai-post-creator' ); ?></h1>
+			<p class="aipc-sub"><?php esc_html_e( 'Configure any number of OpenAI-compatible providers — then assign each pipeline step its own connection under Prompts & Steps.', 'wp-ai-post-creator' ); ?></p>
+		</div>
+	</div>
+
+	<?php if ( 'saved' === $aipc_msg ) : ?>
+		<div class="aipc-card aipc-alert aipc-alert-ok"><p>✅ <?php esc_html_e( 'Connection saved.', 'wp-ai-post-creator' ); ?></p></div>
+	<?php elseif ( 'deleted' === $aipc_msg ) : ?>
+		<div class="aipc-card aipc-alert"><p>🗑 <?php esc_html_e( 'Connection deleted.', 'wp-ai-post-creator' ); ?></p></div>
+	<?php endif; ?>
+
+	<section class="aipc-card">
+		<h2>🗂 <?php esc_html_e( 'Your connections', 'wp-ai-post-creator' ); ?></h2>
+
+		<?php if ( empty( $aipc_conns ) ) : ?>
+			<p class="aipc-empty">— <?php esc_html_e( 'No connections yet. Add your first one below.', 'wp-ai-post-creator' ); ?> —</p>
+		<?php else : ?>
+			<table class="wp-list-table widefat fixed striped aipc-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Name', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Endpoint', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Chat model', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Image model', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Default', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'wp-ai-post-creator' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+				<?php foreach ( $aipc_conns as $aipc_conn ) : ?>
+					<tr>
+						<td><strong><?php echo esc_html( $aipc_conn['name'] ); ?></strong></td>
+						<td class="aipc-code"><?php echo esc_html( $aipc_conn['base_url'] ); ?></td>
+						<td class="aipc-code"><?php echo esc_html( $aipc_conn['chat_model'] ); ?></td>
+						<td class="aipc-code"><?php echo esc_html( $aipc_conn['image_model'] ); ?></td>
+						<td><?php echo ! empty( $aipc_conn['is_default'] ) ? '⭐ ' . esc_html__( 'Yes', 'wp-ai-post-creator' ) : '—'; ?></td>
+						<td>
+							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'aipc-connections', 'edit' => $aipc_conn['id'] ), admin_url( 'admin.php' ) ) ); ?>"><?php esc_html_e( 'Edit', 'wp-ai-post-creator' ); ?></a> ·
+							<a class="aipc-danger" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_delete_connection&id=' . $aipc_conn['id'] ), 'aipc_delete_connection' ) ); ?>"
+								onclick="return confirm('<?php echo esc_js( __( 'Delete this connection? Steps using it will fall back to the default connection.', 'wp-ai-post-creator' ) ); ?>');"><?php esc_html_e( 'Delete', 'wp-ai-post-creator' ); ?></a>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php endif; ?>
+	</section>
+
+	<section class="aipc-card">
+		<?php
+		if ( $aipc_editing ) {
+			aipc_connection_form( $aipc_editing );
+		}
+		?>
+		<details class="aipc-options" <?php echo $aipc_editing ? '' : 'open'; ?> id="aipc-add-connection">
+			<summary><?php esc_html_e( 'Add a new connection', 'wp-ai-post-creator' ); ?></summary>
+			<?php aipc_connection_form( null ); ?>
+		</details>
+	</section>
+
+	<section class="aipc-card">
+		<h2>💡 <?php esc_html_e( 'Example endpoints', 'wp-ai-post-creator' ); ?></h2>
+		<p class="aipc-code aipc-hint">
+			https://api.openai.com/v1 (OpenAI) ·
+			https://openrouter.ai/api/v1 (OpenRouter) ·
+			https://api.groq.com/openai/v1 (Groq) ·
+			https://api.deepseek.com/v1 (DeepSeek) ·
+			http://localhost:11434/v1 (Ollama) ·
+			http://localhost:1234/v1 (LM Studio)
+		</p>
+	</section>
+
+</div>

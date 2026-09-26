@@ -9,6 +9,9 @@ defined( 'ABSPATH' ) || exit;
 
 $aipc_settings = AIPC_Settings::all();
 $aipc_has_site_prompt = (bool) trim( (string) $aipc_settings['site_prompt'] );
+$aipc_conn = AIPC_Connections::get_default();
+$aipc_links = admin_url( 'admin.php?page=aipc-settings' );
+$aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 ?>
 <div class="wrap aipc-wrap">
 
@@ -18,20 +21,27 @@ $aipc_has_site_prompt = (bool) trim( (string) $aipc_settings['site_prompt'] );
 			<h1><?php esc_html_e( 'AI Post Creator', 'wp-ai-post-creator' ); ?></h1>
 			<p class="aipc-sub"><?php esc_html_e( 'Agent mode: from a bare topic to a complete, SEO-ready post — step by step.', 'wp-ai-post-creator' ); ?></p>
 			<p class="aipc-meta">
-				<span class="aipc-chip">⚙ <?php echo esc_html( sprintf( /* translators: %s: model name */ __( 'Model: %s', 'wp-ai-post-creator' ), $aipc_settings['chat_model'] ) ); ?></span>
-				<span class="aipc-chip">🔌 <?php echo esc_html( sprintf( /* translators: %s: host */ __( 'Provider: %s', 'wp-ai-post-creator' ), (string) wp_parse_url( $aipc_settings['api_base_url'], PHP_URL_HOST ) ) ); ?></span>
-				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( admin_url( 'admin.php?page=aipc-settings' ) ); ?>"><?php esc_html_e( 'Settings', 'wp-ai-post-creator' ); ?></a>
+				<?php if ( $aipc_conn ) : ?>
+					<span class="aipc-chip">🔌 <?php echo esc_html( sprintf( /* translators: %s: connection name */ __( 'Default: %s', 'wp-ai-post-creator' ), $aipc_conn['name'] ) ); ?></span>
+					<span class="aipc-chip">⚙ <?php echo esc_html( sprintf( /* translators: %s: model name */ __( 'Model: %s', 'wp-ai-post-creator' ), $aipc_conn['chat_model'] ) ); ?></span>
+				<?php else : ?>
+					<span class="aipc-chip">⚠ <?php esc_html_e( 'No connection configured', 'wp-ai-post-creator' ); ?></span>
+				<?php endif; ?>
+				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( $aipc_conn_links ); ?>"><?php esc_html_e( 'Connections', 'wp-ai-post-creator' ); ?></a>
+				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( admin_url( 'admin.php?page=aipc-prompts' ) ); ?>"><?php esc_html_e( 'Prompts & Steps', 'wp-ai-post-creator' ); ?></a>
+				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( admin_url( 'admin.php?page=aipc-logs' ) ); ?>"><?php esc_html_e( 'Logs', 'wp-ai-post-creator' ); ?></a>
+				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( $aipc_links ); ?>"><?php esc_html_e( 'Settings', 'wp-ai-post-creator' ); ?></a>
 			</p>
 		</div>
 	</div>
 
-	<?php if ( empty( $aipc_settings['api_key'] ) ) : ?>
+	<?php if ( ! $aipc_conn ) : ?>
 		<div class="aipc-card aipc-alert">
 			<p>
-				<strong>🔑 <?php esc_html_e( 'No API key configured.', 'wp-ai-post-creator' ); ?></strong>
-				<?php esc_html_e( 'Connect an OpenAI-compatible provider to start generating.', 'wp-ai-post-creator' ); ?>
-				<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=aipc-settings' ) ); ?>">
-					<?php esc_html_e( 'Open settings', 'wp-ai-post-creator' ); ?>
+				<strong>🔑 <?php esc_html_e( 'No AI connection configured.', 'wp-ai-post-creator' ); ?></strong>
+				<?php esc_html_e( 'Add an OpenAI-compatible connection (URL + API key) to start generating posts.', 'wp-ai-post-creator' ); ?>
+				<a class="button button-small" href="<?php echo esc_url( $aipc_conn_links ); ?>">
+					<?php esc_html_e( 'Open connections', 'wp-ai-post-creator' ); ?>
 				</a>
 			</p>
 		</div>
@@ -57,6 +67,7 @@ $aipc_has_site_prompt = (bool) trim( (string) $aipc_settings['site_prompt'] );
 			<p class="aipc-hint">
 				<?php esc_html_e( 'The agent always picks one of your existing post categories and builds the topic from the site prompt.', 'wp-ai-post-creator' ); ?>
 				<?php esc_html_e( 'The post is always saved as a draft for your review.', 'wp-ai-post-creator' ); ?>
+				<?php esc_html_e( 'Each step uses the connection and prompt assigned under Prompts & Steps.', 'wp-ai-post-creator' ); ?>
 			</p>
 
 			<details class="aipc-options" id="aipc-options">

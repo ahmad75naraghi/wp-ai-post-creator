@@ -1,6 +1,8 @@
 <?php
 /**
- * Settings storage and defaults.
+ * Global plugin settings (content defaults).
+ *
+ * Provider endpoints/keys now live in AIPC_Connections.
  *
  * @package wp-ai-post-creator
  */
@@ -21,19 +23,12 @@ final class AIPC_Settings {
 	 */
 	public static function defaults() {
 		return array(
-			'api_key'             => '',
-			'api_base_url'        => 'https://api.openai.com/v1',
-			'chat_model'          => 'gpt-4o-mini',
-			'image_enabled'       => 1,
-			'image_model'         => 'dall-e-3',
-			'image_size'          => '1792x1024',
-			'temperature'         => 0.7,
-			'max_tokens'          => 4000,
-			'request_timeout'     => 120,
-			'site_prompt'         => '',
 			'content_language'    => self::default_language(),
 			'default_tone'        => 'professional',
 			'default_length'      => 'medium',
+			'site_prompt'         => '',
+			'image_enabled'       => 1,
+			'image_size'          => '1792x1024',
 			'add_toc'             => 1,
 			'add_faq'             => 1,
 			'system_prompt_extra' => '',
@@ -190,41 +185,9 @@ final class AIPC_Settings {
 	 * @return array
 	 */
 	public static function sanitize( $input ) {
-		$old  = self::all();
-		$in   = is_array( $input ) ? $input : array();
-		$out  = array();
-
-		// API key: an empty submitted value keeps the stored key.
-		$key          = isset( $in['api_key'] ) ? trim( (string) $in['api_key'] ) : '';
-		$out['api_key'] = ( '' !== $key ) ? $key : $old['api_key'];
-
-		$base = isset( $in['api_base_url'] ) ? esc_url_raw( trim( (string) $in['api_base_url'] ) ) : '';
-		if ( '' === $base || 0 !== strpos( $base, 'http' ) ) {
-			$base = $old['api_base_url'];
-		}
-		$out['api_base_url'] = untrailingslashit( $base );
-
-		$out['chat_model'] = isset( $in['chat_model'] ) ? sanitize_text_field( $in['chat_model'] ) : '';
-		if ( '' === $out['chat_model'] ) {
-			$out['chat_model'] = $old['chat_model'];
-		}
-
-		$out['temperature'] = isset( $in['temperature'] ) ? (float) $in['temperature'] : $old['temperature'];
-		if ( $out['temperature'] < 0 || $out['temperature'] > 2 ) {
-			$out['temperature'] = 0.7;
-		}
-
-		$out['max_tokens'] = isset( $in['max_tokens'] ) ? absint( $in['max_tokens'] ) : $old['max_tokens'];
-		if ( $out['max_tokens'] > 16000 ) {
-			$out['max_tokens'] = 16000;
-		}
-
-		$out['request_timeout'] = isset( $in['request_timeout'] ) ? absint( $in['request_timeout'] ) : $old['request_timeout'];
-		if ( $out['request_timeout'] < 15 ) {
-			$out['request_timeout'] = 15;
-		} elseif ( $out['request_timeout'] > 600 ) {
-			$out['request_timeout'] = 600;
-		}
+		$old = self::all();
+		$in  = is_array( $input ) ? $input : array();
+		$out = array();
 
 		$out['content_language'] = isset( $in['content_language'] ) ? sanitize_key( $in['content_language'] ) : $old['content_language'];
 		if ( ! array_key_exists( $out['content_language'], self::languages() ) ) {
@@ -243,8 +206,6 @@ final class AIPC_Settings {
 
 		$site_prompt = isset( $in['site_prompt'] ) ? sanitize_textarea_field( $in['site_prompt'] ) : $old['site_prompt'];
 		$out['site_prompt'] = mb_substr( trim( $site_prompt ), 0, 4000 );
-
-		$out['image_model'] = isset( $in['image_model'] ) ? sanitize_text_field( $in['image_model'] ) : $old['image_model'];
 
 		$out['image_size'] = isset( $in['image_size'] ) ? sanitize_text_field( $in['image_size'] ) : $old['image_size'];
 		if ( ! in_array( $out['image_size'], self::image_sizes(), true ) ) {

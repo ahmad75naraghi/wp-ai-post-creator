@@ -1,6 +1,6 @@
 <?php
 /**
- * REST API routes for the agent console and the settings screen.
+ * REST API routes for the agent console and the admin screens.
  *
  * @package wp-ai-post-creator
  */
@@ -29,16 +29,14 @@ final class AIPC_REST {
 				'permission_callback' => array( __CLASS__, 'can_edit' ),
 				'args'                => array(
 					'topic'           => array(
-						'required'          => true,
 						'type'              => 'string',
+						'default'           => '',
 						'sanitize_callback' => 'sanitize_textarea_field',
 					),
 					'tone'            => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_key' ),
 					'length'          => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_key' ),
 					'language'        => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_key' ),
 					'language_custom' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
-					'category_id'     => array( 'type' => 'integer', 'sanitize_callback' => 'absint' ),
-					'status'          => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_key' ),
 					'image'           => array( 'type' => 'boolean' ),
 					'faq'             => array( 'type' => 'boolean' ),
 					'toc'             => array( 'type' => 'boolean' ),
@@ -100,22 +98,38 @@ final class AIPC_REST {
 
 		register_rest_route(
 			self::NS,
-			'/models',
+			'/connection/test',
 			array(
-				'methods'             => 'GET',
-				'callback'            => array( __CLASS__, 'models' ),
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'connection_test' ),
 				'permission_callback' => array( __CLASS__, 'can_manage' ),
+				'args'                => self::connection_args(),
 			)
 		);
 
 		register_rest_route(
 			self::NS,
-			'/test',
+			'/connection/models',
 			array(
 				'methods'             => 'POST',
-				'callback'            => array( __CLASS__, 'test' ),
+				'callback'            => array( __CLASS__, 'connection_models' ),
 				'permission_callback' => array( __CLASS__, 'can_manage' ),
+				'args'                => self::connection_args(),
 			)
+		);
+	}
+
+	/**
+	 * Shared argument definition for connection endpoints.
+	 *
+	 * @return array
+	 */
+	private static function connection_args() {
+		return array(
+			'id'         => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_key' ),
+			'base_url'   => array( 'type' => 'string', 'sanitize_callback' => 'esc_url_raw' ),
+			'api_key'    => array( 'type' => 'string' ),
+			'chat_model' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
 		);
 	}
 
@@ -135,6 +149,40 @@ final class AIPC_REST {
 	 */
 	public static function can_manage() {
 		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * Build a connection array from the request: posted values win, but a
+	 * saved connection (by id) fills the gaps — including its stored API key
+	 * when the request does not send one (write-only key UX).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return array|WP_Error Connection or error.
+	 */
+	private static function connection_from_request( $request ) {
+		$id   = (string) $request->get_param( 'id' );
+		$conn = $id ? AIPC_Connections::get( $id ) : null;
+		$conn = $conn ? $conn : AIPC_Connections::sanitize( array() );
+
+		$base = trim( (string) $request->get_param( 'base_url' ) );
+		$key  = (string) $request->get_param( 'api_key' );
+
+		if ( '' !== $base ) {
+			$conn['base_url'] = untrailingslashit( esc_url_raw( $base ) );
+		}
+		if ( '' !== $key ) {
+			$conn['api_key'] = $key;
+		}
+		$model = trim( (string) $request->get_param( 'chat_model' ) );
+		if ( '' !== $model ) {
+			$conn['chat_model'] = sanitize_text_field( $model );
+		}
+
+		if ( empty( $conn['base_url'] ) || 0 !== strpos( $conn['base_url'], 'http' ) ) {
+			return new WP_Error( 'aipc_config', __( 'Enter a valid API base URL first.', 'wp-ai-post-creator' ), array( 'status' => 400 ) );
+		}
+
+		return $conn;
 	}
 
 	/**
@@ -199,30 +247,42 @@ final class AIPC_REST {
 	}
 
 	/**
-	 * List provider models (settings screen).
+	 * Test a connection (saved by id, or an unsaved form's values).
 	 *
+	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public static function models() {
-		$client = new AIPC_API_Client();
-		$models = $client->models();
-		if ( is_wp_error( $models ) ) {
-			return new WP_Error( $models->get_error_code(), $models->get_error_message(), array( 'status' => 502 ) );
+	public static function connection_test( $request ) {
+		$conn = self::connection_from_request( $request );
+		if ( is_wp_error( $conn ) ) {
+			return $conn;
 		}
-		return rest_ensure_response( array( 'models' => $models ) );
-	}
 
-	/**
-	 * Test the provider connection (settings screen).
-	 *
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public static function test() {
-		$client = new AIPC_API_Client();
+		$client = new AIPC_API_Client( $conn );
 		$result = $client->test();
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error( $result->get_error_code(), $result->get_error_message(), array( 'status' => 502 ) );
 		}
 		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * List the models of a connection.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function connection_models( $request ) {
+		$conn = self::connection_from_request( $request );
+		if ( is_wp_error( $conn ) ) {
+			return $conn;
+		}
+
+		$client = new AIPC_API_Client( $conn );
+		$models = $client->models();
+		if ( is_wp_error( $models ) ) {
+			return new WP_Error( $models->get_error_code(), $models->get_error_message(), array( 'status' => 502 ) );
+		}
+		return rest_ensure_response( array( 'models' => $models ) );
 	}
 }

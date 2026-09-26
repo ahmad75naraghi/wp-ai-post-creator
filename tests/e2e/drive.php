@@ -32,23 +32,39 @@ $out['unit_extract_json'] = array(
 );
 
 /* ------------------------------------------------------------------ *
- * REST: models + connection test
+ * Connections & steps configuration
  * ------------------------------------------------------------------ */
 rest_get_server();
 wp_set_current_user( 1 );
 
-$req  = new WP_REST_Request( 'GET', '/aipc/v1/models' );
-$resp = rest_do_request( $req );
-$out['rest_models'] = array(
-	'status' => $resp->get_status(),
-	'models' => $resp->get_data()['models'] ?? null,
+$connections = AIPC_Connections::all();
+$out['connections'] = array(
+	'count'         => count( $connections ),
+	'default_name'  => AIPC_Connections::get_default()['name'],
+	'faq_custom'    => AIPC_Steps::has_custom_prompt( 'faq' ),
+	'plan_default'  => AIPC_Steps::prompt_for( 'plan' ) === AIPC_Steps::registry()['plan']['prompt'],
+	'image_step'    => AIPC_Steps::get( 'image' )['connection'] === $connections[1]['id'],
+	'prompt_marker' => false !== strpos( AIPC_Steps::prompt_for( 'faq' ), 'FAQ-QUESTIONS-CUSTOM' ),
 );
 
-$req  = new WP_REST_Request( 'POST', '/aipc/v1/test' );
+/* ------------------------------------------------------------------ *
+ * REST: connection test + models (saved id, and raw config)
+ * ------------------------------------------------------------------ */
+$req = new WP_REST_Request( 'POST', '/aipc/v1/connection/test' );
+$req->set_param( 'id', $connections[0]['id'] );
 $resp = rest_do_request( $req );
-$out['rest_test'] = array(
+$out['rest_conn_test_by_id'] = array(
 	'status' => $resp->get_status(),
 	'ok'     => ! empty( $resp->get_data()['ok'] ),
+);
+
+$req = new WP_REST_Request( 'POST', '/aipc/v1/connection/models' );
+$req->set_param( 'base_url', 'https://mock.invalid/v1' );
+$req->set_param( 'api_key', 'sk-chat-key' );
+$resp = rest_do_request( $req );
+$out['rest_conn_models_raw'] = array(
+	'status' => $resp->get_status(),
+	'count'  => count( $resp->get_data()['models'] ?? array() ),
 );
 
 /* ------------------------------------------------------------------ *
@@ -58,8 +74,16 @@ wp_set_current_user( 0 );
 $req  = new WP_REST_Request( 'POST', '/aipc/v1/start' );
 $req->set_param( 'topic', 'test' );
 $resp = rest_do_request( $req );
+$anon_start = $resp->get_status();
+
+$req  = new WP_REST_Request( 'POST', '/aipc/v1/connection/test' );
+$req->set_param( 'base_url', 'https://mock.invalid/v1' );
+$resp = rest_do_request( $req );
+$anon_conn = $resp->get_status();
+
 $out['rest_permissions'] = array(
-	'anonymous_status' => $resp->get_status(), // expect 401/403
+	'anonymous_start'       => $anon_start,
+	'anonymous_connection'  => $anon_conn,
 );
 wp_set_current_user( 1 );
 
@@ -84,11 +108,12 @@ $out['start'] = array(
 	'logs'   => count( $state['logs'] ?? array() ),
 );
 
-$since = $state['since'] ?? 0;
-$guard = 0;
+$job_id = $state['id'];
+$since  = $state['since'] ?? 0;
+$guard  = 0;
 while ( isset( $state['status'] ) && 'running' === $state['status'] && $guard++ < 50 ) {
 	$req = new WP_REST_Request( 'POST', '/aipc/v1/step' );
-	$req->set_param( 'job_id', $state['id'] );
+	$req->set_param( 'job_id', $job_id );
 	$req->set_param( 'since', $since );
 	$resp  = rest_do_request( $req );
 	$state = $resp->get_data();
@@ -104,6 +129,54 @@ $out['agent'] = array(
 		return $s['status'] . ':' . $s['id'];
 	}, $state['steps'] ?? array() ),
 	'result'   => $state['result'] ?? null,
+);
+
+/* ------------------------------------------------------------------ *
+ * Per-call inspection: different connections per step
+ * ------------------------------------------------------------------ */
+$job = AIPC_Agent::instance()->get_job( $job_id );
+
+/**
+ * Unique connection names among calls matching the filter.
+ *
+ * @param array    $calls  Job calls.
+ * @param callable $filter Step filter.
+ * @return array
+ */
+$aipc_conns_for = function ( $calls, $filter ) {
+	$names = array();
+	foreach ( $calls as $call ) {
+		if ( $filter( $call ) ) {
+			$names[] = $call['conn'];
+		}
+	}
+	return array_values( array_unique( $names ) );
+};
+
+$aipc_ok_calls     = 0;
+$aipc_failed_calls = 0;
+foreach ( $job['calls'] as $call ) {
+	if ( $call['ok'] ) {
+		$aipc_ok_calls++;
+	} else {
+		$aipc_failed_calls++;
+	}
+}
+
+$out['calls'] = array(
+	'total'             => count( $job['calls'] ),
+	'chat_conns'        => $aipc_conns_for( $job['calls'], function ( $c ) {
+		return 'image' !== $c['step'] && 'image_prompt' !== $c['step'];
+	} ),
+	'image_conn'        => $aipc_conns_for( $job['calls'], function ( $c ) {
+		return 'image' === $c['step'];
+	} ),
+	'image_prompt_conn' => $aipc_conns_for( $job['calls'], function ( $c ) {
+		return 'image_prompt' === $c['step'];
+	} ),
+	'ok_calls'          => $aipc_ok_calls,
+	'failed_calls'      => $aipc_failed_calls,
+	'has_timings'       => count( $job['timings'] ) === count( $job['steps'] ),
 );
 
 /* ------------------------------------------------------------------ *
@@ -128,14 +201,14 @@ if ( ! empty( $state['result']['post_id'] ) ) {
 	);
 
 	$out['meta'] = array(
-		'seo_title'   => get_post_meta( $post_id, '_aipc_meta_title', true ),
-		'seo_desc'    => get_post_meta( $post_id, '_aipc_meta_description', true ),
-		'yoast_desc'  => get_post_meta( $post_id, '_yoast_wpseo_metadesc', true ),
-		'rankmath'    => get_post_meta( $post_id, 'rank_math_title', true ),
+		'seo_title'     => get_post_meta( $post_id, '_aipc_meta_title', true ),
+		'seo_desc'      => get_post_meta( $post_id, '_aipc_meta_description', true ),
+		'yoast_desc'    => get_post_meta( $post_id, '_yoast_wpseo_metadesc', true ),
+		'rankmath'      => get_post_meta( $post_id, 'rank_math_title', true ),
 		'rankmath_desc' => get_post_meta( $post_id, 'rank_math_description', true ),
-		'focus_kw'    => get_post_meta( $post_id, 'rank_math_focus_keyword', true ),
-		'has_schema'  => false !== strpos( (string) get_post_meta( $post_id, '_aipc_faq_schema', true ), 'FAQPage' ),
-		'generated'   => (bool) get_post_meta( $post_id, '_aipc_generated', true ),
+		'focus_kw'      => get_post_meta( $post_id, 'rank_math_focus_keyword', true ),
+		'has_schema'    => false !== strpos( (string) get_post_meta( $post_id, '_aipc_faq_schema', true ), 'FAQPage' ),
+		'generated'     => (bool) get_post_meta( $post_id, '_aipc_generated', true ),
 	);
 
 	$out['terms'] = array(
@@ -147,36 +220,100 @@ if ( ! empty( $state['result']['post_id'] ) ) {
 }
 
 /* ------------------------------------------------------------------ *
- * Settings sanitize
+ * Aggregate stats
  * ------------------------------------------------------------------ */
-$clean = AIPC_Settings::sanitize( array(
-	'api_key'             => ' new-key ',
-	'api_base_url'        => 'https://api.openai.com/v1/',
-	'chat_model'          => 'gpt-4o',
-	'temperature'         => '9',
-	'max_tokens'          => '99999',
-	'request_timeout'     => '5',
-	'content_language'    => 'fa',
-	'default_tone'        => 'professional',
-	'default_length'      => 'medium',
-	'site_prompt'         => "  توضیح سایت  ",
-	'image_model'         => 'dall-e-3',
-	'image_size'          => '1024x1024',
-	'image_enabled'       => '1',
-	'add_toc'             => '0',
-	'add_faq'             => '1',
-	'system_prompt_extra' => "line1\nline2",
-	'delete_on_uninstall' => '0',
-) );
+$stats = AIPC_Agent::stats();
+$out['stats'] = array(
+	'jobs'      => $stats['jobs'],
+	'done'      => $stats['done'],
+	'calls'     => $stats['calls'],
+	'has_chat'  => isset( $stats['by_connection']['Chat Mock'] ) && $stats['by_connection']['Chat Mock']['calls'] > 0,
+	'has_image' => isset( $stats['by_connection']['Image Mock'] ) && $stats['by_connection']['Image Mock']['calls'] > 0,
+);
 
-$out['sanitize'] = array(
-	'key_trimmed'     => 'new-key' === $clean['api_key'],
-	'base_normalized' => 'https://api.openai.com/v1' === $clean['api_base_url'],
-	'temp_clamped'    => 0.7 === $clean['temperature'],
-	'tokens_clamped'  => 16000 === $clean['max_tokens'],
-	'timeout_clamped' => 15 === $clean['request_timeout'],
-	'toc_off'         => 0 === $clean['add_toc'],
-	'site_prompt_trimmed' => 'توضیح سایت' === $clean['site_prompt'],
+/* ------------------------------------------------------------------ *
+ * Admin pages render (list + detail)
+ * ------------------------------------------------------------------ */
+$out['admin_pages'] = array(
+	'logs_list'   => '',
+	'logs_detail' => '',
+	'connections' => '',
+	'prompts'     => '',
+);
+
+unset( $_GET['job'] );
+ob_start();
+AIPC_Admin::render_logs();
+$html = ob_get_clean();
+$out['admin_pages']['logs_list'] = array(
+	'rendered'   => false !== strpos( $html, 'aipc-stats-grid' ),
+	'shows_job'  => false !== strpos( $html, $job_id ),
+	'shows_topic'=> false !== strpos( $html, 'سبزی' ),
+);
+
+$_GET['job'] = $job_id;
+ob_start();
+AIPC_Admin::render_logs();
+$html = ob_get_clean();
+$out['admin_pages']['logs_detail'] = array(
+	'rendered'     => false !== strpos( $html, 'Job details' ) || false !== strpos( $html, 'aipc-terminal-static' ),
+	'shows_calls'  => false !== strpos( $html, 'Image Mock' ) && false !== strpos( $html, 'Chat Mock' ),
+	'shows_steps'  => false !== strpos( $html, 'Copywriting' ),
+);
+unset( $_GET['job'] );
+
+ob_start();
+AIPC_Admin::render_connections();
+$html = ob_get_clean();
+$out['admin_pages']['connections'] = array(
+	'rendered'      => false !== strpos( $html, 'aipc-conn-form' ),
+	'shows_conns'   => false !== strpos( $html, 'Chat Mock' ) && false !== strpos( $html, 'Image Mock' ),
+);
+
+ob_start();
+AIPC_Admin::render_prompts();
+$html = ob_get_clean();
+$out['admin_pages']['prompts'] = array(
+	'rendered'        => false !== strpos( $html, 'aipc-step-card' ),
+	'shows_custom'    => false !== strpos( $html, 'FAQ-QUESTIONS-CUSTOM' ),
+	'shows_image_sel' => false !== strpos( $html, 'steps[image]' ),
+);
+
+/* ------------------------------------------------------------------ *
+ * Sanitization
+ * ------------------------------------------------------------------ */
+$clean_conn = AIPC_Connections::sanitize( array(
+	'name'            => '  Test  ',
+	'base_url'        => 'https://api.openai.com/v1/',
+	'api_key'         => '',
+	'chat_model'      => 'gpt-4o',
+	'temperature'     => '9',
+	'max_tokens'      => '99999',
+	'request_timeout' => '5',
+), array( 'api_key' => 'kept-key', 'id' => 'c_x' ) );
+
+$out['sanitize_connection'] = array(
+	'name_trimmed'     => 'Test' === $clean_conn['name'],
+	'base_normalized'  => 'https://api.openai.com/v1' === $clean_conn['base_url'],
+	'key_kept'         => 'kept-key' === $clean_conn['api_key'],
+	'temp_clamped'     => 0.7 === $clean_conn['temperature'],
+	'tokens_clamped'   => 16000 === $clean_conn['max_tokens'],
+	'timeout_clamped'  => 15 === $clean_conn['request_timeout'],
+);
+
+$clean_settings = AIPC_Settings::sanitize( array(
+	'content_language' => 'fa',
+	'default_tone'     => 'professional',
+	'default_length'   => 'medium',
+	'site_prompt'      => "  توضیح سایت  ",
+	'image_size'       => '1024x1024',
+	'add_toc'          => '0',
+	'add_faq'          => '1',
+) );
+$out['sanitize_settings'] = array(
+	'site_prompt_trimmed' => 'توضیح سایت' === $clean_settings['site_prompt'],
+	'toc_off'             => 0 === $clean_settings['add_toc'],
+	'faq_on'              => 1 === $clean_settings['add_faq'],
 );
 
 /* ------------------------------------------------------------------ *
@@ -189,20 +326,29 @@ if ( file_exists( $log_file ) ) {
 		$requests[] = json_decode( $line, true );
 	}
 }
+$image_requests = array_values( array_filter( $requests, function ( $r ) {
+	return 'images.invalid' === $r['host'];
+} ) );
+$faq_requests = array_values( array_filter( $requests, function ( $r ) {
+	return false !== strpos( (string) $r['prompt'], 'FAQ-QUESTIONS-CUSTOM' );
+} ) );
+
 $out['provider_requests'] = array(
-	'count'    => count( $requests ),
-	'auth_ok'  => ! empty( $requests ) && 'Bearer sk-mock-key' === $requests[0]['auth'],
-	'urls'     => array_values( array_unique( array_column( $requests, 'url' ) ) ),
-	'models'   => array_values( array_unique( array_column( $requests, 'model' ) ) ),
+	'count'          => count( $requests ),
+	'hosts'          => array_values( array_unique( array_column( $requests, 'host' ) ) ),
+	'image_requests' => count( $image_requests ),
+	'image_auth'     => ! empty( $image_requests ) && 'Bearer sk-image-key' === $image_requests[0]['auth'],
+	'chat_auth'      => ! empty( $requests ) && 'Bearer sk-chat-key' === $requests[0]['auth'],
+	'faq_custom_used'=> count( $faq_requests ) > 0,
 );
 
 /* ------------------------------------------------------------------ *
  * Cancel behavior on a second job
  * ------------------------------------------------------------------ */
-$job = AIPC_Agent::instance()->create_job( 'cancel test topic', array( 'length' => 'short', 'language' => 'fa' ) );
-AIPC_Agent::instance()->execute_step( $job['id'], 0 ); // plan
-AIPC_Agent::instance()->cancel_job( $job['id'] );
-$after = AIPC_Agent::instance()->get_job( $job['id'] );
+$job2 = AIPC_Agent::instance()->create_job( 'cancel test topic', array( 'length' => 'short', 'language' => 'fa' ) );
+AIPC_Agent::instance()->execute_step( $job2['id'], 0 ); // plan
+AIPC_Agent::instance()->cancel_job( $job2['id'] );
+$after = AIPC_Agent::instance()->get_job( $job2['id'] );
 $st    = AIPC_Agent::instance()->execute_step( $after['id'], 0 );
 $out['cancel_flow'] = array(
 	'status_after_cancel' => $after['status'],
@@ -210,10 +356,11 @@ $out['cancel_flow'] = array(
 );
 
 /* ------------------------------------------------------------------ *
- * Failure + retry flow on a third job (provider returns 500 once)
+ * Failure + retry flow: provider fails ALL attempts of the plan step
+ * (3 automatic retries), then a manual retry succeeds.
  * ------------------------------------------------------------------ */
 add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
-	if ( ! empty( $GLOBALS['aipc_fail_next'] ) && false !== strpos( $url, '/chat/completions' ) ) {
+	if ( ! empty( $GLOBALS['aipc_fail_all'] ) && false !== strpos( $url, '/chat/completions' ) ) {
 		return array(
 			'body'     => json_encode( array( 'error' => array( 'message' => 'mock upstream error' ) ) ),
 			'response' => array( 'code' => 500, 'message' => 'Server Error' ),
@@ -222,37 +369,57 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 	return $preempt;
 }, 5, 3 );
 
-$GLOBALS['aipc_fail_next'] = true;
+$GLOBALS['aipc_fail_all'] = true;
+$before_log = count( $requests );
 
-$job   = AIPC_Agent::instance()->create_job( 'failure flow topic', array( 'length' => 'short', 'language' => 'fa' ) );
-$state = AIPC_Agent::instance()->execute_step( $job['id'], 0 );
-$err   = $state;
-if ( 'running' === $state['status'] ) {
-	// the first call was plan (maybe not hit by the 500 filter due to ordering) — keep stepping
-	$guard = 0;
-	while ( 'running' === $state['status'] && $guard++ < 30 ) {
-		$state = AIPC_Agent::instance()->execute_step( $job['id'], 0 );
+$job3   = AIPC_Agent::instance()->create_job( 'failure flow topic', array( 'length' => 'short', 'language' => 'fa' ) );
+$state3 = AIPC_Agent::instance()->execute_step( $job3['id'], 0 );
+
+$failed_calls = 0;
+$job3 = AIPC_Agent::instance()->get_job( $job3['id'] );
+foreach ( $job3['calls'] as $call ) {
+	if ( ! $call['ok'] ) {
+		$failed_calls++;
 	}
-	$err = $state;
 }
+
 $out['failure_flow'] = array(
-	'status'         => $err['status'],
-	'error_message'  => $err['error']['message'] ?? null,
-	'error_step'     => $err['error']['step'] ?? null,
+	'status'         => $state3['status'],
+	'error_message'  => $state3['error']['message'] ?? null,
+	'error_step'     => $state3['error']['step'] ?? null,
+	'failed_calls'   => $failed_calls, // expect 3 (one per auto attempt)
+	'has_timing'     => isset( $job3['timings']['plan'] ),
 );
 
-if ( 'error' === $err['status'] ) {
-	$GLOBALS['aipc_fail_next'] = false;
-	$state = AIPC_Agent::instance()->retry_job( $job['id'] );
-	$guard = 0;
-	while ( 'running' === $state['status'] && $guard++ < 30 ) {
-		$state = AIPC_Agent::instance()->execute_step( $job['id'], 0 );
+if ( 'error' === $state3['status'] ) {
+	$GLOBALS['aipc_fail_all'] = false;
+	$state3 = AIPC_Agent::instance()->retry_job( $job3['id'] );
+	$guard  = 0;
+	while ( 'running' === $state3['status'] && $guard++ < 30 ) {
+		$state3 = AIPC_Agent::instance()->execute_step( $job3['id'], 0 );
 	}
 	$out['retry_flow'] = array(
-		'status_after_retry' => $state['status'],
-		'has_result'         => ! empty( $state['result']['post_id'] ),
+		'status_after_retry' => $state3['status'],
+		'has_result'         => ! empty( $state3['result']['post_id'] ),
 	);
 }
+
+/* ------------------------------------------------------------------ *
+ * Persian translation bundle loads and resolves (fa_IR)
+ * ------------------------------------------------------------------ */
+unload_textdomain( 'wp-ai-post-creator' );
+$mo_loaded = load_textdomain(
+	'wp-ai-post-creator',
+	trailingslashit( WP_PLUGIN_DIR ) . 'wp-ai-post-creator/languages/wp-ai-post-creator-fa_IR.mo'
+);
+$out['i18n_fa'] = array(
+	'mo_loaded'    => $mo_loaded,
+	'delete_job'   => __( 'Delete job', 'wp-ai-post-creator' ) === 'حذف کار',
+	'logs_title'   => __( 'AI Logs', 'wp-ai-post-creator' ) === 'گزارش‌های هوش مصنوعی',
+	'old_string'   => __( 'Starting the agent…', 'wp-ai-post-creator' ) !== 'Starting the agent…',
+	'plural_form'  => sprintf( _n( 'Outline ready — %d section.', 'Outline ready — %d sections.', 3, 'wp-ai-post-creator' ), 3 ),
+	'placeholder'  => __( 'Default (%s)', 'wp-ai-post-creator' ) === 'پیش‌فرض (%s)',
+);
 
 echo "\n===E2E_JSON===\n";
 echo json_encode( $out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );

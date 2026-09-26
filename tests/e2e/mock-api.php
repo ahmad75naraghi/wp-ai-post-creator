@@ -2,9 +2,10 @@
 /**
  * Mock OpenAI-compatible API for the AI Post Creator end-to-end test.
  *
- * Intercepts wp_remote_* calls to https://mock.invalid/v1/* and returns
- * scripted responses that drive the agent pipeline deterministically.
- * Every request is logged to wp-content/mock-api-log.jsonl for assertions.
+ * Intercepts wp_remote_* calls to https://mock.invalid/v1/* (chat) and
+ * https://images.invalid/v1/* (images) and returns scripted responses that
+ * drive the agent pipeline deterministically. Every request is logged to
+ * wp-content/mock-api-log.jsonl for assertions.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -20,11 +21,13 @@ function aipc_mock_log( $entry ) {
 }
 
 add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
-	// Respect earlier (higher-priority) interceptions.
+	// Respect earlier (higher-priority) interceptions (e.g. failure injection).
 	if ( null !== $preempt && false !== $preempt ) {
 		return $preempt;
 	}
-	if ( false === strpos( $url, 'mock.invalid/v1' ) ) {
+
+	$host = (string) wp_parse_url( $url, PHP_URL_HOST );
+	if ( ! in_array( $host, array( 'mock.invalid', 'images.invalid' ), true ) ) {
 		return $preempt;
 	}
 
@@ -37,13 +40,22 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		$auth = $args['headers']['authorization'];
 	}
 
+	$prompt = '';
+	if ( is_array( $body ) && ! empty( $body['messages'] ) ) {
+		foreach ( $body['messages'] as $message ) {
+			if ( isset( $message['role'] ) && 'user' === $message['role'] ) {
+				$prompt = (string) $message['content'];
+			}
+		}
+	}
+
 	aipc_mock_log( array(
 		'method'    => $method,
 		'url'       => $url,
+		'host'      => $host,
 		'auth'      => $auth,
 		'model'     => isset( $body['model'] ) ? $body['model'] : null,
-		'messages'  => isset( $body['messages'] ) ? count( $body['messages'] ) : 0,
-		'response_format' => isset( $body['response_format'] ) ? $body['response_format'] : null,
+		'prompt'    => mb_substr( $prompt, 0, 100 ),
 	) );
 
 	$chat = function ( $content ) {
@@ -64,7 +76,7 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 	};
 
 	// GET /models
-	if ( false !== strpos( $url, '/v1/models' ) ) {
+	if ( false !== strpos( $url, '/models' ) ) {
 		return array(
 			'body'     => json_encode( array(
 				'object' => 'list',
@@ -79,7 +91,7 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 	}
 
 	// POST /images/generations
-	if ( false !== strpos( $url, '/v1/images/generations' ) ) {
+	if ( false !== strpos( $url, '/images/generations' ) ) {
 		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' );
 		return array(
 			'body'     => json_encode( array(
@@ -91,14 +103,6 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 	}
 
 	// POST /chat/completions — route by prompt content.
-	$messages = isset( $body['messages'] ) ? $body['messages'] : array();
-	$prompt   = '';
-	foreach ( $messages as $message ) {
-		if ( isset( $message['role'] ) && 'user' === $message['role'] ) {
-			$prompt = $message['content'];
-		}
-	}
-
 	$has = function ( $needle ) use ( $prompt ) {
 		return false !== strpos( $prompt, $needle );
 	};
@@ -166,7 +170,7 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		return $chat( '<h2>نتیجه‌گیری</h2><p>جمع‌بندی آزمایشی مقاله همراه با مرور نکات کلیدی هر بخش و تأکید بر اهمیت شروع کوچک و عملی. در پایان از خوانندگان عزیز دعوت می‌کنیم تجربه‌ها و پرسش‌های خود را در بخش دیدگاه‌ها با ما و سایر خوانندگان به اشتراک بگذارند و این مطلب را برای دوستان علاقه‌مند به باغبانی بفرستند.</p>' );
 	}
 
-	if ( $has( 'FAQ questions' ) ) {
+	if ( $has( 'FAQ questions' ) ) { // custom prompt still contains the routing phrase
 		return $chat( json_encode( array(
 			'faq_heading' => 'پرسش‌های متداول',
 			'items'       => array(
@@ -177,14 +181,13 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		), JSON_UNESCAPED_UNICODE ) );
 	}
 
-	if ( $has( 'SEO metadata' ) ) {
+	if ( $has( '"meta_title"' ) ) { // seo step
 		return $chat( json_encode( array(
 			'meta_title'       => 'سبزی‌کاری در بالکن | راهنمای کامل',
 			'meta_description' => 'آموزش گام‌به‌گام سبزی‌کاری در بالکن برای مبتدیان با کمترین امکانات.',
 			'slug'             => 'balcony-vegetable-gardening-guide',
 			'excerpt'          => 'راهنمای کامل سبزی‌کاری در بالکن برای مبتدیان.',
 			'tags'             => array( 'باغبانی', 'سبزیجات', 'بالکن', 'کشاورزی شهری', 'آپارتمان' ),
-			'category'         => 'باغبانی',
 		), JSON_UNESCAPED_UNICODE ) );
 	}
 

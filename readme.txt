@@ -1,20 +1,27 @@
 === AI Post Creator ===
 Contributors: ahmad75naraghi
-Tags: openai, ai, content-generator, seo, auto-publish, gpt, dall-e
+Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Agent-style AI post generator for any OpenAI-compatible API — from a site prompt and a chosen category to a complete, SEO-revised draft post, step by step.
+Agent-style AI post generator for any OpenAI-compatible API — unlimited AI connections, per-step prompts and routing, complete logs, from a site prompt and a chosen category to a full, SEO-revised draft post.
 
 == Description ==
 
 AI Post Creator turns your WordPress admin into an AI content agent. Configure your **site prompt** once (what your site is about, its goal and audience). Then, each run: the agent picks one of your **existing post categories**, invents a topic from the site prompt (or uses yours), writes the article, runs a **copywriting + SEO revision pass** over the whole draft, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** for your review — live in the agent console, with every step auto-retried until it passes.
 
-It talks to **any OpenAI-compatible REST API** — OpenAI, OpenRouter, Groq, DeepSeek, Together, Ollama, LM Studio and more. Your API key stays on your own site.
+It talks to **any OpenAI-compatible REST API** — OpenAI, OpenRouter, Groq, DeepSeek, Together, Ollama, LM Studio and more — and you can mix them freely:
+
+* **Unlimited AI connections** — each with its own base URL, API key, chat model, image model, temperature, max tokens and timeout. One connection is the default.
+* **Per-step routing** — assign every pipeline step its own connection: e.g. write with OpenAI and generate images with a different provider.
+* **Per-step prompt templates** — every step's prompt is editable, with a documented placeholder table. Untouched prompts stay in "default" mode and are auto-improved on plugin updates.
+* **Complete admin management panel** — connections manager, prompts & steps editor, and a logs panel with summary stats, usage per connection, full job history and per-job drilldown (step timings, every API call with model/tokens/duration/errors, console replay).
+
+Your API keys stay on your own site.
 
 **Pipeline (each step runs live, visible in the agent console):**
 
@@ -35,18 +42,21 @@ It talks to **any OpenAI-compatible REST API** — OpenAI, OpenRouter, Groq, Dee
 * Every step is automatically retried up to 3 times before an error is raised; manual retry button; cancel anytime
 * Per-run options: tone, length (short/medium/long), 12+ content languages (incl. Persian), FAQ/TOC/image toggles
 * The result is always a draft — you review before anything goes live
-* Token usage tracking per job
+* Token usage tracking per job, per connection and in aggregate
 * Works without PHP execution-time problems — one step per request
 * RTL-friendly, full Persian (fa_IR) translation included
-* Developer filters: `aipc_system_prompt`, `aipc_messages`, `aipc_post_args`, `aipc_step_attempts`
+* Developer filters: `aipc_system_prompt`, `aipc_step_prompt`, `aipc_step_connection`, `aipc_messages`, `aipc_post_args`, `aipc_step_attempts`
+* Automatic migration of 1.1 provider settings into a default connection
 * Clean uninstall (opt-in data removal)
 
 == Installation ==
 
 1. Upload the `wp-ai-post-creator` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the **Plugins** screen.
-3. Open **AI Post Creator → Settings**, fill in the **Site prompt** (what your site is about), your API base URL and API key, then click **Test connection**.
-4. Go to **AI Post Creator** — optionally type a topic (empty = the agent invents one) and click **Generate post**.
+3. Open **AI Post Creator → Connections**, add a connection (base URL + API key), click **Test connection** and **Load models from provider**. Add as many connections as you need — one image-focused provider can be added for the featured-image step.
+4. Open **AI Post Creator → Settings** and write the **Site prompt** (what your site is about).
+5. (Optional) Under **AI Post Creator → Prompts & Steps**, assign connections to steps and adjust prompt templates.
+6. Go to **AI Post Creator** — optionally type a topic (empty = the agent invents one) and click **Generate post**.
 
 Example base URLs:
 
@@ -61,7 +71,11 @@ Example base URLs:
 
 = Which models work? =
 
-Any chat model your provider offers (gpt-4o, gpt-4o-mini, gpt-4.1, deepseek-chat, llama-3.1-70b-versatile, …). Click "Load models from provider" in the settings to list them automatically.
+Any chat model your provider offers (gpt-4o, gpt-4o-mini, gpt-4.1, deepseek-chat, llama-3.1-70b-versatile, …). Click "Load models from provider" on the Connections screen to list them automatically.
+
+= Can different steps use different providers? =
+
+Yes. Create one connection per provider, then assign each step its connection under "Prompts & Steps". Steps without an assignment use the default connection.
 
 = Does it publish immediately? =
 
@@ -69,13 +83,25 @@ Never. The agent always saves a draft so you can review the AI content first.
 
 = Does it work with Ollama / LM Studio? =
 
-Yes. Point the base URL at your local server and use any dummy API key.
+Yes. Point a connection's base URL at your local server and use any dummy API key.
 
 = Is my API key safe? =
 
-It is stored in your own WordPress database and sent only to the provider you configured. It is never exposed to the browser or REST responses.
+Keys are stored in your own WordPress database and sent only to the provider you configured. They are never exposed to the browser, REST responses or the connections list, and the key field is write-only (leave it empty to keep the stored key).
+
+= I updated from 1.1 — where did my API settings go? =
+
+They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.2.0 =
+* Unlimited AI connections (base URL, key, chat/image models, temperature, max tokens, timeout) with a default connection
+* Per-step connection routing — e.g. text steps with one provider, images with another
+* Editable per-step prompt templates with placeholder documentation and reset-to-default
+* New admin panel: Connections, Prompts & Steps, and a complete Logs panel (summary stats, usage per connection, job history, per-call API details, console replay)
+* Legacy provider settings migrate into a default connection automatically
+* Job history increased to 30 with aggregate stats
 
 = 1.1.0 =
 * Site prompt: the agent invents topics from your site's context
