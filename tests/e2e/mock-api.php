@@ -1,0 +1,196 @@
+<?php
+/**
+ * Mock OpenAI-compatible API for the AI Post Creator end-to-end test.
+ *
+ * Intercepts wp_remote_* calls to https://mock.invalid/v1/* and returns
+ * scripted responses that drive the agent pipeline deterministically.
+ * Every request is logged to wp-content/mock-api-log.jsonl for assertions.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+function aipc_mock_log( $entry ) {
+	file_put_contents(
+		WP_CONTENT_DIR . '/mock-api-log.jsonl',
+		json_encode( $entry, JSON_UNESCAPED_UNICODE ) . "\n",
+		FILE_APPEND
+	);
+}
+
+add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
+	// Respect earlier (higher-priority) interceptions.
+	if ( null !== $preempt && false !== $preempt ) {
+		return $preempt;
+	}
+	if ( false === strpos( $url, 'mock.invalid/v1' ) ) {
+		return $preempt;
+	}
+
+	$method = isset( $args['method'] ) ? $args['method'] : 'POST';
+	$body   = isset( $args['body'] ) ? json_decode( $args['body'], true ) : null;
+	$auth   = '';
+	if ( isset( $args['headers']['Authorization'] ) ) {
+		$auth = $args['headers']['Authorization'];
+	} elseif ( isset( $args['headers']['authorization'] ) ) {
+		$auth = $args['headers']['authorization'];
+	}
+
+	aipc_mock_log( array(
+		'method'    => $method,
+		'url'       => $url,
+		'auth'      => $auth,
+		'model'     => isset( $body['model'] ) ? $body['model'] : null,
+		'messages'  => isset( $body['messages'] ) ? count( $body['messages'] ) : 0,
+		'response_format' => isset( $body['response_format'] ) ? $body['response_format'] : null,
+	) );
+
+	$chat = function ( $content ) {
+		return array(
+			'body'     => json_encode( array(
+				'id'      => 'chatcmpl-mock',
+				'object'  => 'chat.completion',
+				'choices' => array( array(
+					'index'         => 0,
+					'message'       => array( 'role' => 'assistant', 'content' => $content ),
+					'finish_reason' => 'stop',
+				) ),
+				'usage'   => array( 'prompt_tokens' => 120, 'completion_tokens' => 80, 'total_tokens' => 200 ),
+				'model'   => 'mock-model',
+			), JSON_UNESCAPED_UNICODE ),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+		);
+	};
+
+	// GET /models
+	if ( false !== strpos( $url, '/v1/models' ) ) {
+		return array(
+			'body'     => json_encode( array(
+				'object' => 'list',
+				'data'   => array(
+					array( 'id' => 'mock-mini' ),
+					array( 'id' => 'mock-pro' ),
+					array( 'id' => 'dall-e-3' ),
+				),
+			) ),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+		);
+	}
+
+	// POST /images/generations
+	if ( false !== strpos( $url, '/v1/images/generations' ) ) {
+		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' );
+		return array(
+			'body'     => json_encode( array(
+				'created' => time(),
+				'data'    => array( array( 'b64_json' => base64_encode( $png ) ) ),
+			) ),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+		);
+	}
+
+	// POST /chat/completions — route by prompt content.
+	$messages = isset( $body['messages'] ) ? $body['messages'] : array();
+	$prompt   = '';
+	foreach ( $messages as $message ) {
+		if ( isset( $message['role'] ) && 'user' === $message['role'] ) {
+			$prompt = $message['content'];
+		}
+	}
+
+	$has = function ( $needle ) use ( $prompt ) {
+		return false !== strpos( $prompt, $needle );
+	};
+
+	if ( $has( 'single word: OK' ) ) {
+		return $chat( 'OK' );
+	}
+
+	if ( $has( '"toc_title"' ) ) { // plan step (category + topic from the site prompt)
+		return $chat( json_encode( array(
+			'category'             => 'باغبانی',
+			'title'                => 'راهنمای کامل سبزی‌کاری در بالکن',
+			'title_options'        => array( 'سبزی‌کاری آپارتمانی از صفر تا برداشت' ),
+			'topic_brief'          => 'راهنمای عملی کاشت سبزیجات در بالکن کوچک از انتخاب خاک تا برداشت.',
+			'audience'             => 'ساکنان آپارتمان‌های کوچک و مبتدیان باغبانی',
+			'intent'               => 'اطلاعاتی و آموزشی',
+			'primary_keyword'      => 'سبزی‌کاری در بالکن',
+			'secondary_keywords'   => array( 'کاشت سبزیجات', 'بالکن کوچک', 'خاک مناسب', 'آبیاری صحیح', 'نور کافی' ),
+			'angle'                => 'تمرکز بر راه‌حل‌های کم‌جا و کم‌هزینه',
+			'toc_title'            => 'فهرست مطالب',
+		), JSON_UNESCAPED_UNICODE ) );
+	}
+
+	if ( $has( '"sections"' ) ) { // outline step
+		$n = 3;
+		if ( preg_match( '/exactly (\d+) main sections/', $prompt, $m ) ) {
+			$n = (int) $m[1];
+		}
+		$sections = array();
+		for ( $i = 1; $i <= $n; $i++ ) {
+			$sections[] = array(
+				'heading' => "بخش آزمایشی شماره {$i}",
+				'brief'   => "در این بخش به موضوع {$i} پرداخته می‌شود و نکات کلیدی آن بررسی می‌گردد.",
+			);
+		}
+		return $chat( json_encode( array( 'sections' => $sections ), JSON_UNESCAPED_UNICODE ) );
+	}
+
+	if ( $has( 'INTRODUCTION' ) ) {
+		return $chat( '<p>مقدمه آزمایشی: در این مقاله با اصول سبزی‌کاری در فضای کوچک آشنا می‌شوید و یاد می‌گیرید چگونه با کمترین امکانات ممکن، سبزیجات تازه پرورش دهید و از محصول آن در آشپزخانه خود لذت ببرید. این راهنما به‌طور خاص برای مبتدیان طراحی شده است و همه مراحل را قدم‌به‌قدم و به زبان ساده توضیح می‌دهد تا هر کسی بتواند شروع کند.</p>' );
+	}
+
+	if ( $has( 'You are writing section' ) ) {
+		$heading = 'بخش';
+		if ( preg_match( '/SECTION HEADING: (.+)/', $prompt, $m ) ) {
+			$heading = trim( $m[1] );
+		}
+		return $chat( '<p>محتوای آزمایشی برای ' . $heading . '. این متن متعدد جمله‌ای است تا شمارش کلمات و ساختار HTML در این مرحله به‌درستی بررسی شود و ذخیره‌سازی بدون مشکل انجام شود. در ادامه چند نکته کاربردی و مهم برای این بخش ارائه می‌شود که هر خواننده‌ای می‌تواند از آن‌ها استفاده کند و به نتیجه مطلوب برسد.</p><ul><li>نکته نخست در این بخش</li><li>نکته دوم در این بخش</li></ul>' );
+	}
+
+	if ( $has( 'COPYWRITING & SEO REVISION PASS' ) ) { // copywrite/revision step
+		$n = 3;
+		if ( preg_match( '/then exactly (\d+) main sections/', $prompt, $m ) ) {
+			$n = (int) $m[1];
+		}
+		$html = '<p>مقدمه بازنویسی‌شده و بهبودیافته: این راهنمای بهبودیافته شما را گام‌به‌گام همراهی می‌کند تا با کمترین امکانات، سبزیجات تازه را در بالکن خود بکارید و از برداشت آن در آشپزخانه لذت ببرید. تمام نکات به‌صورت کاربردی و ساده بازنویسی شده‌اند تا هر مبتدی بتواند با اطمینان شروع کند و به نتیجه مطلوب برسد.</p>';
+		for ( $i = 1; $i <= $n; $i++ ) {
+			$html .= '<h2>بخش بهبودیافته ' . strval( $i ) . '</h2><p>محتوای بهبودیافته بخش ' . strval( $i ) . ' با تمرکز بر نکات کاربردی و عبارت‌پردازی اصیل. جملات کاملاً بازنویسی شده‌اند تا از تکرار و عبارات کلیشه‌ای پرهیز شود و کلیدواژه اصلی به‌طور طبیعی در متن به کار رود. این پاراگراف طول کافی برای تأیید شمارش کلمات را دارد و ساختار HTML آن استاندارد است و از نظر سئو و کپی‌رایتینگ بهینه شده است.</p>';
+		}
+		$html .= '<h2>نتیجه‌گیری</h2><p>جمع‌بندی نهایی بازنویسی‌شده همراه با دعوت به اقدام: تجربه‌های خود را در بخش دیدگاه‌ها با ما و سایر خوانندگان به اشتراک بگذارید و این راهنما را برای دوستان علاقه‌مند به باغبانی بفرستید تا آن‌ها هم از این نکات کاربردی بهره‌مند شوند.</p>';
+		return $chat( $html );
+	}
+
+	if ( $has( 'CONCLUSION' ) ) {
+		return $chat( '<h2>نتیجه‌گیری</h2><p>جمع‌بندی آزمایشی مقاله همراه با مرور نکات کلیدی هر بخش و تأکید بر اهمیت شروع کوچک و عملی. در پایان از خوانندگان عزیز دعوت می‌کنیم تجربه‌ها و پرسش‌های خود را در بخش دیدگاه‌ها با ما و سایر خوانندگان به اشتراک بگذارند و این مطلب را برای دوستان علاقه‌مند به باغبانی بفرستند.</p>' );
+	}
+
+	if ( $has( 'FAQ questions' ) ) {
+		return $chat( json_encode( array(
+			'faq_heading' => 'پرسش‌های متداول',
+			'items'       => array(
+				array( 'q' => 'چه مقدار نور لازم است؟', 'a' => 'حداقل چهار ساعت نور مستقیم خورشید در روز.' ),
+				array( 'q' => 'به چه خاکی نیاز دارم؟', 'a' => 'خاک کاشت غنی با زهکشی مناسب.' ),
+				array( 'q' => 'چقدر جا لازم است؟', 'a' => 'یک متر مربع فضای بالکن کافی است.' ),
+			),
+		), JSON_UNESCAPED_UNICODE ) );
+	}
+
+	if ( $has( 'SEO metadata' ) ) {
+		return $chat( json_encode( array(
+			'meta_title'       => 'سبزی‌کاری در بالکن | راهنمای کامل',
+			'meta_description' => 'آموزش گام‌به‌گام سبزی‌کاری در بالکن برای مبتدیان با کمترین امکانات.',
+			'slug'             => 'balcony-vegetable-gardening-guide',
+			'excerpt'          => 'راهنمای کامل سبزی‌کاری در بالکن برای مبتدیان.',
+			'tags'             => array( 'باغبانی', 'سبزیجات', 'بالکن', 'کشاورزی شهری', 'آپارتمان' ),
+			'category'         => 'باغبانی',
+		), JSON_UNESCAPED_UNICODE ) );
+	}
+
+	if ( $has( 'image-generation prompt' ) ) {
+		return $chat( json_encode( array( 'prompt' => 'A modern editorial illustration of a green balcony garden with fresh vegetables in terracotta pots, soft morning light, clean composition, high quality, no text' ), JSON_UNESCAPED_UNICODE ) );
+	}
+
+	return $chat( 'OK' );
+}, 10, 3 );

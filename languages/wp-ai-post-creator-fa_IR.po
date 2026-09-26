@@ -1,0 +1,588 @@
+# Persian translation for AI Post Creator.
+# Copyright (C) 2026 Ahmad Naraghi
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: AI Post Creator 1.1.0\n"
+"Language: fa_IR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: make-translations.py\n"
+
+msgid "New AI Post"
+msgstr "پست جدید با هوش مصنوعی"
+
+msgid "Settings"
+msgstr "تنظیمات"
+
+msgid "AI Post Creator"
+msgstr "سازنده پست با هوش مصنوعی"
+
+msgid "Agent mode: from a bare topic to a complete, SEO-ready post — step by step."
+msgstr "حالت ایجنت: از یک موضوع خام تا پست کامل و آماده سئو — گام به گام."
+
+msgid "Model: %s"
+msgstr "مدل: %s"
+
+msgid "Provider: %s"
+msgstr "سرویس‌دهنده: %s"
+
+msgid "No API key configured."
+msgstr "کلید API تنظیم نشده است."
+
+msgid "Connect an OpenAI-compatible provider to start generating."
+msgstr "برای شروع تولید، یک سرویس‌دهنده سازگار با OpenAI متصل کنید."
+
+msgid "Open settings"
+msgstr "باز کردن تنظیمات"
+
+msgid "No site prompt configured."
+msgstr "پرامپت سایت تنظیم نشده است."
+
+msgid "Describe your site — what it is about, its goal and audience — so the agent can invent fitting topics."
+msgstr "سایت خود را توصیف کنید — درباره چیست، هدف و مخاطبانش کدامند — تا ایجنت بتواند موضوعات مناسب بسازد."
+
+msgid "Topic (optional)"
+msgstr "موضوع (اختیاری)"
+
+msgid "Leave empty and the agent will invent a topic from the site prompt — or write your own idea here…"
+msgstr "خالی بگذارید تا ایجنت از روی پرامپت سایت موضوع بسازد — یا ایده خود را اینجا بنویسید…"
+
+msgid "The agent always picks one of your existing post categories and builds the topic from the site prompt."
+msgstr "ایجنت همیشه یکی از دسته‌بندی‌های موجود نوشته‌های شما را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد."
+
+msgid "The post is always saved as a draft for your review."
+msgstr "پست همیشه به‌صورت پیش‌نویس برای بازبینی شما ذخیره می‌شود."
+
+msgid "Options"
+msgstr "گزینه‌ها"
+
+msgid "tone, length, language, SEO…"
+msgstr "لحن، طول، زبان، سئو…"
+
+msgid "Tone"
+msgstr "لحن"
+
+msgid "Length"
+msgstr "طول"
+
+msgid "Content language"
+msgstr "زبان محتوا"
+
+msgid "Language (write its English name)"
+msgstr "زبان (نام انگلیسی آن را بنویسید)"
+
+msgid "Featured image"
+msgstr "تصویر شاخص"
+
+msgid "generate & attach a hero image"
+msgstr "ساخت و افزودن تصویر هیرو"
+
+msgid "FAQ block"
+msgstr "بلوک پرسش‌های متداول"
+
+msgid "answers + Google rich-results schema"
+msgstr "پاسخ‌ها + اسکیمای نتایج غنی گوگل"
+
+msgid "Table of contents"
+msgstr "فهرست مطالب"
+
+msgid "linked jump menu"
+msgstr "منوی پرشِ لینک‌شده"
+
+msgid "Generate post"
+msgstr "تولید پست"
+
+msgid "The agent plans, writes and assembles the post live — you can cancel anytime."
+msgstr "ایجنت به‌صورت زنده پست را برنامه‌ریزی، نگارش و مونتاژ می‌کند — در هر لحظه می‌توانید لغو کنید."
+
+msgid "Agent console"
+msgstr "کنسول ایجنت"
+
+msgid "Cancel agent"
+msgstr "لغو ایجنت"
+
+msgid "Retry step"
+msgstr "تلاش دوباره برای این مرحله"
+
+msgid "Your post is ready!"
+msgstr "پست شما آماده است!"
+
+msgid "Edit post"
+msgstr "ویرایش پست"
+
+msgid "View post"
+msgstr "مشاهده پست"
+
+msgid "Create another"
+msgstr "ساخت پست جدید"
+
+msgid "AI Post Creator — Settings"
+msgstr "سازنده پست با هوش مصنوعی — تنظیمات"
+
+msgid "Connect any OpenAI-compatible provider and tune content generation."
+msgstr "هر سرویس‌دهنده سازگار با OpenAI را متصل کنید و تولید محتوا را تنظیم کنید."
+
+msgid "Site prompt"
+msgstr "پرامپت سایت"
+
+msgid "Tell the agent what this site is about: its purpose, audience and voice. The agent uses this to pick the category, invent topics and stay on-brand."
+msgstr "به ایجنت بگویید این سایت درباره چیست: هدف، مخاطبان و لحن آن. ایجنت از این اطلاعات برای انتخاب دسته‌بندی، ساختن موضوع و حفظ هویت برند استفاده می‌کند."
+
+msgid "e.g. A Persian cooking blog focused on quick weeknight dinners for busy families. Goal: practical, tested recipes with everyday ingredients. Warm, encouraging voice."
+msgstr "مثلاً: یک وبلاگ آشپزی فارسی درباره شام‌های سریع شب‌های هفته برای خانواده‌های پرمشغله. هدف: دستورهای عملی و آزموده با مواد روزمره. لحن گرم و دلگرم‌کننده."
+
+msgid "Example: what the site is, what it is about, its goal, its audience, the voice you want."
+msgstr "مثال: سایت چیست، درباره چیست، هدفش چیست، مخاطبانش چه کسانی هستند و چه لحنی می‌خواهید."
+
+msgid "Provider connection"
+msgstr "اتصال سرویس‌دهنده"
+
+msgid "API base URL"
+msgstr "آدرس پایه API"
+
+msgid "Any OpenAI-compatible endpoint. Examples:"
+msgstr "هر نقطه اتصال سازگار با OpenAI. نمونه‌ها:"
+
+msgid "API key"
+msgstr "کلید API"
+
+msgid "•••••••••••• (saved — leave empty to keep)"
+msgstr "•••••••••••• (ذخیره شده — برای حفظ، خالی بگذارید)"
+
+msgid "sk-…"
+msgstr "sk-…"
+
+msgid "Show"
+msgstr "نمایش"
+
+msgid "Stored in your own database and only sent to the provider you configured. Ollama / LM Studio accept any dummy value."
+msgstr "در پایگاه داده سایت خودتان ذخیره می‌شود و فقط برای سرویس‌دهنده‌ای که تنظیم کرده‌اید ارسال می‌گردد. برای Ollama و LM Studio هر مقدار فرضی کافی است."
+
+msgid "Connection test"
+msgstr "تست اتصال"
+
+msgid "Test connection"
+msgstr "تست اتصال"
+
+msgid "Model & generation"
+msgstr "مدل و تولید محتوا"
+
+msgid "Chat model"
+msgstr "مدل گفت‌وگو"
+
+msgid "Load models from provider"
+msgstr "بارگذاری مدل‌ها از سرویس‌دهنده"
+
+msgid "Type any model id your provider supports, or load the list automatically."
+msgstr "شناسه هر مدلی که سرویس‌دهنده شما پشتیبانی می‌کند را بنویسید، یا فهرست را به‌صورت خودکار بارگذاری کنید."
+
+msgid "Temperature"
+msgstr "دمای مدل (Temperature)"
+
+msgid "0 = precise and repetitive, 1+ = creative. 0.6–0.8 works well for articles."
+msgstr "۰ = دقیق و تکراری، ۱ به بالا = خلاقانه. مقدار ۰٫۶ تا ۰٫۸ برای مقالات مناسب است."
+
+msgid "Max tokens per step"
+msgstr "حداکثر توکن در هر مرحله"
+
+msgid "Each agent step (plan, each section, SEO…) may use up to this many tokens."
+msgstr "هر مرحله از کار ایجنت (برنامه‌ریزی، هر بخش، سئو و…) حداکثر به این تعداد توکن نیاز دارد."
+
+msgid "Request timeout (seconds)"
+msgstr "مهلت درخواست (ثانیه)"
+
+msgid "Increase for slow local models (Ollama) or very long generations."
+msgstr "برای مدل‌های محلی کند (مثل Ollama) یا تولیدهای خیلی طولانی، این مقدار را افزایش دهید."
+
+msgid "Content defaults"
+msgstr "پیش‌فرض‌های محتوا"
+
+msgid "Default language"
+msgstr "زبان پیش‌فرض"
+
+msgid "Default tone"
+msgstr "لحن پیش‌فرض"
+
+msgid "Default length"
+msgstr "طول پیش‌فرض"
+
+msgid "Extras"
+msgstr "گزینه‌های تکمیلی"
+
+msgid "Add a table of contents by default"
+msgstr "افزودن فهرست مطالب به‌صورت پیش‌فرض"
+
+msgid "Add an FAQ block with schema markup by default"
+msgstr "افزودن بلوک پرسش‌های متداول به‌همراه اسکیما به‌صورت پیش‌فرض"
+
+msgid "Featured images"
+msgstr "تصاویر شاخص"
+
+msgid "Enable image generation"
+msgstr "فعال‌سازی تولید تصویر"
+
+msgid "Let the agent generate a featured image (skipped gracefully if the provider does not support it)"
+msgstr "اجازه دهید ایجنت تصویر شاخص بسازد (اگر سرویس‌دهنده پشتیبانی نکند، این مرحله به‌آرامی رد می‌شود)"
+
+msgid "Image model"
+msgstr "مدل تصویر"
+
+msgid "Image size"
+msgstr "اندازه تصویر"
+
+msgid "1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024."
+msgstr "۱۷۹۲×۱۰۲۴ یک تصویر عریضِ مناسب برای DALL·E 3 است؛ gpt-image-1 از ۱۵۳۶×۱۰۲۴ استفاده می‌کند."
+
+msgid "Advanced"
+msgstr "پیشرفته"
+
+msgid "Extra system instructions"
+msgstr "دستورالعمل‌های سیستمی اضافی"
+
+msgid "e.g. Always address the reader as “you” and include practical examples."
+msgstr "مثلاً: همیشه مخاطب را با «شما» خطاب کن و مثال‌های کاربردی بیاور."
+
+msgid "Appended to every agent request — steer style, vocabulary, formatting rules…"
+msgstr "به همه درخواست‌های ایجنت اضافه می‌شود — سبک، واژگان و قواعد قالب‌بندی را هدایت کنید…"
+
+msgid "Uninstall"
+msgstr "حذف افزونه"
+
+msgid "Delete all plugin data (settings, jobs, SEO meta) when the plugin is uninstalled"
+msgstr "حذف تمام داده‌های افزونه (تنظیمات، کارها و متای سئو) هنگام حذف افزونه"
+
+msgid "Save settings"
+msgstr "ذخیره تنظیمات"
+
+msgid "AI Settings"
+msgstr "تنظیمات هوش مصنوعی"
+
+msgid "You do not have permission to access this page."
+msgstr "شما اجازه دسترسی به این صفحه را ندارید."
+
+msgid "Category & topic selection"
+msgstr "انتخاب دسته‌بندی و موضوع"
+
+msgid "Article outline"
+msgstr "طرح کلی مقاله"
+
+msgid "Agent started — suggested topic: “%s”"
+msgstr "ایجنت آغاز شد — موضوع پیشنهادی: «%s»"
+
+msgid "Agent started — the topic will be invented from the site prompt."
+msgstr "ایجنت آغاز شد — موضوع از روی پرامپت سایت ساخته می‌شود."
+
+msgid "Setup — model: %1$s · tone: %2$s · length: %3$s"
+msgstr "آماده‌سازی — مدل: %1$s · لحن: %2$s · طول: %3$s"
+
+msgid "Job not found or already cleaned up."
+msgstr "کار پیدا نشد یا قبلاً پاک‌سازی شده است."
+
+msgid "Agent cancelled by user."
+msgstr "ایجنت توسط کاربر لغو شد."
+
+msgid "Retrying failed step…"
+msgstr "در حال تلاش دوباره برای مرحله ناموفق…"
+
+msgid "Job not found or expired. Please start again."
+msgstr "کار پیدا نشد یا منقضی شده است. لطفاً دوباره شروع کنید."
+
+msgid "Attempt %1$d/%2$d failed (%3$s) — retrying…"
+msgstr "تلاش %1$d از %2$d ناموفق بود (%3$s) — تلاش دوباره…"
+
+msgid "Step failed: %s"
+msgstr "مرحله ناموفق بود: %s"
+
+msgid "The model returned too little content for this step. Please retry."
+msgstr "مدل برای این مرحله محتوای بسیار کمی برگرداند. لطفاً دوباره تلاش کنید."
+
+msgid "Uncategorized"
+msgstr "دسته‌بندی نشده"
+
+msgid "The plan did not include a title. Please retry."
+msgstr "برنامه فاقد عنوان بود. لطفاً دوباره تلاش کنید."
+
+msgid "The model did not pick a category from the list. Retrying."
+msgstr "مدل دسته‌بندی را از فهرست انتخاب نکرد. دوباره تلاش می‌شود."
+
+msgid "Chosen category: %s"
+msgstr "دسته‌بندی انتخاب‌شده: %s"
+
+msgid "Audience: %s"
+msgstr "مخاطبان: %s"
+
+msgid "Primary keyword: %s"
+msgstr "کلیدواژه اصلی: %s"
+
+msgid "Secondary keywords: %s"
+msgstr "کلیدواژه‌های فرعی: %s"
+
+msgid "Working title: “%s”"
+msgstr "عنوان کاری: «%s»"
+
+msgid "The outline was empty or malformed. Please retry."
+msgstr "طرح کلی خالی یا معیوب بود. لطفاً دوباره تلاش کنید."
+
+msgid "Introduction"
+msgstr "مقدمه"
+
+msgid "Conclusion & call to action"
+msgstr "نتیجه‌گیری و دعوت به اقدام"
+
+msgid "Copywriting & SEO pass"
+msgstr "مرحله کپی‌رایتینگ و سئو"
+
+msgid "FAQ section (rich results)"
+msgstr "بخش پرسش‌های متداول (نتایج غنی گوگل)"
+
+msgid "SEO summary for Rank Math"
+msgstr "خلاصه سئو برای Rank Math"
+
+msgid "Save post"
+msgstr "ذخیره پست"
+
+msgid "Introduction written (%d words)"
+msgstr "مقدمه نوشته شد (%d کلمه)"
+
+msgid "Section written (%1$d words) — %2$s"
+msgstr "بخش نوشته شد (%1$d کلمه) — %2$s"
+
+msgid "Conclusion written (%d words)"
+msgstr "نتیجه‌گیری نوشته شد (%d کلمه)"
+
+msgid "The revision lost the article structure. Retrying."
+msgstr "بازنویسی ساختار مقاله را از دست داد. دوباره تلاش می‌شود."
+
+msgid "The revision came back much shorter than the draft. Retrying."
+msgstr "نسخه بازنویسی‌شده خیلی کوتاه‌تر از پیش‌نویس بود. دوباره تلاش می‌شود."
+
+msgid "Copywriting & SEO pass complete (%1$d → %2$d words)"
+msgstr "مرحله کپی‌رایتینگ و سئو کامل شد (%1$d → %2$d کلمه)"
+
+msgid "The FAQ step returned no usable questions. Please retry."
+msgstr "مرحله پرسش‌های متداول پرسش قابل استفاده‌ای برنگرداند. لطفاً دوباره تلاش کنید."
+
+msgid "Frequently asked questions"
+msgstr "پرسش‌های متداول"
+
+msgid "FAQ ready — %d questions (FAQ schema will be added)"
+msgstr "پرسش‌های متداول آماده شد — %d پرسش (اسکیمای FAQ اضافه می‌شود)"
+
+msgid "SEO metadata was incomplete. Please retry."
+msgstr "متادیتای سئو کامل نبود. لطفاً دوباره تلاش کنید."
+
+msgid "SEO title: %s"
+msgstr "عنوان سئو: %s"
+
+msgid "Rank Math summary: %s"
+msgstr "خلاصه Rank Math: %s"
+
+msgid "Slug: /%s/"
+msgstr "نامک: /%s/"
+
+msgid "Tags: %s"
+msgstr "برچسب‌ها: %s"
+
+msgid "SEO metadata ready"
+msgstr "متادیتای سئو آماده شد"
+
+msgid "Featured image disabled in settings — skipped."
+msgstr "تصویر شاخص در تنظیمات غیرفعال است — رد شد."
+
+msgid "Generating featured image — prompt: %s"
+msgstr "در حال تولید تصویر شاخص — پرامپت: %s"
+
+msgid "Image generation failed (%s) — continuing without a featured image."
+msgstr "تولید تصویر ناموفق بود (%s) — بدون تصویر شاخص ادامه می‌دهیم."
+
+msgid "Could not download the generated image — continuing without one."
+msgstr "دانلود تصویر تولیدشده ممکن نشد — بدون تصویر ادامه می‌دهیم."
+
+msgid "Could not save the image to the media library (%s) — continuing without one."
+msgstr "ذخیره تصویر در کتابخانه رسانه ممکن نشد (%s) — بدون تصویر ادامه می‌دهیم."
+
+msgid "Featured image saved to the media library (#%d)"
+msgstr "تصویر شاخص در کتابخانه رسانه ذخیره شد (#%d)"
+
+msgid "Draft created: #%d"
+msgstr "پیش‌نویس ساخته شد: #%d"
+
+msgid "Done — %1$d words · %2$d prompt + %3$d completion tokens"
+msgstr "تمام شد — %1$d کلمه · %2$d توکن ورودی + %3$d توکن خروجی"
+
+msgid "Outline ready — %d section."
+msgid_plural "Outline ready — %d sections."
+msgstr[0] "طرح کلی آماده شد — %d بخش."
+msgstr[1] "طرح کلی آماده شد — %d بخش."
+
+msgid "Could not reach the AI provider: %s"
+msgstr "اتصال به سرویس‌دهنده هوش مصنوعی ممکن نشد: %s"
+
+msgid "API error %1$d: %2$s"
+msgstr "خطای API %1$d: %2$s"
+
+msgid "The provider returned an invalid (non-JSON) response."
+msgstr "سرویس‌دهنده پاسخ نامعتبر (غیر JSON) برگرداند."
+
+msgid "API key or endpoint is not configured. Open Settings and connect a provider first."
+msgstr "کلید API یا نقطه اتصال پیکربندی نشده است. ابتدا از بخش تنظیمات یک سرویس‌دهنده متصل کنید."
+
+msgid "The model returned an empty response. Try again or lower the max tokens setting."
+msgstr "مدل پاسخ خالی برگرداند. دوباره تلاش کنید یا مقدار حداکثر توکن را کاهش دهید."
+
+msgid "The model did not return valid JSON. Try again, or switch to a stronger model."
+msgstr "مدل JSON معتبر برنگرداند. دوباره تلاش کنید یا به مدل قوی‌تری تغییر دهید."
+
+msgid "API key or endpoint is not configured."
+msgstr "کلید API یا نقطه اتصال پیکربندی نشده است."
+
+msgid "The provider returned no image data."
+msgstr "سرویس‌دهنده داده تصویری برنگرداند."
+
+msgid "Could not download the generated image."
+msgstr "دانلود تصویر تولیدشده ممکن نشد."
+
+msgid "Starting the agent…"
+msgstr "در حال راه‌اندازی ایجنت…"
+
+msgid "Planning…"
+msgstr "در حال برنامه‌ریزی…"
+
+msgid "The agent is working — keep this tab open."
+msgstr "ایجنت در حال کار است — این برگه را باز نگه دارید."
+
+msgid "Connection error:"
+msgstr "خطای اتصال:"
+
+msgid "The request timed out."
+msgstr "مهلت درخواست به پایان رسید."
+
+msgid "The agent stopped with an error. You can retry the failed step."
+msgstr "ایجنت با خطا متوقف شد. می‌توانید مرحله ناموفق را دوباره اجرا کنید."
+
+msgid "Cancel the agent? The current progress will be kept but nothing new will run."
+msgstr "ایجنت لغو شود؟ پیشرفت فعلی حفظ می‌شود اما مرحله جدیدی اجرا نخواهد شد."
+
+msgid "Agent cancelled."
+msgstr "ایجنت لغو شد."
+
+msgid "No API key configured"
+msgstr "کلید API تنظیم نشده است"
+
+msgid "Add your OpenAI-compatible API key in the settings to start generating posts."
+msgstr "برای شروع تولید پست، کلید API سازگار با OpenAI را در تنظیمات وارد کنید."
+
+msgid "words"
+msgstr "کلمه"
+
+msgid "tokens"
+msgstr "توکن"
+
+msgid "s"
+msgstr "ثانیه"
+
+msgid "Testing connection…"
+msgstr "در حال تست اتصال…"
+
+msgid "Connection successful!"
+msgstr "اتصال موفق بود!"
+
+msgid "Connection successful (model list not supported by this provider)."
+msgstr "اتصال موفق بود (این سرویس‌دهنده فهرست مدل‌ها را ارائه نمی‌دهد)."
+
+msgid "Connection successful — %d models found."
+msgstr "اتصال موفق — %d مدل پیدا شد."
+
+msgid "Connection failed:"
+msgstr "اتصال ناموفق بود:"
+
+msgid "Loading models…"
+msgstr "در حال بارگذاری مدل‌ها…"
+
+msgid "%d models loaded — pick one in the list."
+msgstr "%d مدل بارگذاری شد — یکی را از فهرست انتخاب کنید."
+
+msgid "Could not load the model list:"
+msgstr "بارگذاری فهرست مدل‌ها ممکن نشد:"
+
+msgid "Hide"
+msgstr "پنهان"
+
+msgid "Generated content was empty."
+msgstr "محتوای تولیدشده خالی بود."
+
+msgid "Empty image data."
+msgstr "داده تصویر خالی است."
+
+msgid "Professional"
+msgstr "حرفه‌ای"
+
+msgid "Friendly"
+msgstr "صمیمی"
+
+msgid "Casual"
+msgstr "خودمانی"
+
+msgid "Expert / technical"
+msgstr "متخصص / فنی"
+
+msgid "Persuasive"
+msgstr "متقاعدکننده"
+
+msgid "Storytelling"
+msgstr "داستان‌سرایی"
+
+msgid "Humorous"
+msgstr "طنزآمیز"
+
+msgid "Neutral"
+msgstr "بی‌طرف"
+
+msgid "Short — ~600 words"
+msgstr "کوتاه — حدود ۶۰۰ کلمه"
+
+msgid "Medium — ~1,200 words"
+msgstr "متوسط — حدود ۱٬۲۰۰ کلمه"
+
+msgid "Long — ~2,200 words"
+msgstr "بلند — حدود ۲٬۲۰۰ کلمه"
+
+msgid "Persian (Farsi)"
+msgstr "فارسی"
+
+msgid "English"
+msgstr "انگلیسی"
+
+msgid "Arabic"
+msgstr "عربی"
+
+msgid "Turkish"
+msgstr "ترکی"
+
+msgid "German"
+msgstr "آلمانی"
+
+msgid "French"
+msgstr "فرانسوی"
+
+msgid "Spanish"
+msgstr "اسپانیایی"
+
+msgid "Russian"
+msgstr "روسی"
+
+msgid "Portuguese"
+msgstr "پرتغالی"
+
+msgid "Hindi"
+msgstr "هندی"
+
+msgid "Chinese"
+msgstr "چینی"
+
+msgid "Other…"
+msgstr "سایر…"
+

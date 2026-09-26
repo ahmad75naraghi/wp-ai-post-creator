@@ -1,0 +1,588 @@
+# Copyright (C) 2026 Ahmad Naraghi
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: AI Post Creator 1.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/ahmad75naraghi/wp-ai-post-creator/issues\n"
+"POT-Creation-Date: 2026-09-26 20:19+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: make-translations.py\n"
+"X-Domain: wp-ai-post-creator\n"
+
+msgid "New AI Post"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "AI Post Creator"
+msgstr ""
+
+msgid "Agent mode: from a bare topic to a complete, SEO-ready post — step by step."
+msgstr ""
+
+msgid "Model: %s"
+msgstr ""
+
+msgid "Provider: %s"
+msgstr ""
+
+msgid "No API key configured."
+msgstr ""
+
+msgid "Connect an OpenAI-compatible provider to start generating."
+msgstr ""
+
+msgid "Open settings"
+msgstr ""
+
+msgid "No site prompt configured."
+msgstr ""
+
+msgid "Describe your site — what it is about, its goal and audience — so the agent can invent fitting topics."
+msgstr ""
+
+msgid "Topic (optional)"
+msgstr ""
+
+msgid "Leave empty and the agent will invent a topic from the site prompt — or write your own idea here…"
+msgstr ""
+
+msgid "The agent always picks one of your existing post categories and builds the topic from the site prompt."
+msgstr ""
+
+msgid "The post is always saved as a draft for your review."
+msgstr ""
+
+msgid "Options"
+msgstr ""
+
+msgid "tone, length, language, SEO…"
+msgstr ""
+
+msgid "Tone"
+msgstr ""
+
+msgid "Length"
+msgstr ""
+
+msgid "Content language"
+msgstr ""
+
+msgid "Language (write its English name)"
+msgstr ""
+
+msgid "Featured image"
+msgstr ""
+
+msgid "generate & attach a hero image"
+msgstr ""
+
+msgid "FAQ block"
+msgstr ""
+
+msgid "answers + Google rich-results schema"
+msgstr ""
+
+msgid "Table of contents"
+msgstr ""
+
+msgid "linked jump menu"
+msgstr ""
+
+msgid "Generate post"
+msgstr ""
+
+msgid "The agent plans, writes and assembles the post live — you can cancel anytime."
+msgstr ""
+
+msgid "Agent console"
+msgstr ""
+
+msgid "Cancel agent"
+msgstr ""
+
+msgid "Retry step"
+msgstr ""
+
+msgid "Your post is ready!"
+msgstr ""
+
+msgid "Edit post"
+msgstr ""
+
+msgid "View post"
+msgstr ""
+
+msgid "Create another"
+msgstr ""
+
+msgid "AI Post Creator — Settings"
+msgstr ""
+
+msgid "Connect any OpenAI-compatible provider and tune content generation."
+msgstr ""
+
+msgid "Site prompt"
+msgstr ""
+
+msgid "Tell the agent what this site is about: its purpose, audience and voice. The agent uses this to pick the category, invent topics and stay on-brand."
+msgstr ""
+
+msgid "e.g. A Persian cooking blog focused on quick weeknight dinners for busy families. Goal: practical, tested recipes with everyday ingredients. Warm, encouraging voice."
+msgstr ""
+
+msgid "Example: what the site is, what it is about, its goal, its audience, the voice you want."
+msgstr ""
+
+msgid "Provider connection"
+msgstr ""
+
+msgid "API base URL"
+msgstr ""
+
+msgid "Any OpenAI-compatible endpoint. Examples:"
+msgstr ""
+
+msgid "API key"
+msgstr ""
+
+msgid "•••••••••••• (saved — leave empty to keep)"
+msgstr ""
+
+msgid "sk-…"
+msgstr ""
+
+msgid "Show"
+msgstr ""
+
+msgid "Stored in your own database and only sent to the provider you configured. Ollama / LM Studio accept any dummy value."
+msgstr ""
+
+msgid "Connection test"
+msgstr ""
+
+msgid "Test connection"
+msgstr ""
+
+msgid "Model & generation"
+msgstr ""
+
+msgid "Chat model"
+msgstr ""
+
+msgid "Load models from provider"
+msgstr ""
+
+msgid "Type any model id your provider supports, or load the list automatically."
+msgstr ""
+
+msgid "Temperature"
+msgstr ""
+
+msgid "0 = precise and repetitive, 1+ = creative. 0.6–0.8 works well for articles."
+msgstr ""
+
+msgid "Max tokens per step"
+msgstr ""
+
+msgid "Each agent step (plan, each section, SEO…) may use up to this many tokens."
+msgstr ""
+
+msgid "Request timeout (seconds)"
+msgstr ""
+
+msgid "Increase for slow local models (Ollama) or very long generations."
+msgstr ""
+
+msgid "Content defaults"
+msgstr ""
+
+msgid "Default language"
+msgstr ""
+
+msgid "Default tone"
+msgstr ""
+
+msgid "Default length"
+msgstr ""
+
+msgid "Extras"
+msgstr ""
+
+msgid "Add a table of contents by default"
+msgstr ""
+
+msgid "Add an FAQ block with schema markup by default"
+msgstr ""
+
+msgid "Featured images"
+msgstr ""
+
+msgid "Enable image generation"
+msgstr ""
+
+msgid "Let the agent generate a featured image (skipped gracefully if the provider does not support it)"
+msgstr ""
+
+msgid "Image model"
+msgstr ""
+
+msgid "Image size"
+msgstr ""
+
+msgid "1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024."
+msgstr ""
+
+msgid "Advanced"
+msgstr ""
+
+msgid "Extra system instructions"
+msgstr ""
+
+msgid "e.g. Always address the reader as “you” and include practical examples."
+msgstr ""
+
+msgid "Appended to every agent request — steer style, vocabulary, formatting rules…"
+msgstr ""
+
+msgid "Uninstall"
+msgstr ""
+
+msgid "Delete all plugin data (settings, jobs, SEO meta) when the plugin is uninstalled"
+msgstr ""
+
+msgid "Save settings"
+msgstr ""
+
+msgid "AI Settings"
+msgstr ""
+
+msgid "You do not have permission to access this page."
+msgstr ""
+
+msgid "Category & topic selection"
+msgstr ""
+
+msgid "Article outline"
+msgstr ""
+
+msgid "Agent started — suggested topic: “%s”"
+msgstr ""
+
+msgid "Agent started — the topic will be invented from the site prompt."
+msgstr ""
+
+msgid "Setup — model: %1$s · tone: %2$s · length: %3$s"
+msgstr ""
+
+msgid "Job not found or already cleaned up."
+msgstr ""
+
+msgid "Agent cancelled by user."
+msgstr ""
+
+msgid "Retrying failed step…"
+msgstr ""
+
+msgid "Job not found or expired. Please start again."
+msgstr ""
+
+msgid "Attempt %1$d/%2$d failed (%3$s) — retrying…"
+msgstr ""
+
+msgid "Step failed: %s"
+msgstr ""
+
+msgid "The model returned too little content for this step. Please retry."
+msgstr ""
+
+msgid "Uncategorized"
+msgstr ""
+
+msgid "The plan did not include a title. Please retry."
+msgstr ""
+
+msgid "The model did not pick a category from the list. Retrying."
+msgstr ""
+
+msgid "Chosen category: %s"
+msgstr ""
+
+msgid "Audience: %s"
+msgstr ""
+
+msgid "Primary keyword: %s"
+msgstr ""
+
+msgid "Secondary keywords: %s"
+msgstr ""
+
+msgid "Working title: “%s”"
+msgstr ""
+
+msgid "The outline was empty or malformed. Please retry."
+msgstr ""
+
+msgid "Introduction"
+msgstr ""
+
+msgid "Conclusion & call to action"
+msgstr ""
+
+msgid "Copywriting & SEO pass"
+msgstr ""
+
+msgid "FAQ section (rich results)"
+msgstr ""
+
+msgid "SEO summary for Rank Math"
+msgstr ""
+
+msgid "Save post"
+msgstr ""
+
+msgid "Introduction written (%d words)"
+msgstr ""
+
+msgid "Section written (%1$d words) — %2$s"
+msgstr ""
+
+msgid "Conclusion written (%d words)"
+msgstr ""
+
+msgid "The revision lost the article structure. Retrying."
+msgstr ""
+
+msgid "The revision came back much shorter than the draft. Retrying."
+msgstr ""
+
+msgid "Copywriting & SEO pass complete (%1$d → %2$d words)"
+msgstr ""
+
+msgid "The FAQ step returned no usable questions. Please retry."
+msgstr ""
+
+msgid "Frequently asked questions"
+msgstr ""
+
+msgid "FAQ ready — %d questions (FAQ schema will be added)"
+msgstr ""
+
+msgid "SEO metadata was incomplete. Please retry."
+msgstr ""
+
+msgid "SEO title: %s"
+msgstr ""
+
+msgid "Rank Math summary: %s"
+msgstr ""
+
+msgid "Slug: /%s/"
+msgstr ""
+
+msgid "Tags: %s"
+msgstr ""
+
+msgid "SEO metadata ready"
+msgstr ""
+
+msgid "Featured image disabled in settings — skipped."
+msgstr ""
+
+msgid "Generating featured image — prompt: %s"
+msgstr ""
+
+msgid "Image generation failed (%s) — continuing without a featured image."
+msgstr ""
+
+msgid "Could not download the generated image — continuing without one."
+msgstr ""
+
+msgid "Could not save the image to the media library (%s) — continuing without one."
+msgstr ""
+
+msgid "Featured image saved to the media library (#%d)"
+msgstr ""
+
+msgid "Draft created: #%d"
+msgstr ""
+
+msgid "Done — %1$d words · %2$d prompt + %3$d completion tokens"
+msgstr ""
+
+msgid "Outline ready — %d section."
+msgid_plural "Outline ready — %d sections."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Could not reach the AI provider: %s"
+msgstr ""
+
+msgid "API error %1$d: %2$s"
+msgstr ""
+
+msgid "The provider returned an invalid (non-JSON) response."
+msgstr ""
+
+msgid "API key or endpoint is not configured. Open Settings and connect a provider first."
+msgstr ""
+
+msgid "The model returned an empty response. Try again or lower the max tokens setting."
+msgstr ""
+
+msgid "The model did not return valid JSON. Try again, or switch to a stronger model."
+msgstr ""
+
+msgid "API key or endpoint is not configured."
+msgstr ""
+
+msgid "The provider returned no image data."
+msgstr ""
+
+msgid "Could not download the generated image."
+msgstr ""
+
+msgid "Starting the agent…"
+msgstr ""
+
+msgid "Planning…"
+msgstr ""
+
+msgid "The agent is working — keep this tab open."
+msgstr ""
+
+msgid "Connection error:"
+msgstr ""
+
+msgid "The request timed out."
+msgstr ""
+
+msgid "The agent stopped with an error. You can retry the failed step."
+msgstr ""
+
+msgid "Cancel the agent? The current progress will be kept but nothing new will run."
+msgstr ""
+
+msgid "Agent cancelled."
+msgstr ""
+
+msgid "No API key configured"
+msgstr ""
+
+msgid "Add your OpenAI-compatible API key in the settings to start generating posts."
+msgstr ""
+
+msgid "words"
+msgstr ""
+
+msgid "tokens"
+msgstr ""
+
+msgid "s"
+msgstr ""
+
+msgid "Testing connection…"
+msgstr ""
+
+msgid "Connection successful!"
+msgstr ""
+
+msgid "Connection successful (model list not supported by this provider)."
+msgstr ""
+
+msgid "Connection successful — %d models found."
+msgstr ""
+
+msgid "Connection failed:"
+msgstr ""
+
+msgid "Loading models…"
+msgstr ""
+
+msgid "%d models loaded — pick one in the list."
+msgstr ""
+
+msgid "Could not load the model list:"
+msgstr ""
+
+msgid "Hide"
+msgstr ""
+
+msgid "Generated content was empty."
+msgstr ""
+
+msgid "Empty image data."
+msgstr ""
+
+msgid "Professional"
+msgstr ""
+
+msgid "Friendly"
+msgstr ""
+
+msgid "Casual"
+msgstr ""
+
+msgid "Expert / technical"
+msgstr ""
+
+msgid "Persuasive"
+msgstr ""
+
+msgid "Storytelling"
+msgstr ""
+
+msgid "Humorous"
+msgstr ""
+
+msgid "Neutral"
+msgstr ""
+
+msgid "Short — ~600 words"
+msgstr ""
+
+msgid "Medium — ~1,200 words"
+msgstr ""
+
+msgid "Long — ~2,200 words"
+msgstr ""
+
+msgid "Persian (Farsi)"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "Arabic"
+msgstr ""
+
+msgid "Turkish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Hindi"
+msgstr ""
+
+msgid "Chinese"
+msgstr ""
+
+msgid "Other…"
+msgstr ""
+

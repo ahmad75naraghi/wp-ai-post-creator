@@ -1,0 +1,151 @@
+<?php
+/**
+ * Admin asset registration and localization.
+ *
+ * @package wp-ai-post-creator
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Loads CSS/JS on the plugin pages only.
+ */
+final class AIPC_Assets {
+
+	/**
+	 * Hook the enqueuer.
+	 *
+	 * @return void
+	 */
+	public static function register() {
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue' ), 20 );
+	}
+
+	/**
+	 * Enqueue assets for the plugin screens.
+	 *
+	 * @param string $hook Admin page hook.
+	 * @return void
+	 */
+	public static function enqueue( $hook ) {
+		$plugin_pages = array( 'toplevel_page_aipc', 'ai-post-creator_page_aipc-settings' );
+
+		if ( ! in_array( $hook, $plugin_pages, true ) ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'aipc-admin',
+			AIPC_PLUGIN_URL . 'assets/admin.css',
+			array(),
+			AIPC_VERSION
+		);
+
+		if ( 'toplevel_page_aipc' === $hook ) {
+			wp_enqueue_script(
+				'aipc-agent',
+				AIPC_PLUGIN_URL . 'assets/admin-agent.js',
+				array(),
+				AIPC_VERSION,
+				true
+			);
+			self::inline_data( 'aipc-agent', self::data_for_agent() );
+		} else {
+			wp_enqueue_script(
+				'aipc-settings',
+				AIPC_PLUGIN_URL . 'assets/admin-settings.js',
+				array(),
+				AIPC_VERSION,
+				true
+			);
+			self::inline_data( 'aipc-settings', self::data_for_settings() );
+		}
+	}
+
+	/**
+	 * Print the AIPC object before a script.
+	 *
+	 * Uses wp_json_encode directly so Persian strings are not HTML-entity encoded
+	 * (unlike wp_localize_script).
+	 *
+	 * @param string $handle Script handle.
+	 * @param array  $data   Data.
+	 * @return void
+	 */
+	private static function inline_data( $handle, $data ) {
+		wp_add_inline_script(
+			$handle,
+			'window.AIPC = ' . wp_json_encode( $data, JSON_UNESCAPED_UNICODE ) . ';',
+			'before'
+		);
+	}
+
+	/**
+	 * Data for the agent console page.
+	 *
+	 * @return array
+	 */
+	private static function data_for_agent() {
+		$s = AIPC_Settings::all();
+
+		return array(
+			'restUrl'      => esc_url_raw( rest_url( 'aipc/v1/' ) ),
+			'nonce'        => wp_create_nonce( 'wp_rest' ),
+			'model'        => $s['chat_model'],
+			'provider'     => (string) wp_parse_url( $s['api_base_url'], PHP_URL_HOST ),
+			'hasKey'       => (bool) $s['api_key'],
+			'hasSitePrompt' => (bool) trim( (string) $s['site_prompt'] ),
+			'tones'        => AIPC_Settings::tones(),
+			'lengths'      => AIPC_Settings::lengths(),
+			'languages'    => AIPC_Settings::languages(),
+			'defaults'     => array(
+				'tone'     => $s['default_tone'],
+				'length'   => $s['default_length'],
+				'language' => $s['content_language'],
+				'image'    => (bool) $s['image_enabled'],
+				'faq'      => (bool) $s['add_faq'],
+				'toc'      => (bool) $s['add_toc'],
+			),
+			'i18n'         => array(
+				'starting'      => __( 'Starting the agent…', 'wp-ai-post-creator' ),
+				'planning'      => __( 'Planning…', 'wp-ai-post-creator' ),
+				'working'       => __( 'The agent is working — keep this tab open.', 'wp-ai-post-creator' ),
+				'networkError'  => __( 'Connection error:', 'wp-ai-post-creator' ),
+				'timeout'       => __( 'The request timed out.', 'wp-ai-post-creator' ),
+				'failed'        => __( 'The agent stopped with an error. You can retry the failed step.', 'wp-ai-post-creator' ),
+				'cancelConfirm' => __( 'Cancel the agent? The current progress will be kept but nothing new will run.', 'wp-ai-post-creator' ),
+				'cancelled'     => __( 'Agent cancelled.', 'wp-ai-post-creator' ),
+				'noKeyTitle'    => __( 'No API key configured', 'wp-ai-post-creator' ),
+				'noKeyBody'     => __( 'Add your OpenAI-compatible API key in the settings to start generating posts.', 'wp-ai-post-creator' ),
+				'goToSettings'  => __( 'Open settings', 'wp-ai-post-creator' ),
+				'words'         => __( 'words', 'wp-ai-post-creator' ),
+				'tokens'        => __( 'tokens', 'wp-ai-post-creator' ),
+				'sec'           => __( 's', 'wp-ai-post-creator' ),
+			),
+		);
+	}
+
+	/**
+	 * Data for the settings page.
+	 *
+	 * @return array
+	 */
+	private static function data_for_settings() {
+		return array(
+			'restUrl' => esc_url_raw( rest_url( 'aipc/v1/' ) ),
+			'nonce'   => wp_create_nonce( 'wp_rest' ),
+			'i18n'    => array(
+				'testing'       => __( 'Testing connection…', 'wp-ai-post-creator' ),
+				'ok'            => __( 'Connection successful!', 'wp-ai-post-creator' ),
+				'okNoModels'    => __( 'Connection successful (model list not supported by this provider).', 'wp-ai-post-creator' ),
+				'okModels'      => __( 'Connection successful — %d models found.', 'wp-ai-post-creator' ),
+				'failed'        => __( 'Connection failed:', 'wp-ai-post-creator' ),
+				'loadingModels' => __( 'Loading models…', 'wp-ai-post-creator' ),
+				'modelsOk'      => __( '%d models loaded — pick one in the list.', 'wp-ai-post-creator' ),
+				'modelsFail'    => __( 'Could not load the model list:', 'wp-ai-post-creator' ),
+				'show'          => __( 'Show', 'wp-ai-post-creator' ),
+				'hide'          => __( 'Hide', 'wp-ai-post-creator' ),
+			),
+		);
+	}
+}
