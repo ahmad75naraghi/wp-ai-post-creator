@@ -1,37 +1,39 @@
 <?php
 /**
- * Agent console page.
+ * Rewrite console page: refresh an existing post with the agent.
  *
  * @package wp-ai-post-creator
  */
 
 defined( 'ABSPATH' ) || exit;
 
-$aipc_settings = AIPC_Settings::all();
-$aipc_has_site_prompt = (bool) trim( (string) $aipc_settings['site_prompt'] );
-$aipc_conn = AIPC_Connections::get_default();
-$aipc_links = admin_url( 'admin.php?page=aipc-settings' );
-$aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
+$aipc_conn     = AIPC_Connections::get_default();
+$aipc_conn_url = admin_url( 'admin.php?page=aipc-connections' );
+$aipc_posts    = get_posts( array(
+	'post_type'        => 'post',
+	'post_status'      => array( 'publish', 'draft', 'pending', 'private', 'future' ),
+	'numberposts'      => 100,
+	'orderby'          => 'modified',
+	'order'            => 'DESC',
+	'suppress_filters' => true,
+) );
 ?>
 <div class="wrap aipc-wrap">
 
 	<div class="aipc-header">
-		<div class="aipc-logo" aria-hidden="true">🤖</div>
+		<div class="aipc-logo" aria-hidden="true">♻️</div>
 		<div class="aipc-header-text">
-			<h1><?php esc_html_e( 'AI Post Creator', 'wp-ai-post-creator' ); ?></h1>
-			<p class="aipc-sub"><?php esc_html_e( 'Agent mode: from a bare topic to a complete, SEO-ready post — step by step.', 'wp-ai-post-creator' ); ?></p>
+			<h1><?php esc_html_e( 'Rewrite post', 'wp-ai-post-creator' ); ?></h1>
+			<p class="aipc-sub"><?php esc_html_e( 'Agent mode: give an existing post a full copywriting + SEO refresh — fresher copy, better structure, full originality.', 'wp-ai-post-creator' ); ?></p>
 			<p class="aipc-meta">
 				<?php if ( $aipc_conn ) : ?>
 					<span class="aipc-chip">🔌 <?php echo esc_html( sprintf( /* translators: %s: connection name */ __( 'Default: %s', 'wp-ai-post-creator' ), $aipc_conn['name'] ) ); ?></span>
-					<span class="aipc-chip">⚙ <?php echo esc_html( sprintf( /* translators: %s: model name */ __( 'Model: %s', 'wp-ai-post-creator' ), $aipc_conn['chat_model'] ) ); ?></span>
 				<?php else : ?>
 					<span class="aipc-chip">⚠ <?php esc_html_e( 'No connection configured', 'wp-ai-post-creator' ); ?></span>
 				<?php endif; ?>
-				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( admin_url( 'admin.php?page=aipc-rewrite' ) ); ?>">♻️ <?php esc_html_e( 'Rewrite post', 'wp-ai-post-creator' ); ?></a>
-				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( $aipc_conn_links ); ?>"><?php esc_html_e( 'Connections', 'wp-ai-post-creator' ); ?></a>
-				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( admin_url( 'admin.php?page=aipc-prompts' ) ); ?>"><?php esc_html_e( 'Prompts & Steps', 'wp-ai-post-creator' ); ?></a>
+				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( admin_url( 'admin.php?page=aipc' ) ); ?>"><?php esc_html_e( 'New AI Post', 'wp-ai-post-creator' ); ?></a>
+				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( $aipc_conn_url ); ?>"><?php esc_html_e( 'Connections', 'wp-ai-post-creator' ); ?></a>
 				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( admin_url( 'admin.php?page=aipc-logs' ) ); ?>"><?php esc_html_e( 'Logs', 'wp-ai-post-creator' ); ?></a>
-				<a class="aipc-chip aipc-chip-link" href="<?php echo esc_url( $aipc_links ); ?>"><?php esc_html_e( 'Settings', 'wp-ai-post-creator' ); ?></a>
 			</p>
 		</div>
 	</div>
@@ -40,35 +42,38 @@ $aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 		<div class="aipc-card aipc-alert">
 			<p>
 				<strong>🔑 <?php esc_html_e( 'No AI connection configured.', 'wp-ai-post-creator' ); ?></strong>
-				<?php esc_html_e( 'Add an OpenAI-compatible connection (URL + API key) to start generating posts.', 'wp-ai-post-creator' ); ?>
-				<a class="button button-small" href="<?php echo esc_url( $aipc_conn_links ); ?>">
-					<?php esc_html_e( 'Open connections', 'wp-ai-post-creator' ); ?>
-				</a>
+				<a class="button button-small" href="<?php echo esc_url( $aipc_conn_url ); ?>"><?php esc_html_e( 'Open connections', 'wp-ai-post-creator' ); ?></a>
 			</p>
 		</div>
 	<?php endif; ?>
 
-	<?php if ( ! $aipc_has_site_prompt ) : ?>
+	<?php if ( empty( $aipc_posts ) ) : ?>
 		<div class="aipc-card aipc-alert">
-			<p>
-				<strong>🎯 <?php esc_html_e( 'No site prompt configured.', 'wp-ai-post-creator' ); ?></strong>
-				<?php esc_html_e( 'Describe your site — what it is about, its goal and audience — so the agent can invent fitting topics.', 'wp-ai-post-creator' ); ?>
-				<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=aipc-settings' ) ); ?>">
-					<?php esc_html_e( 'Open settings', 'wp-ai-post-creator' ); ?>
-				</a>
-			</p>
+			<p><strong>📝 <?php esc_html_e( 'No posts found.', 'wp-ai-post-creator' ); ?></strong>
+			<?php esc_html_e( 'Create your first post with the agent, then come back to refresh it anytime.', 'wp-ai-post-creator' ); ?></p>
 		</div>
-	<?php endif; ?>
+	<?php else : ?>
 
 	<section class="aipc-card" id="aipc-form-card">
 		<form id="aipc-form" autocomplete="off">
-			<label class="aipc-label" for="aipc-topic"><?php esc_html_e( 'Topic (optional)', 'wp-ai-post-creator' ); ?></label>
-			<textarea id="aipc-topic" rows="2" maxlength="400"
-				placeholder="<?php esc_attr_e( 'Leave empty and the agent will invent a topic from the site prompt — or write your own idea here…', 'wp-ai-post-creator' ); ?>"></textarea>
+			<label class="aipc-label" for="aipc-rewrite-post"><?php esc_html_e( 'Post to rewrite', 'wp-ai-post-creator' ); ?></label>
+			<select id="aipc-rewrite-post" class="aipc-select" required>
+				<option value=""><?php esc_html_e( '— pick a post —', 'wp-ai-post-creator' ); ?></option>
+				<?php foreach ( $aipc_posts as $aipc_post ) : ?>
+					<option value="<?php echo esc_attr( $aipc_post->ID ); ?>">
+						<?php
+						echo esc_html(
+							wp_html_excerpt( $aipc_post->post_title, 80, '…' )
+							. ' · ' . date_i18n( 'Y/m/d', strtotime( $aipc_post->post_date ) )
+							. ' · ' . $aipc_post->post_status
+						);
+						?>
+					</option>
+				<?php endforeach; ?>
+			</select>
 			<p class="aipc-hint">
-				<?php esc_html_e( 'The agent always picks one of your existing post categories and builds the topic from the site prompt.', 'wp-ai-post-creator' ); ?>
-				<?php esc_html_e( 'The post is always saved as a draft for your review.', 'wp-ai-post-creator' ); ?>
-				<?php esc_html_e( 'Each step uses the connection and prompt assigned under Prompts & Steps.', 'wp-ai-post-creator' ); ?>
+				<?php esc_html_e( 'The agent analyzes the post, rewrites every paragraph (keeping the facts and the links), refreshes the SEO metadata and can generate a new featured image.', 'wp-ai-post-creator' ); ?>
+				<?php esc_html_e( 'The post is updated in place — its status, author, address and category stay untouched.', 'wp-ai-post-creator' ); ?>
 			</p>
 
 			<details class="aipc-options" id="aipc-options">
@@ -93,27 +98,10 @@ $aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 					</div>
 				</div>
 
-				<?php if ( current_user_can( 'publish_posts' ) ) : ?>
-					<div class="aipc-grid" style="margin-block-start:12px;">
-						<div class="aipc-field">
-							<label for="aipc-publish-mode"><?php esc_html_e( 'After creation', 'wp-ai-post-creator' ); ?></label>
-							<select id="aipc-publish-mode" class="aipc-select">
-								<option value="draft"><?php esc_html_e( '📝 Keep as draft', 'wp-ai-post-creator' ); ?></option>
-								<option value="now"><?php esc_html_e( '🚀 Publish immediately', 'wp-ai-post-creator' ); ?></option>
-								<option value="delay"><?php esc_html_e( '⏱ Publish later', 'wp-ai-post-creator' ); ?></option>
-							</select>
-						</div>
-						<div class="aipc-field aipc-hidden" id="aipc-publish-delay-field">
-							<label for="aipc-publish-delay"><?php esc_html_e( 'Delay (minutes)', 'wp-ai-post-creator' ); ?></label>
-							<input type="number" id="aipc-publish-delay" class="aipc-input" min="15" max="10080" step="1" value="60" />
-						</div>
-					</div>
-				<?php endif; ?>
-
 				<div class="aipc-toggles">
 					<label class="aipc-toggle">
 						<input type="checkbox" id="aipc-opt-image" />
-						<span><?php esc_html_e( 'Featured image', 'wp-ai-post-creator' ); ?></span>
+						<span><?php esc_html_e( 'New featured image', 'wp-ai-post-creator' ); ?></span>
 						<em><?php esc_html_e( 'generate & attach a hero image', 'wp-ai-post-creator' ); ?></em>
 					</label>
 					<label class="aipc-toggle">
@@ -130,8 +118,8 @@ $aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 			</details>
 
 			<div class="aipc-actions">
-				<button type="button" id="aipc-start" class="button button-primary button-hero">✦ <?php esc_html_e( 'Generate post', 'wp-ai-post-creator' ); ?></button>
-				<span class="aipc-hint"><?php esc_html_e( 'The agent plans, writes and assembles the post live — you can cancel anytime.', 'wp-ai-post-creator' ); ?></span>
+				<button type="button" id="aipc-start" class="button button-primary button-hero">♻️ <?php esc_html_e( 'Rewrite post', 'wp-ai-post-creator' ); ?></button>
+				<span class="aipc-hint"><?php esc_html_e( 'The agent rewrites the post live — you can cancel anytime.', 'wp-ai-post-creator' ); ?></span>
 			</div>
 		</form>
 	</section>
@@ -160,14 +148,16 @@ $aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 
 	<section class="aipc-card aipc-result aipc-hidden" id="aipc-result">
 		<div class="aipc-result-emoji" aria-hidden="true">✅</div>
-		<h2><?php esc_html_e( 'Your post is ready!', 'wp-ai-post-creator' ); ?></h2>
+		<h2><?php esc_html_e( 'Your post was rewritten!', 'wp-ai-post-creator' ); ?></h2>
 		<h3 id="aipc-result-title"></h3>
 		<p class="aipc-stats" id="aipc-result-stats"></p>
 		<p class="aipc-result-actions">
 			<a id="aipc-result-edit" class="button button-primary" target="_blank" rel="noopener">✎ <?php esc_html_e( 'Edit post', 'wp-ai-post-creator' ); ?></a>
 			<a id="aipc-result-view" class="button" target="_blank" rel="noopener">👁 <?php esc_html_e( 'View post', 'wp-ai-post-creator' ); ?></a>
-			<button type="button" id="aipc-new" class="button">＋ <?php esc_html_e( 'Create another', 'wp-ai-post-creator' ); ?></button>
+			<button type="button" id="aipc-new" class="button">＋ <?php esc_html_e( 'Rewrite another', 'wp-ai-post-creator' ); ?></button>
 		</p>
 	</section>
+
+	<?php endif; ?>
 
 </div>

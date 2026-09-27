@@ -60,6 +60,15 @@ final class AIPC_Admin {
 
 		add_submenu_page(
 			'aipc',
+			__( 'Rewrite post', 'wp-ai-post-creator' ),
+			__( 'Rewrite post', 'wp-ai-post-creator' ),
+			'edit_posts',
+			'aipc-rewrite',
+			array( __CLASS__, 'render_rewrite' )
+		);
+
+		add_submenu_page(
+			'aipc',
 			__( 'AI Connections', 'wp-ai-post-creator' ),
 			__( 'Connections', 'wp-ai-post-creator' ),
 			'manage_options',
@@ -141,6 +150,13 @@ final class AIPC_Admin {
 	 *
 	 * @return void
 	 */
+	public static function render_rewrite() {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
+		}
+		require AIPC_PLUGIN_DIR . 'admin/views/rewrite.php';
+	}
+
 	public static function render_connections() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
@@ -275,9 +291,11 @@ final class AIPC_Admin {
 				continue;
 			}
 			$cfg[ $step ] = array(
-				'connection' => isset( $data['connection'] ) ? sanitize_key( $data['connection'] ) : '',
-				'prompt'     => isset( $data['prompt'] ) ? sanitize_textarea_field( $data['prompt'] ) : '',
-				'reset'      => ! empty( $data['reset'] ),
+				'connections' => isset( $data['connections'] ) && is_array( $data['connections'] )
+					? array_map( 'sanitize_key', $data['connections'] )
+					: ( isset( $data['connection'] ) ? array( sanitize_key( $data['connection'] ) ) : array() ),
+				'prompt'      => isset( $data['prompt'] ) ? sanitize_textarea_field( $data['prompt'] ) : '',
+				'reset'       => ! empty( $data['reset'] ),
 			);
 		}
 
@@ -337,12 +355,14 @@ final class AIPC_Admin {
 		$raw = isset( $_POST['days'] ) && is_array( $_POST['days'] ) ? array_map( 'absint', wp_unslash( $_POST['days'] ) ) : array();
 
 		$entry = AIPC_Scheduler::save_entry( array(
-			'id'      => isset( $_POST['id'] ) ? sanitize_key( wp_unslash( $_POST['id'] ) ) : '',
-			'time'    => isset( $_POST['time'] ) ? sanitize_text_field( wp_unslash( $_POST['time'] ) ) : '',
-			'days'    => $raw,
-			'enabled' => ! empty( $_POST['enabled'] ),
-			'topic'   => isset( $_POST['topic'] ) ? wp_unslash( $_POST['topic'] ) : '',
-			'opts'    => array(
+			'id'            => isset( $_POST['id'] ) ? sanitize_key( wp_unslash( $_POST['id'] ) ) : '',
+			'time'          => isset( $_POST['time'] ) ? sanitize_text_field( wp_unslash( $_POST['time'] ) ) : '',
+			'days'          => $raw,
+			'enabled'       => ! empty( $_POST['enabled'] ),
+			'topic'         => isset( $_POST['topic'] ) ? wp_unslash( $_POST['topic'] ) : '',
+			'publish'       => isset( $_POST['publish'] ) ? sanitize_key( wp_unslash( $_POST['publish'] ) ) : 'draft',
+			'publish_delay' => isset( $_POST['publish_delay'] ) ? absint( wp_unslash( $_POST['publish_delay'] ) ) : 60,
+			'opts'          => array(
 				'tone'     => isset( $_POST['tone'] ) ? sanitize_key( wp_unslash( $_POST['tone'] ) ) : '',
 				'length'   => isset( $_POST['length'] ) ? sanitize_key( wp_unslash( $_POST['length'] ) ) : '',
 				'language' => isset( $_POST['language'] ) ? sanitize_key( wp_unslash( $_POST['language'] ) ) : '',

@@ -85,7 +85,27 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		);
 	}
 
-	if ( ! in_array( $host, array( 'mock.invalid', 'images.invalid' ), true ) ) {
+	// ---- RSS feed of a research source site ----
+	$aipc_path = (string) wp_parse_url( $url, PHP_URL_PATH );
+	if ( 'news.invalid' === $host && false !== strpos( $aipc_path, 'feed' ) ) {
+		aipc_mock_log( array(
+			'host'   => 'rss',
+			'method' => isset( $args['method'] ) ? $args['method'] : 'GET',
+			'url'    => $url,
+		) );
+		$aipc_rss = '<?xml version="1.0" encoding="UTF-8"?>'
+			. '<rss version="2.0"><channel><title>اخبار آزمایشی باغبانی</title><link>https://news.invalid</link><description>فید آزمایشی</description>'
+			. '<item><title>خبر آزمایشی: کشاورزی شهری در خانه رواج می‌یابد</title><link>https://news.invalid/item-1</link><description>گزارشی تازه درباره رشد سبزی‌کاری خانگی و بالکنی در شهرهای بزرگ.</description></item>'
+			. '<item><title>خبر آزمایشی: خاک مناسب برای گلدان</title><link>https://news.invalid/item-2</link><description>راهنمای انتخاب خاک غنی با زهکشی مناسب برای کاشت خانگی.</description></item>'
+			. '</channel></rss>';
+		return array(
+			'body'     => $aipc_rss,
+			'headers'  => array( 'content-type' => 'application/rss+xml; charset=UTF-8' ),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+		);
+	}
+
+	if ( ! in_array( $host, array( 'mock.invalid', 'images.invalid', 'flaky.invalid' ), true ) ) {
 		return $preempt;
 	}
 
@@ -113,7 +133,7 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		'host'      => $host,
 		'auth'      => $auth,
 		'model'     => isset( $body['model'] ) ? $body['model'] : null,
-		'prompt'    => mb_substr( $prompt, 0, 100 ),
+		'prompt'    => mb_substr( $prompt, 0, 4000 ),
 	) );
 
 	$chat = function ( $content ) {
@@ -160,6 +180,14 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		);
 	}
 
+	// Always-failing provider used by the fallback-chain test.
+	if ( 'flaky.invalid' === $host ) {
+		return array(
+			'body'     => json_encode( array( 'error' => array( 'message' => 'mock flaky provider is down' ) ) ),
+			'response' => array( 'code' => 500, 'message' => 'Server Error' ),
+		);
+	}
+
 	// POST /chat/completions — route by prompt content.
 	$has = function ( $needle ) use ( $prompt ) {
 		return false !== strpos( $prompt, $needle );
@@ -167,6 +195,41 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 
 	if ( $has( 'single word: OK' ) ) {
 		return $chat( 'OK' );
+	}
+
+	if ( $has( 'REWRITE ANALYSIS' ) ) { // rw_analyze step
+		$aipc_internal = array();
+		if ( preg_match( '/- (.+?) — (http:\/\/localhost\/\?p=\d+)/u', $prompt, $aipc_m ) ) {
+			$aipc_internal[] = array( 'title' => $aipc_m[1], 'url' => $aipc_m[2] );
+		}
+		return $chat( json_encode( array(
+			'title'              => 'عنوان بازنویسی‌شدهٔ بهتر و سئوپسند',
+			'primary_keyword'    => 'سبزی‌کاری در بالکن',
+			'secondary_keywords' => array( 'کاشت سبزیجات', 'بالکن کوچک', 'خاک مناسب' ),
+			'notes'              => "- عنوان تازه‌تر و دقیق‌تر بنویس\n- ساختار بخش‌ها را مرتب کن\n- لینک داخلی مرتبط را حفظ کن",
+			'sections'           => array(
+				array( 'heading' => 'بخش بازنویسی‌شده یک', 'brief' => 'پوشش کامل موضوع اول با نگاه تازه.' ),
+				array( 'heading' => 'بخش بازنویسی‌شده دو', 'brief' => 'پوشش کامل موضوع دوم با نکات کاربردی.' ),
+			),
+			'internal_links'     => $aipc_internal,
+		), JSON_UNESCAPED_UNICODE ) );
+	}
+
+	if ( $has( 'FULL REWRITE' ) ) { // rw_rewrite step
+		$n = 2;
+		if ( preg_match( '/exactly (\d+) main sections/', $prompt, $aipc_m ) ) {
+			$n = (int) $aipc_m[1];
+		}
+		$aipc_internal_link = '';
+		if ( preg_match( '/(http:\/\/localhost\/\?p=\d+)/', $prompt, $aipc_m ) ) {
+			$aipc_internal_link = ' در همین بستر، <a href="' . $aipc_m[1] . '">مقالهٔ مرتبط</a> را هم ببینید.';
+		}
+		$html = '<p>مقدمهٔ کاملاً بازنویسی‌شده و تازه: این مقاله با نگاهی نو به سبزی‌کاری خانگی می‌پردازد و تمام نکات را ساده و کاربردی بازگو می‌کند. پیوند مرجع قدیمی همچنان معتبر است: <a href="https://example.com/old">منبع اصلی</a>.' . $aipc_internal_link . ' خواننده با چند دقیقه مطالعه می‌تواند کاشت خود را شروع کند و به نتیجهٔ مطلوب برسد.</p>';
+		for ( $i = 1; $i <= $n; $i++ ) {
+			$html .= '<h2>بخش بازنویسی‌شده ' . strval( $i ) . '</h2><p>محتوای تازه و اصیل بخش ' . strval( $i ) . ': تمام جملات این بخش کاملاً بازنویسی شده‌اند تا از هرگونه کلیشه و تکرار دور بماند و کلیدواژهٔ اصلی به‌طور طبیعی در متن بنشیند. نکات کاربردی گام‌به‌گام توضیح داده شده‌اند تا هر خواننده‌ای بتواند آن‌ها را انجام دهد و نتیجه بگیرد.</p>';
+		}
+		$html .= '<h2>نتیجه‌گیری بازنویسی‌شده</h2><p>جمع‌بندی تازه و الهام‌بخش: با رعایت نکات این راهنما، سبزی‌کاری در فضای کوچک ساده و لذت‌بخش می‌شود. تجربه‌های خود را با دیگران به اشتراک بگذارید و همین امروز اولین گلدان را بکارید.</p>';
+		return $chat( $html );
 	}
 
 	if ( $has( '"toc_title"' ) ) { // plan step (category + topic from the site prompt)

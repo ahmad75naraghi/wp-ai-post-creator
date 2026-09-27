@@ -30,6 +30,7 @@ final class AIPC_Assets {
 	public static function enqueue( $hook ) {
 		$plugin_pages = array(
 			'toplevel_page_aipc'                    => 'agent',
+			'ai-post-creator_page_aipc-rewrite'     => 'rewrite',
 			'ai-post-creator_page_aipc-connections' => 'connections',
 			'ai-post-creator_page_aipc-prompts'     => 'prompts',
 			'ai-post-creator_page_aipc-logs'        => 'logs',
@@ -49,7 +50,7 @@ final class AIPC_Assets {
 			AIPC_VERSION
 		);
 
-		if ( 'agent' === $screen ) {
+		if ( 'agent' === $screen || 'rewrite' === $screen ) {
 			wp_enqueue_script(
 				'aipc-agent',
 				AIPC_PLUGIN_URL . 'assets/admin-agent.js',
@@ -57,7 +58,8 @@ final class AIPC_Assets {
 				AIPC_VERSION,
 				true
 			);
-			self::inline_data( 'aipc-agent', self::data_for_agent() );
+			$extra = ( 'rewrite' === $screen ) ? array( 'mode' => 'rewrite' ) : array();
+			self::inline_data( 'aipc-agent', self::data_for_agent( $extra ) );
 		} elseif ( 'connections' === $screen ) {
 			wp_enqueue_script(
 				'aipc-connections',
@@ -102,7 +104,7 @@ final class AIPC_Assets {
 	 *
 	 * @return array
 	 */
-	private static function data_for_agent() {
+	private static function data_for_agent( $extra = array() ) {
 		$s    = AIPC_Settings::all();
 		$conn = AIPC_Connections::get_default();
 
@@ -124,6 +126,7 @@ final class AIPC_Assets {
 			'restUrl'       => esc_url_raw( rest_url( 'aipc/v1/' ) ),
 			'nonce'         => wp_create_nonce( 'wp_rest' ),
 			'resumeJobId'   => $resume_id,
+			'extraArgs'     => $extra,
 			'model'         => $conn ? $conn['chat_model'] : '',
 			'provider'      => $conn ? (string) wp_parse_url( $conn['base_url'], PHP_URL_HOST ) : '',
 			'hasConnection' => (bool) $conn,
@@ -142,6 +145,7 @@ final class AIPC_Assets {
 			'i18n'          => array(
 				'starting'      => __( 'Starting the agent…', 'wp-ai-post-creator' ),
 				'resuming'      => __( 'Resuming the running agent…', 'wp-ai-post-creator' ),
+				'needPost'      => __( 'Pick a post to rewrite first.', 'wp-ai-post-creator' ),
 				'planning'      => __( 'Planning…', 'wp-ai-post-creator' ),
 				'working'       => __( 'The agent is working — keep this tab open.', 'wp-ai-post-creator' ),
 				'networkError'  => __( 'Connection error:', 'wp-ai-post-creator' ),

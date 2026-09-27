@@ -225,6 +225,74 @@ final class AIPC_Post_Builder {
 	}
 
 	/**
+	 * Update an existing post from job data (rewrite mode). The post id,
+	 * status, author, slug and categories are preserved.
+	 *
+	 * @param array $job Job.
+	 * @return int|WP_Error Post id.
+	 */
+	public static function update( array $job ) {
+		$d       = $job['data'];
+		$post_id = (int) $job['args']['post_id'];
+		$post    = get_post( $post_id );
+
+		if ( ! $post || 'post' !== $post->post_type ) {
+			return new WP_Error( 'aipc_rewrite', __( 'The post to rewrite was not found.', 'wp-ai-post-creator' ) );
+		}
+
+		$content = self::build_content( $job );
+		if ( '' === trim( wp_strip_all_tags( $content ) ) ) {
+			return new WP_Error( 'aipc_empty', __( 'Generated content was empty.', 'wp-ai-post-creator' ) );
+		}
+
+		$postarr = array(
+			'ID'           => $post_id,
+			'post_title'   => sanitize_text_field( $d['plan']['title'] ),
+			'post_content' => $content,
+			'post_excerpt' => ! empty( $d['seo']['excerpt'] ) ? $d['seo']['excerpt'] : $post->post_excerpt,
+		);
+
+		/**
+		 * Filter the arguments passed to wp_update_post() in rewrite mode.
+		 *
+		 * @param array $postarr Post args.
+		 * @param array $job     Agent job.
+		 */
+		$postarr = apply_filters( 'aipc_post_args', $postarr, $job );
+
+		$res = wp_update_post( wp_slash( $postarr ), true );
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+
+		// Tags: append the fresh ones to the existing set.
+		$tags = ! empty( $d['seo']['tags'] ) ? array_map( 'sanitize_text_field', (array) $d['seo']['tags'] ) : array();
+		if ( ! empty( $tags ) ) {
+			wp_set_object_terms( $post_id, $tags, 'post_tag', true );
+		}
+
+		self::set_seo_meta( $post_id, isset( $d['seo'] ) ? $d['seo'] : array() );
+
+		$focus = ! empty( $d['plan']['primary_keyword'] ) ? sanitize_text_field( (string) $d['plan']['primary_keyword'] ) : '';
+		if ( '' !== $focus ) {
+			update_post_meta( $post_id, 'rank_math_focus_keyword', $focus );
+			update_post_meta( $post_id, '_yoast_wpseo_focuskw', $focus );
+		}
+
+		if ( ! empty( $d['image']['attachment_id'] ) ) {
+			set_post_thumbnail( $post_id, (int) $d['image']['attachment_id'] );
+		}
+
+		update_post_meta( $post_id, '_aipc_generated', time() );
+		update_post_meta( $post_id, '_aipc_job', $job['id'] );
+		if ( ! empty( $d['faq']['items'] ) ) {
+			update_post_meta( $post_id, '_aipc_faq_schema', self::faq_schema( $d['faq']['items'] ) );
+		}
+
+		return (int) $post_id;
+	}
+
+	/**
 	 * Store SEO meta for the plugin and popular SEO plugins.
 	 *
 	 * @param int   $post_id Post id.

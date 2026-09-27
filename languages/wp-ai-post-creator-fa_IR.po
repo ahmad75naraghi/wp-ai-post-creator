@@ -14,1609 +14,1874 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Domain: wp-ai-post-creator\n"
 
-#: admin/views/connections.php:33
+#: admin/views/connections.php
 msgid "Edit connection"
 msgstr "ویرایش اتصال"
 
-#: admin/views/connections.php:159 admin/views/connections.php:33
+#: admin/views/connections.php
 msgid "Add a new connection"
 msgstr "افزودن اتصال جدید"
 
-#: admin/views/connections.php:124 admin/views/connections.php:37
+#: admin/views/connections.php
 msgid "Name"
 msgstr "نام"
 
-#: admin/views/connections.php:39
+#: admin/views/connections.php
 msgid "e.g. OpenAI · Groq · Local Ollama"
 msgstr "مثلاً OpenAI · Groq · Ollama محلی"
 
-#: admin/views/connections.php:43
+#: admin/views/connections.php
 msgid "API base URL"
 msgstr "آدرس پایه API"
 
-#: admin/views/connections.php:49
+#: admin/views/connections.php
 msgid "API key"
 msgstr "کلید API"
 
-#: admin/views/connections.php:51 admin/views/schedule.php:224
+#: admin/views/connections.php admin/views/schedule.php
 msgid "••••• (saved — leave empty to keep)"
 msgstr "••••• (ذخیره شده — برای حفظ آن خالی بگذارید)"
 
-#: admin/views/connections.php:51
+#: admin/views/connections.php
 msgid "sk-… (any value for Ollama/LM Studio)"
 msgstr "sk-… (برای Ollama/LM Studio هر مقداری کافی است)"
 
-#: admin/views/connections.php:126 admin/views/connections.php:55
+#: admin/views/connections.php
 msgid "Chat model"
 msgstr "مدل گفت‌وگو"
 
-#: admin/views/connections.php:127 admin/views/connections.php:61
+#: admin/views/connections.php
 msgid "Image model"
 msgstr "مدل تصویر"
 
-#: admin/views/connections.php:66
+#: admin/views/connections.php
 msgid "Temperature"
 msgstr "دمای مدل (Temperature)"
 
-#: admin/views/connections.php:71
+#: admin/views/connections.php
 msgid "Max tokens per step"
 msgstr "حداکثر توکن در هر مرحله"
 
-#: admin/views/connections.php:76
+#: admin/views/connections.php
 msgid "Timeout (seconds)"
 msgstr "مهلت (ثانیه)"
 
-#: admin/views/connections.php:85
+#: admin/views/connections.php
 msgid "Use as the default connection"
 msgstr "استفاده به‌عنوان اتصال پیش‌فرض"
 
-#: admin/views/connections.php:90
+#: admin/views/connections.php
 msgid "Save connection"
 msgstr "ذخیره اتصال"
 
-#: admin/views/connections.php:91
+#: admin/views/connections.php
 msgid "Test connection"
 msgstr "تست اتصال"
 
-#: admin/views/connections.php:92
+#: admin/views/connections.php
 msgid "Load models from provider"
 msgstr "بارگذاری مدل‌ها از سرویس‌دهنده"
 
-#: admin/views/connections.php:104 includes/class-aipc-admin.php:63
+#: admin/views/connections.php includes/class-aipc-admin.php
 msgid "AI Connections"
 msgstr "اتصال‌های هوش مصنوعی"
 
-#: admin/views/connections.php:105
+#: admin/views/connections.php
 msgid "Configure any number of OpenAI-compatible providers — then assign each pipeline step its own connection under Prompts & Steps."
 msgstr "هر تعداد سرویس‌دهنده سازگار با OpenAI پیکربندی کنید — سپس در بخش «پرامپت‌ها و مراحل» به هر مرحله از خط تولید، اتصال اختصاصی خودش را بدهید."
 
-#: admin/views/connections.php:110
+#: admin/views/connections.php
 msgid "Connection saved."
 msgstr "اتصال ذخیره شد."
 
-#: admin/views/connections.php:112
+#: admin/views/connections.php
 msgid "Connection deleted."
 msgstr "اتصال حذف شد."
 
-#: admin/views/connections.php:116
+#: admin/views/connections.php
 msgid "Your connections"
 msgstr "اتصال‌های شما"
 
-#: admin/views/connections.php:119
+#: admin/views/connections.php
 msgid "No connections yet. Add your first one below."
 msgstr "هنوز اتصالی وجود ندارد. اولین مورد را در پایین اضافه کنید."
 
-#: admin/views/connections.php:125
+#: admin/views/connections.php
 msgid "Endpoint"
 msgstr "آدرس سرویس"
 
-#: admin/views/connections.php:128
+#: admin/views/connections.php
 msgid "Default"
 msgstr "پیش‌فرض"
 
-#: admin/views/connections.php:129 admin/views/logs.php:111 admin/views/schedule.php:62
+#: admin/views/connections.php admin/views/logs.php admin/views/schedule.php
 msgid "Actions"
 msgstr "عملیات"
 
-#: admin/views/connections.php:139
+#: admin/views/connections.php
 msgid "Yes"
 msgstr "بله"
 
-#: admin/views/connections.php:141 admin/views/schedule.php:97
+#: admin/views/connections.php admin/views/schedule.php
 msgid "Edit"
 msgstr "ویرایش"
 
-#: admin/views/connections.php:143
+#: admin/views/connections.php
 msgid "Delete this connection? Steps using it will fall back to the default connection."
 msgstr "این اتصال حذف شود؟ مراحلِ استفاده‌کننده از آن به اتصال پیش‌فرض برمی‌گردند."
 
-#: admin/views/connections.php:143 admin/views/logs.php:144 admin/views/schedule.php:101
+#: admin/views/connections.php admin/views/logs.php admin/views/schedule.php
 msgid "Delete"
 msgstr "حذف"
 
-#: admin/views/connections.php:165
+#: admin/views/connections.php
 msgid "Example endpoints"
 msgstr "نمونه آدرس‌ها"
 
-#: admin/views/log-detail.php:22
+#: admin/views/log-detail.php
 msgid "Job details"
 msgstr "جزئیات کار"
 
-#: admin/views/log-detail.php:26
+#: admin/views/log-detail.php
 msgid "%s wall time"
 msgstr "%s زمان کل"
 
-#: admin/views/log-detail.php:27 includes/class-aipc-bale.php:540
+#: admin/views/log-detail.php includes/class-aipc-bale.php
 msgid "%d API calls"
 msgstr "%d فراخوانی API"
 
-#: admin/views/log-detail.php:34
+#: admin/views/log-detail.php
 msgid "Back to logs"
 msgstr "بازگشت به گزارش‌ها"
 
-#: admin/views/log-detail.php:35
+#: admin/views/log-detail.php
 msgid "Delete job"
 msgstr "حذف کار"
 
-#: admin/views/log-detail.php:39
+#: admin/views/log-detail.php
 msgid "Overview"
 msgstr "نمای کلی"
 
-#: admin/views/log-detail.php:42 admin/views/schedule.php:59
+#: admin/views/log-detail.php admin/views/schedule.php
 msgid "Topic"
 msgstr "موضوع"
 
-#: admin/views/log-detail.php:43 admin/views/log-detail.php:65 admin/views/logs.php:106 admin/views/schedule.php:61
+#: admin/views/log-detail.php admin/views/logs.php admin/views/schedule.php
 msgid "Status"
 msgstr "وضعیت"
 
-#: admin/views/log-detail.php:44
+#: admin/views/log-detail.php
 msgid "Tone / length / language"
 msgstr "لحن / طول / زبان"
 
-#: admin/views/log-detail.php:45
+#: admin/views/log-detail.php
 msgid "Tokens (prompt + completion)"
 msgstr "توکن‌ها (پرامپت + تولید)"
 
-#: admin/views/log-detail.php:46
+#: admin/views/log-detail.php
 msgid "AI time (sum of steps)"
 msgstr "زمان هوش مصنوعی (مجموع مراحل)"
 
-#: admin/views/log-detail.php:48 admin/views/log-detail.php:99
+#: admin/views/log-detail.php
 msgid "Result"
 msgstr "نتیجه"
 
-#: admin/views/log-detail.php:50
+#: admin/views/log-detail.php
 msgid "Draft post #%1$d · %2$d words"
 msgstr "پیش‌نویس نوشته #%1$d · %2$d واژه"
 
-#: admin/views/log-detail.php:51 admin/views/new-post.php:149
+#: admin/views/log-detail.php admin/views/new-post.php admin/views/rewrite.php
 msgid "Edit post"
 msgstr "ویرایش پست"
 
-#: admin/views/log-detail.php:52 admin/views/new-post.php:150
+#: admin/views/log-detail.php admin/views/new-post.php admin/views/rewrite.php
 msgid "View post"
 msgstr "مشاهده پست"
 
-#: admin/views/log-detail.php:60 admin/views/logs.php:107
+#: admin/views/log-detail.php admin/views/logs.php
 msgid "Steps"
 msgstr "مراحل"
 
-#: admin/views/log-detail.php:64 admin/views/log-detail.php:94
+#: admin/views/log-detail.php
 msgid "Step"
 msgstr "مرحله"
 
-#: admin/views/log-detail.php:66 admin/views/log-detail.php:98 admin/views/schedule.php:146 admin/views/schedule.php:57
+#: admin/views/log-detail.php admin/views/schedule.php
 msgid "Time"
 msgstr "زمان"
 
-#: admin/views/log-detail.php:86 admin/views/logs.php:108 admin/views/logs.php:60
+#: admin/views/log-detail.php admin/views/logs.php
 msgid "API calls"
 msgstr "فراخوانی‌های API"
 
-#: admin/views/log-detail.php:88
+#: admin/views/log-detail.php
 msgid "No calls recorded."
 msgstr "هیچ فراخوانی‌ای ثبت نشده است."
 
-#: admin/views/log-detail.php:95 admin/views/logs.php:69 includes/class-aipc-connections.php:205
+#: admin/views/log-detail.php admin/views/logs.php includes/class-aipc-connections.php
 msgid "Connection"
 msgstr "اتصال"
 
-#: admin/views/log-detail.php:96
+#: admin/views/log-detail.php
 msgid "Model"
 msgstr "مدل"
 
-#: admin/views/log-detail.php:97
+#: admin/views/log-detail.php
 msgid "Prompt → completion"
 msgstr "پرامپت ← تولید"
 
-#: admin/views/log-detail.php:115
+#: admin/views/log-detail.php
 msgid "Failed"
 msgstr "ناموفق"
 
-#: admin/views/log-detail.php:126
+#: admin/views/log-detail.php
 msgid "Console log"
 msgstr "گزارش کنسول"
 
-#: admin/views/logs.php:29
+#: admin/views/logs.php
 msgid "Running"
 msgstr "در حال اجرا"
 
-#: admin/views/logs.php:30
+#: admin/views/logs.php
 msgid "Done"
 msgstr "انجام شد"
 
-#: admin/views/logs.php:31
+#: admin/views/logs.php
 msgid "Error"
 msgstr "خطا"
 
-#: admin/views/logs.php:32
+#: admin/views/logs.php
 msgid "Cancelled"
 msgstr "لغو شد"
 
-#: admin/views/logs.php:43 includes/class-aipc-admin.php:81
+#: admin/views/logs.php includes/class-aipc-admin.php
 msgid "AI Logs"
 msgstr "گزارش‌های هوش مصنوعی"
 
-#: admin/views/logs.php:44
+#: admin/views/logs.php
 msgid "Every agent run: status, timing, tokens, per-step API calls and the full console log."
 msgstr "هر اجرای ایجنت: وضعیت، زمان‌بندی، توکن‌ها، فراخوانی‌های API هر مرحله و گزارش کامل کنسول."
 
-#: admin/views/logs.php:49
+#: admin/views/logs.php
 msgid "All logs cleared."
 msgstr "همه گزارش‌ها پاک شدند."
 
-#: admin/views/logs.php:51
+#: admin/views/logs.php
 msgid "Job deleted."
 msgstr "کار حذف شد."
 
-#: admin/views/logs.php:55
+#: admin/views/logs.php
 msgid "Summary"
 msgstr "خلاصه"
 
-#: admin/views/logs.php:57
+#: admin/views/logs.php
 msgid "total jobs"
 msgstr "مجموع کارها"
 
-#: admin/views/logs.php:58
+#: admin/views/logs.php
 msgid "successful"
 msgstr "موفق"
 
-#: admin/views/logs.php:59
+#: admin/views/logs.php
 msgid "failed"
 msgstr "ناموفق"
 
-#: admin/views/logs.php:61
+#: admin/views/logs.php
 msgid "tokens used"
 msgstr "توکن مصرف‌شده"
 
-#: admin/views/logs.php:65 includes/class-aipc-bale.php:546
+#: admin/views/logs.php includes/class-aipc-bale.php
 msgid "Usage per connection"
 msgstr "مصرف به تفکیک اتصال"
 
-#: admin/views/logs.php:70
+#: admin/views/logs.php
 msgid "Calls"
 msgstr "فراخوانی‌ها"
 
-#: admin/views/logs.php:71
+#: admin/views/logs.php
 msgid "Prompt tokens"
 msgstr "توکن پرامپت"
 
-#: admin/views/logs.php:72
+#: admin/views/logs.php
 msgid "Completion tokens"
 msgstr "توکن تولید"
 
-#: admin/views/logs.php:91
+#: admin/views/logs.php
 msgid "Jobs"
 msgstr "کارها"
 
-#: admin/views/logs.php:94
+#: admin/views/logs.php
 msgid "Delete ALL job logs? This cannot be undone."
 msgstr "همه گزارش‌های کار حذف شوند؟ این کار بازگشت‌پذیر نیست."
 
-#: admin/views/logs.php:94
+#: admin/views/logs.php
 msgid "Clear all logs"
 msgstr "پاک کردن همه گزارش‌ها"
 
-#: admin/views/logs.php:99
+#: admin/views/logs.php
 msgid "No jobs yet. Generate your first post!"
 msgstr "هنوز کاری ثبت نشده. اولین نوشته را تولید کنید!"
 
-#: admin/views/logs.php:104
+#: admin/views/logs.php
 msgid "Date"
 msgstr "تاریخ"
 
-#: admin/views/logs.php:105
+#: admin/views/logs.php
 msgid "Topic / title"
 msgstr "موضوع / عنوان"
 
-#: admin/views/logs.php:109
+#: admin/views/logs.php
 msgid "Tokens"
 msgstr "توکن‌ها"
 
-#: admin/views/logs.php:110
+#: admin/views/logs.php
 msgid "Duration"
 msgstr "مدت"
 
-#: admin/views/logs.php:131
+#: admin/views/logs.php
 msgid "Scheduled"
 msgstr "زمان‌بندی‌شده"
 
-#: admin/views/logs.php:143
+#: admin/views/logs.php
 msgid "Details"
 msgstr "جزئیات"
 
-#: admin/views/new-post.php:21 includes/class-aipc-admin.php:43 includes/class-aipc-admin.php:44
+#: admin/views/new-post.php includes/class-aipc-admin.php
 msgid "AI Post Creator"
 msgstr "سازنده پست با هوش مصنوعی"
 
-#: admin/views/new-post.php:22
+#: admin/views/new-post.php
 msgid "Agent mode: from a bare topic to a complete, SEO-ready post — step by step."
 msgstr "حالت ایجنت: از یک موضوع خام تا پست کامل و آماده سئو — گام به گام."
 
-#: admin/views/new-post.php:25
+#: admin/views/new-post.php admin/views/rewrite.php
 msgid "Default: %s"
 msgstr "پیش‌فرض: %s"
 
-#: admin/views/new-post.php:26
+#: admin/views/new-post.php
 msgid "Model: %s"
 msgstr "مدل: %s"
 
-#: admin/views/new-post.php:28
+#: admin/views/new-post.php admin/views/rewrite.php
 msgid "No connection configured"
 msgstr "اتصالی پیکربندی نشده است"
 
-#: admin/views/new-post.php:30 includes/class-aipc-admin.php:64 wp-ai-post-creator.php:71
+#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Connections"
 msgstr "اتصال‌ها"
 
-#: admin/views/new-post.php:31 admin/views/prompts.php:20 includes/class-aipc-admin.php:72 includes/class-aipc-admin.php:73 wp-ai-post-creator.php:72
+#: admin/views/new-post.php admin/views/prompts.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Prompts & Steps"
 msgstr "پرامپت‌ها و مراحل"
 
-#: admin/views/new-post.php:32 includes/class-aipc-admin.php:82 wp-ai-post-creator.php:73
+#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Logs"
 msgstr "گزارش‌ها"
 
-#: admin/views/new-post.php:33 includes/class-aipc-admin.php:100 wp-ai-post-creator.php:75
+#: admin/views/new-post.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Settings"
 msgstr "تنظیمات"
 
-#: admin/views/new-post.php:41 admin/views/schedule.php:42
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
 msgid "No AI connection configured."
 msgstr "هیچ اتصال هوش مصنوعی پیکربندی نشده است."
 
-#: admin/views/new-post.php:42 includes/class-aipc-assets.php:153
+#: admin/views/new-post.php includes/class-aipc-assets.php
 msgid "Add an OpenAI-compatible connection (URL + API key) to start generating posts."
 msgstr "برای شروع تولید نوشته‌ها، یک اتصال سازگار با OpenAI (نشانی + کلید API) اضافه کنید."
 
-#: admin/views/new-post.php:44 admin/views/schedule.php:43 includes/class-aipc-assets.php:154
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php includes/class-aipc-assets.php
 msgid "Open connections"
 msgstr "باز کردن اتصال‌ها"
 
-#: admin/views/new-post.php:53
+#: admin/views/new-post.php
 msgid "No site prompt configured."
 msgstr "پرامپت سایت تنظیم نشده است."
 
-#: admin/views/new-post.php:54
+#: admin/views/new-post.php
 msgid "Describe your site — what it is about, its goal and audience — so the agent can invent fitting topics."
 msgstr "سایت خود را توصیف کنید — درباره چیست، هدف و مخاطبانش کدامند — تا ایجنت بتواند موضوعات مناسب بسازد."
 
-#: admin/views/new-post.php:56
+#: admin/views/new-post.php
 msgid "Open settings"
 msgstr "باز کردن تنظیمات"
 
-#: admin/views/new-post.php:64 admin/views/schedule.php:151
+#: admin/views/new-post.php admin/views/schedule.php
 msgid "Topic (optional)"
 msgstr "موضوع (اختیاری)"
 
-#: admin/views/new-post.php:66
+#: admin/views/new-post.php
 msgid "Leave empty and the agent will invent a topic from the site prompt — or write your own idea here…"
 msgstr "خالی بگذارید تا ایجنت از روی پرامپت سایت موضوع بسازد — یا ایده خود را اینجا بنویسید…"
 
-#: admin/views/new-post.php:68
+#: admin/views/new-post.php
 msgid "The agent always picks one of your existing post categories and builds the topic from the site prompt."
 msgstr "ایجنت همیشه یکی از دسته‌بندی‌های موجود نوشته‌های شما را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد."
 
-#: admin/views/new-post.php:69
+#: admin/views/new-post.php
 msgid "The post is always saved as a draft for your review."
 msgstr "پست همیشه به‌صورت پیش‌نویس برای بازبینی شما ذخیره می‌شود."
 
-#: admin/views/new-post.php:70
+#: admin/views/new-post.php
 msgid "Each step uses the connection and prompt assigned under Prompts & Steps."
 msgstr "هر مرحله از اتصال و پرامپتِ تعیین‌شده در «پرامپت‌ها و مراحل» استفاده می‌کند."
 
-#: admin/views/new-post.php:74 admin/views/schedule.php:60
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
 msgid "Options"
 msgstr "گزینه‌ها"
 
-#: admin/views/new-post.php:74
+#: admin/views/new-post.php admin/views/rewrite.php
 msgid "tone, length, language, SEO…"
 msgstr "لحن، طول، زبان، سئو…"
 
-#: admin/views/new-post.php:78 admin/views/schedule.php:157
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
 msgid "Tone"
 msgstr "لحن"
 
-#: admin/views/new-post.php:82 admin/views/schedule.php:165
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
 msgid "Length"
 msgstr "طول"
 
-#: admin/views/new-post.php:86 admin/views/schedule.php:173
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
 msgid "Content language"
 msgstr "زبان محتوا"
 
-#: admin/views/new-post.php:90
+#: admin/views/new-post.php admin/views/rewrite.php
 msgid "Language (write its English name)"
 msgstr "زبان (نام انگلیسی آن را بنویسید)"
 
-#: admin/views/new-post.php:98 admin/views/schedule.php:196 includes/class-aipc-agent.php:1065
+#: admin/views/new-post.php admin/views/schedule.php includes/class-aipc-agent.php
 msgid "Featured image"
 msgstr "تصویر شاخص"
 
-#: admin/views/new-post.php:99
+#: admin/views/new-post.php admin/views/rewrite.php
 msgid "generate & attach a hero image"
 msgstr "ساخت و افزودن تصویر هیرو"
 
-#: admin/views/new-post.php:103 admin/views/schedule.php:197
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
 msgid "FAQ block"
 msgstr "بلوک پرسش‌های متداول"
 
-#: admin/views/new-post.php:104
+#: admin/views/new-post.php admin/views/rewrite.php
 msgid "answers + Google rich-results schema"
 msgstr "پاسخ‌ها + اسکیمای نتایج غنی گوگل"
 
-#: admin/views/new-post.php:108 admin/views/schedule.php:198 includes/class-aipc-post-builder.php:76
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php includes/class-aipc-post-builder.php
 msgid "Table of contents"
 msgstr "فهرست مطالب"
 
-#: admin/views/new-post.php:109
+#: admin/views/new-post.php admin/views/rewrite.php
 msgid "linked jump menu"
 msgstr "منوی پرشِ لینک‌شده"
 
-#: admin/views/new-post.php:115
+#: admin/views/new-post.php
 msgid "Generate post"
 msgstr "تولید پست"
 
-#: admin/views/new-post.php:116
+#: admin/views/new-post.php
 msgid "The agent plans, writes and assembles the post live — you can cancel anytime."
 msgstr "ایجنت به‌صورت زنده پست را برنامه‌ریزی، نگارش و مونتاژ می‌کند — در هر لحظه می‌توانید لغو کنید."
 
-#: admin/views/new-post.php:125
+#: admin/views/new-post.php admin/views/rewrite.php
 msgid "Agent console"
 msgstr "کنسول ایجنت"
 
-#: admin/views/new-post.php:138
+#: admin/views/new-post.php admin/views/rewrite.php
 msgid "Cancel agent"
 msgstr "لغو ایجنت"
 
-#: admin/views/new-post.php:139
+#: admin/views/new-post.php admin/views/rewrite.php
 msgid "Retry step"
 msgstr "تلاش دوباره برای این مرحله"
 
-#: admin/views/new-post.php:145
+#: admin/views/new-post.php
 msgid "Your post is ready!"
 msgstr "پست شما آماده است!"
 
-#: admin/views/new-post.php:151
+#: admin/views/new-post.php
 msgid "Create another"
 msgstr "ساخت پست جدید"
 
-#: admin/views/prompts.php:22
+#: admin/views/prompts.php
 msgid "Assign each pipeline step its own AI connection and edit its prompt template."
 msgstr "به هر مرحله از خط تولید، اتصال هوش مصنوعی اختصاصی بدهید و قالب پرامپت آن را ویرایش کنید."
 
-#: admin/views/prompts.php:24
+#: admin/views/prompts.php
 msgid "Default connection: %s"
 msgstr "اتصال پیش‌فرض: %s"
 
-#: admin/views/prompts.php:26
+#: admin/views/prompts.php
 msgid "No connection configured yet."
 msgstr "هنوز اتصالی پیکربندی نشده است."
 
-#: admin/views/prompts.php:33
+#: admin/views/prompts.php
 msgid "Prompts & assignments saved."
 msgstr "پرامپت‌ها و تخصیص‌ها ذخیره شدند."
 
-#: admin/views/prompts.php:120 admin/views/prompts.php:41
+#: admin/views/prompts.php
 msgid "Save all"
 msgstr "ذخیره همه"
 
-#: admin/views/prompts.php:42
+#: admin/views/prompts.php
 msgid "Tip: leaving a prompt exactly as its default keeps it in “default” mode (auto-improved on plugin updates)."
 msgstr "نکته: اگر پرامپتی دقیقاً مانند حالت پیش‌فرض بماند، در حالت «پیش‌فرض» می‌ماند و با به‌روزرسانی افزونه خودکار بهبود می‌یابد."
 
-#: admin/views/prompts.php:57
+#: admin/views/prompts.php
 msgid "custom"
 msgstr "سفارشی"
 
-#: admin/views/prompts.php:69
-msgid "AI connection for this step"
-msgstr "اتصال هوش مصنوعی این مرحله"
-
-#: admin/views/prompts.php:71
-msgid "Default (%s)"
-msgstr "پیش‌فرض (%s)"
-
-#: admin/views/prompts.php:80
+#: admin/views/prompts.php
 msgid "Reset"
 msgstr "بازنشانی"
 
-#: admin/views/prompts.php:83
+#: admin/views/prompts.php
 msgid "restore the default prompt on save"
 msgstr "بازگرداندن پرامپت پیش‌فرض هنگام ذخیره"
 
-#: admin/views/prompts.php:90
+#: admin/views/prompts.php
 msgid "Prompt template"
 msgstr "قالب پرامپت"
 
-#: admin/views/prompts.php:95
+#: admin/views/prompts.php
 msgid "A “respond ONLY with valid JSON” instruction is appended automatically."
 msgstr "دستورِ «فقط JSON معتبر برگردان» به‌طور خودکار اضافه می‌شود."
 
-#: admin/views/prompts.php:97
+#: admin/views/prompts.php
 msgid "A “respond with raw HTML only” instruction is appended automatically."
 msgstr "دستورِ «فقط HTML خام برگردان» به‌طور خودکار اضافه می‌شود."
 
-#: admin/views/prompts.php:102
+#: admin/views/prompts.php
 msgid "Available placeholders"
 msgstr "جای‌نگهدارهای موجود"
 
-#: admin/views/schedule.php:20
+#: admin/views/schedule.php
 msgid "Schedule saved."
 msgstr "زمان‌بندی ذخیره شد."
 
-#: admin/views/schedule.php:21
+#: admin/views/schedule.php
 msgid "Schedule deleted."
 msgstr "زمان‌بندی حذف شد."
 
-#: admin/views/schedule.php:22
+#: admin/views/schedule.php
 msgid "Schedule settings saved."
 msgstr "تنظیمات زمان‌بندی ذخیره شد."
 
-#: admin/views/schedule.php:23
+#: admin/views/schedule.php
 msgid "The agent just started — the console page is now running it."
 msgstr "ایجنت همین حالا شروع کرد — صفحهٔ کنسول در حال اجرای آن است."
 
-#: admin/views/schedule.php:24
+#: admin/views/schedule.php
 msgid "Could not start the agent. Check that a connection is configured."
 msgstr "شروع ایجنت ممکن نشد. بررسی کنید که یک اتصال پیکربندی شده باشد."
 
-#: admin/views/schedule.php:25
+#: admin/views/schedule.php
 msgid "Bale notification settings saved."
 msgstr "تنظیمات اطلاع‌رسانی بله ذخیره شد."
 
-#: admin/views/schedule.php:30
+#: admin/views/schedule.php
 msgid "AI Schedule & Notifications"
 msgstr "زمان‌بندی و اطلاع‌رسانی هوش مصنوعی"
 
-#: admin/views/schedule.php:37
+#: admin/views/schedule.php
 msgid "Let the agent write posts automatically at fixed times — and get a Bale message (image + summary + link) after every post is created."
 msgstr "بگذارید ایجنت در ساعات مشخص به‌طور خودکار نوشته بسازد — و بعد از ساخته‌شدن هر نوشته، پیامی در بله (تصویر + خلاصه + لینک) دریافت کنید."
 
-#: admin/views/schedule.php:48
+#: admin/views/schedule.php
 msgid "Automatic schedules"
 msgstr "زمان‌بندی‌های خودکار"
 
-#: admin/views/schedule.php:49
+#: admin/views/schedule.php
 msgid "Each entry starts one full agent run (a complete draft post) at the chosen time on the chosen days. The topic can be fixed — or left empty so the agent invents one from the site prompt."
 msgstr "هر زمان‌بندی در روزها و ساعت انتخاب‌شده، یک اجرای کامل ایجنت (یک پیش‌نویس کامل) را آغاز می‌کند. موضوع می‌تواند ثابت باشد — یا خالی بماند تا ایجنت از پرامپت سایت موضوعی بسازد."
 
-#: admin/views/schedule.php:52
+#: admin/views/schedule.php
 msgid "No schedules yet. Add your first one below — e.g. every day at 09:00."
 msgstr "هنوز زمان‌بندی‌ای وجود ندارد. اولین مورد را در پایین اضافه کنید — مثلاً هر روز ساعت ۰۹:۰۰."
 
-#: admin/views/schedule.php:183 admin/views/schedule.php:58
+#: admin/views/schedule.php
 msgid "Days"
 msgstr "روزها"
 
-#: admin/views/schedule.php:83
+#: admin/views/schedule.php
 msgid "Automatic (site prompt)"
 msgstr "خودکار (پرامپت سایت)"
 
-#: admin/views/schedule.php:199 admin/views/schedule.php:87
+#: admin/views/schedule.php
 msgid "Active"
 msgstr "فعال"
 
-#: admin/views/schedule.php:89
+#: admin/views/schedule.php
 msgid "Paused"
 msgstr "متوقف"
 
-#: admin/views/schedule.php:95
+#: admin/views/schedule.php
 msgid "Run now"
 msgstr "همین حالا اجرا کن"
 
-#: admin/views/schedule.php:100
+#: admin/views/schedule.php
 msgid "Delete this schedule?"
 msgstr "این زمان‌بندی حذف شود؟"
 
-#: admin/views/schedule.php:114
+#: admin/views/schedule.php
 msgid "Max scheduled posts per day"
 msgstr "حداکثر پست‌های زمان‌بندی‌شده در روز"
 
-#: admin/views/schedule.php:117
+#: admin/views/schedule.php
 msgid "0 = unlimited"
 msgstr "۰ = بی‌نهایت"
 
-#: admin/views/schedule.php:118
+#: admin/views/schedule.php
 msgid "Save"
 msgstr "ذخیره"
 
-#: admin/views/schedule.php:123
+#: admin/views/schedule.php
 msgid "Scheduled posts today: %1$d of %2$s"
 msgstr "پست‌های زمان‌بندی‌شدهٔ امروز: %1$d از %2$s"
 
-#: admin/views/schedule.php:137
+#: admin/views/schedule.php
 msgid "Edit schedule"
 msgstr "ویرایش زمان‌بندی"
 
-#: admin/views/schedule.php:137
+#: admin/views/schedule.php
 msgid "Add a new schedule"
 msgstr "افزودن زمان‌بندی جدید"
 
-#: admin/views/schedule.php:148
+#: admin/views/schedule.php
 msgid "Site timezone. The run starts within ~15 minutes of this time."
 msgstr "به وقت سایت. اجرا حداکثر ~۱۵ دقیقه بعد از این ساعت شروع می‌شود."
 
-#: admin/views/schedule.php:153
+#: admin/views/schedule.php
 msgid "Empty = invented from the site prompt"
 msgstr "خالی = ابداع از پرامپت سایت"
 
-#: admin/views/schedule.php:203
+#: admin/views/schedule.php
 msgid "Save schedule"
 msgstr "ذخیره زمان‌بندی"
 
-#: admin/views/schedule.php:205
+#: admin/views/schedule.php
 msgid "Cancel"
 msgstr "انصراف"
 
-#: admin/views/schedule.php:213
+#: admin/views/schedule.php
 msgid "Bale notifications"
 msgstr "اطلاع‌رسانی بله"
 
-#: admin/views/schedule.php:214
+#: admin/views/schedule.php
 msgid "After every generated post the agent can message a Bale chat with the featured image, the summary and the link to the article. Create a bot with @Bot_Father in Bale, paste its token here, and enter the chat ID of the person (or channel) that should receive the messages."
 msgstr "بعد از هر نوشتهٔ تولیدشده، ایجنت می‌تواند به یک گفتگوی بله پیام بفرستد شامل تصویر شاخص، خلاصه و لینک مقاله. با @Bot_Father در بله یک ربات بسازید، توکنش را اینجا بچسبانید و شناسهٔ گفتگوی شخص (یا کانال) دریافت‌کنندهٔ پیام‌ها را وارد کنید."
 
-#: admin/views/schedule.php:222
+#: admin/views/schedule.php
 msgid "Bot token"
 msgstr "توکن ربات"
 
-#: admin/views/schedule.php:228
+#: admin/views/schedule.php
 msgid "Chat IDs (one per line)"
 msgstr "شناسه‌های گفتگو (هر خط یک شناسه)"
 
-#: admin/views/schedule.php:231
+#: admin/views/schedule.php
 msgid "One chat ID per line — a person’s numeric ID or a @channel username. Send any message to your bot, then use the button below to detect it automatically."
 msgstr "هر خط یک شناسهٔ گفتگو — شناسهٔ عددی شخص یا نام کاربری @کانال. یک پیام به ربات‌تان بفرستید و سپس با دکمهٔ پایین آن را به‌طور خودکار شناسایی کنید."
 
-#: admin/views/schedule.php:234
+#: admin/views/schedule.php
 msgid "Periodic report"
 msgstr "گزارش دوره‌ای"
 
-#: admin/views/schedule.php:236
+#: admin/views/schedule.php
 msgid "Off"
 msgstr "خاموش"
 
-#: admin/views/schedule.php:237
+#: admin/views/schedule.php
 msgid "Daily"
 msgstr "روزانه"
 
-#: admin/views/schedule.php:238
+#: admin/views/schedule.php
 msgid "Weekly"
 msgstr "هفتگی"
 
-#: admin/views/schedule.php:240
+#: admin/views/schedule.php
 msgid "Reports are sent once per day/week at this time, after it has passed."
 msgstr "گزارش‌ها یک بار در روز/هفته پس از گذشت این ساعت ارسال می‌شوند."
 
-#: admin/views/schedule.php:243
+#: admin/views/schedule.php
 msgid "Report time"
 msgstr "ساعت گزارش"
 
-#: admin/views/schedule.php:247
+#: admin/views/schedule.php
 msgid "Report day (weekly reports)"
 msgstr "روز گزارش (گزارش‌های هفتگی)"
 
-#: admin/views/schedule.php:257
+#: admin/views/schedule.php
 msgid "Send a Bale message after every generated post"
 msgstr "بعد از هر نوشتهٔ تولیدشده، پیام بله ارسال شود"
 
-#: admin/views/schedule.php:261 admin/views/settings.php:144
+#: admin/views/schedule.php admin/views/settings.php
 msgid "Save settings"
 msgstr "ذخیره تنظیمات"
 
-#: admin/views/schedule.php:262
+#: admin/views/schedule.php
 msgid "Send test message"
 msgstr "ارسال پیام آزمایشی"
 
-#: admin/views/schedule.php:263
+#: admin/views/schedule.php
 msgid "Detect chat ID"
 msgstr "شناسایی شناسهٔ گفتگو"
 
-#: admin/views/schedule.php:270
+#: admin/views/schedule.php
 msgid "Cron status"
 msgstr "وضعیت کران"
 
-#: admin/views/schedule.php:276
+#: admin/views/schedule.php
 msgid "The scheduler runs every 15 minutes. Next tick: %1$s (site timezone: %2$s)."
 msgstr "زمان‌بند هر ۱۵ دقیقه یک‌بار اجرا می‌شود. اجرای بعدی: %1$s (منطقهٔ زمانی سایت: %2$s)."
 
-#: admin/views/schedule.php:282
+#: admin/views/schedule.php
 msgid "The cron event is not scheduled."
 msgstr "رویداد کران زمان‌بندی نشده است."
 
-#: admin/views/schedule.php:287
+#: admin/views/schedule.php
 msgid "WP-Cron is disabled on this site. Make sure a real server cron job calls wp-cron.php every few minutes, or the schedules will not fire:"
 msgstr "WP-Cron در این سایت غیرفعال است. مطمئن شوید یک کران واقعی سرور هر چند دقیقه wp-cron.php را صدا بزند، وگرنه زمان‌بندی‌ها اجرا نمی‌شوند:"
 
-#: admin/views/schedule.php:291
+#: admin/views/schedule.php
 msgid "Tip: for exact timing on busy or quiet sites alike, disable WP-Cron in wp-config.php and call wp-cron.php with a server cron job instead."
 msgstr "نکته: برای زمان‌بندی دقیق، WP-Cron را در wp-config.php غیرفعال کنید و wp-cron.php را با کران سرور فراخوانی کنید."
 
-#: admin/views/settings.php:16
+#: admin/views/settings.php
 msgid "AI Post Creator — Settings"
 msgstr "سازنده پست با هوش مصنوعی — تنظیمات"
 
-#: admin/views/settings.php:17
+#: admin/views/settings.php
 msgid "Content defaults. Providers, models and per-step prompts live under Connections and Prompts & Steps."
 msgstr "پیش‌فرض‌های محتوا. سرویس‌دهنده‌ها، مدل‌ها و پرامپت‌های هر مرحله در بخش «اتصال‌ها» و «پرامپت‌ها و مراحل» قرار دارند."
 
-#: admin/views/settings.php:25 admin/views/settings.php:28
+#: admin/views/settings.php
 msgid "Site prompt"
 msgstr "پرامپت سایت"
 
-#: admin/views/settings.php:32
+#: admin/views/settings.php
 msgid "e.g. A Persian cooking blog focused on quick weeknight dinners for busy families. Goal: practical, tested recipes with everyday ingredients. Warm, encouraging voice."
 msgstr "مثلاً: یک وبلاگ آشپزی فارسی درباره شام‌های سریع شب‌های هفته برای خانواده‌های پرمشغله. هدف: دستورهای عملی و آزموده با مواد روزمره. لحن گرم و دلگرم‌کننده."
 
-#: admin/views/settings.php:33
+#: admin/views/settings.php
 msgid "Tell the agent what this site is about: its purpose, audience and voice. Used to pick the category, invent topics and keep every sentence on-brand."
 msgstr "به ایجنت بگویید این سایت درباره چیست: هدف، مخاطب و لحن آن. این توضیح برای انتخاب دسته، ابداع موضوع و هم‌رنگ ماندن همه جمله‌ها با برند استفاده می‌شود."
 
-#: admin/views/settings.php:40
+#: admin/views/settings.php
 msgid "Content defaults"
 msgstr "پیش‌فرض‌های محتوا"
 
-#: admin/views/settings.php:43
+#: admin/views/settings.php
 msgid "Default language"
 msgstr "زبان پیش‌فرض"
 
-#: admin/views/settings.php:54
+#: admin/views/settings.php
 msgid "Default tone"
 msgstr "لحن پیش‌فرض"
 
-#: admin/views/settings.php:65
+#: admin/views/settings.php
 msgid "Default length"
 msgstr "طول پیش‌فرض"
 
-#: admin/views/settings.php:76
+#: admin/views/settings.php
 msgid "Extras"
 msgstr "گزینه‌های تکمیلی"
 
-#: admin/views/settings.php:81
+#: admin/views/settings.php
 msgid "Add a table of contents by default"
 msgstr "افزودن فهرست مطالب به‌صورت پیش‌فرض"
 
-#: admin/views/settings.php:85
+#: admin/views/settings.php
 msgid "Add an FAQ block with schema markup by default"
 msgstr "افزودن بلوک پرسش‌های متداول به‌همراه اسکیما به‌صورت پیش‌فرض"
 
-#: admin/views/settings.php:94
+#: admin/views/settings.php
 msgid "Featured images"
 msgstr "تصاویر شاخص"
 
-#: admin/views/settings.php:97
+#: admin/views/settings.php
 msgid "Enable image generation"
 msgstr "فعال‌سازی تولید تصویر"
 
-#: admin/views/settings.php:101
+#: admin/views/settings.php
 msgid "Let the agent generate a featured image (skipped gracefully if the provider does not support it)"
 msgstr "اجازه دهید ایجنت تصویر شاخص بسازد (اگر سرویس‌دهنده پشتیبانی نکند، این مرحله به‌آرامی رد می‌شود)"
 
-#: admin/views/settings.php:106
+#: admin/views/settings.php
 msgid "Image size"
 msgstr "اندازه تصویر"
 
-#: admin/views/settings.php:114
+#: admin/views/settings.php
 msgid "1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024. The image model itself is set per connection."
 msgstr "۱۷۹۲×۱۰۲۴ سربرگ عریض خوبی برای DALL·E 3 است؛ gpt-image-1 از ۱۵۳۶×۱۰۲۴ استفاده می‌کند. خودِ مدل تصویر به‌ازای هر اتصال تعیین می‌شود."
 
-#: admin/views/settings.php:121
+#: admin/views/settings.php
 msgid "Advanced"
 msgstr "پیشرفته"
 
-#: admin/views/settings.php:124
+#: admin/views/settings.php
 msgid "Extra system instructions"
 msgstr "دستورالعمل‌های سیستمی اضافی"
 
-#: admin/views/settings.php:128
+#: admin/views/settings.php
 msgid "e.g. Always address the reader as “you” and include practical examples."
 msgstr "مثلاً: همیشه مخاطب را با «شما» خطاب کن و مثال‌های کاربردی بیاور."
 
-#: admin/views/settings.php:129
+#: admin/views/settings.php
 msgid "Appended to every agent request (the {{extra}} placeholder of the system prompt)."
 msgstr "به همه درخواست‌های ایجنت افزوده می‌شود (جای‌نگهدار {{extra}} در پرامپت سیستمی)."
 
-#: admin/views/settings.php:133
+#: admin/views/settings.php
 msgid "Uninstall"
 msgstr "حذف افزونه"
 
-#: admin/views/settings.php:137
+#: admin/views/settings.php
 msgid "Delete all plugin data (settings, connections, jobs, SEO meta) when the plugin is uninstalled"
 msgstr "هنگام حذف افزونه، همه داده‌های آن (تنظیمات، اتصال‌ها، کارها، فراداده سئو) حذف شوند"
 
-#: includes/class-aipc-admin.php:54 includes/class-aipc-admin.php:55 wp-ai-post-creator.php:70
+#: admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "New AI Post"
 msgstr "پست جدید با هوش مصنوعی"
 
-#: includes/class-aipc-admin.php:90
+#: includes/class-aipc-admin.php
 msgid "AI Schedule"
 msgstr "زمان‌بندی هوش مصنوعی"
 
-#: includes/class-aipc-admin.php:91 wp-ai-post-creator.php:74
+#: includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Schedule"
 msgstr "زمان‌بندی"
 
-#: includes/class-aipc-admin.php:99
+#: includes/class-aipc-admin.php
 msgid "AI Settings"
 msgstr "تنظیمات هوش مصنوعی"
 
-#: includes/class-aipc-admin.php:134 includes/class-aipc-admin.php:146 includes/class-aipc-admin.php:158 includes/class-aipc-admin.php:170 includes/class-aipc-admin.php:192 includes/class-aipc-admin.php:199
+#: includes/class-aipc-admin.php
 msgid "You do not have permission to access this page."
 msgstr "شما اجازه دسترسی به این صفحه را ندارید."
 
-#: includes/class-aipc-admin.php:177 includes/class-aipc-agent.php:479 includes/class-aipc-agent.php:499
+#: includes/class-aipc-admin.php includes/class-aipc-agent.php
 msgid "Job not found or already cleaned up."
 msgstr "کار پیدا نشد یا قبلاً پاک‌سازی شده است."
 
-#: includes/class-aipc-admin.php:216
+#: includes/class-aipc-admin.php
 msgid "You do not have permission to do this."
 msgstr "شما اجازه انجام این کار را ندارید."
 
-#: includes/class-aipc-agent.php:409 includes/class-aipc-agent.php:89
+#: includes/class-aipc-agent.php
 msgid "No AI connection is configured yet. Add one under AI Post Creator → Connections."
 msgstr "هنوز اتصال هوش مصنوعی پیکربندی نشده است. یک مورد در «سازنده نوشته هوشمند ← اتصال‌ها» اضافه کنید."
 
-#: includes/class-aipc-agent.php:343
+#: includes/class-aipc-agent.php
 msgid "Unknown connection"
 msgstr "اتصال ناشناخته"
 
-#: includes/class-aipc-agent.php:431 includes/class-aipc-steps.php:45
+#: includes/class-aipc-steps.php
 msgid "Category & topic selection"
 msgstr "انتخاب دسته‌بندی و موضوع"
 
-#: includes/class-aipc-agent.php:432 includes/class-aipc-steps.php:83
+#: includes/class-aipc-steps.php
 msgid "Article outline"
 msgstr "طرح کلی مقاله"
 
-#: includes/class-aipc-agent.php:450
+#: includes/class-aipc-agent.php
 msgid "Agent started — suggested topic: “%s”"
 msgstr "ایجنت آغاز شد — موضوع پیشنهادی: «%s»"
 
-#: includes/class-aipc-agent.php:454
+#: includes/class-aipc-agent.php
 msgid "Agent started — the topic will be invented from the site prompt."
 msgstr "ایجنت آغاز شد — موضوع از روی پرامپت سایت ساخته می‌شود."
 
-#: includes/class-aipc-agent.php:458
+#: includes/class-aipc-agent.php
 msgid "Setup — default connection: %1$s (%2$s) · tone: %3$s · length: %4$s"
 msgstr "راه‌اندازی — اتصال پیش‌فرض: %1$s (%2$s) · لحن: %3$s · طول: %4$s"
 
-#: includes/class-aipc-agent.php:483
+#: includes/class-aipc-agent.php
 msgid "Agent cancelled by user."
 msgstr "ایجنت توسط کاربر لغو شد."
 
-#: includes/class-aipc-agent.php:510
+#: includes/class-aipc-agent.php
 msgid "Retrying failed step…"
 msgstr "در حال تلاش دوباره برای مرحله ناموفق…"
 
-#: includes/class-aipc-agent.php:533
+#: includes/class-aipc-agent.php
 msgid "Job not found or expired. Please start again."
 msgstr "کار پیدا نشد یا منقضی شده است. لطفاً دوباره شروع کنید."
 
-#: includes/class-aipc-agent.php:577
-msgid "Attempt %1$d/%2$d failed (%3$s) — retrying…"
-msgstr "تلاش %1$d از %2$d ناموفق بود (%3$s) — تلاش دوباره…"
-
-#: includes/class-aipc-agent.php:602
+#: includes/class-aipc-agent.php
 msgid "Step failed: %s"
 msgstr "مرحله ناموفق بود: %s"
 
-#: includes/class-aipc-agent.php:838
+#: includes/class-aipc-agent.php
 msgid "The model returned too little content for this step. Please retry."
 msgstr "مدل برای این مرحله محتوای بسیار کمی برگرداند. لطفاً دوباره تلاش کنید."
 
-#: includes/class-aipc-agent.php:917
+#: includes/class-aipc-agent.php
 msgid "Uncategorized"
 msgstr "دسته‌بندی نشده"
 
-#: includes/class-aipc-agent.php:923
+#: includes/class-aipc-agent.php
 msgid "(No site prompt configured — write for a general audience.)"
 msgstr "(پرامپت سایت تنظیم نشده — برای مخاطب عمومی بنویس.)"
 
-#: includes/class-aipc-agent.php:928
-msgid "The user suggests this topic: \"%s\" — build the article around it, adapted to the site context."
-msgstr "کاربر این موضوع را پیشنهاد داده: «%s» — مقاله را حول آن و متناسب با بافت سایت بساز."
-
-#: includes/class-aipc-agent.php:931
+#: includes/class-aipc-agent.php
 msgid "No topic given — invent the single best topic yourself. It must fit the site context AND the chosen category."
 msgstr "موضوعی داده نشده — خودت بهترین موضوع ممکن را ابداع کن. باید هم با بافت سایت و هم با دستهٔ انتخابی بخواند."
 
-#: includes/class-aipc-agent.php:945
+#: includes/class-aipc-agent.php
 msgid "The plan did not include a title. Please retry."
 msgstr "برنامه فاقد عنوان بود. لطفاً دوباره تلاش کنید."
 
-#: includes/class-aipc-agent.php:960
+#: includes/class-aipc-agent.php
 msgid "The model did not pick a category from the list. Retrying."
 msgstr "مدل دسته‌بندی را از فهرست انتخاب نکرد. دوباره تلاش می‌شود."
 
-#: includes/class-aipc-agent.php:977
+#: includes/class-aipc-agent.php
 msgid "Chosen category: %s"
 msgstr "دسته‌بندی انتخاب‌شده: %s"
 
-#: includes/class-aipc-agent.php:982
+#: includes/class-aipc-agent.php
 msgid "Audience: %s"
 msgstr "مخاطبان: %s"
 
-#: includes/class-aipc-agent.php:987
+#: includes/class-aipc-agent.php
 msgid "Primary keyword: %s"
 msgstr "کلیدواژه اصلی: %s"
 
-#: includes/class-aipc-agent.php:993
+#: includes/class-aipc-agent.php
 msgid "Secondary keywords: %s"
 msgstr "کلیدواژه‌های فرعی: %s"
 
-#: includes/class-aipc-agent.php:999
+#: includes/class-aipc-agent.php
 msgid "Working title: “%s”"
 msgstr "عنوان کاری: «%s»"
 
-#: includes/class-aipc-agent.php:1044
+#: includes/class-aipc-agent.php
 msgid "The outline was empty or malformed. Please retry."
 msgstr "طرح کلی خالی یا معیوب بود. لطفاً دوباره تلاش کنید."
 
-#: includes/class-aipc-agent.php:1050 includes/class-aipc-steps.php:108
+#: includes/class-aipc-agent.php includes/class-aipc-steps.php
 msgid "Introduction"
 msgstr "مقدمه"
 
-#: includes/class-aipc-agent.php:1058 includes/class-aipc-steps.php:162
+#: includes/class-aipc-agent.php includes/class-aipc-steps.php
 msgid "Conclusion & call to action"
 msgstr "نتیجه‌گیری و دعوت به اقدام"
 
-#: includes/class-aipc-agent.php:1059 includes/class-aipc-steps.php:182
+#: includes/class-aipc-agent.php includes/class-aipc-steps.php
 msgid "Copywriting & SEO pass"
 msgstr "مرحله کپی‌رایتینگ و سئو"
 
-#: includes/class-aipc-agent.php:1061 includes/class-aipc-steps.php:208
+#: includes/class-aipc-agent.php includes/class-aipc-steps.php
 msgid "FAQ section (rich results)"
 msgstr "بخش پرسش‌های متداول (نتایج غنی گوگل)"
 
-#: includes/class-aipc-agent.php:1063 includes/class-aipc-steps.php:221
+#: includes/class-aipc-agent.php includes/class-aipc-steps.php
 msgid "SEO summary for Rank Math"
 msgstr "خلاصه سئو برای Rank Math"
 
-#: includes/class-aipc-agent.php:1067
+#: includes/class-aipc-agent.php
 msgid "Save post"
 msgstr "ذخیره پست"
 
-#: includes/class-aipc-agent.php:1073
-msgid "Outline ready — %d section."
-msgid_plural "Outline ready — %d sections."
-msgstr[0] "طرح کلی آماده شد — %d بخش."
-msgstr[1] "طرح کلی آماده شد — %d بخش."
-
-#: includes/class-aipc-agent.php:1106
+#: includes/class-aipc-agent.php
 msgid "Introduction written (%d words)"
 msgstr "مقدمه نوشته شد (%d کلمه)"
 
-#: includes/class-aipc-agent.php:1162
+#: includes/class-aipc-agent.php
 msgid "Section written (%1$d words) — %2$s"
 msgstr "بخش نوشته شد (%1$d کلمه) — %2$s"
 
-#: includes/class-aipc-agent.php:1195
+#: includes/class-aipc-agent.php
 msgid "Conclusion written (%d words)"
 msgstr "نتیجه‌گیری نوشته شد (%d کلمه)"
 
-#: includes/class-aipc-agent.php:1241 includes/class-aipc-agent.php:1253 includes/class-aipc-agent.php:1258 includes/class-aipc-agent.php:1262
+#: includes/class-aipc-agent.php
 msgid "The revision lost the article structure. Retrying."
 msgstr "بازنویسی ساختار مقاله را از دست داد. دوباره تلاش می‌شود."
 
-#: includes/class-aipc-agent.php:1246
+#: includes/class-aipc-agent.php
 msgid "The revision came back much shorter than the draft. Retrying."
 msgstr "نسخه بازنویسی‌شده خیلی کوتاه‌تر از پیش‌نویس بود. دوباره تلاش می‌شود."
 
-#: includes/class-aipc-agent.php:1273
+#: includes/class-aipc-agent.php
 msgid "Copywriting & SEO pass complete (%1$d → %2$d words)"
 msgstr "مرحله کپی‌رایتینگ و سئو کامل شد (%1$d → %2$d کلمه)"
 
-#: includes/class-aipc-agent.php:1310
+#: includes/class-aipc-agent.php
 msgid "The FAQ step returned no usable questions. Please retry."
 msgstr "مرحله پرسش‌های متداول پرسش قابل استفاده‌ای برنگرداند. لطفاً دوباره تلاش کنید."
 
-#: includes/class-aipc-agent.php:1314 includes/class-aipc-post-builder.php:96
+#: includes/class-aipc-agent.php includes/class-aipc-post-builder.php
 msgid "Frequently asked questions"
 msgstr "پرسش‌های متداول"
 
-#: includes/class-aipc-agent.php:1320
+#: includes/class-aipc-agent.php
 msgid "FAQ ready — %d questions (FAQ schema will be added)"
 msgstr "پرسش‌های متداول آماده شد — %d پرسش (اسکیمای FAQ اضافه می‌شود)"
 
-#: includes/class-aipc-agent.php:1346
+#: includes/class-aipc-agent.php
 msgid "SEO metadata was incomplete. Please retry."
 msgstr "متادیتای سئو کامل نبود. لطفاً دوباره تلاش کنید."
 
-#: includes/class-aipc-agent.php:1364
+#: includes/class-aipc-agent.php
 msgid "SEO title: %s"
 msgstr "عنوان سئو: %s"
 
-#: includes/class-aipc-agent.php:1369
+#: includes/class-aipc-agent.php
 msgid "Rank Math summary: %s"
 msgstr "خلاصه Rank Math: %s"
 
-#: includes/class-aipc-agent.php:1374
+#: includes/class-aipc-agent.php
 msgid "Slug: /%s/"
 msgstr "نامک: /%s/"
 
-#: includes/class-aipc-agent.php:1380
+#: includes/class-aipc-agent.php
 msgid "Tags: %s"
 msgstr "برچسب‌ها: %s"
 
-#: includes/class-aipc-agent.php:1384
+#: includes/class-aipc-agent.php
 msgid "SEO metadata ready"
 msgstr "متادیتای سئو آماده شد"
 
-#: includes/class-aipc-agent.php:1397
+#: includes/class-aipc-agent.php
 msgid "Featured image disabled in settings — skipped."
 msgstr "تصویر شاخص در تنظیمات غیرفعال است — رد شد."
 
-#: includes/class-aipc-agent.php:1415
+#: includes/class-aipc-agent.php
 msgid "Generating featured image — prompt: %s"
 msgstr "در حال تولید تصویر شاخص — پرامپت: %s"
 
-#: includes/class-aipc-agent.php:1430
-msgid "Image generation failed (%s) — continuing without a featured image."
-msgstr "تولید تصویر ناموفق بود (%s) — بدون تصویر شاخص ادامه می‌دهیم."
-
-#: includes/class-aipc-agent.php:1444
+#: includes/class-aipc-agent.php
 msgid "Could not download the generated image — continuing without one."
 msgstr "دانلود تصویر تولیدشده ممکن نشد — بدون تصویر ادامه می‌دهیم."
 
-#: includes/class-aipc-agent.php:1456
+#: includes/class-aipc-agent.php
 msgid "Could not save the image to the media library (%s) — continuing without one."
 msgstr "ذخیره تصویر در کتابخانه رسانه ممکن نشد (%s) — بدون تصویر ادامه می‌دهیم."
 
-#: includes/class-aipc-agent.php:1469
+#: includes/class-aipc-agent.php
 msgid "Featured image saved to the media library (#%d)"
 msgstr "تصویر شاخص در کتابخانه رسانه ذخیره شد (#%d)"
 
-#: includes/class-aipc-agent.php:1510
+#: includes/class-aipc-agent.php
 msgid "Draft created: #%d"
 msgstr "پیش‌نویس ساخته شد: #%d"
 
-#: includes/class-aipc-agent.php:1515
+#: includes/class-aipc-agent.php
 msgid "Done — %1$d words · %2$d prompt + %3$d completion tokens"
 msgstr "تمام شد — %1$d کلمه · %2$d توکن ورودی + %3$d توکن خروجی"
 
-#: includes/class-aipc-api-client.php:124
+#: includes/class-aipc-api-client.php
 msgid "Could not reach the AI provider: %s"
 msgstr "اتصال به سرویس‌دهنده هوش مصنوعی ممکن نشد: %s"
 
-#: includes/class-aipc-api-client.php:141
+#: includes/class-aipc-api-client.php
 msgid "API error %1$d: %2$s"
 msgstr "خطای API %1$d: %2$s"
 
-#: includes/class-aipc-api-client.php:148
+#: includes/class-aipc-api-client.php
 msgid "The provider returned an invalid (non-JSON) response."
 msgstr "سرویس‌دهنده پاسخ نامعتبر (غیر JSON) برگرداند."
 
-#: includes/class-aipc-api-client.php:201
+#: includes/class-aipc-api-client.php
 msgid "API key or endpoint is not configured. Open Settings and connect a provider first."
 msgstr "کلید API یا نقطه اتصال پیکربندی نشده است. ابتدا از بخش تنظیمات یک سرویس‌دهنده متصل کنید."
 
-#: includes/class-aipc-api-client.php:241
+#: includes/class-aipc-api-client.php
 msgid "The model returned an empty response. Try again or lower the max tokens setting."
 msgstr "مدل پاسخ خالی برگرداند. دوباره تلاش کنید یا مقدار حداکثر توکن را کاهش دهید."
 
-#: includes/class-aipc-api-client.php:283
+#: includes/class-aipc-api-client.php
 msgid "The model did not return valid JSON. Try again, or switch to a stronger model."
 msgstr "مدل JSON معتبر برنگرداند. دوباره تلاش کنید یا به مدل قوی‌تری تغییر دهید."
 
-#: includes/class-aipc-api-client.php:330
+#: includes/class-aipc-api-client.php
 msgid "API key or endpoint is not configured."
 msgstr "کلید API یا نقطه اتصال پیکربندی نشده است."
 
-#: includes/class-aipc-api-client.php:379
+#: includes/class-aipc-api-client.php
 msgid "The provider returned no image data."
 msgstr "سرویس‌دهنده داده تصویری برنگرداند."
 
-#: includes/class-aipc-api-client.php:401
+#: includes/class-aipc-api-client.php
 msgid "Could not download the generated image."
 msgstr "دانلود تصویر تولیدشده ممکن نشد."
 
-#: includes/class-aipc-assets.php:143
+#: includes/class-aipc-assets.php
 msgid "Starting the agent…"
 msgstr "در حال راه‌اندازی ایجنت…"
 
-#: includes/class-aipc-assets.php:144
+#: includes/class-aipc-assets.php
 msgid "Resuming the running agent…"
 msgstr "از سرگیری ایجنتِ در حال اجرا…"
 
-#: includes/class-aipc-assets.php:145
+#: includes/class-aipc-assets.php
 msgid "Planning…"
 msgstr "در حال برنامه‌ریزی…"
 
-#: includes/class-aipc-assets.php:146
+#: includes/class-aipc-assets.php
 msgid "The agent is working — keep this tab open."
 msgstr "ایجنت در حال کار است — این برگه را باز نگه دارید."
 
-#: includes/class-aipc-assets.php:147
+#: includes/class-aipc-assets.php
 msgid "Connection error:"
 msgstr "خطای اتصال:"
 
-#: includes/class-aipc-assets.php:148
+#: includes/class-aipc-assets.php
 msgid "The request timed out."
 msgstr "مهلت درخواست به پایان رسید."
 
-#: includes/class-aipc-assets.php:149
+#: includes/class-aipc-assets.php
 msgid "The agent stopped with an error. You can retry the failed step."
 msgstr "ایجنت با خطا متوقف شد. می‌توانید مرحله ناموفق را دوباره اجرا کنید."
 
-#: includes/class-aipc-assets.php:150
+#: includes/class-aipc-assets.php
 msgid "Cancel the agent? The current progress will be kept but nothing new will run."
 msgstr "ایجنت لغو شود؟ پیشرفت فعلی حفظ می‌شود اما مرحله جدیدی اجرا نخواهد شد."
 
-#: includes/class-aipc-assets.php:151
+#: includes/class-aipc-assets.php
 msgid "Agent cancelled."
 msgstr "ایجنت لغو شد."
 
-#: includes/class-aipc-assets.php:152
+#: includes/class-aipc-assets.php
 msgid "No AI connection configured"
 msgstr "اتصال هوش مصنوعی پیکربندی نشده است"
 
-#: includes/class-aipc-assets.php:155
+#: includes/class-aipc-assets.php
 msgid "words"
 msgstr "کلمه"
 
-#: includes/class-aipc-assets.php:156
+#: includes/class-aipc-assets.php
 msgid "tokens"
 msgstr "توکن"
 
-#: includes/class-aipc-assets.php:157
+#: includes/class-aipc-assets.php
 msgid "s"
 msgstr "ثانیه"
 
-#: includes/class-aipc-assets.php:172
+#: includes/class-aipc-assets.php
 msgid "Sending test message…"
 msgstr "در حال ارسال پیام آزمایشی…"
 
-#: includes/class-aipc-assets.php:173
+#: includes/class-aipc-assets.php
 msgid "Test message sent — check Bale!"
 msgstr "پیام آزمایشی ارسال شد — بله را بررسی کنید!"
 
-#: includes/class-aipc-assets.php:174
+#: includes/class-aipc-assets.php
 msgid "Failed:"
 msgstr "ناموفق:"
 
-#: includes/class-aipc-assets.php:175
+#: includes/class-aipc-assets.php
 msgid "Detecting chat ID…"
 msgstr "در حال شناسایی شناسهٔ گفتگو…"
 
-#: includes/class-aipc-assets.php:176 includes/class-aipc-bale.php:270
+#: includes/class-aipc-assets.php includes/class-aipc-bale.php
 msgid "No messages found. Send any message to your bot in Bale first, then try again."
 msgstr "پیامی یافت نشد. ابتدا یک پیام به ربات‌تان در بله بفرستید و دوباره تلاش کنید."
 
-#: includes/class-aipc-assets.php:177
+#: includes/class-aipc-assets.php
 msgid "Chat ID detected: %s"
 msgstr "شناسهٔ گفتگو شناسایی شد: %s"
 
-#: includes/class-aipc-assets.php:178
+#: includes/class-aipc-assets.php
 msgid "Enter a bot token first."
 msgstr "ابتدا توکن ربات را وارد کنید."
 
-#: includes/class-aipc-assets.php:179
+#: includes/class-aipc-assets.php
 msgid "Enter at least one chat ID."
 msgstr "حداقل یک شناسهٔ گفتگو وارد کنید."
 
-#: includes/class-aipc-assets.php:194
+#: includes/class-aipc-assets.php
 msgid "Testing connection…"
 msgstr "در حال تست اتصال…"
 
-#: includes/class-aipc-assets.php:195
+#: includes/class-aipc-assets.php
 msgid "Connection successful!"
 msgstr "اتصال موفق بود!"
 
-#: includes/class-aipc-assets.php:196
+#: includes/class-aipc-assets.php
 msgid "Connection successful (model list not supported by this provider)."
 msgstr "اتصال موفق بود (این سرویس‌دهنده فهرست مدل‌ها را ارائه نمی‌دهد)."
 
-#: includes/class-aipc-assets.php:197
+#: includes/class-aipc-assets.php
 msgid "Connection successful — %d models found."
 msgstr "اتصال موفق — %d مدل پیدا شد."
 
-#: includes/class-aipc-assets.php:198
+#: includes/class-aipc-assets.php
 msgid "Connection failed:"
 msgstr "اتصال ناموفق بود:"
 
-#: includes/class-aipc-assets.php:199
+#: includes/class-aipc-assets.php
 msgid "Loading models…"
 msgstr "در حال بارگذاری مدل‌ها…"
 
-#: includes/class-aipc-assets.php:200
+#: includes/class-aipc-assets.php
 msgid "%d models loaded — pick one in the list."
 msgstr "%d مدل بارگذاری شد — یکی را از فهرست انتخاب کنید."
 
-#: includes/class-aipc-assets.php:201
+#: includes/class-aipc-assets.php
 msgid "Could not load the model list:"
 msgstr "بارگذاری فهرست مدل‌ها ممکن نشد:"
 
-#: includes/class-aipc-bale.php:171
+#: includes/class-aipc-bale.php
 msgid "Bale bot token is not configured."
 msgstr "توکن ربات بله پیکربندی نشده است."
 
-#: includes/class-aipc-bale.php:186
+#: includes/class-aipc-bale.php
 msgid "Could not reach Bale: %s"
 msgstr "ارتباط با بله برقرار نشد: %s"
 
-#: includes/class-aipc-bale.php:198
+#: includes/class-aipc-bale.php
 msgid "Bale API error: %s"
 msgstr "خطای API بله: %s"
 
-#: includes/class-aipc-bale.php:216
+#: includes/class-aipc-bale.php
 msgid "Bale chat ID is not configured."
 msgstr "شناسهٔ گفتگوی بله پیکربندی نشده است."
 
-#: includes/class-aipc-bale.php:284
+#: includes/class-aipc-bale.php
 msgid "Test message from AI Post Creator — your Bale connection works!"
 msgstr "پیام آزمایشی از AI Post Creator — اتصال بله شما کار می‌کند!"
 
-#: includes/class-aipc-bale.php:328
+#: includes/class-aipc-bale.php
 msgid "New AI post is ready"
 msgstr "نوشتهٔ جدید هوش مصنوعی آماده است"
 
-#: includes/class-aipc-bale.php:334
+#: includes/class-aipc-bale.php
 msgid "%d words · saved as a draft"
 msgstr "%d واژه · به‌صورت پیش‌نویس ذخیره شد"
 
-#: includes/class-aipc-bale.php:375
+#: includes/class-aipc-bale.php
 msgid "Bale notification sent (image, summary and link)."
 msgstr "اطلاع‌رسانی بله ارسال شد (تصویر، خلاصه و لینک)."
 
-#: includes/class-aipc-bale.php:379
+#: includes/class-aipc-bale.php
 msgid "Bale notification sent to %d chats (image, summary and link)."
 msgstr "اطلاع‌رسانی بله برای %d گفتگو ارسال شد (تصویر، خلاصه و لینک)."
 
-#: includes/class-aipc-bale.php:386
+#: includes/class-aipc-bale.php
 msgid "Bale notification sent to %1$d of %2$d chats."
 msgstr "اطلاع‌رسانی بله برای %1$d از %2$d گفتگو ارسال شد."
 
-#: includes/class-aipc-bale.php:393
+#: includes/class-aipc-bale.php
 msgid "Bale notification failed: %s"
 msgstr "اطلاع‌رسانی بله ناموفق بود: %s"
 
-#: includes/class-aipc-bale.php:394
+#: includes/class-aipc-bale.php
 msgid "unknown error"
 msgstr "خطای ناشناخته"
 
-#: includes/class-aipc-bale.php:510
+#: includes/class-aipc-bale.php
 msgid "Daily report"
 msgstr "گزارش روزانه"
 
-#: includes/class-aipc-bale.php:511
+#: includes/class-aipc-bale.php
 msgid "Weekly report"
 msgstr "گزارش هفتگی"
 
-#: includes/class-aipc-bale.php:518
+#: includes/class-aipc-bale.php
 msgid "No runs in this period."
 msgstr "در این بازه اجرایی ثبت نشده است."
 
-#: includes/class-aipc-bale.php:522
+#: includes/class-aipc-bale.php
 msgid "Jobs: %1$d (✅ %2$d · ❌ %3$d)"
 msgstr "کارها: %1$d (✅ %2$d · ❌ %3$d)"
 
-#: includes/class-aipc-bale.php:529
+#: includes/class-aipc-bale.php
 msgid "Drafts created: %d"
 msgstr "پیش‌نویس‌های ساخته‌شده: %d"
 
-#: includes/class-aipc-bale.php:534
+#: includes/class-aipc-bale.php
 msgid "Tokens: %1$s prompt + %2$s completion"
 msgstr "توکن‌ها: %1$s پرامپت + %2$s تولید"
 
-#: includes/class-aipc-bale.php:550
+#: includes/class-aipc-bale.php
 msgid "• %1$s — %2$d calls · %3$s tokens"
 msgstr "• %1$s — %2$d فراخوانی · %3$s توکن"
 
-#: includes/class-aipc-connections.php:270
+#: includes/class-aipc-connections.php
 msgid "Main connection"
 msgstr "اتصال اصلی"
 
-#: includes/class-aipc-post-builder.php:160
+#: includes/class-aipc-post-builder.php
 msgid "Generated content was empty."
 msgstr "محتوای تولیدشده خالی بود."
 
-#: includes/class-aipc-post-builder.php:267
+#: includes/class-aipc-post-builder.php
 msgid "Empty image data."
 msgstr "داده تصویر خالی است."
 
-#: includes/class-aipc-rest.php:204
+#: includes/class-aipc-rest.php
 msgid "Enter a Bale bot token and chat ID first."
 msgstr "ابتدا توکن ربات بله و شناسهٔ گفتگو را وارد کنید."
 
-#: includes/class-aipc-rest.php:245
+#: includes/class-aipc-rest.php
 msgid "Enter a Bale bot token first."
 msgstr "ابتدا توکن ربات بله را وارد کنید."
 
-#: includes/class-aipc-rest.php:287
+#: includes/class-aipc-rest.php
 msgid "Enter a valid API base URL first."
 msgstr "ابتدا یک نشانی پایه معتبر API وارد کنید."
 
-#: includes/class-aipc-scheduler.php:50
+#: includes/class-aipc-scheduler.php
 msgid "Every 15 minutes (AI Post Creator)"
 msgstr "هر ۱۵ دقیقه (AI Post Creator)"
 
-#: includes/class-aipc-scheduler.php:435
+#: includes/class-aipc-scheduler.php
 msgid "Schedule entry not found."
 msgstr "زمان‌بندی یافت نشد."
 
-#: includes/class-aipc-settings.php:80
+#: includes/class-aipc-settings.php
 msgid "Professional"
 msgstr "حرفه‌ای"
 
-#: includes/class-aipc-settings.php:81
+#: includes/class-aipc-settings.php
 msgid "Friendly"
 msgstr "صمیمی"
 
-#: includes/class-aipc-settings.php:82
+#: includes/class-aipc-settings.php
 msgid "Casual"
 msgstr "خودمانی"
 
-#: includes/class-aipc-settings.php:83
+#: includes/class-aipc-settings.php
 msgid "Expert / technical"
 msgstr "متخصص / فنی"
 
-#: includes/class-aipc-settings.php:84
+#: includes/class-aipc-settings.php
 msgid "Persuasive"
 msgstr "متقاعدکننده"
 
-#: includes/class-aipc-settings.php:85
+#: includes/class-aipc-settings.php
 msgid "Storytelling"
 msgstr "داستان‌سرایی"
 
-#: includes/class-aipc-settings.php:86
+#: includes/class-aipc-settings.php
 msgid "Humorous"
 msgstr "طنزآمیز"
 
-#: includes/class-aipc-settings.php:87
+#: includes/class-aipc-settings.php
 msgid "Neutral"
 msgstr "بی‌طرف"
 
-#: includes/class-aipc-settings.php:98
+#: includes/class-aipc-settings.php
 msgid "Short — ~600 words"
 msgstr "کوتاه — حدود ۶۰۰ کلمه"
 
-#: includes/class-aipc-settings.php:99
+#: includes/class-aipc-settings.php
 msgid "Medium — ~1,200 words"
 msgstr "متوسط — حدود ۱٬۲۰۰ کلمه"
 
-#: includes/class-aipc-settings.php:100
+#: includes/class-aipc-settings.php
 msgid "Long — ~2,200 words"
 msgstr "بلند — حدود ۲٬۲۰۰ کلمه"
 
-#: includes/class-aipc-settings.php:129
+#: includes/class-aipc-settings.php
 msgid "Persian (Farsi)"
 msgstr "فارسی"
 
-#: includes/class-aipc-settings.php:130
+#: includes/class-aipc-settings.php
 msgid "English"
 msgstr "انگلیسی"
 
-#: includes/class-aipc-settings.php:131
+#: includes/class-aipc-settings.php
 msgid "Arabic"
 msgstr "عربی"
 
-#: includes/class-aipc-settings.php:132
+#: includes/class-aipc-settings.php
 msgid "Turkish"
 msgstr "ترکی"
 
-#: includes/class-aipc-settings.php:133
+#: includes/class-aipc-settings.php
 msgid "German"
 msgstr "آلمانی"
 
-#: includes/class-aipc-settings.php:134
+#: includes/class-aipc-settings.php
 msgid "French"
 msgstr "فرانسوی"
 
-#: includes/class-aipc-settings.php:135
+#: includes/class-aipc-settings.php
 msgid "Spanish"
 msgstr "اسپانیایی"
 
-#: includes/class-aipc-settings.php:136
+#: includes/class-aipc-settings.php
 msgid "Russian"
 msgstr "روسی"
 
-#: includes/class-aipc-settings.php:137
+#: includes/class-aipc-settings.php
 msgid "Portuguese"
 msgstr "پرتغالی"
 
-#: includes/class-aipc-settings.php:138
+#: includes/class-aipc-settings.php
 msgid "Hindi"
 msgstr "هندی"
 
-#: includes/class-aipc-settings.php:139
+#: includes/class-aipc-settings.php
 msgid "Chinese"
 msgstr "چینی"
 
-#: includes/class-aipc-settings.php:140
+#: includes/class-aipc-settings.php
 msgid "Other…"
 msgstr "سایر…"
 
-#: includes/class-aipc-steps.php:32
+#: includes/class-aipc-steps.php
 msgid "System prompt (all steps)"
 msgstr "پرامپت سیستمی (همه مراحل)"
 
-#: includes/class-aipc-steps.php:34
+#: includes/class-aipc-steps.php
 msgid "Base identity sent with every request, before the step prompt."
 msgstr "هویت پایه که پیش از پرامپت هر مرحله، همراه همه درخواست‌ها ارسال می‌شود."
 
-#: includes/class-aipc-steps.php:103 includes/class-aipc-steps.php:128 includes/class-aipc-steps.php:177 includes/class-aipc-steps.php:216 includes/class-aipc-steps.php:239 includes/class-aipc-steps.php:37 includes/class-aipc-steps.php:78
+#: includes/class-aipc-steps.php
 msgid "Content language name"
 msgstr "نام زبان محتوا"
 
-#: includes/class-aipc-steps.php:38
+#: includes/class-aipc-steps.php
 msgid "Selected tone label"
 msgstr "برچسب لحن انتخابی"
 
-#: includes/class-aipc-steps.php:39
+#: includes/class-aipc-steps.php
 msgid "Site prompt context (empty when not configured)"
 msgstr "بافت پرامپت سایت (خالی وقتی تنظیم نشده باشد)"
 
-#: includes/class-aipc-steps.php:40
+#: includes/class-aipc-steps.php
 msgid "Extra system instructions from the settings"
 msgstr "دستورالعمل‌های سیستمی اضافه از تنظیمات"
 
-#: includes/class-aipc-steps.php:47
+#: includes/class-aipc-steps.php
 msgid "Picks one of the existing categories and builds the topic from the site prompt."
 msgstr "یکی از دسته‌های موجود را برمی‌گزیند و موضوع را از پرامپت سایت می‌سازد."
 
-#: includes/class-aipc-steps.php:73
+#: includes/class-aipc-steps.php
 msgid "The site prompt (or a fallback note)"
 msgstr "پرامپت سایت (یا یادداشت جایگزین)"
 
-#: includes/class-aipc-steps.php:74
+#: includes/class-aipc-steps.php
 msgid "Bullet list of the site’s post categories"
 msgstr "فهرست گلوله‌ای دسته‌های نوشته سایت"
 
-#: includes/class-aipc-steps.php:75
+#: includes/class-aipc-steps.php
 msgid "The user’s topic hint, or “invent one” instruction"
 msgstr "راهنمای موضوع کاربر، یا دستورِ «موضوعی ابداع کن»"
 
-#: includes/class-aipc-steps.php:76
+#: includes/class-aipc-steps.php
 msgid "Target word count for the article"
 msgstr "تعداد واژه هدف مقاله"
 
-#: includes/class-aipc-steps.php:102 includes/class-aipc-steps.php:77
+#: includes/class-aipc-steps.php
 msgid "Planned section count"
 msgstr "تعداد بخش‌های برنامه‌ریزی‌شده"
 
-#: includes/class-aipc-steps.php:85
+#: includes/class-aipc-steps.php
 msgid "Builds the section outline for the chosen length."
 msgstr "طرح بخش‌ها را برای طول انتخابی می‌سازد."
 
-#: includes/class-aipc-steps.php:124 includes/class-aipc-steps.php:151 includes/class-aipc-steps.php:175 includes/class-aipc-steps.php:200 includes/class-aipc-steps.php:215 includes/class-aipc-steps.php:237 includes/class-aipc-steps.php:254 includes/class-aipc-steps.php:97
+#: includes/class-aipc-steps.php
 msgid "Working title"
 msgstr "عنوان کاری"
 
-#: includes/class-aipc-steps.php:98
+#: includes/class-aipc-steps.php
 msgid "Topic brief from the plan step"
 msgstr "خلاصه موضوع از مرحله برنامه‌ریزی"
 
-#: includes/class-aipc-steps.php:126 includes/class-aipc-steps.php:155 includes/class-aipc-steps.php:201 includes/class-aipc-steps.php:99
+#: includes/class-aipc-steps.php
 msgid "Primary keyword"
 msgstr "کلیدواژه اصلی"
 
-#: includes/class-aipc-steps.php:100
+#: includes/class-aipc-steps.php
 msgid "Unique angle from the plan step"
 msgstr "زاویه یگانه از مرحله برنامه‌ریزی"
 
-#: includes/class-aipc-steps.php:101
+#: includes/class-aipc-steps.php
 msgid "Target word count"
 msgstr "تعداد واژه هدف"
 
-#: includes/class-aipc-steps.php:110
+#: includes/class-aipc-steps.php
 msgid "Writes the article introduction."
 msgstr "مقدمه مقاله را می‌نویسد."
 
-#: includes/class-aipc-steps.php:125
+#: includes/class-aipc-steps.php
 msgid "Topic brief"
 msgstr "خلاصه موضوع"
 
-#: includes/class-aipc-steps.php:127
+#: includes/class-aipc-steps.php
 msgid "Target audience"
 msgstr "مخاطب هدف"
 
-#: includes/class-aipc-steps.php:133
+#: includes/class-aipc-steps.php
 msgid "Body section"
 msgstr "بخش بدنه"
 
-#: includes/class-aipc-steps.php:135
+#: includes/class-aipc-steps.php
 msgid "Writes one body section (runs once per outline section)."
 msgstr "یک بخش بدنه را می‌نویسد (برای هر بخشِ طرح یک‌بار اجرا می‌شود)."
 
-#: includes/class-aipc-steps.php:149
+#: includes/class-aipc-steps.php
 msgid "Current section number (1-based)"
 msgstr "شماره بخش جاری (از ۱)"
 
-#: includes/class-aipc-steps.php:150
+#: includes/class-aipc-steps.php
 msgid "Total section count"
 msgstr "تعداد کل بخش‌ها"
 
-#: includes/class-aipc-steps.php:152
+#: includes/class-aipc-steps.php
 msgid "This section’s heading"
 msgstr "تیتر همین بخش"
 
-#: includes/class-aipc-steps.php:153
+#: includes/class-aipc-steps.php
 msgid "What this section must cover"
 msgstr "چه چیزی باید در این بخش پوشش داده شود"
 
-#: includes/class-aipc-steps.php:154
+#: includes/class-aipc-steps.php
 msgid "Word target for this section"
 msgstr "تعداد واژه هدف این بخش"
 
-#: includes/class-aipc-steps.php:156
+#: includes/class-aipc-steps.php
 msgid "Secondary keywords line (or empty)"
 msgstr "سطر کلیدواژه‌های ثانویه (یا خالی)"
 
-#: includes/class-aipc-steps.php:157
+#: includes/class-aipc-steps.php
 msgid "Previous section tail for continuity (or empty)"
 msgstr "انتهای بخش پیشین برای پیوستگی (یا خالی)"
 
-#: includes/class-aipc-steps.php:164
+#: includes/class-aipc-steps.php
 msgid "Writes the conclusion with a call to action."
 msgstr "نتیجه‌گیری را همراه با دعوت به اقدام می‌نویسد."
 
-#: includes/class-aipc-steps.php:176
+#: includes/class-aipc-steps.php
 msgid "Bullet list of section headings"
 msgstr "فهرست گلوله‌ای تیتر بخش‌ها"
 
-#: includes/class-aipc-steps.php:184
+#: includes/class-aipc-steps.php
 msgid "Revises the whole draft for copy quality, SEO and originality."
 msgstr "کل پیش‌نویس را از نظر کیفیت کپی‌رایتینگ، سئو و اصالت بازبینی و اصلاح می‌کند."
 
-#: includes/class-aipc-steps.php:202
+#: includes/class-aipc-steps.php
 msgid "Section count"
 msgstr "تعداد بخش‌ها"
 
-#: includes/class-aipc-steps.php:203
+#: includes/class-aipc-steps.php
 msgid "The full assembled draft HTML"
 msgstr "HTML کامل پیش‌نویس مونتاژشده"
 
-#: includes/class-aipc-steps.php:210
+#: includes/class-aipc-steps.php
 msgid "Writes the FAQ questions and answers."
 msgstr "پرسش‌ها و پاسخ‌های متداول را می‌نویسد."
 
-#: includes/class-aipc-steps.php:223
+#: includes/class-aipc-steps.php
 msgid "Meta title/description (the Rank Math summary), slug, excerpt and tags."
 msgstr "عنوان/توضیح متا (خلاصه Rank Math)، نامک، چکیده و برچسب‌ها."
 
-#: includes/class-aipc-steps.php:238
+#: includes/class-aipc-steps.php
 msgid "Opening of the finished introduction"
 msgstr "آغاز مقدمه تمام‌شده"
 
-#: includes/class-aipc-steps.php:244
+#: includes/class-aipc-steps.php
 msgid "Image prompt"
 msgstr "پرامپت تصویر"
 
-#: includes/class-aipc-steps.php:246
+#: includes/class-aipc-steps.php
 msgid "Turns the topic + Rank Math summary into an image-generation prompt."
 msgstr "موضوع + خلاصه Rank Math را به پرامپت تولید تصویر تبدیل می‌کند."
 
-#: includes/class-aipc-steps.php:255
+#: includes/class-aipc-steps.php
 msgid "Rank Math summary (meta description)"
 msgstr "خلاصه Rank Math (توضیح متا)"
 
-#: includes/class-aipc-steps.php:260
+#: includes/class-aipc-steps.php
 msgid "Featured image (image API)"
 msgstr "تصویر شاخص (API تصویر)"
 
-#: includes/class-aipc-steps.php:262
+#: includes/class-aipc-steps.php
 msgid "Calls the image API of the assigned connection and saves the result to the media library. No prompt — the image model and size come from the connection and settings."
 msgstr "API تصویرِ اتصال تخصیص‌یافته را فراخوانی می‌کند و نتیجه را در کتابخانه رسانه ذخیره می‌کند. پرامپتی ندارد — مدل و اندازه تصویر از اتصال و تنظیمات می‌آیند."
 
+#: includes/class-aipc-bale.php
+msgid "%d words · published"
+msgstr "%d کلمه · منتشر شد"
+
+#: admin/views/prompts.php
+msgid "%d-step fallback chain"
+msgstr "زنجیرهٔ جایگزین %d مرحله‌ای"
+
+#: includes/class-aipc-agent.php
+msgid "(No published posts yet.)"
+msgstr "(هنوز هیچ نوشتهٔ منتشرشده‌ای وجود ندارد.)"
+
+#: admin/views/schedule.php
+msgid "15–10080 minutes (up to a week). Only used with “Publish later”."
+msgstr "۱۵ تا ۱۰۰۸۰ دقیقه (حداکثر یک هفته). فقط با گزینهٔ «انتشار بعداً» استفاده می‌شود."
+
+#: includes/class-aipc-bale.php
+msgid "A new AI post is published"
+msgstr "یک نوشتهٔ جدید هوش مصنوعی منتشر شد"
+
+#: admin/views/prompts.php
+msgid "AI connections chain (fallback order)"
+msgstr "زنجیرهٔ اتصال‌های هوش مصنوعی (ترتیب جایگزینی)"
+
+#: admin/views/new-post.php admin/views/schedule.php
+msgid "After creation"
+msgstr "پس از ساخت"
+
+#: admin/views/rewrite.php
+msgid "Agent mode: give an existing post a full copywriting + SEO refresh — fresher copy, better structure, full originality."
+msgstr "حالت ایجنت: یک نوشتهٔ موجود را کاملاً بازنویسی و از نظر سئو و اصالت متن بهینه می‌کند — متن تازه‌تر، ساختار بهتر."
+
+#: includes/class-aipc-bale.php
+msgid "An existing post was rewritten by the AI"
+msgstr "یک نوشتهٔ موجود توسط هوش مصنوعی بازنویسی شد"
+
+#: includes/class-aipc-steps.php
+msgid "Analyzes the existing post (rewrite mode) and builds the improved outline."
+msgstr "نوشتهٔ موجود را تحلیل می‌کند (حالت بازنویسی) و طرح بهبودیافته می‌سازد."
+
+#: includes/class-aipc-agent.php
+msgid "Attempt %1$d/%2$d on “%3$s” failed (%4$s) — retrying…"
+msgstr "تلاش %1$d از %2$d روی «%3$s» ناموفق بود (%4$s) — تلاش دوباره…"
+
+#: includes/class-aipc-steps.php
+msgid "Bullet list of existing article titles (avoid duplicating them)"
+msgstr "فهرست نشانگی از عناوین نوشته‌های موجود (برای پرهیز از تکرار)"
+
+#: includes/class-aipc-steps.php
+msgid "Bullet list of existing articles usable as internal links"
+msgstr "فهرست نشانگی از نوشته‌های موجود که قابل استفاده به‌عنوان لینک داخلی هستند"
+
+#: includes/class-aipc-steps.php
+msgid "Bullet list of this site’s other articles usable as internal links"
+msgstr "فهرست نشانگی از سایر نوشته‌های این سایت که قابل استفاده به‌عنوان لینک داخلی هستند"
+
+#: includes/class-aipc-agent.php
+msgid "Connection “%1$s” failed after %2$d attempts — switching to “%3$s”."
+msgstr "اتصال «%1$s» پس از %2$d تلاش ناموفق بود — تغییر به «%3$s»."
+
+#: admin/views/rewrite.php
+msgid "Create your first post with the agent, then come back to refresh it anytime."
+msgstr "نخستین نوشتهٔ خود را با ایجنت بسازید، بعد هر وقت خواستید برای تازه‌سازی برگردید."
+
+#: admin/views/new-post.php
+msgid "Delay (minutes)"
+msgstr "تأخیر (دقیقه)"
+
+#: admin/views/schedule.php
+msgid "Delay before publishing (minutes)"
+msgstr "تأخیر پیش از انتشار (دقیقه)"
+
+#: admin/views/prompts.php
+msgid "Hold Ctrl / Cmd to pick several. Each selected connection gets its own retry budget; when one keeps failing the agent automatically switches to the next. Empty = default connection."
+msgstr "با نگه‌داشتن Ctrl / Cmd چند مورد را انتخاب کنید. هر اتصال انتخاب‌شده بودجهٔ تلاش مجدد خود را دارد؛ اگر یکی مدام شکست بخورد، ایجنت خودکار به بعدی سوئیچ می‌کند. خالی = اتصال پیش‌فرض."
+
+#: includes/class-aipc-agent.php
+msgid "Image generation failed on every connection — continuing without a featured image."
+msgstr "تولید تصویر در همهٔ اتصال‌ها ناموفق بود — ادامه بدون تصویر شاخص."
+
+#: includes/class-aipc-steps.php
+msgid "Improved title from the analysis step"
+msgstr "عنوان بهبودیافته از مرحلهٔ تحلیل"
+
+#: includes/class-aipc-agent.php
+msgid "Improved title: “%s”"
+msgstr "عنوان بهبودیافته: «%s»"
+
+#: includes/class-aipc-steps.php
+msgid "Improvement notes from the analysis step"
+msgstr "یادداشت‌های بهبود از مرحلهٔ تحلیل"
+
+#: includes/class-aipc-steps.php
+msgid "Internal linking list chosen in the plan step (or empty)"
+msgstr "فهرست لینک‌دهی داخلی که در مرحلهٔ برنامه‌ریزی انتخاب شده (یا خالی)"
+
+#: includes/class-aipc-agent.php
+msgid "Internal linking: %d existing articles will be linked"
+msgstr "لینک‌دهی داخلی: %d نوشتهٔ موجود لینک می‌شوند"
+
+#: includes/class-aipc-steps.php
+msgid "Internal links to weave in (or empty)"
+msgstr "لینک‌های داخلی که باید در متن بیایند (یا خالی)"
+
+#: admin/views/rewrite.php
+msgid "New featured image"
+msgstr "تصویر شاخص جدید"
+
+#: admin/views/rewrite.php
+msgid "No posts found."
+msgstr "هیچ نوشته‌ای یافت نشد."
+
+#: admin/views/settings.php
+msgid "Optional: one URL per line (max 8). The agent reads each site’s RSS feed while planning and grounds the topic and facts in their latest articles."
+msgstr "اختیاری: هر خط یک نشانی (حداکثر ۸ مورد). ایجنت هنگام برنامه‌ریزی فید RSS هر سایت را می‌خواند و موضوع و واقعیت‌ها را با آخرین مطالبشان هم‌راستا می‌کند."
+
+#: includes/class-aipc-assets.php
+msgid "Pick a post to rewrite first."
+msgstr "اول یک نوشته برای بازنویسی انتخاب کنید."
+
+#: includes/class-aipc-agent.php includes/class-aipc-scheduler.php
+msgid "Post published."
+msgstr "نوشته منتشر شد."
+
+#: includes/class-aipc-agent.php
+msgid "Post published: #%d"
+msgstr "نوشته منتشر شد: #%d"
+
+#: admin/views/rewrite.php
+msgid "Post to rewrite"
+msgstr "نوشتهٔ موردنظر برای بازنویسی"
+
+#: includes/class-aipc-agent.php
+msgid "Post updated: #%d"
+msgstr "نوشته به‌روزرسانی شد: #%d"
+
+#: admin/views/schedule.php
+msgid "Posts are always created as drafts first; pick what happens next."
+msgstr "نوشته‌ها همیشه ابتدا به‌صورت پیش‌نویس ساخته می‌شوند؛ انتخاب کنید بعدش چه اتفاقی بیفتد."
+
+#: admin/views/schedule.php
+msgid "Publish"
+msgstr "انتشار"
+
+#: includes/class-aipc-steps.php
+msgid "Reminder of the internal links that must survive the revision"
+msgstr "یادآوری لینک‌های داخلی که باید در بازنویسی حفظ شوند"
+
+#: includes/class-aipc-steps.php
+msgid "Research items from the configured source sites (or empty)"
+msgstr "مطالب پژوهشی از سایت‌های مبدأ پیکربندی‌شده (یا خالی)"
+
+#: admin/views/settings.php
+msgid "Research source sites"
+msgstr "سایت‌های مبدأ پژوهش"
+
+#: admin/views/rewrite.php
+msgid "Rewrite another"
+msgstr "بازنویسی نوشتهٔ دیگر"
+
+#: includes/class-aipc-agent.php
+msgid "Rewrite complete (%1$d → %2$d words)"
+msgstr "بازنویسی کامل شد (%1$d → %2$d کلمه)"
+
+#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+msgid "Rewrite post"
+msgstr "بازنویسی نوشته"
+
+#: includes/class-aipc-steps.php
+msgid "Rewrite: analysis & new outline"
+msgstr "بازنویسی: تحلیل و طرح جدید"
+
+#: includes/class-aipc-steps.php
+msgid "Rewrite: full revision pass"
+msgstr "بازنویسی: مرحلهٔ کامل بازبینی"
+
+#: includes/class-aipc-steps.php
+msgid "Rewrites the whole existing post: fresher copy, better SEO, full originality."
+msgstr "کل نوشتهٔ موجود را بازنویسی می‌کند: متن تازه‌تر، سئوی بهتر، اصالت کامل."
+
+#: includes/class-aipc-agent.php
+msgid "Rewriting the existing post “%1$s” (#%2$d) — fresh copy, better SEO, full originality."
+msgstr "در حال بازنویسی نوشتهٔ موجود «%1$s» (#%2$d) — متن تازه، سئوی بهتر، اصالت کامل."
+
+#: includes/class-aipc-agent.php
+msgid "Scheduled to publish at %s."
+msgstr "زمان‌بندی شد تا در %s منتشر شود."
+
+#: includes/class-aipc-steps.php
+msgid "Section count from the analysis step"
+msgstr "تعداد بخش‌ها از مرحلهٔ تحلیل"
+
+#: admin/views/rewrite.php
+msgid "The agent analyzes the post, rewrites every paragraph (keeping the facts and the links), refreshes the SEO metadata and can generate a new featured image."
+msgstr "ایجنت نوشته را تحلیل می‌کند، هر پاراگراف را بازنویسی می‌کند (با حفظ واقعیت‌ها و لینک‌ها)، متادیتای سئو را تازه می‌کند و می‌تواند تصویر شاخص جدیدی بسازد."
+
+#: admin/views/rewrite.php
+msgid "The agent rewrites the post live — you can cancel anytime."
+msgstr "ایجنت نوشته را زنده بازنویسی می‌کند — هر لحظه می‌توانید لغو کنید."
+
+#: includes/class-aipc-steps.php
+msgid "The current content of the post being rewritten"
+msgstr "محتوای فعلی نوشته‌ای که بازنویسی می‌شود"
+
+#: includes/class-aipc-agent.php
+msgid "The image prompt step failed."
+msgstr "مرحلهٔ پرامپت تصویر ناموفق بود."
+
+#: admin/views/rewrite.php
+msgid "The post is updated in place — its status, author, address and category stay untouched."
+msgstr "نوشته درجا به‌روزرسانی می‌شود — وضعیت، نویسنده، نشانی و دستهٔ آن دست‌نخورده می‌ماند."
+
+#: includes/class-aipc-agent.php includes/class-aipc-post-builder.php
+msgid "The post to rewrite was not found."
+msgstr "نوشته‌ای که باید بازنویسی شود پیدا نشد."
+
+#: includes/class-aipc-agent.php
+msgid "The rewrite analysis did not include a title. Please retry."
+msgstr "تحلیل بازنویسی شامل عنوان نبود. دوباره تلاش کنید."
+
+#: includes/class-aipc-agent.php
+msgid "The rewrite analysis returned no usable outline. Please retry."
+msgstr "تحلیل بازنویسی طرح قابل‌استفاده‌ای برنگرداند. دوباره تلاش کنید."
+
+#: includes/class-aipc-agent.php
+msgid "The rewrite came back much shorter than the original. Retrying."
+msgstr "نتیجهٔ بازنویسی خیلی کوتاه‌تر از نسخهٔ اصلی شد. تلاش دوباره."
+
+#: includes/class-aipc-agent.php
+msgid "The rewrite lost the article structure. Retrying."
+msgstr "بازنویسی ساختار مقاله را از دست داد. تلاش دوباره."
+
+#: includes/class-aipc-agent.php
+msgid "The user suggests this topic: \"%s\" — build the article around it, adapted to the site context."
+msgstr "کاربر این موضوع را پیشنهاد داده: «%s» — مقاله را حول آن و متناسب با زمینهٔ سایت بساز."
+
+#: includes/class-aipc-steps.php
+msgid "Title of the post being rewritten"
+msgstr "عنوان نوشته‌ای که بازنویسی می‌شود"
+
+#: includes/class-aipc-agent.php
+msgid "Update post"
+msgstr "به‌روزرسانی نوشته"
+
+#: includes/class-aipc-agent.php
+msgid "You are not allowed to edit this post."
+msgstr "شما اجازهٔ ویرایش این نوشته را ندارید."
+
+#: admin/views/rewrite.php
+msgid "Your post was rewritten!"
+msgstr "نوشتهٔ شما بازنویسی شد!"
+
+#: admin/views/rewrite.php
+msgid "— pick a post —"
+msgstr "— یک نوشته انتخاب کنید —"
+
+#: admin/views/schedule.php
+msgid "⏱ +%d min"
+msgstr "⏱ +%d دقیقه"
+
+#: admin/views/new-post.php admin/views/schedule.php
+msgid "⏱ Publish later"
+msgstr "⏱ انتشار بعداً"
+
+#: admin/views/schedule.php
+msgid "📝 Draft"
+msgstr "📝 پیش‌نویس"
+
+#: admin/views/new-post.php
+msgid "📝 Keep as draft"
+msgstr "📝 پیش‌نویس بماند"
+
+#: admin/views/schedule.php
+msgid "🚀 Immediately"
+msgstr "🚀 بلافاصله"
+
+#: admin/views/new-post.php admin/views/schedule.php
+msgid "🚀 Publish immediately"
+msgstr "🚀 انتشار بلافاصله"
+
+#: includes/class-aipc-agent.php
+msgid "Outline ready — %d section."
+msgid_plural "Outline ready — %d sections."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-aipc-agent.php
+msgid "Rewrite plan ready — %d section."
+msgid_plural "Rewrite plan ready — %d sections."
+msgstr[0] ""
+msgstr[1] ""

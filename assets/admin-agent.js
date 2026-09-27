@@ -16,6 +16,10 @@
 	var el = {
 		wrap: document.getElementById('aipc-form-card'),
 		topic: document.getElementById('aipc-topic'),
+		postSelect: document.getElementById('aipc-rewrite-post'),
+		publishMode: document.getElementById('aipc-publish-mode'),
+		publishDelay: document.getElementById('aipc-publish-delay'),
+		publishDelayField: document.getElementById('aipc-publish-delay-field'),
 		tone: document.getElementById('aipc-tone'),
 		length: document.getElementById('aipc-length'),
 		language: document.getElementById('aipc-language'),
@@ -240,8 +244,9 @@
 	/* ------------------------------------------------------------------ */
 
 	function collectArgs() {
-		return {
+		var args = {
 			topic: el.topic ? el.topic.value.trim() : '',
+			post_id: el.postSelect ? el.postSelect.value : '',
 			tone: el.tone ? el.tone.value : '',
 			length: el.length ? el.length.value : '',
 			language: el.language ? el.language.value : '',
@@ -250,6 +255,21 @@
 			faq: !!(el.optFaq && el.optFaq.checked),
 			toc: !!(el.optToc && el.optToc.checked)
 		};
+		if (CFG.extraArgs) {
+			Object.keys(CFG.extraArgs).forEach(function (key) {
+				args[key] = CFG.extraArgs[key];
+			});
+		}
+		if (el.publishMode && el.publishMode.value !== 'draft') {
+			args.publish_mode = el.publishMode.value;
+			if (el.publishMode.value === 'delay' && el.publishDelay) {
+				args.publish_delay = parseInt(el.publishDelay.value, 10) || 60;
+			}
+		}
+		if (args.mode === 'rewrite' && !args.post_id) {
+			return null;
+		}
+		return args;
 	}
 
 	function resumeAgent(jobId) {
@@ -266,8 +286,19 @@
 		loop();
 	}
 
+	function bindPublishToggle() {
+		if (!el.publishMode || !el.publishDelayField) { return; }
+		el.publishMode.addEventListener('change', function () {
+			el.publishDelayField.classList.toggle('aipc-hidden', el.publishMode.value !== 'delay');
+		});
+	}
+
 	function startAgent() {
 		var args = collectArgs();
+		if (!args) {
+			log('error', t('needPost'));
+			return;
+		}
 
 		state.t0 = Date.now();
 		state.since = 0;
@@ -392,6 +423,7 @@
 
 	fillSelects();
 	bindEvents();
+	bindPublishToggle();
 
 	// Adopt a job handed over by another screen (e.g. Schedule → Run now).
 	if (CFG.resumeJobId) {

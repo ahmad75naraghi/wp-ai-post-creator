@@ -80,6 +80,7 @@ if ( is_wp_error( $activate_result ) ) {
 update_option( 'aipc_settings', array_merge( AIPC_Settings::defaults(), array(
 	'content_language' => 'fa',
 	'site_prompt'      => 'یک وبلاگ فارسی درباره باغبانی خانگی و کشاورزی شهری برای مبتدیان.',
+	'source_sites'     => 'https://news.invalid',
 ) ) );
 
 // Two connections: one for chat, one dedicated to images.
@@ -186,7 +187,8 @@ echo json_encode( array(
 	'chat_conn'      => $chat_conn['id'],
 	'image_conn'     => $image_conn['id'],
 	'faq_custom'     => AIPC_Steps::has_custom_prompt( 'faq' ),
-	'image_step'     => AIPC_Steps::get( 'image' )['connection'],
+	'image_step'     => AIPC_Steps::get( 'image' )['connections'],
+	'source_sites'   => AIPC_Settings::all()['source_sites'],
 	'categories'     => wp_list_pluck( get_categories( array( 'hide_empty' => false ) ), 'name' ),
 	'bale'           => array(
 		'enabled'    => (int) AIPC_Bale::all()['enabled'],

@@ -33,6 +33,16 @@ $aipc = AIPC_Settings::all();
 						<p class="description"><?php esc_html_e( 'Tell the agent what this site is about: its purpose, audience and voice. Used to pick the category, invent topics and keep every sentence on-brand.', 'wp-ai-post-creator' ); ?></p>
 					</td>
 				</tr>
+				<tr>
+					<th scope="row"><label for="aipc-source-sites"><?php esc_html_e( 'Research source sites', 'wp-ai-post-creator' ); ?></label></th>
+					<td>
+						<textarea id="aipc-source-sites" rows="3" class="large-text code"
+							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[source_sites]"
+							placeholder="https://example.com/news
+https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Optional: one URL per line (max 8). The agent reads each site’s RSS feed while planning and grounds the topic and facts in their latest articles.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
 			</table>
 		</section>
 

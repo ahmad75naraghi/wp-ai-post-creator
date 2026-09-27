@@ -44,11 +44,19 @@ $aipc_msg      = isset( $_GET['aipc_msg'] ) ? sanitize_key( wp_unslash( $_GET['a
 
 		<?php foreach ( $aipc_registry as $aipc_step => $aipc_meta ) : ?>
 			<?php
-			$aipc_cfg     = AIPC_Steps::get( $aipc_step );
-			$aipc_value   = AIPC_Steps::has_custom_prompt( $aipc_step ) ? $aipc_cfg['prompt'] : $aipc_meta['prompt'];
-			$aipc_is_img  = 'image' === $aipc_meta['kind'];
-			$aipc_is_sys  = 'system' === $aipc_meta['kind'];
-			?>
+		$aipc_cfg     = AIPC_Steps::get( $aipc_step );
+		$aipc_value   = AIPC_Steps::has_custom_prompt( $aipc_step ) ? $aipc_cfg['prompt'] : $aipc_meta['prompt'];
+		$aipc_is_img  = 'image' === $aipc_meta['kind'];
+		$aipc_is_sys  = 'system' === $aipc_meta['kind'];
+		$aipc_chain   = isset( $aipc_cfg['connections'] ) && is_array( $aipc_cfg['connections'] ) ? $aipc_cfg['connections'] : array();
+		$aipc_chain_names = array();
+		foreach ( $aipc_chain as $aipc_cid ) {
+			$aipc_cc = AIPC_Connections::get( $aipc_cid );
+			if ( $aipc_cc ) {
+				$aipc_chain_names[] = $aipc_cc['name'];
+			}
+		}
+		?>
 			<section class="aipc-card aipc-step-card">
 				<div class="aipc-step-head">
 					<h2><?php echo esc_html( $aipc_meta['label'] ); ?></h2>
@@ -56,8 +64,11 @@ $aipc_msg      = isset( $_GET['aipc_msg'] ) ? sanitize_key( wp_unslash( $_GET['a
 					<?php if ( AIPC_Steps::has_custom_prompt( $aipc_step ) ) : ?>
 						<span class="aipc-chip aipc-chip-custom">✎ <?php esc_html_e( 'custom', 'wp-ai-post-creator' ); ?></span>
 					<?php endif; ?>
-					<?php if ( ! $aipc_is_sys && ! empty( $aipc_cfg['connection'] ) ) : ?>
-						<span class="aipc-chip aipc-chip-custom">🔌 <?php echo esc_html( AIPC_Connections::get( $aipc_cfg['connection'] ) ? AIPC_Connections::get( $aipc_cfg['connection'] )['name'] : '' ); ?></span>
+					<?php if ( ! $aipc_is_sys && ! empty( $aipc_chain_names ) ) : ?>
+						<span class="aipc-chip aipc-chip-custom">🔌 <?php echo esc_html( implode( ' → ', $aipc_chain_names ) ); ?></span>
+						<?php if ( count( $aipc_chain_names ) > 1 ) : ?>
+							<span class="aipc-chip aipc-chip-custom">🛡 <?php echo esc_html( sprintf( /* translators: %d: number of connections */ __( '%d-step fallback chain', 'wp-ai-post-creator' ), count( $aipc_chain_names ) ) ); ?></span>
+						<?php endif; ?>
 					<?php endif; ?>
 				</div>
 
@@ -66,13 +77,13 @@ $aipc_msg      = isset( $_GET['aipc_msg'] ) ? sanitize_key( wp_unslash( $_GET['a
 				<div class="aipc-grid">
 					<?php if ( ! $aipc_is_sys ) : ?>
 						<div class="aipc-field">
-							<label><?php esc_html_e( 'AI connection for this step', 'wp-ai-post-creator' ); ?></label>
-							<select class="aipc-select" name="steps[<?php echo esc_attr( $aipc_step ); ?>][connection]">
-								<option value=""><?php echo esc_html( sprintf( /* translators: %s: default connection name */ __( 'Default (%s)', 'wp-ai-post-creator' ), $aipc_default ? $aipc_default['name'] : '—' ) ); ?></option>
+							<label><?php esc_html_e( 'AI connections chain (fallback order)', 'wp-ai-post-creator' ); ?></label>
+							<select class="aipc-select" name="steps[<?php echo esc_attr( $aipc_step ); ?>][connections][]" multiple size="<?php echo min( 4, max( 2, count( $aipc_conns ) + 1 ) ); ?>">
 								<?php foreach ( $aipc_conns as $aipc_conn ) : ?>
-									<option value="<?php echo esc_attr( $aipc_conn['id'] ); ?>" <?php selected( $aipc_cfg['connection'], $aipc_conn['id'] ); ?>><?php echo esc_html( $aipc_conn['name'] ); ?></option>
+									<option value="<?php echo esc_attr( $aipc_conn['id'] ); ?>" <?php selected( true, in_array( $aipc_conn['id'], $aipc_chain, true ) ); ?>><?php echo esc_html( $aipc_conn['name'] ); ?></option>
 								<?php endforeach; ?>
 							</select>
+							<p class="description"><?php esc_html_e( 'Hold Ctrl / Cmd to pick several. Each selected connection gets its own retry budget; when one keeps failing the agent automatically switches to the next. Empty = default connection.', 'wp-ai-post-creator' ); ?></p>
 						</div>
 					<?php endif; ?>
 					<?php if ( ! $aipc_is_img ) : ?>

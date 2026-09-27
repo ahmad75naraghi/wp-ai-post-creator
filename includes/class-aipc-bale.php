@@ -25,6 +25,7 @@ final class AIPC_Bale {
 	 */
 	public static function register() {
 		add_action( 'aipc_post_created', array( __CLASS__, 'notify' ), 10, 2 );
+		add_action( 'aipc_post_published', array( __CLASS__, 'notify_published' ), 10, 2 );
 	}
 
 	/**
@@ -323,17 +324,36 @@ final class AIPC_Bale {
 			$summary = mb_substr( $summary, 0, 400 ) . '…';
 		}
 
-		$words = AIPC_Agent::count_words( $post->post_content );
+		$words  = AIPC_Agent::count_words( $post->post_content );
+		$status = get_post_status( $post_id );
 
-		$text = '✍️ ' . __( 'New AI post is ready', 'wp-ai-post-creator' ) . "\n\n"
-			. $title . "\n\n"
-			. $summary . "\n\n"
-			. '🔗 ' . get_permalink( $post_id ) . "\n\n"
-			. '📊 ' . sprintf(
+		// Pick the intro line for the run mode and final status.
+		$job = AIPC_Agent::instance()->get_job( $job_id );
+		if ( $job && 'rewrite' === ( isset( $job['mode'] ) ? $job['mode'] : 'new' ) ) {
+			$intro = '♻️ ' . __( 'An existing post was rewritten by the AI', 'wp-ai-post-creator' );
+		} elseif ( 'publish' === $status ) {
+			$intro = '🎉 ' . __( 'A new AI post is published', 'wp-ai-post-creator' );
+		} else {
+			$intro = '✍️ ' . __( 'New AI post is ready', 'wp-ai-post-creator' );
+		}
+
+		$footer = ( 'publish' === $status )
+			? sprintf(
+				/* translators: %d: word count. */
+				__( '%d words · published', 'wp-ai-post-creator' ),
+				$words
+			)
+			: sprintf(
 				/* translators: %d: word count. */
 				__( '%d words · saved as a draft', 'wp-ai-post-creator' ),
 				$words
 			);
+
+		$text = $intro . "\n\n"
+			. $title . "\n\n"
+			. $summary . "\n\n"
+			. '🔗 ' . get_permalink( $post_id ) . "\n\n"
+			. '📊 ' . $footer;
 
 		$photo = '';
 		$thumb = get_post_thumbnail_id( $post_id );
@@ -393,6 +413,34 @@ final class AIPC_Bale {
 				__( 'Bale notification failed: %s', 'wp-ai-post-creator' ),
 				$first_error ? $first_error->get_error_message() : __( 'unknown error', 'wp-ai-post-creator' )
 			), 'warn' );
+		}
+	}
+
+	/**
+	 * Notify every chat that a delayed-scheduled post has just been published.
+	 *
+	 * @param int    $post_id Post id.
+	 * @param string $job_id  Job id.
+	 * @return void
+	 */
+	public static function notify_published( $post_id, $job_id ) {
+		$cfg        = self::all();
+		$recipients = self::recipients( $cfg );
+		if ( empty( $cfg['enabled'] ) || '' === $cfg['token'] || empty( $recipients ) ) {
+			return;
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return;
+		}
+
+		$text = '🎉 ' . __( 'A new AI post is published', 'wp-ai-post-creator' ) . "\n\n"
+			. get_the_title( $post ) . "\n\n"
+			. '🔗 ' . get_permalink( $post_id );
+
+		foreach ( $recipients as $chat_id ) {
+			self::send_message( $cfg['token'], $chat_id, $text );
 		}
 	}
 

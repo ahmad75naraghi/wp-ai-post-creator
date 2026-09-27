@@ -299,7 +299,25 @@ final class AIPC_REST {
 	public static function start( $request ) {
 		$topic = trim( (string) $request->get_param( 'topic' ) );
 
-		$job = AIPC_Agent::instance()->create_job( $topic, $request->get_params() );
+		$args = array(
+			'tone'            => $request->get_param( 'tone' ),
+			'length'          => $request->get_param( 'length' ),
+			'language'        => $request->get_param( 'language' ),
+			'language_custom' => $request->get_param( 'language_custom' ),
+			'image'           => $request->get_param( 'image' ),
+			'faq'             => $request->get_param( 'faq' ),
+			'toc'             => $request->get_param( 'toc' ),
+			'mode'            => $request->get_param( 'mode' ),
+			'post_id'         => $request->get_param( 'post_id' ),
+		);
+
+		// Auto-publishing from the console requires the publish capability.
+		if ( current_user_can( 'publish_posts' ) ) {
+			$args['publish_mode']  = $request->get_param( 'publish_mode' );
+			$args['publish_delay'] = $request->get_param( 'publish_delay' );
+		}
+
+		$job = AIPC_Agent::instance()->create_job( $topic, $args );
 		if ( is_wp_error( $job ) ) {
 			return new WP_Error( $job->get_error_code(), $job->get_error_message(), array( 'status' => 400 ) );
 		}

@@ -36,6 +36,7 @@ final class AIPC_Scheduler {
 	public static function register() {
 		add_filter( 'cron_schedules', array( __CLASS__, 'cron_schedules' ) );
 		add_action( self::CRON_HOOK, array( __CLASS__, 'tick' ) );
+		add_action( 'aipc_publish_post', array( __CLASS__, 'publish_post' ), 10, 2 );
 	}
 
 	/**
@@ -173,13 +174,28 @@ final class AIPC_Scheduler {
 			$language = $s['content_language'];
 		}
 
+		$publish = isset( $in['publish'] ) ? sanitize_key( $in['publish'] ) : 'draft';
+		if ( ! in_array( $publish, array( 'draft', 'now', 'delay' ), true ) ) {
+			$publish = 'draft';
+		}
+
+		$delay = isset( $in['publish_delay'] ) ? absint( $in['publish_delay'] ) : 60;
+		if ( $delay < 15 ) {
+			$delay = 15;
+		}
+		if ( $delay > 10080 ) {
+			$delay = 10080;
+		}
+
 		return array(
-			'id'      => isset( $in['id'] ) ? sanitize_key( $in['id'] ) : '',
-			'time'    => $time,
-			'days'    => $days,
-			'enabled' => empty( $in['enabled'] ) ? 0 : 1,
-			'topic'   => mb_substr( sanitize_text_field( isset( $in['topic'] ) ? $in['topic'] : '' ), 0, 400 ),
-			'opts'    => array(
+			'id'            => isset( $in['id'] ) ? sanitize_key( $in['id'] ) : '',
+			'time'          => $time,
+			'days'          => $days,
+			'enabled'       => empty( $in['enabled'] ) ? 0 : 1,
+			'topic'         => mb_substr( sanitize_text_field( isset( $in['topic'] ) ? $in['topic'] : '' ), 0, 400 ),
+			'publish'       => $publish,
+			'publish_delay' => $delay,
+			'opts'          => array(
 				'tone'     => $tone,
 				'length'   => $length,
 				'language' => $language,
@@ -434,7 +450,12 @@ final class AIPC_Scheduler {
 		if ( ! $entry ) {
 			return new WP_Error( 'aipc_schedule', __( 'Schedule entry not found.', 'wp-ai-post-creator' ) );
 		}
-		return AIPC_Agent::instance()->create_job( $entry['topic'], $entry['opts'], $source );
+
+		$opts = $entry['opts'];
+		$opts['publish_mode']  = isset( $entry['publish'] ) ? $entry['publish'] : 'draft';
+		$opts['publish_delay'] = isset( $entry['publish_delay'] ) ? $entry['publish_delay'] : 60;
+
+		return AIPC_Agent::instance()->create_job( $entry['topic'], $opts, $source );
 	}
 
 	/**
@@ -465,6 +486,41 @@ final class AIPC_Scheduler {
 			}
 		}
 		return $state;
+	}
+
+	/**
+	 * Cron callback: publish a delayed-scheduled post.
+	 *
+	 * @param int    $post_id Post id.
+	 * @param string $job_id  Job id.
+	 * @return void
+	 */
+	public static function publish_post( $post_id, $job_id = '' ) {
+		$post = get_post( (int) $post_id );
+		if ( ! $post || 'draft' !== $post->post_status ) {
+			return;
+		}
+
+		$res = wp_update_post( array(
+			'ID'          => (int) $post_id,
+			'post_status' => 'publish',
+		), true );
+
+		if ( is_wp_error( $res ) ) {
+			return;
+		}
+
+		if ( '' !== (string) $job_id ) {
+			AIPC_Agent::instance()->append_log( $job_id, __( 'Post published.', 'wp-ai-post-creator' ), 'success' );
+		}
+
+		/**
+		 * Fires after a delayed-scheduled post has been published.
+		 *
+		 * @param int    $post_id Post id.
+		 * @param string $job_id  Job id.
+		 */
+		do_action( 'aipc_post_published', (int) $post_id, (string) $job_id );
 	}
 
 	/**

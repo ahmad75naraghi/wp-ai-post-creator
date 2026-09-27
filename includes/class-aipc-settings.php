@@ -27,6 +27,7 @@ final class AIPC_Settings {
 			'default_tone'        => 'professional',
 			'default_length'      => 'medium',
 			'site_prompt'         => '',
+			'source_sites'       => '',
 			'image_enabled'       => 1,
 			'image_size'          => '1792x1024',
 			'add_toc'             => 1,
@@ -207,12 +208,31 @@ final class AIPC_Settings {
 		$site_prompt = isset( $in['site_prompt'] ) ? sanitize_textarea_field( $in['site_prompt'] ) : $old['site_prompt'];
 		$out['site_prompt'] = mb_substr( trim( $site_prompt ), 0, 4000 );
 
+		// Research source sites: one URL per line, max 8, http(s) only.
+		$aipc_sources = array();
+		if ( isset( $in['source_sites'] ) ) {
+			foreach ( preg_split( '/\r?\n/', (string) $in['source_sites'] ) as $aipc_raw ) {
+				$aipc_raw = trim( $aipc_raw );
+				// Only full http(s) URLs; esc_url_raw() would invent an
+				// http:// scheme for bare strings, so check the input first.
+				if ( 0 === strpos( $aipc_raw, 'http' ) ) {
+					$aipc_line = untrailingslashit( esc_url_raw( $aipc_raw ) );
+					if ( '' !== $aipc_line ) {
+						$aipc_sources[] = $aipc_line;
+					}
+				}
+			}
+		} else {
+			$aipc_sources = array_filter( array_map( 'trim', preg_split( '/\r?\n/', (string) $old['source_sites'] ) ) );
+		}
+		$out['source_sites'] = implode( "\n", array_slice( array_values( array_unique( $aipc_sources ) ), 0, 8 ) );
+
 		$out['image_size'] = isset( $in['image_size'] ) ? sanitize_text_field( $in['image_size'] ) : $old['image_size'];
 		if ( ! in_array( $out['image_size'], self::image_sizes(), true ) ) {
 			$out['image_size'] = $old['image_size'];
 		}
 
-		$bools = array( 'image_enabled', 'add_toc', 'add_faq', 'delete_on_uninstall' );
+				$bools = array( 'image_enabled', 'add_toc', 'add_faq', 'delete_on_uninstall' );
 		foreach ( $bools as $bool ) {
 			$out[ $bool ] = empty( $in[ $bool ] ) ? 0 : 1;
 		}

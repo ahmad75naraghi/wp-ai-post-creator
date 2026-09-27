@@ -50,11 +50,22 @@ final class AIPC_Steps {
 CATEGORIES (existing post categories of this website):
 {{categories}}
 
+EXISTING ARTICLES ALREADY PUBLISHED HERE:
+{{recent_posts}}
+Do NOT pick a topic that duplicates or closely resembles one of these — the new article must cover fresh ground or a clearly different angle.
+
+RESEARCH SOURCES provided by the site owner (titles, links and summaries):
+{{sources}}
+Use them for inspiration and grounding; you may reference at most 1-2 of them later with a link. Never copy their sentences.
+
 {{topic_hint}}
 
 You are planning a blog article (~{{words}} words) written in {{lang}}.
 STEP 1: choose the ONE best-fitting category from the list above — you MUST use its exact name.
 STEP 2: decide the topic and a compelling SEO title for it.
+STEP 3: from the internal linking candidates below, pick the ones genuinely relevant to this topic (max 4, or an empty list).
+INTERNAL LINKING CANDIDATES:
+{{link_candidates}}
 
 Return ONLY this JSON object (values in {{lang}} unless noted):
 {
@@ -67,15 +78,19 @@ Return ONLY this JSON object (values in {{lang}} unless noted):
   "primary_keyword": "main keyword, in {{lang}}",
   "secondary_keywords": ["4-8 related keywords, in {{lang}}"],
   "angle": "a unique angle that makes this article stand out, one sentence, in {{lang}}",
-  "toc_title": "short label for the table of contents, in {{lang}}"
+  "toc_title": "short label for the table of contents, in {{lang}}",
+  "internal_links": [{"title": "copied exactly from the candidates", "url": "its url"}]
 }',
 				'placeholders' => array(
-					'{{site_context}}' => __( 'The site prompt (or a fallback note)', 'wp-ai-post-creator' ),
-					'{{categories}}'   => __( 'Bullet list of the site’s post categories', 'wp-ai-post-creator' ),
-					'{{topic_hint}}'   => __( 'The user’s topic hint, or “invent one” instruction', 'wp-ai-post-creator' ),
-					'{{words}}'        => __( 'Target word count for the article', 'wp-ai-post-creator' ),
-					'{{sections}}'     => __( 'Planned section count', 'wp-ai-post-creator' ),
-					'{{lang}}'         => __( 'Content language name', 'wp-ai-post-creator' ),
+					'{{site_context}}'     => __( 'The site prompt (or a fallback note)', 'wp-ai-post-creator' ),
+					'{{categories}}'       => __( 'Bullet list of the site’s post categories', 'wp-ai-post-creator' ),
+					'{{recent_posts}}'     => __( 'Bullet list of existing article titles (avoid duplicating them)', 'wp-ai-post-creator' ),
+					'{{sources}}'          => __( 'Research items from the configured source sites (or empty)', 'wp-ai-post-creator' ),
+					'{{link_candidates}}'  => __( 'Bullet list of existing articles usable as internal links', 'wp-ai-post-creator' ),
+					'{{topic_hint}}'       => __( 'The user’s topic hint, or “invent one” instruction', 'wp-ai-post-creator' ),
+					'{{words}}'            => __( 'Target word count for the article', 'wp-ai-post-creator' ),
+					'{{sections}}'         => __( 'Planned section count', 'wp-ai-post-creator' ),
+					'{{lang}}'             => __( 'Content language name', 'wp-ai-post-creator' ),
 				),
 			),
 
@@ -139,10 +154,11 @@ SECTION HEADING: {{section_heading}}
 WHAT TO COVER: {{section_brief}}
 TARGET LENGTH: about {{per_words}} words
 PRIMARY KEYWORD (use once, naturally): {{primary_keyword}}
-{{keywords_block}}{{prev_block}}
+{{keywords_block}}{{prev_block}}{{internal_links}}
 RULES:
 - Do NOT repeat the section heading — start directly with the content
 - You may use <h3>/<h4> subheadings, <p>, <ul>, <ol>, <table>, <blockquote>, <strong>, <em>
+- If the internal-links list above is present, weave at most 1-2 of those links naturally into the text where they genuinely help the reader
 - Be specific and useful; no filler, no generic fluff
 HTML fragment only.',
 				'placeholders' => array(
@@ -155,6 +171,7 @@ HTML fragment only.',
 					'{{primary_keyword}}' => __( 'Primary keyword', 'wp-ai-post-creator' ),
 					'{{keywords_block}}'  => __( 'Secondary keywords line (or empty)', 'wp-ai-post-creator' ),
 					'{{prev_block}}'      => __( 'Previous section tail for continuity (or empty)', 'wp-ai-post-creator' ),
+					'{{internal_links}}'  => __( 'Internal linking list chosen in the plan step (or empty)', 'wp-ai-post-creator' ),
 				),
 			),
 
@@ -187,7 +204,8 @@ Below is the draft body of the article "{{title}}". Improve it as a professional
 - COPYWRITING: sharper hooks, clearer flow, more persuasive and specific wording, remove filler and repetition.
 - SEO: natural use of the primary keyword \'{{primary_keyword}}\', better subheading phrasing, stronger topic sentences.
 - ORIGINALITY: rephrase anything that reads like generic boilerplate or copied phrasing — the final text must be original and pass as human-written.
-
+- LINKS: keep every <a href> link that exists in the draft (internal and external) — you may reposition or rephrase the anchor text, but never drop a link.
+{{internal_links}}
 STRICT FORMAT RULES (the pipeline breaks without them):
 - Return ONLY the article body as raw HTML.
 - Structure: an introduction with NO <h2> heading, then exactly {{sections}} main sections each starting with its own <h2> heading, then ONE final <h2> conclusion block.
@@ -201,6 +219,7 @@ DRAFT:
 					'{{primary_keyword}}' => __( 'Primary keyword', 'wp-ai-post-creator' ),
 					'{{sections}}'        => __( 'Section count', 'wp-ai-post-creator' ),
 					'{{draft}}'           => __( 'The full assembled draft HTML', 'wp-ai-post-creator' ),
+					'{{internal_links}}'  => __( 'Reminder of the internal links that must survive the revision', 'wp-ai-post-creator' ),
 				),
 			),
 
@@ -263,6 +282,82 @@ Describe the scene only. JSON only.',
 				'prompt' => '',
 				'placeholders' => array(),
 			),
+
+			'rw_analyze' => array(
+				'label' => __( 'Rewrite: analysis & new outline', 'wp-ai-post-creator' ),
+				'kind'  => 'chat_json',
+				'desc'  => __( 'Analyzes the existing post (rewrite mode) and builds the improved outline.', 'wp-ai-post-creator' ),
+				'prompt' => 'REWRITE ANALYSIS — an existing published article must be refreshed.
+Existing title: "{{existing_title}}"
+EXISTING ARTICLE CONTENT:
+{{existing_content}}
+
+SITE CONTEXT: {{site_context}}
+
+RESEARCH SOURCES provided by the site owner:
+{{sources}}
+
+INTERNAL LINKING CANDIDATES (other articles of this site):
+{{link_candidates}}
+
+TASK: analyse the existing article and plan its refresh (~{{words}} words, {{lang}}). Keep its core topic and every fact that is still valid; fix anything outdated; find a better angle, a sharper SEO title and a cleaner structure.
+
+Return ONLY this JSON object:
+{
+  "title": "improved SEO title, max 60 characters, in {{lang}} — keep the original meaning",
+  "primary_keyword": "main keyword, in {{lang}}",
+  "secondary_keywords": ["4-8 related keywords, in {{lang}}"],
+  "notes": "3-5 bullet-style notes in {{lang}} on what to keep, fix and improve",
+  "sections": [{"heading": "section heading (H2 level, in {{lang}})", "brief": "2-3 sentences describing exactly what this section must cover"}],
+  "internal_links": [{"title": "copied from the candidates", "url": "its url"}]
+}',
+				'placeholders' => array(
+					'{{existing_title}}'   => __( 'Title of the post being rewritten', 'wp-ai-post-creator' ),
+					'{{existing_content}}' => __( 'The current content of the post being rewritten', 'wp-ai-post-creator' ),
+					'{{site_context}}'     => __( 'The site prompt (or a fallback note)', 'wp-ai-post-creator' ),
+					'{{sources}}'          => __( 'Research items from the configured source sites (or empty)', 'wp-ai-post-creator' ),
+					'{{link_candidates}}'  => __( 'Bullet list of this site’s other articles usable as internal links', 'wp-ai-post-creator' ),
+					'{{words}}'            => __( 'Target word count for the article', 'wp-ai-post-creator' ),
+					'{{lang}}'             => __( 'Content language name', 'wp-ai-post-creator' ),
+				),
+			),
+
+			'rw_rewrite' => array(
+				'label' => __( 'Rewrite: full revision pass', 'wp-ai-post-creator' ),
+				'kind'  => 'chat_html',
+				'desc'  => __( 'Rewrites the whole existing post: fresher copy, better SEO, full originality.', 'wp-ai-post-creator' ),
+				'prompt' => 'FULL REWRITE of the article "{{title}}".
+IMPROVEMENT NOTES from the analysis:
+{{notes}}
+
+RESEARCH SOURCES provided by the site owner:
+{{sources}}
+
+Rewrite the existing article below as a professional copywriter and SEO editor:
+- COPYWRITING: sharper hooks, clearer flow, more persuasive and specific wording, remove filler and repetition.
+- SEO: natural use of the primary keyword \'{{primary_keyword}}\', better subheading phrasing, stronger topic sentences.
+- ORIGINALITY: rephrase every sentence that reads like generic boilerplate — the final text must be original and pass as human-written; keep all facts from the original that are still valid.
+- LINKS: keep every <a href> link from the original content, and weave in the internal links listed below where they genuinely help.
+{{internal_links}}
+
+STRICT FORMAT RULES (the pipeline breaks without them):
+- Return ONLY the article body as raw HTML.
+- Structure: an introduction with NO <h2> heading, then exactly {{sections}} main sections each starting with its own <h2> heading, then ONE final <h2> conclusion block.
+- Do not add or remove sections, do not merge them; no TOC, no FAQ, no title tag.
+- Same language as the original, approximately the same length or longer.
+
+EXISTING ARTICLE:
+{{draft}}',
+				'placeholders' => array(
+					'{{title}}'           => __( 'Improved title from the analysis step', 'wp-ai-post-creator' ),
+					'{{notes}}'           => __( 'Improvement notes from the analysis step', 'wp-ai-post-creator' ),
+					'{{primary_keyword}}' => __( 'Primary keyword', 'wp-ai-post-creator' ),
+					'{{sections}}'        => __( 'Section count from the analysis step', 'wp-ai-post-creator' ),
+					'{{sources}}'         => __( 'Research items from the configured source sites (or empty)', 'wp-ai-post-creator' ),
+					'{{internal_links}}'  => __( 'Internal links to weave in (or empty)', 'wp-ai-post-creator' ),
+					'{{draft}}'           => __( 'The current content of the post being rewritten', 'wp-ai-post-creator' ),
+				),
+			),
 		);
 	}
 
@@ -284,9 +379,17 @@ Describe the scene only. JSON only.',
 	 */
 	public static function get( $step ) {
 		$cfg = self::all_config();
+
+		$connections = array();
+		if ( isset( $cfg[ $step ]['connections'] ) && is_array( $cfg[ $step ]['connections'] ) ) {
+			$connections = $cfg[ $step ]['connections'];
+		} elseif ( ! empty( $cfg[ $step ]['connection'] ) ) {
+			$connections = array( $cfg[ $step ]['connection'] ); // Legacy 1.2–1.4 format.
+		}
+
 		return array(
-			'connection' => isset( $cfg[ $step ]['connection'] ) ? (string) $cfg[ $step ]['connection'] : '',
-			'prompt'     => isset( $cfg[ $step ]['prompt'] ) ? (string) $cfg[ $step ]['prompt'] : '',
+			'connections' => array_values( array_filter( array_map( 'strval', (array) $connections ) ) ),
+			'prompt'      => isset( $cfg[ $step ]['prompt'] ) ? (string) $cfg[ $step ]['prompt'] : '',
 		);
 	}
 
@@ -334,9 +437,8 @@ Describe the scene only. JSON only.',
 			if ( ! isset( $cfg[ $step ] ) || ! is_array( $cfg[ $step ] ) ) {
 				continue;
 			}
-			$conn_id  = isset( $cfg[ $step ]['connection'] ) ? sanitize_key( $cfg[ $step ]['connection'] ) : '';
-			$prompt   = isset( $cfg[ $step ]['prompt'] ) ? trim( (string) $cfg[ $step ]['prompt'] ) : '';
-			$default  = isset( $meta['prompt'] ) ? $meta['prompt'] : '';
+			$prompt  = isset( $cfg[ $step ]['prompt'] ) ? trim( (string) $cfg[ $step ]['prompt'] ) : '';
+			$default = isset( $meta['prompt'] ) ? $meta['prompt'] : '';
 
 			if ( ! empty( $cfg[ $step ]['reset'] ) ) {
 				$prompt = '';
@@ -345,15 +447,26 @@ Describe the scene only. JSON only.',
 				$prompt = ''; // Identical to default — store as default.
 			}
 
-			$entry = array();
-			if ( '' !== $conn_id && AIPC_Connections::get( $conn_id ) ) {
-				$entry['connection'] = $conn_id;
-			} else {
-				$entry['connection'] = '';
+			// Connection chain: ordered list of connection ids (fallback order).
+			$raw = array();
+			if ( isset( $cfg[ $step ]['connections'] ) && is_array( $cfg[ $step ]['connections'] ) ) {
+				$raw = $cfg[ $step ]['connections'];
+			} elseif ( ! empty( $cfg[ $step ]['connection'] ) ) {
+				$raw = array( $cfg[ $step ]['connection'] ); // Legacy single select.
 			}
-			$entry['prompt'] = mb_substr( $prompt, 0, 20000 );
 
-			$clean[ $step ] = $entry;
+			$connections = array();
+			foreach ( $raw as $conn_id ) {
+				$conn_id = sanitize_key( (string) $conn_id );
+				if ( '' !== $conn_id && AIPC_Connections::get( $conn_id ) && ! in_array( $conn_id, $connections, true ) ) {
+					$connections[] = $conn_id;
+				}
+			}
+
+			$clean[ $step ] = array(
+				'connections' => $connections,
+				'prompt'      => mb_substr( $prompt, 0, 20000 ),
+			);
 		}
 
 		if ( false === get_option( self::OPTION, false ) ) {

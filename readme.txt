@@ -4,11 +4,11 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Agent-style AI post generator for any OpenAI-compatible API — unlimited AI connections, per-step prompts and routing, complete logs, automatic schedules and Bale notifications, from a site prompt to a full, SEO-revised draft post.
+Agent-style AI post generator for any OpenAI-compatible API — unlimited AI connections with per-step fallback chains, per-step prompts, post rewriting, internal linking, research sources, scheduled auto-publishing, complete logs and Bale notifications.
 
 == Description ==
 
@@ -20,6 +20,15 @@ It talks to **any OpenAI-compatible REST API** — OpenAI, OpenRouter, Groq, Dee
 * **Per-step routing** — assign every pipeline step its own connection: e.g. write with OpenAI and generate images with a different provider.
 * **Per-step prompt templates** — every step's prompt is editable, with a documented placeholder table. Untouched prompts stay in "default" mode and are auto-improved on plugin updates.
 * **Complete admin management panel** — connections manager, prompts & steps editor, and a logs panel with summary stats, usage per connection, full job history and per-job drilldown (step timings, every API call with model/tokens/duration/errors, console replay).
+
+**New in 1.5.0 — rewrite, internal linking, auto-publish, fallback chains, research sources:**
+
+* **Rewrite existing posts** — pick any old post and give it a full copywriting + SEO refresh: the agent analyzes it, rewrites the whole article (keeping the facts, links, status, author, slug and category), refreshes the SEO metadata and can attach a new featured image
+* **Automatic internal linking** — while writing, the agent weaves links to your existing related posts into the new content (planned in the topic step, max 4 per article)
+* **Scheduled auto-publishing** — posts are still created as drafts by default, but each run can optionally publish immediately or after a delay (15–10080 minutes)
+* **Connection fallback chains** — assign several AI connections to a step; each one gets its own retry budget and the agent automatically switches to the next when one keeps failing (text and image steps alike)
+* **Existing-post awareness** — the topic step sees your recent published titles and avoids duplicating them
+* **Research source sites** — list up to 8 URLs; the agent reads their RSS feeds while planning and grounds the topic and facts in their latest articles
 
 **New in 1.4.0 — recipients, reports, limit:**
 
@@ -116,6 +125,16 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.5.0 =
+* Rewrite mode: analyze + full revision of an existing post in place (status, author, slug and category preserved; tags appended; new featured image optional)
+* Automatic internal linking to related existing posts while writing (planned in the topic step, capped at 4 links)
+* Publish modes for every run: draft (default), publish immediately, or publish after a delay of 15–10080 minutes via a scheduled event
+* Connection chains per step: ordered fallback list, per-connection retry budget, automatic switching on repeated failure; image steps degrade gracefully when the whole chain fails
+* Topic planning sees the recent published posts and avoids duplicating them
+* Research source sites (up to 8): RSS feeds are read during planning and ground the topic and facts
+* New admin page: Rewrite post (post picker + live agent console); Prompts & Steps uses a multi-select chain; Schedule entries have publish settings
+* Bale notifications distinguish created/rewritten/published posts, and delayed publishing notifies every chat when the post goes live
 
 = 1.4.0 =
 * Multiple Bale recipients: any number of chat IDs (people or @channels), per-chat delivery results in the job log

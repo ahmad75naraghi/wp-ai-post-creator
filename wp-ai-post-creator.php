@@ -3,7 +3,7 @@
  * Plugin Name:       AI Post Creator
  * Plugin URI:        https://github.com/ahmad75naraghi/wp-ai-post-creator
  * Description:       Agent-style AI content engine. Connect any OpenAI-compatible API (OpenAI, OpenRouter, Groq, DeepSeek, Ollama, LM Studio …) and generate complete, SEO-optimized posts from scratch — outline to featured image — on a schedule, with Bale notifications and a live agent console.
- * Version:           1.4.0
+ * Version:           1.5.0
  * Requires at least: 5.7
  * Requires PHP:      7.4
  * Author:            Ahmad Naraghi
@@ -16,7 +16,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AIPC_VERSION', '1.4.0' );
+define( 'AIPC_VERSION', '1.5.0' );
 define( 'AIPC_PLUGIN_FILE', __FILE__ );
 define( 'AIPC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AIPC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -54,6 +54,9 @@ function aipc_boot() {
 	add_action( 'rest_api_init', array( 'AIPC_REST', 'register' ) );
 
 	add_action( 'aipc_daily_cleanup', array( 'AIPC_Agent', 'cleanup_static' ) );
+
+	// Delayed publishing of scheduled posts.
+	add_action( 'aipc_publish_post', array( 'AIPC_Scheduler', 'publish_post' ), 10, 2 );
 	add_filter( 'plugin_action_links_' . plugin_basename( AIPC_PLUGIN_FILE ), 'aipc_action_links' );
 }
 add_action( 'plugins_loaded', 'aipc_boot' );
@@ -68,6 +71,7 @@ function aipc_action_links( $links ) {
 	array_unshift(
 		$links,
 		'<a href="' . esc_url( admin_url( 'admin.php?page=aipc' ) ) . '">' . esc_html__( 'New AI Post', 'wp-ai-post-creator' ) . '</a>',
+		'<a href="' . esc_url( admin_url( 'admin.php?page=aipc-rewrite' ) ) . '">' . esc_html__( 'Rewrite post', 'wp-ai-post-creator' ) . '</a>',
 		'<a href="' . esc_url( admin_url( 'admin.php?page=aipc-connections' ) ) . '">' . esc_html__( 'Connections', 'wp-ai-post-creator' ) . '</a>',
 		'<a href="' . esc_url( admin_url( 'admin.php?page=aipc-prompts' ) ) . '">' . esc_html__( 'Prompts & Steps', 'wp-ai-post-creator' ) . '</a>',
 		'<a href="' . esc_url( admin_url( 'admin.php?page=aipc-logs' ) ) . '">' . esc_html__( 'Logs', 'wp-ai-post-creator' ) . '</a>',

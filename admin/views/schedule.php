@@ -58,6 +58,7 @@ $aipc_notices = array(
 						<th><?php esc_html_e( 'Days', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Topic', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Options', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Publish', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Status', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Actions', 'wp-ai-post-creator' ); ?></th>
 					</tr>
@@ -82,6 +83,16 @@ $aipc_notices = array(
 							<td><?php echo esc_html( implode( '، ', $aipc_day_names ) ); ?></td>
 							<td><?php echo '' !== $aipc_entry['topic'] ? esc_html( wp_trim_words( $aipc_entry['topic'], 8, '…' ) ) : '<em>' . esc_html__( 'Automatic (site prompt)', 'wp-ai-post-creator' ) . '</em>'; ?></td>
 							<td><?php echo esc_html( implode( ' · ', $aipc_opt_summary ) ); ?></td>
+							<td><?php
+								$aipc_p = isset( $aipc_entry['publish'] ) ? $aipc_entry['publish'] : 'draft';
+								if ( 'delay' === $aipc_p ) {
+									echo esc_html( sprintf( /* translators: %d: minutes. */ __( '⏱ +%d min', 'wp-ai-post-creator' ), isset( $aipc_entry['publish_delay'] ) ? (int) $aipc_entry['publish_delay'] : 60 ) );
+								} elseif ( 'now' === $aipc_p ) {
+									esc_html_e( '🚀 Immediately', 'wp-ai-post-creator' );
+								} else {
+									esc_html_e( '📝 Draft', 'wp-ai-post-creator' );
+								}
+							?></td>
 							<td>
 								<?php if ( ! empty( $aipc_entry['enabled'] ) ) : ?>
 									<span class="aipc-badge aipc-badge-ok"><?php esc_html_e( 'Active', 'wp-ai-post-creator' ); ?></span>
@@ -129,8 +140,15 @@ $aipc_notices = array(
 		</form>
 
 		<?php
-		$aipc_e      = $aipc_editing ? $aipc_editing : array( 'time' => '09:00', 'days' => array( 0, 1, 2, 3, 4, 5, 6 ), 'enabled' => 1, 'topic' => '', 'opts' => array( 'tone' => $aipc_s['default_tone'], 'length' => $aipc_s['default_length'], 'language' => $aipc_s['content_language'], 'image' => (int) $aipc_s['image_enabled'], 'faq' => (int) $aipc_s['add_faq'], 'toc' => (int) $aipc_s['add_toc'] ) );
+		$aipc_e      = $aipc_editing ? $aipc_editing : array( 'time' => '09:00', 'days' => array( 0, 1, 2, 3, 4, 5, 6 ), 'enabled' => 1, 'topic' => '', 'publish' => 'draft', 'publish_delay' => 60, 'opts' => array( 'tone' => $aipc_s['default_tone'], 'length' => $aipc_s['default_length'], 'language' => $aipc_s['content_language'], 'image' => (int) $aipc_s['image_enabled'], 'faq' => (int) $aipc_s['add_faq'], 'toc' => (int) $aipc_s['add_toc'] ) );
 		$aipc_opts   = $aipc_e['opts'];
+		$aipc_pub    = isset( $aipc_e['publish'] ) ? $aipc_e['publish'] : 'draft';
+		$aipc_pub_dl = isset( $aipc_e['publish_delay'] ) ? (int) $aipc_e['publish_delay'] : 60;
+		$aipc_pub_labels = array(
+			'draft' => __( '📝 Draft', 'wp-ai-post-creator' ),
+			'now'   => __( '🚀 Publish immediately', 'wp-ai-post-creator' ),
+			'delay' => __( '⏱ Publish later', 'wp-ai-post-creator' ),
+		);
 		$aipc_open   = (bool) $aipc_editing;
 		?>
 		<details class="aipc-details" <?php echo $aipc_open ? 'open' : ''; ?>>
@@ -176,6 +194,24 @@ $aipc_notices = array(
 								<option value="<?php echo esc_attr( $aipc_key ); ?>" <?php selected( $aipc_opts['language'], $aipc_key ); ?>><?php echo esc_html( $aipc_label ); ?></option>
 							<?php endforeach; ?>
 						</select>
+					</div>
+				</div>
+
+				<div class="aipc-grid">
+					<div class="aipc-field">
+						<label><?php esc_html_e( 'After creation', 'wp-ai-post-creator' ); ?></label>
+						<select class="aipc-input" name="publish" id="aipc-sch-publish">
+							<?php foreach ( $aipc_pub_labels as $aipc_pk => $aipc_pl ) : ?>
+								<option value="<?php echo esc_attr( $aipc_pk ); ?>" <?php selected( $aipc_pub, $aipc_pk ); ?>><?php echo esc_html( $aipc_pl ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description"><?php esc_html_e( 'Posts are always created as drafts first; pick what happens next.', 'wp-ai-post-creator' ); ?></p>
+					</div>
+					<div class="aipc-field" id="aipc-sch-delay-field">
+						<label><?php esc_html_e( 'Delay before publishing (minutes)', 'wp-ai-post-creator' ); ?></label>
+						<input type="number" class="aipc-input" name="publish_delay" min="15" max="10080" step="1"
+							value="<?php echo esc_attr( $aipc_pub_dl ); ?>" />
+						<p class="description"><?php esc_html_e( '15–10080 minutes (up to a week). Only used with “Publish later”.', 'wp-ai-post-creator' ); ?></p>
 					</div>
 				</div>
 
@@ -292,3 +328,14 @@ $aipc_notices = array(
 		<?php endif; ?>
 	</div>
 </div>
+
+<script>
+(function () {
+	var sel = document.getElementById('aipc-sch-publish');
+	var field = document.getElementById('aipc-sch-delay-field');
+	if (!sel || !field) { return; }
+	function sync() { field.style.display = (sel.value === 'delay') ? '' : 'none'; }
+	sel.addEventListener('change', sync);
+	sync();
+})();
+</script>

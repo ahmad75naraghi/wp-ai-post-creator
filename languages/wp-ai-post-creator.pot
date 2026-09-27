@@ -1,4 +1,4 @@
-# Translation template for wp-ai-post-creator.
+# Persian translation for wp-ai-post-creator.
 msgid ""
 msgstr ""
 "Project-Id-Version: wp-ai-post-creator 1.4.0\n"
@@ -7,1616 +7,1881 @@ msgstr ""
 "PO-Revision-Date: 2026-09-27 06:40+0000\n"
 "Last-Translator: AIPC\n"
 "Language-Team: Persian\n"
-"Language: fa\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Domain: wp-ai-post-creator\n"
 
-#: admin/views/connections.php:33
-msgid "Edit connection"
-msgstr ""
-
-#: admin/views/connections.php:159 admin/views/connections.php:33
-msgid "Add a new connection"
-msgstr ""
-
-#: admin/views/connections.php:124 admin/views/connections.php:37
-msgid "Name"
-msgstr ""
-
-#: admin/views/connections.php:39
-msgid "e.g. OpenAI · Groq · Local Ollama"
-msgstr ""
-
-#: admin/views/connections.php:43
-msgid "API base URL"
-msgstr ""
-
-#: admin/views/connections.php:49
-msgid "API key"
-msgstr ""
-
-#: admin/views/connections.php:51 admin/views/schedule.php:224
-msgid "••••• (saved — leave empty to keep)"
-msgstr ""
-
-#: admin/views/connections.php:51
-msgid "sk-… (any value for Ollama/LM Studio)"
-msgstr ""
-
-#: admin/views/connections.php:126 admin/views/connections.php:55
-msgid "Chat model"
-msgstr ""
-
-#: admin/views/connections.php:127 admin/views/connections.php:61
-msgid "Image model"
-msgstr ""
-
-#: admin/views/connections.php:66
-msgid "Temperature"
-msgstr ""
-
-#: admin/views/connections.php:71
-msgid "Max tokens per step"
-msgstr ""
-
-#: admin/views/connections.php:76
-msgid "Timeout (seconds)"
-msgstr ""
-
-#: admin/views/connections.php:85
-msgid "Use as the default connection"
-msgstr ""
-
-#: admin/views/connections.php:90
-msgid "Save connection"
-msgstr ""
-
-#: admin/views/connections.php:91
-msgid "Test connection"
-msgstr ""
-
-#: admin/views/connections.php:92
-msgid "Load models from provider"
-msgstr ""
-
-#: admin/views/connections.php:104 includes/class-aipc-admin.php:63
-msgid "AI Connections"
-msgstr ""
-
-#: admin/views/connections.php:105
-msgid "Configure any number of OpenAI-compatible providers — then assign each pipeline step its own connection under Prompts & Steps."
-msgstr ""
-
-#: admin/views/connections.php:110
-msgid "Connection saved."
-msgstr ""
-
-#: admin/views/connections.php:112
-msgid "Connection deleted."
-msgstr ""
-
-#: admin/views/connections.php:116
-msgid "Your connections"
-msgstr ""
-
-#: admin/views/connections.php:119
-msgid "No connections yet. Add your first one below."
-msgstr ""
-
-#: admin/views/connections.php:125
-msgid "Endpoint"
-msgstr ""
-
-#: admin/views/connections.php:128
-msgid "Default"
-msgstr ""
-
-#: admin/views/connections.php:129 admin/views/logs.php:111 admin/views/schedule.php:62
-msgid "Actions"
-msgstr ""
-
-#: admin/views/connections.php:139
-msgid "Yes"
-msgstr ""
-
-#: admin/views/connections.php:141 admin/views/schedule.php:97
-msgid "Edit"
-msgstr ""
-
-#: admin/views/connections.php:143
-msgid "Delete this connection? Steps using it will fall back to the default connection."
-msgstr ""
-
-#: admin/views/connections.php:143 admin/views/logs.php:144 admin/views/schedule.php:101
-msgid "Delete"
-msgstr ""
-
-#: admin/views/connections.php:165
-msgid "Example endpoints"
-msgstr ""
-
-#: admin/views/log-detail.php:22
-msgid "Job details"
-msgstr ""
-
-#: admin/views/log-detail.php:26
-msgid "%s wall time"
-msgstr ""
-
-#: admin/views/log-detail.php:27 includes/class-aipc-bale.php:540
+#: admin/views/log-detail.php includes/class-aipc-bale.php
 msgid "%d API calls"
 msgstr ""
 
-#: admin/views/log-detail.php:34
-msgid "Back to logs"
+#: includes/class-aipc-assets.php
+msgid "%d models loaded — pick one in the list."
 msgstr ""
 
-#: admin/views/log-detail.php:35
-msgid "Delete job"
+#: includes/class-aipc-bale.php
+msgid "%d words · published"
 msgstr ""
 
-#: admin/views/log-detail.php:39
-msgid "Overview"
+#: includes/class-aipc-bale.php
+msgid "%d words · saved as a draft"
 msgstr ""
 
-#: admin/views/log-detail.php:42 admin/views/schedule.php:59
-msgid "Topic"
+#: admin/views/prompts.php
+msgid "%d-step fallback chain"
 msgstr ""
 
-#: admin/views/log-detail.php:43 admin/views/log-detail.php:65 admin/views/logs.php:106 admin/views/schedule.php:61
-msgid "Status"
+#: admin/views/log-detail.php
+msgid "%s wall time"
 msgstr ""
 
-#: admin/views/log-detail.php:44
-msgid "Tone / length / language"
+#: includes/class-aipc-agent.php
+msgid "(No published posts yet.)"
 msgstr ""
 
-#: admin/views/log-detail.php:45
-msgid "Tokens (prompt + completion)"
-msgstr ""
-
-#: admin/views/log-detail.php:46
-msgid "AI time (sum of steps)"
-msgstr ""
-
-#: admin/views/log-detail.php:48 admin/views/log-detail.php:99
-msgid "Result"
-msgstr ""
-
-#: admin/views/log-detail.php:50
-msgid "Draft post #%1$d · %2$d words"
-msgstr ""
-
-#: admin/views/log-detail.php:51 admin/views/new-post.php:149
-msgid "Edit post"
-msgstr ""
-
-#: admin/views/log-detail.php:52 admin/views/new-post.php:150
-msgid "View post"
-msgstr ""
-
-#: admin/views/log-detail.php:60 admin/views/logs.php:107
-msgid "Steps"
-msgstr ""
-
-#: admin/views/log-detail.php:64 admin/views/log-detail.php:94
-msgid "Step"
-msgstr ""
-
-#: admin/views/log-detail.php:66 admin/views/log-detail.php:98 admin/views/schedule.php:146 admin/views/schedule.php:57
-msgid "Time"
-msgstr ""
-
-#: admin/views/log-detail.php:86 admin/views/logs.php:108 admin/views/logs.php:60
-msgid "API calls"
-msgstr ""
-
-#: admin/views/log-detail.php:88
-msgid "No calls recorded."
-msgstr ""
-
-#: admin/views/log-detail.php:95 admin/views/logs.php:69 includes/class-aipc-connections.php:205
-msgid "Connection"
-msgstr ""
-
-#: admin/views/log-detail.php:96
-msgid "Model"
-msgstr ""
-
-#: admin/views/log-detail.php:97
-msgid "Prompt → completion"
-msgstr ""
-
-#: admin/views/log-detail.php:115
-msgid "Failed"
-msgstr ""
-
-#: admin/views/log-detail.php:126
-msgid "Console log"
-msgstr ""
-
-#: admin/views/logs.php:29
-msgid "Running"
-msgstr ""
-
-#: admin/views/logs.php:30
-msgid "Done"
-msgstr ""
-
-#: admin/views/logs.php:31
-msgid "Error"
-msgstr ""
-
-#: admin/views/logs.php:32
-msgid "Cancelled"
-msgstr ""
-
-#: admin/views/logs.php:43 includes/class-aipc-admin.php:81
-msgid "AI Logs"
-msgstr ""
-
-#: admin/views/logs.php:44
-msgid "Every agent run: status, timing, tokens, per-step API calls and the full console log."
-msgstr ""
-
-#: admin/views/logs.php:49
-msgid "All logs cleared."
-msgstr ""
-
-#: admin/views/logs.php:51
-msgid "Job deleted."
-msgstr ""
-
-#: admin/views/logs.php:55
-msgid "Summary"
-msgstr ""
-
-#: admin/views/logs.php:57
-msgid "total jobs"
-msgstr ""
-
-#: admin/views/logs.php:58
-msgid "successful"
-msgstr ""
-
-#: admin/views/logs.php:59
-msgid "failed"
-msgstr ""
-
-#: admin/views/logs.php:61
-msgid "tokens used"
-msgstr ""
-
-#: admin/views/logs.php:65 includes/class-aipc-bale.php:546
-msgid "Usage per connection"
-msgstr ""
-
-#: admin/views/logs.php:70
-msgid "Calls"
-msgstr ""
-
-#: admin/views/logs.php:71
-msgid "Prompt tokens"
-msgstr ""
-
-#: admin/views/logs.php:72
-msgid "Completion tokens"
-msgstr ""
-
-#: admin/views/logs.php:91
-msgid "Jobs"
-msgstr ""
-
-#: admin/views/logs.php:94
-msgid "Delete ALL job logs? This cannot be undone."
-msgstr ""
-
-#: admin/views/logs.php:94
-msgid "Clear all logs"
-msgstr ""
-
-#: admin/views/logs.php:99
-msgid "No jobs yet. Generate your first post!"
-msgstr ""
-
-#: admin/views/logs.php:104
-msgid "Date"
-msgstr ""
-
-#: admin/views/logs.php:105
-msgid "Topic / title"
-msgstr ""
-
-#: admin/views/logs.php:109
-msgid "Tokens"
-msgstr ""
-
-#: admin/views/logs.php:110
-msgid "Duration"
-msgstr ""
-
-#: admin/views/logs.php:131
-msgid "Scheduled"
-msgstr ""
-
-#: admin/views/logs.php:143
-msgid "Details"
-msgstr ""
-
-#: admin/views/new-post.php:21 includes/class-aipc-admin.php:43 includes/class-aipc-admin.php:44
-msgid "AI Post Creator"
-msgstr ""
-
-#: admin/views/new-post.php:22
-msgid "Agent mode: from a bare topic to a complete, SEO-ready post — step by step."
-msgstr ""
-
-#: admin/views/new-post.php:25
-msgid "Default: %s"
-msgstr ""
-
-#: admin/views/new-post.php:26
-msgid "Model: %s"
-msgstr ""
-
-#: admin/views/new-post.php:28
-msgid "No connection configured"
-msgstr ""
-
-#: admin/views/new-post.php:30 includes/class-aipc-admin.php:64 wp-ai-post-creator.php:71
-msgid "Connections"
-msgstr ""
-
-#: admin/views/new-post.php:31 admin/views/prompts.php:20 includes/class-aipc-admin.php:72 includes/class-aipc-admin.php:73 wp-ai-post-creator.php:72
-msgid "Prompts & Steps"
-msgstr ""
-
-#: admin/views/new-post.php:32 includes/class-aipc-admin.php:82 wp-ai-post-creator.php:73
-msgid "Logs"
-msgstr ""
-
-#: admin/views/new-post.php:33 includes/class-aipc-admin.php:100 wp-ai-post-creator.php:75
-msgid "Settings"
-msgstr ""
-
-#: admin/views/new-post.php:41 admin/views/schedule.php:42
-msgid "No AI connection configured."
-msgstr ""
-
-#: admin/views/new-post.php:42 includes/class-aipc-assets.php:153
-msgid "Add an OpenAI-compatible connection (URL + API key) to start generating posts."
-msgstr ""
-
-#: admin/views/new-post.php:44 admin/views/schedule.php:43 includes/class-aipc-assets.php:154
-msgid "Open connections"
-msgstr ""
-
-#: admin/views/new-post.php:53
-msgid "No site prompt configured."
-msgstr ""
-
-#: admin/views/new-post.php:54
-msgid "Describe your site — what it is about, its goal and audience — so the agent can invent fitting topics."
-msgstr ""
-
-#: admin/views/new-post.php:56
-msgid "Open settings"
-msgstr ""
-
-#: admin/views/new-post.php:64 admin/views/schedule.php:151
-msgid "Topic (optional)"
-msgstr ""
-
-#: admin/views/new-post.php:66
-msgid "Leave empty and the agent will invent a topic from the site prompt — or write your own idea here…"
-msgstr ""
-
-#: admin/views/new-post.php:68
-msgid "The agent always picks one of your existing post categories and builds the topic from the site prompt."
-msgstr ""
-
-#: admin/views/new-post.php:69
-msgid "The post is always saved as a draft for your review."
-msgstr ""
-
-#: admin/views/new-post.php:70
-msgid "Each step uses the connection and prompt assigned under Prompts & Steps."
-msgstr ""
-
-#: admin/views/new-post.php:74 admin/views/schedule.php:60
-msgid "Options"
-msgstr ""
-
-#: admin/views/new-post.php:74
-msgid "tone, length, language, SEO…"
-msgstr ""
-
-#: admin/views/new-post.php:78 admin/views/schedule.php:157
-msgid "Tone"
-msgstr ""
-
-#: admin/views/new-post.php:82 admin/views/schedule.php:165
-msgid "Length"
-msgstr ""
-
-#: admin/views/new-post.php:86 admin/views/schedule.php:173
-msgid "Content language"
-msgstr ""
-
-#: admin/views/new-post.php:90
-msgid "Language (write its English name)"
-msgstr ""
-
-#: admin/views/new-post.php:98 admin/views/schedule.php:196 includes/class-aipc-agent.php:1065
-msgid "Featured image"
-msgstr ""
-
-#: admin/views/new-post.php:99
-msgid "generate & attach a hero image"
-msgstr ""
-
-#: admin/views/new-post.php:103 admin/views/schedule.php:197
-msgid "FAQ block"
-msgstr ""
-
-#: admin/views/new-post.php:104
-msgid "answers + Google rich-results schema"
-msgstr ""
-
-#: admin/views/new-post.php:108 admin/views/schedule.php:198 includes/class-aipc-post-builder.php:76
-msgid "Table of contents"
-msgstr ""
-
-#: admin/views/new-post.php:109
-msgid "linked jump menu"
-msgstr ""
-
-#: admin/views/new-post.php:115
-msgid "Generate post"
-msgstr ""
-
-#: admin/views/new-post.php:116
-msgid "The agent plans, writes and assembles the post live — you can cancel anytime."
-msgstr ""
-
-#: admin/views/new-post.php:125
-msgid "Agent console"
-msgstr ""
-
-#: admin/views/new-post.php:138
-msgid "Cancel agent"
-msgstr ""
-
-#: admin/views/new-post.php:139
-msgid "Retry step"
-msgstr ""
-
-#: admin/views/new-post.php:145
-msgid "Your post is ready!"
-msgstr ""
-
-#: admin/views/new-post.php:151
-msgid "Create another"
-msgstr ""
-
-#: admin/views/prompts.php:22
-msgid "Assign each pipeline step its own AI connection and edit its prompt template."
-msgstr ""
-
-#: admin/views/prompts.php:24
-msgid "Default connection: %s"
-msgstr ""
-
-#: admin/views/prompts.php:26
-msgid "No connection configured yet."
-msgstr ""
-
-#: admin/views/prompts.php:33
-msgid "Prompts & assignments saved."
-msgstr ""
-
-#: admin/views/prompts.php:120 admin/views/prompts.php:41
-msgid "Save all"
-msgstr ""
-
-#: admin/views/prompts.php:42
-msgid "Tip: leaving a prompt exactly as its default keeps it in “default” mode (auto-improved on plugin updates)."
-msgstr ""
-
-#: admin/views/prompts.php:57
-msgid "custom"
-msgstr ""
-
-#: admin/views/prompts.php:69
-msgid "AI connection for this step"
-msgstr ""
-
-#: admin/views/prompts.php:71
-msgid "Default (%s)"
-msgstr ""
-
-#: admin/views/prompts.php:80
-msgid "Reset"
-msgstr ""
-
-#: admin/views/prompts.php:83
-msgid "restore the default prompt on save"
-msgstr ""
-
-#: admin/views/prompts.php:90
-msgid "Prompt template"
-msgstr ""
-
-#: admin/views/prompts.php:95
-msgid "A “respond ONLY with valid JSON” instruction is appended automatically."
-msgstr ""
-
-#: admin/views/prompts.php:97
-msgid "A “respond with raw HTML only” instruction is appended automatically."
-msgstr ""
-
-#: admin/views/prompts.php:102
-msgid "Available placeholders"
-msgstr ""
-
-#: admin/views/schedule.php:20
-msgid "Schedule saved."
-msgstr ""
-
-#: admin/views/schedule.php:21
-msgid "Schedule deleted."
-msgstr ""
-
-#: admin/views/schedule.php:22
-msgid "Schedule settings saved."
-msgstr ""
-
-#: admin/views/schedule.php:23
-msgid "The agent just started — the console page is now running it."
-msgstr ""
-
-#: admin/views/schedule.php:24
-msgid "Could not start the agent. Check that a connection is configured."
-msgstr ""
-
-#: admin/views/schedule.php:25
-msgid "Bale notification settings saved."
-msgstr ""
-
-#: admin/views/schedule.php:30
-msgid "AI Schedule & Notifications"
-msgstr ""
-
-#: admin/views/schedule.php:37
-msgid "Let the agent write posts automatically at fixed times — and get a Bale message (image + summary + link) after every post is created."
-msgstr ""
-
-#: admin/views/schedule.php:48
-msgid "Automatic schedules"
-msgstr ""
-
-#: admin/views/schedule.php:49
-msgid "Each entry starts one full agent run (a complete draft post) at the chosen time on the chosen days. The topic can be fixed — or left empty so the agent invents one from the site prompt."
-msgstr ""
-
-#: admin/views/schedule.php:52
-msgid "No schedules yet. Add your first one below — e.g. every day at 09:00."
-msgstr ""
-
-#: admin/views/schedule.php:183 admin/views/schedule.php:58
-msgid "Days"
-msgstr ""
-
-#: admin/views/schedule.php:83
-msgid "Automatic (site prompt)"
-msgstr ""
-
-#: admin/views/schedule.php:199 admin/views/schedule.php:87
-msgid "Active"
-msgstr ""
-
-#: admin/views/schedule.php:89
-msgid "Paused"
-msgstr ""
-
-#: admin/views/schedule.php:95
-msgid "Run now"
-msgstr ""
-
-#: admin/views/schedule.php:100
-msgid "Delete this schedule?"
-msgstr ""
-
-#: admin/views/schedule.php:114
-msgid "Max scheduled posts per day"
-msgstr ""
-
-#: admin/views/schedule.php:117
-msgid "0 = unlimited"
-msgstr ""
-
-#: admin/views/schedule.php:118
-msgid "Save"
-msgstr ""
-
-#: admin/views/schedule.php:123
-msgid "Scheduled posts today: %1$d of %2$s"
-msgstr ""
-
-#: admin/views/schedule.php:137
-msgid "Edit schedule"
-msgstr ""
-
-#: admin/views/schedule.php:137
-msgid "Add a new schedule"
-msgstr ""
-
-#: admin/views/schedule.php:148
-msgid "Site timezone. The run starts within ~15 minutes of this time."
-msgstr ""
-
-#: admin/views/schedule.php:153
-msgid "Empty = invented from the site prompt"
-msgstr ""
-
-#: admin/views/schedule.php:203
-msgid "Save schedule"
-msgstr ""
-
-#: admin/views/schedule.php:205
-msgid "Cancel"
-msgstr ""
-
-#: admin/views/schedule.php:213
-msgid "Bale notifications"
-msgstr ""
-
-#: admin/views/schedule.php:214
-msgid "After every generated post the agent can message a Bale chat with the featured image, the summary and the link to the article. Create a bot with @Bot_Father in Bale, paste its token here, and enter the chat ID of the person (or channel) that should receive the messages."
-msgstr ""
-
-#: admin/views/schedule.php:222
-msgid "Bot token"
-msgstr ""
-
-#: admin/views/schedule.php:228
-msgid "Chat IDs (one per line)"
-msgstr ""
-
-#: admin/views/schedule.php:231
-msgid "One chat ID per line — a person’s numeric ID or a @channel username. Send any message to your bot, then use the button below to detect it automatically."
-msgstr ""
-
-#: admin/views/schedule.php:234
-msgid "Periodic report"
-msgstr ""
-
-#: admin/views/schedule.php:236
-msgid "Off"
-msgstr ""
-
-#: admin/views/schedule.php:237
-msgid "Daily"
-msgstr ""
-
-#: admin/views/schedule.php:238
-msgid "Weekly"
-msgstr ""
-
-#: admin/views/schedule.php:240
-msgid "Reports are sent once per day/week at this time, after it has passed."
-msgstr ""
-
-#: admin/views/schedule.php:243
-msgid "Report time"
-msgstr ""
-
-#: admin/views/schedule.php:247
-msgid "Report day (weekly reports)"
-msgstr ""
-
-#: admin/views/schedule.php:257
-msgid "Send a Bale message after every generated post"
-msgstr ""
-
-#: admin/views/schedule.php:261 admin/views/settings.php:144
-msgid "Save settings"
-msgstr ""
-
-#: admin/views/schedule.php:262
-msgid "Send test message"
-msgstr ""
-
-#: admin/views/schedule.php:263
-msgid "Detect chat ID"
-msgstr ""
-
-#: admin/views/schedule.php:270
-msgid "Cron status"
-msgstr ""
-
-#: admin/views/schedule.php:276
-msgid "The scheduler runs every 15 minutes. Next tick: %1$s (site timezone: %2$s)."
-msgstr ""
-
-#: admin/views/schedule.php:282
-msgid "The cron event is not scheduled."
-msgstr ""
-
-#: admin/views/schedule.php:287
-msgid "WP-Cron is disabled on this site. Make sure a real server cron job calls wp-cron.php every few minutes, or the schedules will not fire:"
-msgstr ""
-
-#: admin/views/schedule.php:291
-msgid "Tip: for exact timing on busy or quiet sites alike, disable WP-Cron in wp-config.php and call wp-cron.php with a server cron job instead."
-msgstr ""
-
-#: admin/views/settings.php:16
-msgid "AI Post Creator — Settings"
-msgstr ""
-
-#: admin/views/settings.php:17
-msgid "Content defaults. Providers, models and per-step prompts live under Connections and Prompts & Steps."
-msgstr ""
-
-#: admin/views/settings.php:25 admin/views/settings.php:28
-msgid "Site prompt"
-msgstr ""
-
-#: admin/views/settings.php:32
-msgid "e.g. A Persian cooking blog focused on quick weeknight dinners for busy families. Goal: practical, tested recipes with everyday ingredients. Warm, encouraging voice."
-msgstr ""
-
-#: admin/views/settings.php:33
-msgid "Tell the agent what this site is about: its purpose, audience and voice. Used to pick the category, invent topics and keep every sentence on-brand."
-msgstr ""
-
-#: admin/views/settings.php:40
-msgid "Content defaults"
-msgstr ""
-
-#: admin/views/settings.php:43
-msgid "Default language"
-msgstr ""
-
-#: admin/views/settings.php:54
-msgid "Default tone"
-msgstr ""
-
-#: admin/views/settings.php:65
-msgid "Default length"
-msgstr ""
-
-#: admin/views/settings.php:76
-msgid "Extras"
-msgstr ""
-
-#: admin/views/settings.php:81
-msgid "Add a table of contents by default"
-msgstr ""
-
-#: admin/views/settings.php:85
-msgid "Add an FAQ block with schema markup by default"
-msgstr ""
-
-#: admin/views/settings.php:94
-msgid "Featured images"
-msgstr ""
-
-#: admin/views/settings.php:97
-msgid "Enable image generation"
-msgstr ""
-
-#: admin/views/settings.php:101
-msgid "Let the agent generate a featured image (skipped gracefully if the provider does not support it)"
-msgstr ""
-
-#: admin/views/settings.php:106
-msgid "Image size"
-msgstr ""
-
-#: admin/views/settings.php:114
-msgid "1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024. The image model itself is set per connection."
-msgstr ""
-
-#: admin/views/settings.php:121
-msgid "Advanced"
-msgstr ""
-
-#: admin/views/settings.php:124
-msgid "Extra system instructions"
-msgstr ""
-
-#: admin/views/settings.php:128
-msgid "e.g. Always address the reader as “you” and include practical examples."
-msgstr ""
-
-#: admin/views/settings.php:129
-msgid "Appended to every agent request (the {{extra}} placeholder of the system prompt)."
-msgstr ""
-
-#: admin/views/settings.php:133
-msgid "Uninstall"
-msgstr ""
-
-#: admin/views/settings.php:137
-msgid "Delete all plugin data (settings, connections, jobs, SEO meta) when the plugin is uninstalled"
-msgstr ""
-
-#: includes/class-aipc-admin.php:54 includes/class-aipc-admin.php:55 wp-ai-post-creator.php:70
-msgid "New AI Post"
-msgstr ""
-
-#: includes/class-aipc-admin.php:90
-msgid "AI Schedule"
-msgstr ""
-
-#: includes/class-aipc-admin.php:91 wp-ai-post-creator.php:74
-msgid "Schedule"
-msgstr ""
-
-#: includes/class-aipc-admin.php:99
-msgid "AI Settings"
-msgstr ""
-
-#: includes/class-aipc-admin.php:134 includes/class-aipc-admin.php:146 includes/class-aipc-admin.php:158 includes/class-aipc-admin.php:170 includes/class-aipc-admin.php:192 includes/class-aipc-admin.php:199
-msgid "You do not have permission to access this page."
-msgstr ""
-
-#: includes/class-aipc-admin.php:177 includes/class-aipc-agent.php:479 includes/class-aipc-agent.php:499
-msgid "Job not found or already cleaned up."
-msgstr ""
-
-#: includes/class-aipc-admin.php:216
-msgid "You do not have permission to do this."
-msgstr ""
-
-#: includes/class-aipc-agent.php:409 includes/class-aipc-agent.php:89
-msgid "No AI connection is configured yet. Add one under AI Post Creator → Connections."
-msgstr ""
-
-#: includes/class-aipc-agent.php:343
-msgid "Unknown connection"
-msgstr ""
-
-#: includes/class-aipc-agent.php:431 includes/class-aipc-steps.php:45
-msgid "Category & topic selection"
-msgstr ""
-
-#: includes/class-aipc-agent.php:432 includes/class-aipc-steps.php:83
-msgid "Article outline"
-msgstr ""
-
-#: includes/class-aipc-agent.php:450
-msgid "Agent started — suggested topic: “%s”"
-msgstr ""
-
-#: includes/class-aipc-agent.php:454
-msgid "Agent started — the topic will be invented from the site prompt."
-msgstr ""
-
-#: includes/class-aipc-agent.php:458
-msgid "Setup — default connection: %1$s (%2$s) · tone: %3$s · length: %4$s"
-msgstr ""
-
-#: includes/class-aipc-agent.php:483
-msgid "Agent cancelled by user."
-msgstr ""
-
-#: includes/class-aipc-agent.php:510
-msgid "Retrying failed step…"
-msgstr ""
-
-#: includes/class-aipc-agent.php:533
-msgid "Job not found or expired. Please start again."
-msgstr ""
-
-#: includes/class-aipc-agent.php:577
-msgid "Attempt %1$d/%2$d failed (%3$s) — retrying…"
-msgstr ""
-
-#: includes/class-aipc-agent.php:602
-msgid "Step failed: %s"
-msgstr ""
-
-#: includes/class-aipc-agent.php:838
-msgid "The model returned too little content for this step. Please retry."
-msgstr ""
-
-#: includes/class-aipc-agent.php:917
-msgid "Uncategorized"
-msgstr ""
-
-#: includes/class-aipc-agent.php:923
+#: includes/class-aipc-agent.php
 msgid "(No site prompt configured — write for a general audience.)"
 msgstr ""
 
-#: includes/class-aipc-agent.php:928
-msgid "The user suggests this topic: \"%s\" — build the article around it, adapted to the site context."
+#: admin/views/schedule.php
+msgid "0 = unlimited"
 msgstr ""
 
-#: includes/class-aipc-agent.php:931
-msgid "No topic given — invent the single best topic yourself. It must fit the site context AND the chosen category."
+#: admin/views/schedule.php
+msgid "15–10080 minutes (up to a week). Only used with “Publish later”."
 msgstr ""
 
-#: includes/class-aipc-agent.php:945
-msgid "The plan did not include a title. Please retry."
+#: admin/views/settings.php
+msgid "1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024. The image model itself is set per connection."
 msgstr ""
 
-#: includes/class-aipc-agent.php:960
-msgid "The model did not pick a category from the list. Retrying."
+#: includes/class-aipc-bale.php
+msgid "A new AI post is published"
 msgstr ""
 
-#: includes/class-aipc-agent.php:977
-msgid "Chosen category: %s"
+#: admin/views/prompts.php
+msgid "A “respond ONLY with valid JSON” instruction is appended automatically."
 msgstr ""
 
-#: includes/class-aipc-agent.php:982
+#: admin/views/prompts.php
+msgid "A “respond with raw HTML only” instruction is appended automatically."
+msgstr ""
+
+#: admin/views/connections.php includes/class-aipc-admin.php
+msgid "AI Connections"
+msgstr ""
+
+#: admin/views/logs.php includes/class-aipc-admin.php
+msgid "AI Logs"
+msgstr ""
+
+#: admin/views/new-post.php includes/class-aipc-admin.php
+msgid "AI Post Creator"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "AI Post Creator — Settings"
+msgstr ""
+
+#: includes/class-aipc-admin.php
+msgid "AI Schedule"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "AI Schedule & Notifications"
+msgstr ""
+
+#: includes/class-aipc-admin.php
+msgid "AI Settings"
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "AI connections chain (fallback order)"
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "AI time (sum of steps)"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "API base URL"
+msgstr ""
+
+#: admin/views/log-detail.php admin/views/logs.php
+msgid "API calls"
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "API error %1$d: %2$s"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "API key"
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "API key or endpoint is not configured."
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "API key or endpoint is not configured. Open Settings and connect a provider first."
+msgstr ""
+
+#: admin/views/connections.php admin/views/logs.php admin/views/schedule.php
+msgid "Actions"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Active"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Add a new connection"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Add a new schedule"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Add a table of contents by default"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Add an FAQ block with schema markup by default"
+msgstr ""
+
+#: admin/views/new-post.php includes/class-aipc-assets.php
+msgid "Add an OpenAI-compatible connection (URL + API key) to start generating posts."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Advanced"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/schedule.php
+msgid "After creation"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "After every generated post the agent can message a Bale chat with the featured image, the summary and the link to the article. Create a bot with @Bot_Father in Bale, paste its token here, and enter the chat ID of the person (or channel) that should receive the messages."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Agent cancelled by user."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Agent cancelled."
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php
+msgid "Agent console"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Agent mode: from a bare topic to a complete, SEO-ready post — step by step."
+msgstr ""
+
+#: admin/views/rewrite.php
+msgid "Agent mode: give an existing post a full copywriting + SEO refresh — fresher copy, better structure, full originality."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Agent started — suggested topic: “%s”"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Agent started — the topic will be invented from the site prompt."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "All logs cleared."
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "An existing post was rewritten by the AI"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Analyzes the existing post (rewrite mode) and builds the improved outline."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Appended to every agent request (the {{extra}} placeholder of the system prompt)."
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Arabic"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Article outline"
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "Assign each pipeline step its own AI connection and edit its prompt template."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Attempt %1$d/%2$d on “%3$s” failed (%4$s) — retrying…"
+msgstr ""
+
+#: includes/class-aipc-agent.php
 msgid "Audience: %s"
 msgstr ""
 
-#: includes/class-aipc-agent.php:987
-msgid "Primary keyword: %s"
+#: admin/views/schedule.php
+msgid "Automatic (site prompt)"
 msgstr ""
 
-#: includes/class-aipc-agent.php:993
-msgid "Secondary keywords: %s"
+#: admin/views/schedule.php
+msgid "Automatic schedules"
 msgstr ""
 
-#: includes/class-aipc-agent.php:999
-msgid "Working title: “%s”"
+#: admin/views/prompts.php
+msgid "Available placeholders"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1044
-msgid "The outline was empty or malformed. Please retry."
+#: admin/views/log-detail.php
+msgid "Back to logs"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1050 includes/class-aipc-steps.php:108
-msgid "Introduction"
+#: includes/class-aipc-bale.php
+msgid "Bale API error: %s"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1058 includes/class-aipc-steps.php:162
+#: includes/class-aipc-bale.php
+msgid "Bale bot token is not configured."
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Bale chat ID is not configured."
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Bale notification failed: %s"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Bale notification sent (image, summary and link)."
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Bale notification sent to %1$d of %2$d chats."
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Bale notification sent to %d chats (image, summary and link)."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Bale notification settings saved."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Bale notifications"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Base identity sent with every request, before the step prompt."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Body section"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Bot token"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Builds the section outline for the chosen length."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Bullet list of existing article titles (avoid duplicating them)"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Bullet list of existing articles usable as internal links"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Bullet list of section headings"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Bullet list of the site’s post categories"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Bullet list of this site’s other articles usable as internal links"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Calls"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Calls the image API of the assigned connection and saves the result to the media library. No prompt — the image model and size come from the connection and settings."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Cancel"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php
+msgid "Cancel agent"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Cancel the agent? The current progress will be kept but nothing new will run."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Cancelled"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Casual"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Category & topic selection"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Chat ID detected: %s"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Chat IDs (one per line)"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Chat model"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Chinese"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Chosen category: %s"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Clear all logs"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Completion tokens"
+msgstr ""
+
+#: includes/class-aipc-agent.php includes/class-aipc-steps.php
 msgid "Conclusion & call to action"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1059 includes/class-aipc-steps.php:182
+#: includes/class-aipc-agent.php
+msgid "Conclusion written (%d words)"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Configure any number of OpenAI-compatible providers — then assign each pipeline step its own connection under Prompts & Steps."
+msgstr ""
+
+#: admin/views/log-detail.php admin/views/logs.php includes/class-aipc-connections.php
+msgid "Connection"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Connection deleted."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Connection error:"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Connection failed:"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Connection saved."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Connection successful (model list not supported by this provider)."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Connection successful — %d models found."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Connection successful!"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Connection “%1$s” failed after %2$d attempts — switching to “%3$s”."
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+msgid "Connections"
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Console log"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Content defaults"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Content defaults. Providers, models and per-step prompts live under Connections and Prompts & Steps."
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
+msgid "Content language"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Content language name"
+msgstr ""
+
+#: includes/class-aipc-agent.php includes/class-aipc-steps.php
 msgid "Copywriting & SEO pass"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1061 includes/class-aipc-steps.php:208
+#: includes/class-aipc-agent.php
+msgid "Copywriting & SEO pass complete (%1$d → %2$d words)"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Could not download the generated image — continuing without one."
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "Could not download the generated image."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Could not load the model list:"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Could not reach Bale: %s"
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "Could not reach the AI provider: %s"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Could not save the image to the media library (%s) — continuing without one."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Could not start the agent. Check that a connection is configured."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Create another"
+msgstr ""
+
+#: admin/views/rewrite.php
+msgid "Create your first post with the agent, then come back to refresh it anytime."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Cron status"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Current section number (1-based)"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Daily"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Daily report"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Date"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Days"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Default"
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "Default connection: %s"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Default language"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Default length"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Default tone"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php
+msgid "Default: %s"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Delay (minutes)"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Delay before publishing (minutes)"
+msgstr ""
+
+#: admin/views/connections.php admin/views/logs.php admin/views/schedule.php
+msgid "Delete"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Delete ALL job logs? This cannot be undone."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Delete all plugin data (settings, connections, jobs, SEO meta) when the plugin is uninstalled"
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Delete job"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Delete this connection? Steps using it will fall back to the default connection."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Delete this schedule?"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Describe your site — what it is about, its goal and audience — so the agent can invent fitting topics."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Details"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Detect chat ID"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Detecting chat ID…"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Done"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Done — %1$d words · %2$d prompt + %3$d completion tokens"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Draft created: #%d"
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Draft post #%1$d · %2$d words"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Drafts created: %d"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Duration"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Each entry starts one full agent run (a complete draft post) at the chosen time on the chosen days. The topic can be fixed — or left empty so the agent invents one from the site prompt."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Each step uses the connection and prompt assigned under Prompts & Steps."
+msgstr ""
+
+#: admin/views/connections.php admin/views/schedule.php
+msgid "Edit"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Edit connection"
+msgstr ""
+
+#: admin/views/log-detail.php admin/views/new-post.php admin/views/rewrite.php
+msgid "Edit post"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Edit schedule"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Empty = invented from the site prompt"
+msgstr ""
+
+#: includes/class-aipc-post-builder.php
+msgid "Empty image data."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Enable image generation"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Endpoint"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "English"
+msgstr ""
+
+#: includes/class-aipc-rest.php
+msgid "Enter a Bale bot token and chat ID first."
+msgstr ""
+
+#: includes/class-aipc-rest.php
+msgid "Enter a Bale bot token first."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Enter a bot token first."
+msgstr ""
+
+#: includes/class-aipc-rest.php
+msgid "Enter a valid API base URL first."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Enter at least one chat ID."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Error"
+msgstr ""
+
+#: includes/class-aipc-scheduler.php
+msgid "Every 15 minutes (AI Post Creator)"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Every agent run: status, timing, tokens, per-step API calls and the full console log."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Example endpoints"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Expert / technical"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Extra system instructions"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Extra system instructions from the settings"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Extras"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
+msgid "FAQ block"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "FAQ ready — %d questions (FAQ schema will be added)"
+msgstr ""
+
+#: includes/class-aipc-agent.php includes/class-aipc-steps.php
 msgid "FAQ section (rich results)"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1063 includes/class-aipc-steps.php:221
-msgid "SEO summary for Rank Math"
+#: admin/views/log-detail.php
+msgid "Failed"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1067
-msgid "Save post"
+#: includes/class-aipc-assets.php
+msgid "Failed:"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1073
+#: admin/views/new-post.php admin/views/schedule.php includes/class-aipc-agent.php
+msgid "Featured image"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Featured image (image API)"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Featured image disabled in settings — skipped."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Featured image saved to the media library (#%d)"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Featured images"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "French"
+msgstr ""
+
+#: includes/class-aipc-agent.php includes/class-aipc-post-builder.php
+msgid "Frequently asked questions"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Friendly"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Generate post"
+msgstr ""
+
+#: includes/class-aipc-post-builder.php
+msgid "Generated content was empty."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Generating featured image — prompt: %s"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "German"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Hindi"
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "Hold Ctrl / Cmd to pick several. Each selected connection gets its own retry budget; when one keeps failing the agent automatically switches to the next. Empty = default connection."
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Humorous"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Image generation failed on every connection — continuing without a featured image."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Image model"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Image prompt"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Image size"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Improved title from the analysis step"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Improved title: “%s”"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Improvement notes from the analysis step"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Internal linking list chosen in the plan step (or empty)"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Internal linking: %d existing articles will be linked"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Internal links to weave in (or empty)"
+msgstr ""
+
+#: includes/class-aipc-agent.php includes/class-aipc-steps.php
+msgid "Introduction"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Introduction written (%d words)"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Job deleted."
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Job details"
+msgstr ""
+
+#: includes/class-aipc-admin.php includes/class-aipc-agent.php
+msgid "Job not found or already cleaned up."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Job not found or expired. Please start again."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Jobs"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Jobs: %1$d (✅ %2$d · ❌ %3$d)"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php
+msgid "Language (write its English name)"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Leave empty and the agent will invent a topic from the site prompt — or write your own idea here…"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
+msgid "Length"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Let the agent generate a featured image (skipped gracefully if the provider does not support it)"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Let the agent write posts automatically at fixed times — and get a Bale message (image + summary + link) after every post is created."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Load models from provider"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Loading models…"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+msgid "Logs"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Long — ~2,200 words"
+msgstr ""
+
+#: includes/class-aipc-connections.php
+msgid "Main connection"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Max scheduled posts per day"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Max tokens per step"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Medium — ~1,200 words"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Meta title/description (the Rank Math summary), slug, excerpt and tags."
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Model"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Model: %s"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Name"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Neutral"
+msgstr ""
+
+#: admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+msgid "New AI Post"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "New AI post is ready"
+msgstr ""
+
+#: admin/views/rewrite.php
+msgid "New featured image"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "No AI connection configured"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
+msgid "No AI connection configured."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "No AI connection is configured yet. Add one under AI Post Creator → Connections."
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "No calls recorded."
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php
+msgid "No connection configured"
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "No connection configured yet."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "No connections yet. Add your first one below."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "No jobs yet. Generate your first post!"
+msgstr ""
+
+#: includes/class-aipc-assets.php includes/class-aipc-bale.php
+msgid "No messages found. Send any message to your bot in Bale first, then try again."
+msgstr ""
+
+#: admin/views/rewrite.php
+msgid "No posts found."
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "No runs in this period."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "No schedules yet. Add your first one below — e.g. every day at 09:00."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "No site prompt configured."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "No topic given — invent the single best topic yourself. It must fit the site context AND the chosen category."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Off"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "One chat ID per line — a person’s numeric ID or a @channel username. Send any message to your bot, then use the button below to detect it automatically."
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php includes/class-aipc-assets.php
+msgid "Open connections"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Open settings"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Opening of the finished introduction"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Optional: one URL per line (max 8). The agent reads each site’s RSS feed while planning and grounds the topic and facts in their latest articles."
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
+msgid "Options"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Other…"
+msgstr ""
+
+#: includes/class-aipc-agent.php
 msgid "Outline ready — %d section."
 msgid_plural "Outline ready — %d sections."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-aipc-agent.php:1106
-msgid "Introduction written (%d words)"
+#: admin/views/log-detail.php
+msgid "Overview"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1162
-msgid "Section written (%1$d words) — %2$s"
+#: admin/views/schedule.php
+msgid "Paused"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1195
-msgid "Conclusion written (%d words)"
+#: admin/views/schedule.php
+msgid "Periodic report"
 msgstr ""
 
-#: includes/class-aipc-agent.php:1241 includes/class-aipc-agent.php:1253 includes/class-aipc-agent.php:1258 includes/class-aipc-agent.php:1262
-msgid "The revision lost the article structure. Retrying."
-msgstr ""
-
-#: includes/class-aipc-agent.php:1246
-msgid "The revision came back much shorter than the draft. Retrying."
-msgstr ""
-
-#: includes/class-aipc-agent.php:1273
-msgid "Copywriting & SEO pass complete (%1$d → %2$d words)"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1310
-msgid "The FAQ step returned no usable questions. Please retry."
-msgstr ""
-
-#: includes/class-aipc-agent.php:1314 includes/class-aipc-post-builder.php:96
-msgid "Frequently asked questions"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1320
-msgid "FAQ ready — %d questions (FAQ schema will be added)"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1346
-msgid "SEO metadata was incomplete. Please retry."
-msgstr ""
-
-#: includes/class-aipc-agent.php:1364
-msgid "SEO title: %s"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1369
-msgid "Rank Math summary: %s"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1374
-msgid "Slug: /%s/"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1380
-msgid "Tags: %s"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1384
-msgid "SEO metadata ready"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1397
-msgid "Featured image disabled in settings — skipped."
-msgstr ""
-
-#: includes/class-aipc-agent.php:1415
-msgid "Generating featured image — prompt: %s"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1430
-msgid "Image generation failed (%s) — continuing without a featured image."
-msgstr ""
-
-#: includes/class-aipc-agent.php:1444
-msgid "Could not download the generated image — continuing without one."
-msgstr ""
-
-#: includes/class-aipc-agent.php:1456
-msgid "Could not save the image to the media library (%s) — continuing without one."
-msgstr ""
-
-#: includes/class-aipc-agent.php:1469
-msgid "Featured image saved to the media library (#%d)"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1510
-msgid "Draft created: #%d"
-msgstr ""
-
-#: includes/class-aipc-agent.php:1515
-msgid "Done — %1$d words · %2$d prompt + %3$d completion tokens"
-msgstr ""
-
-#: includes/class-aipc-api-client.php:124
-msgid "Could not reach the AI provider: %s"
-msgstr ""
-
-#: includes/class-aipc-api-client.php:141
-msgid "API error %1$d: %2$s"
-msgstr ""
-
-#: includes/class-aipc-api-client.php:148
-msgid "The provider returned an invalid (non-JSON) response."
-msgstr ""
-
-#: includes/class-aipc-api-client.php:201
-msgid "API key or endpoint is not configured. Open Settings and connect a provider first."
-msgstr ""
-
-#: includes/class-aipc-api-client.php:241
-msgid "The model returned an empty response. Try again or lower the max tokens setting."
-msgstr ""
-
-#: includes/class-aipc-api-client.php:283
-msgid "The model did not return valid JSON. Try again, or switch to a stronger model."
-msgstr ""
-
-#: includes/class-aipc-api-client.php:330
-msgid "API key or endpoint is not configured."
-msgstr ""
-
-#: includes/class-aipc-api-client.php:379
-msgid "The provider returned no image data."
-msgstr ""
-
-#: includes/class-aipc-api-client.php:401
-msgid "Could not download the generated image."
-msgstr ""
-
-#: includes/class-aipc-assets.php:143
-msgid "Starting the agent…"
-msgstr ""
-
-#: includes/class-aipc-assets.php:144
-msgid "Resuming the running agent…"
-msgstr ""
-
-#: includes/class-aipc-assets.php:145
-msgid "Planning…"
-msgstr ""
-
-#: includes/class-aipc-assets.php:146
-msgid "The agent is working — keep this tab open."
-msgstr ""
-
-#: includes/class-aipc-assets.php:147
-msgid "Connection error:"
-msgstr ""
-
-#: includes/class-aipc-assets.php:148
-msgid "The request timed out."
-msgstr ""
-
-#: includes/class-aipc-assets.php:149
-msgid "The agent stopped with an error. You can retry the failed step."
-msgstr ""
-
-#: includes/class-aipc-assets.php:150
-msgid "Cancel the agent? The current progress will be kept but nothing new will run."
-msgstr ""
-
-#: includes/class-aipc-assets.php:151
-msgid "Agent cancelled."
-msgstr ""
-
-#: includes/class-aipc-assets.php:152
-msgid "No AI connection configured"
-msgstr ""
-
-#: includes/class-aipc-assets.php:155
-msgid "words"
-msgstr ""
-
-#: includes/class-aipc-assets.php:156
-msgid "tokens"
-msgstr ""
-
-#: includes/class-aipc-assets.php:157
-msgid "s"
-msgstr ""
-
-#: includes/class-aipc-assets.php:172
-msgid "Sending test message…"
-msgstr ""
-
-#: includes/class-aipc-assets.php:173
-msgid "Test message sent — check Bale!"
-msgstr ""
-
-#: includes/class-aipc-assets.php:174
-msgid "Failed:"
-msgstr ""
-
-#: includes/class-aipc-assets.php:175
-msgid "Detecting chat ID…"
-msgstr ""
-
-#: includes/class-aipc-assets.php:176 includes/class-aipc-bale.php:270
-msgid "No messages found. Send any message to your bot in Bale first, then try again."
-msgstr ""
-
-#: includes/class-aipc-assets.php:177
-msgid "Chat ID detected: %s"
-msgstr ""
-
-#: includes/class-aipc-assets.php:178
-msgid "Enter a bot token first."
-msgstr ""
-
-#: includes/class-aipc-assets.php:179
-msgid "Enter at least one chat ID."
-msgstr ""
-
-#: includes/class-aipc-assets.php:194
-msgid "Testing connection…"
-msgstr ""
-
-#: includes/class-aipc-assets.php:195
-msgid "Connection successful!"
-msgstr ""
-
-#: includes/class-aipc-assets.php:196
-msgid "Connection successful (model list not supported by this provider)."
-msgstr ""
-
-#: includes/class-aipc-assets.php:197
-msgid "Connection successful — %d models found."
-msgstr ""
-
-#: includes/class-aipc-assets.php:198
-msgid "Connection failed:"
-msgstr ""
-
-#: includes/class-aipc-assets.php:199
-msgid "Loading models…"
-msgstr ""
-
-#: includes/class-aipc-assets.php:200
-msgid "%d models loaded — pick one in the list."
-msgstr ""
-
-#: includes/class-aipc-assets.php:201
-msgid "Could not load the model list:"
-msgstr ""
-
-#: includes/class-aipc-bale.php:171
-msgid "Bale bot token is not configured."
-msgstr ""
-
-#: includes/class-aipc-bale.php:186
-msgid "Could not reach Bale: %s"
-msgstr ""
-
-#: includes/class-aipc-bale.php:198
-msgid "Bale API error: %s"
-msgstr ""
-
-#: includes/class-aipc-bale.php:216
-msgid "Bale chat ID is not configured."
-msgstr ""
-
-#: includes/class-aipc-bale.php:284
-msgid "Test message from AI Post Creator — your Bale connection works!"
-msgstr ""
-
-#: includes/class-aipc-bale.php:328
-msgid "New AI post is ready"
-msgstr ""
-
-#: includes/class-aipc-bale.php:334
-msgid "%d words · saved as a draft"
-msgstr ""
-
-#: includes/class-aipc-bale.php:375
-msgid "Bale notification sent (image, summary and link)."
-msgstr ""
-
-#: includes/class-aipc-bale.php:379
-msgid "Bale notification sent to %d chats (image, summary and link)."
-msgstr ""
-
-#: includes/class-aipc-bale.php:386
-msgid "Bale notification sent to %1$d of %2$d chats."
-msgstr ""
-
-#: includes/class-aipc-bale.php:393
-msgid "Bale notification failed: %s"
-msgstr ""
-
-#: includes/class-aipc-bale.php:394
-msgid "unknown error"
-msgstr ""
-
-#: includes/class-aipc-bale.php:510
-msgid "Daily report"
-msgstr ""
-
-#: includes/class-aipc-bale.php:511
-msgid "Weekly report"
-msgstr ""
-
-#: includes/class-aipc-bale.php:518
-msgid "No runs in this period."
-msgstr ""
-
-#: includes/class-aipc-bale.php:522
-msgid "Jobs: %1$d (✅ %2$d · ❌ %3$d)"
-msgstr ""
-
-#: includes/class-aipc-bale.php:529
-msgid "Drafts created: %d"
-msgstr ""
-
-#: includes/class-aipc-bale.php:534
-msgid "Tokens: %1$s prompt + %2$s completion"
-msgstr ""
-
-#: includes/class-aipc-bale.php:550
-msgid "• %1$s — %2$d calls · %3$s tokens"
-msgstr ""
-
-#: includes/class-aipc-connections.php:270
-msgid "Main connection"
-msgstr ""
-
-#: includes/class-aipc-post-builder.php:160
-msgid "Generated content was empty."
-msgstr ""
-
-#: includes/class-aipc-post-builder.php:267
-msgid "Empty image data."
-msgstr ""
-
-#: includes/class-aipc-rest.php:204
-msgid "Enter a Bale bot token and chat ID first."
-msgstr ""
-
-#: includes/class-aipc-rest.php:245
-msgid "Enter a Bale bot token first."
-msgstr ""
-
-#: includes/class-aipc-rest.php:287
-msgid "Enter a valid API base URL first."
-msgstr ""
-
-#: includes/class-aipc-scheduler.php:50
-msgid "Every 15 minutes (AI Post Creator)"
-msgstr ""
-
-#: includes/class-aipc-scheduler.php:435
-msgid "Schedule entry not found."
-msgstr ""
-
-#: includes/class-aipc-settings.php:80
-msgid "Professional"
-msgstr ""
-
-#: includes/class-aipc-settings.php:81
-msgid "Friendly"
-msgstr ""
-
-#: includes/class-aipc-settings.php:82
-msgid "Casual"
-msgstr ""
-
-#: includes/class-aipc-settings.php:83
-msgid "Expert / technical"
-msgstr ""
-
-#: includes/class-aipc-settings.php:84
-msgid "Persuasive"
-msgstr ""
-
-#: includes/class-aipc-settings.php:85
-msgid "Storytelling"
-msgstr ""
-
-#: includes/class-aipc-settings.php:86
-msgid "Humorous"
-msgstr ""
-
-#: includes/class-aipc-settings.php:87
-msgid "Neutral"
-msgstr ""
-
-#: includes/class-aipc-settings.php:98
-msgid "Short — ~600 words"
-msgstr ""
-
-#: includes/class-aipc-settings.php:99
-msgid "Medium — ~1,200 words"
-msgstr ""
-
-#: includes/class-aipc-settings.php:100
-msgid "Long — ~2,200 words"
-msgstr ""
-
-#: includes/class-aipc-settings.php:129
+#: includes/class-aipc-settings.php
 msgid "Persian (Farsi)"
 msgstr ""
 
-#: includes/class-aipc-settings.php:130
-msgid "English"
+#: includes/class-aipc-settings.php
+msgid "Persuasive"
 msgstr ""
 
-#: includes/class-aipc-settings.php:131
-msgid "Arabic"
+#: includes/class-aipc-assets.php
+msgid "Pick a post to rewrite first."
 msgstr ""
 
-#: includes/class-aipc-settings.php:132
-msgid "Turkish"
-msgstr ""
-
-#: includes/class-aipc-settings.php:133
-msgid "German"
-msgstr ""
-
-#: includes/class-aipc-settings.php:134
-msgid "French"
-msgstr ""
-
-#: includes/class-aipc-settings.php:135
-msgid "Spanish"
-msgstr ""
-
-#: includes/class-aipc-settings.php:136
-msgid "Russian"
-msgstr ""
-
-#: includes/class-aipc-settings.php:137
-msgid "Portuguese"
-msgstr ""
-
-#: includes/class-aipc-settings.php:138
-msgid "Hindi"
-msgstr ""
-
-#: includes/class-aipc-settings.php:139
-msgid "Chinese"
-msgstr ""
-
-#: includes/class-aipc-settings.php:140
-msgid "Other…"
-msgstr ""
-
-#: includes/class-aipc-steps.php:32
-msgid "System prompt (all steps)"
-msgstr ""
-
-#: includes/class-aipc-steps.php:34
-msgid "Base identity sent with every request, before the step prompt."
-msgstr ""
-
-#: includes/class-aipc-steps.php:103 includes/class-aipc-steps.php:128 includes/class-aipc-steps.php:177 includes/class-aipc-steps.php:216 includes/class-aipc-steps.php:239 includes/class-aipc-steps.php:37 includes/class-aipc-steps.php:78
-msgid "Content language name"
-msgstr ""
-
-#: includes/class-aipc-steps.php:38
-msgid "Selected tone label"
-msgstr ""
-
-#: includes/class-aipc-steps.php:39
-msgid "Site prompt context (empty when not configured)"
-msgstr ""
-
-#: includes/class-aipc-steps.php:40
-msgid "Extra system instructions from the settings"
-msgstr ""
-
-#: includes/class-aipc-steps.php:47
+#: includes/class-aipc-steps.php
 msgid "Picks one of the existing categories and builds the topic from the site prompt."
 msgstr ""
 
-#: includes/class-aipc-steps.php:73
-msgid "The site prompt (or a fallback note)"
-msgstr ""
-
-#: includes/class-aipc-steps.php:74
-msgid "Bullet list of the site’s post categories"
-msgstr ""
-
-#: includes/class-aipc-steps.php:75
-msgid "The user’s topic hint, or “invent one” instruction"
-msgstr ""
-
-#: includes/class-aipc-steps.php:76
-msgid "Target word count for the article"
-msgstr ""
-
-#: includes/class-aipc-steps.php:102 includes/class-aipc-steps.php:77
+#: includes/class-aipc-steps.php
 msgid "Planned section count"
 msgstr ""
 
-#: includes/class-aipc-steps.php:85
-msgid "Builds the section outline for the chosen length."
+#: includes/class-aipc-assets.php
+msgid "Planning…"
 msgstr ""
 
-#: includes/class-aipc-steps.php:124 includes/class-aipc-steps.php:151 includes/class-aipc-steps.php:175 includes/class-aipc-steps.php:200 includes/class-aipc-steps.php:215 includes/class-aipc-steps.php:237 includes/class-aipc-steps.php:254 includes/class-aipc-steps.php:97
-msgid "Working title"
+#: includes/class-aipc-settings.php
+msgid "Portuguese"
 msgstr ""
 
-#: includes/class-aipc-steps.php:98
-msgid "Topic brief from the plan step"
+#: includes/class-aipc-agent.php includes/class-aipc-scheduler.php
+msgid "Post published."
 msgstr ""
 
-#: includes/class-aipc-steps.php:126 includes/class-aipc-steps.php:155 includes/class-aipc-steps.php:201 includes/class-aipc-steps.php:99
-msgid "Primary keyword"
+#: includes/class-aipc-agent.php
+msgid "Post published: #%d"
 msgstr ""
 
-#: includes/class-aipc-steps.php:100
-msgid "Unique angle from the plan step"
+#: admin/views/rewrite.php
+msgid "Post to rewrite"
 msgstr ""
 
-#: includes/class-aipc-steps.php:101
-msgid "Target word count"
+#: includes/class-aipc-agent.php
+msgid "Post updated: #%d"
 msgstr ""
 
-#: includes/class-aipc-steps.php:110
-msgid "Writes the article introduction."
+#: admin/views/schedule.php
+msgid "Posts are always created as drafts first; pick what happens next."
 msgstr ""
 
-#: includes/class-aipc-steps.php:125
-msgid "Topic brief"
-msgstr ""
-
-#: includes/class-aipc-steps.php:127
-msgid "Target audience"
-msgstr ""
-
-#: includes/class-aipc-steps.php:133
-msgid "Body section"
-msgstr ""
-
-#: includes/class-aipc-steps.php:135
-msgid "Writes one body section (runs once per outline section)."
-msgstr ""
-
-#: includes/class-aipc-steps.php:149
-msgid "Current section number (1-based)"
-msgstr ""
-
-#: includes/class-aipc-steps.php:150
-msgid "Total section count"
-msgstr ""
-
-#: includes/class-aipc-steps.php:152
-msgid "This section’s heading"
-msgstr ""
-
-#: includes/class-aipc-steps.php:153
-msgid "What this section must cover"
-msgstr ""
-
-#: includes/class-aipc-steps.php:154
-msgid "Word target for this section"
-msgstr ""
-
-#: includes/class-aipc-steps.php:156
-msgid "Secondary keywords line (or empty)"
-msgstr ""
-
-#: includes/class-aipc-steps.php:157
+#: includes/class-aipc-steps.php
 msgid "Previous section tail for continuity (or empty)"
 msgstr ""
 
-#: includes/class-aipc-steps.php:164
-msgid "Writes the conclusion with a call to action."
+#: includes/class-aipc-steps.php
+msgid "Primary keyword"
 msgstr ""
 
-#: includes/class-aipc-steps.php:176
-msgid "Bullet list of section headings"
+#: includes/class-aipc-agent.php
+msgid "Primary keyword: %s"
 msgstr ""
 
-#: includes/class-aipc-steps.php:184
-msgid "Revises the whole draft for copy quality, SEO and originality."
+#: includes/class-aipc-settings.php
+msgid "Professional"
 msgstr ""
 
-#: includes/class-aipc-steps.php:202
-msgid "Section count"
+#: admin/views/prompts.php
+msgid "Prompt template"
 msgstr ""
 
-#: includes/class-aipc-steps.php:203
-msgid "The full assembled draft HTML"
+#: admin/views/logs.php
+msgid "Prompt tokens"
 msgstr ""
 
-#: includes/class-aipc-steps.php:210
-msgid "Writes the FAQ questions and answers."
+#: admin/views/log-detail.php
+msgid "Prompt → completion"
 msgstr ""
 
-#: includes/class-aipc-steps.php:223
-msgid "Meta title/description (the Rank Math summary), slug, excerpt and tags."
+#: admin/views/new-post.php admin/views/prompts.php includes/class-aipc-admin.php wp-ai-post-creator.php
+msgid "Prompts & Steps"
 msgstr ""
 
-#: includes/class-aipc-steps.php:238
-msgid "Opening of the finished introduction"
+#: admin/views/prompts.php
+msgid "Prompts & assignments saved."
 msgstr ""
 
-#: includes/class-aipc-steps.php:244
-msgid "Image prompt"
+#: admin/views/schedule.php
+msgid "Publish"
 msgstr ""
 
-#: includes/class-aipc-steps.php:246
-msgid "Turns the topic + Rank Math summary into an image-generation prompt."
-msgstr ""
-
-#: includes/class-aipc-steps.php:255
+#: includes/class-aipc-steps.php
 msgid "Rank Math summary (meta description)"
 msgstr ""
 
-#: includes/class-aipc-steps.php:260
-msgid "Featured image (image API)"
+#: includes/class-aipc-agent.php
+msgid "Rank Math summary: %s"
 msgstr ""
 
-#: includes/class-aipc-steps.php:262
-msgid "Calls the image API of the assigned connection and saves the result to the media library. No prompt — the image model and size come from the connection and settings."
+#: includes/class-aipc-steps.php
+msgid "Reminder of the internal links that must survive the revision"
 msgstr ""
 
+#: admin/views/schedule.php
+msgid "Report day (weekly reports)"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Report time"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Reports are sent once per day/week at this time, after it has passed."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Research items from the configured source sites (or empty)"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Research source sites"
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "Reset"
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Result"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Resuming the running agent…"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php
+msgid "Retry step"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Retrying failed step…"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Revises the whole draft for copy quality, SEO and originality."
+msgstr ""
+
+#: admin/views/rewrite.php
+msgid "Rewrite another"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Rewrite complete (%1$d → %2$d words)"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Rewrite plan ready — %d section."
+msgid_plural "Rewrite plan ready — %d sections."
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+msgid "Rewrite post"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Rewrite: analysis & new outline"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Rewrite: full revision pass"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Rewrites the whole existing post: fresher copy, better SEO, full originality."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Rewriting the existing post “%1$s” (#%2$d) — fresh copy, better SEO, full originality."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Run now"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Running"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Russian"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "SEO metadata ready"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "SEO metadata was incomplete. Please retry."
+msgstr ""
+
+#: includes/class-aipc-agent.php includes/class-aipc-steps.php
+msgid "SEO summary for Rank Math"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "SEO title: %s"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Save"
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "Save all"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Save connection"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Save post"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Save schedule"
+msgstr ""
+
+#: admin/views/schedule.php admin/views/settings.php
+msgid "Save settings"
+msgstr ""
+
+#: includes/class-aipc-admin.php wp-ai-post-creator.php
+msgid "Schedule"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Schedule deleted."
+msgstr ""
+
+#: includes/class-aipc-scheduler.php
+msgid "Schedule entry not found."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Schedule saved."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Schedule settings saved."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Scheduled"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Scheduled posts today: %1$d of %2$s"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Scheduled to publish at %s."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Secondary keywords line (or empty)"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Secondary keywords: %s"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Section count"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Section count from the analysis step"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Section written (%1$d words) — %2$s"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Selected tone label"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Send a Bale message after every generated post"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Send test message"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Sending test message…"
+msgstr ""
+
+#: admin/views/new-post.php includes/class-aipc-admin.php wp-ai-post-creator.php
+msgid "Settings"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Setup — default connection: %1$s (%2$s) · tone: %3$s · length: %4$s"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Short — ~600 words"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Site prompt"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Site prompt context (empty when not configured)"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Site timezone. The run starts within ~15 minutes of this time."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Slug: /%s/"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Spanish"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Starting the agent…"
+msgstr ""
+
+#: admin/views/log-detail.php admin/views/logs.php admin/views/schedule.php
+msgid "Status"
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Step"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Step failed: %s"
+msgstr ""
+
+#: admin/views/log-detail.php admin/views/logs.php
+msgid "Steps"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Storytelling"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Summary"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "System prompt (all steps)"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php includes/class-aipc-post-builder.php
+msgid "Table of contents"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Tags: %s"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Target audience"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Target word count"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Target word count for the article"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Tell the agent what this site is about: its purpose, audience and voice. Used to pick the category, invent topics and keep every sentence on-brand."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Temperature"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Test connection"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Test message from AI Post Creator — your Bale connection works!"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Test message sent — check Bale!"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Testing connection…"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The FAQ step returned no usable questions. Please retry."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "The agent always picks one of your existing post categories and builds the topic from the site prompt."
+msgstr ""
+
+#: admin/views/rewrite.php
+msgid "The agent analyzes the post, rewrites every paragraph (keeping the facts and the links), refreshes the SEO metadata and can generate a new featured image."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "The agent is working — keep this tab open."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "The agent just started — the console page is now running it."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "The agent plans, writes and assembles the post live — you can cancel anytime."
+msgstr ""
+
+#: admin/views/rewrite.php
+msgid "The agent rewrites the post live — you can cancel anytime."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "The agent stopped with an error. You can retry the failed step."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "The cron event is not scheduled."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "The current content of the post being rewritten"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "The full assembled draft HTML"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The image prompt step failed."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The model did not pick a category from the list. Retrying."
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "The model did not return valid JSON. Try again, or switch to a stronger model."
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "The model returned an empty response. Try again or lower the max tokens setting."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The model returned too little content for this step. Please retry."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The outline was empty or malformed. Please retry."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The plan did not include a title. Please retry."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "The post is always saved as a draft for your review."
+msgstr ""
+
+#: admin/views/rewrite.php
+msgid "The post is updated in place — its status, author, address and category stay untouched."
+msgstr ""
+
+#: includes/class-aipc-agent.php includes/class-aipc-post-builder.php
+msgid "The post to rewrite was not found."
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "The provider returned an invalid (non-JSON) response."
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "The provider returned no image data."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "The request timed out."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The revision came back much shorter than the draft. Retrying."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The revision lost the article structure. Retrying."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The rewrite analysis did not include a title. Please retry."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The rewrite analysis returned no usable outline. Please retry."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The rewrite came back much shorter than the original. Retrying."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The rewrite lost the article structure. Retrying."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "The scheduler runs every 15 minutes. Next tick: %1$s (site timezone: %2$s)."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "The site prompt (or a fallback note)"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The user suggests this topic: \"%s\" — build the article around it, adapted to the site context."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "The user’s topic hint, or “invent one” instruction"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "This section’s heading"
+msgstr ""
+
+#: admin/views/log-detail.php admin/views/schedule.php
+msgid "Time"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Timeout (seconds)"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Tip: for exact timing on busy or quiet sites alike, disable WP-Cron in wp-config.php and call wp-cron.php with a server cron job instead."
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "Tip: leaving a prompt exactly as its default keeps it in “default” mode (auto-improved on plugin updates)."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Title of the post being rewritten"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Tokens"
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Tokens (prompt + completion)"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Tokens: %1$s prompt + %2$s completion"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
+msgid "Tone"
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Tone / length / language"
+msgstr ""
+
+#: admin/views/log-detail.php admin/views/schedule.php
+msgid "Topic"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/schedule.php
+msgid "Topic (optional)"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Topic / title"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Topic brief"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Topic brief from the plan step"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Total section count"
+msgstr ""
+
+#: includes/class-aipc-settings.php
+msgid "Turkish"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Turns the topic + Rank Math summary into an image-generation prompt."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Uncategorized"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Uninstall"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Unique angle from the plan step"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Unknown connection"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Update post"
+msgstr ""
+
+#: admin/views/logs.php includes/class-aipc-bale.php
+msgid "Usage per connection"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Use as the default connection"
+msgstr ""
+
+#: admin/views/log-detail.php admin/views/new-post.php admin/views/rewrite.php
+msgid "View post"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "WP-Cron is disabled on this site. Make sure a real server cron job calls wp-cron.php every few minutes, or the schedules will not fire:"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Weekly"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Weekly report"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "What this section must cover"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Word target for this section"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Working title"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Working title: “%s”"
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Writes one body section (runs once per outline section)."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Writes the FAQ questions and answers."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Writes the article introduction."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Writes the conclusion with a call to action."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Yes"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "You are not allowed to edit this post."
+msgstr ""
+
+#: includes/class-aipc-admin.php
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: includes/class-aipc-admin.php
+msgid "You do not have permission to do this."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Your connections"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Your post is ready!"
+msgstr ""
+
+#: admin/views/rewrite.php
+msgid "Your post was rewritten!"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php
+msgid "answers + Google rich-results schema"
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "custom"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "e.g. A Persian cooking blog focused on quick weeknight dinners for busy families. Goal: practical, tested recipes with everyday ingredients. Warm, encouraging voice."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "e.g. Always address the reader as “you” and include practical examples."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "e.g. OpenAI · Groq · Local Ollama"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "failed"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php
+msgid "generate & attach a hero image"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php
+msgid "linked jump menu"
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "restore the default prompt on save"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "s"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "sk-… (any value for Ollama/LM Studio)"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "successful"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "tokens"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "tokens used"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/rewrite.php
+msgid "tone, length, language, SEO…"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "total jobs"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "unknown error"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "words"
+msgstr ""
+
+#: admin/views/rewrite.php
+msgid "— pick a post —"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "• %1$s — %2$d calls · %3$s tokens"
+msgstr ""
+
+#: admin/views/connections.php admin/views/schedule.php
+msgid "••••• (saved — leave empty to keep)"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "⏱ +%d min"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/schedule.php
+msgid "⏱ Publish later"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "📝 Draft"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "📝 Keep as draft"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "🚀 Immediately"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/schedule.php
+msgid "🚀 Publish immediately"
+msgstr ""
