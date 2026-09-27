@@ -31,8 +31,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the 
 - Persian translations for all new strings (72 new + first plural `_n()` entries);
   committed dev tooling: `tests/e2e/lint.js` and `tests/e2e/make-translations.py`.
 - Full documentation set: `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`,
-  `CODE_OF_CONDUCT.md`, this changelog, `docs/ARCHITECTURE.md`,
-  `docs/USER-GUIDE.fa.md`, `docs/USER-GUIDE.en.md`, `docs/RELEASE-CHECKLIST.md`.
+  `CODE_OF_CONDUCT.md`, this changelog, and in `docs/`: `ARCHITECTURE.md`,
+  `COOKBOOK.md` (development recipes), `ROADMAP.md` (plan + decision log),
+  `REST-API.md`, `DEBUGGING.md`, `USER-GUIDE.fa.md`, `USER-GUIDE.en.md`,
+  `RELEASE-CHECKLIST.md`.
 
 ### Changed
 - Prompts & Steps admin page: multi-select connection chain replaces the single

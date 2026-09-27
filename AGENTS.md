@@ -1,7 +1,13 @@
 # AGENTS.md — Working Guide for AI Agents (and humans in a hurry)
 
 This file tells you how to work on **AI Post Creator** safely. Read it fully before
-touching code. Deep system documentation lives in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+touching code. Companion documents:
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — full system reference (data model, execution loop, hooks)
+- [`docs/COOKBOOK.md`](docs/COOKBOOK.md) — step-by-step recipes for every common change (add a step, a setting, a page, a REST route, translations…)
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — what's next + binding product decisions (do not violate the decision log)
+- [`docs/REST-API.md`](docs/REST-API.md) / [`docs/DEBUGGING.md`](docs/DEBUGGING.md) — API surface and troubleshooting
+- [`tests/e2e/README.md`](tests/e2e/README.md) — the test world and how to extend it
 
 ## What this project is
 
@@ -188,13 +194,18 @@ breaks naive matching — match exact tab counts or use line-based surgery).
 
 ## Release checklist (short version)
 
-See [`docs/RELEASE-CHECKLIST.md`](docs/RELEASE-CHECKLIST.md) for the full list:
+The change you are making probably matches a recipe in
+[`docs/COOKBOOK.md`](docs/COOKBOOK.md) — follow it. Release steps are in
+[`docs/RELEASE-CHECKLIST.md`](docs/RELEASE-CHECKLIST.md); the full list:
 bump `AIPC_VERSION` (constant + plugin header), `readme.txt` stable tag +
 changelog, `README.md` version + feature sections, re-run translations, lint +
 e2e green, commit `vX.Y.Z — summary`, push the arena branch, update PR #1 via
 REST PATCH, confirm mergeable.
 
-## Roadmap (decided with the product owner)
+## Roadmap
+
+Full plan with rationale and the binding decision log:
+[`docs/ROADMAP.md`](docs/ROADMAP.md). Summary:
 
 - **1.6 — infrastructure:** CI (GitHub Actions running this e2e), custom DB table
   for jobs + schema versioning, Action Scheduler / true background execution,

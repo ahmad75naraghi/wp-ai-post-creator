@@ -12,6 +12,10 @@
 | [راهنمای کامل کاربر (فارسی)](docs/USER-GUIDE.fa.md) | کاربران افزونه |
 | [Complete User Guide (English)](docs/USER-GUIDE.en.md) | Plugin users |
 | [Architecture](docs/ARCHITECTURE.md) | Contributors — full system reference |
+| [Development Cookbook](docs/COOKBOOK.md) | Contributors — step-by-step recipes for every common change |
+| [REST API Reference](docs/REST-API.md) | Developers — endpoints, params, response shapes, curl examples |
+| [Debugging Guide](docs/DEBUGGING.md) | Devs & power users — job logs, symptoms → causes → fixes |
+| [Roadmap & Decisions](docs/ROADMAP.md) | Everyone — 1.6/1.7/1.8 plan, backlog, binding product principles |
 | [AGENTS.md](AGENTS.md) | AI agents / developers — working rules, environment, verification |
 | [Contributing](CONTRIBUTING.md) | Human contributors |
 | [E2E Test Suite](tests/e2e/README.md) | How to run and extend the tests |
