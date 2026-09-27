@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.5.1
+Stable tag: 1.5.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.5.2 =
+* Git connection settings: repository, branch and Personal Access Token (write-only, stored in a non-autoloaded option) — configurable right on the Update from Git page
+* Connection test button checks the repository, branch and token together against GitHub and reports the latest version
+* Private repositories supported: with a token, version checks hit raw.githubusercontent.com authenticated and downloads use the api.github.com zipball endpoint; without a token the public codeload URL is used
 
 = 1.5.1 =
 * New admin page "Update from Git": download the latest files straight from the GitHub repository and replace the plugin in place — version check (with a downgrade guard and a force-reinstall option), automatic backup of the previous version to wp-content/aipc-backups, atomic swap with automatic rollback on failure, and cleanup of stale files

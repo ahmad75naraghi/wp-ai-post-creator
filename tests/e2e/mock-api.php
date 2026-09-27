@@ -106,49 +106,20 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 	}
 
 	// ---- Git self-updater mocks ----
-	if ( 'raw.githubusercontent.com' === $host ) {
-		$aipc_git_branch = 'main';
-		if ( preg_match( '#/wp-ai-post-creator\.php$#', (string) wp_parse_url( $url, PHP_URL_PATH ) ) ) {
-			preg_match( '#raw\.githubusercontent\.com/[^/]+/[^/]+/([^/]+)/#', $url, $aipc_m );
-			$aipc_git_branch = isset( $aipc_m[1] ) ? $aipc_m[1] : 'main';
-		}
-		$aipc_git_version = ( 'old' === $aipc_git_branch ) ? '0.0.1' : '9.9.9';
-		aipc_mock_log( array(
-			'host'    => 'git-raw',
-			'branch'  => $aipc_git_branch,
-			'version' => $aipc_git_version,
-		) );
-		return array(
-			'body'     => "<?php\n/**\n * Plugin Name: AI Post Creator\n * Version: {$aipc_git_version}\n */\n",
-			'response' => array( 'code' => 200, 'message' => 'OK' ),
-		);
+	$aipc_git_auth = '';
+	if ( isset( $args['headers']['Authorization'] ) ) {
+		$aipc_git_auth = (string) $args['headers']['Authorization'];
+	} elseif ( isset( $args['headers']['authorization'] ) ) {
+		$aipc_git_auth = (string) $args['headers']['authorization'];
 	}
 
-	if ( 'codeload.github.com' === $host ) {
-		$aipc_git_branch = 'main';
-		if ( preg_match( '#/zip/refs/heads/(.+)$#', (string) wp_parse_url( $url, PHP_URL_PATH ), $aipc_m ) ) {
-			$aipc_git_branch = $aipc_m[1];
-		}
-		aipc_mock_log( array(
-			'host'   => 'git-zip',
-			'branch' => $aipc_git_branch,
-		) );
-
-		// 'bad' serves garbage; 'old' never reaches the download (version guard).
-		if ( 'bad' === $aipc_git_branch ) {
-			return array(
-				'body'     => 'this is definitely not a zip archive',
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
-			);
-		}
-
-		// Build a zipball from the CURRENT live plugin folder with the version
-		// bumped to 9.9.9, plus a marker file the assertions look for.
+	// Shared zipball builder: package the LIVE plugin folder as version 9.9.9.
+	$aipc_git_zip = function ( $branch ) {
 		require_once ABSPATH . 'wp-admin/includes/class-pclzip.php';
 
 		$aipc_work = WP_CONTENT_DIR . '/aipc-mock-git-' . time();
 		$aipc_src  = WP_PLUGIN_DIR . '/wp-ai-post-creator';
-		$aipc_dst  = $aipc_work . '/wp-ai-post-creator';
+		$aipc_dst  = $aipc_work . '/wp-ai-post-creator-' . $branch;
 
 		$aipc_copy_dir = function ( $from, $to ) use ( &$aipc_copy_dir ) {
 			wp_mkdir_p( $to );
@@ -189,8 +160,85 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		$aipc_rm_dir( $aipc_work );
 		unlink( $aipc_zipfile );
 
+		return $aipc_zip_bytes;
+	};
+
+	if ( 'raw.githubusercontent.com' === $host ) {
+		$aipc_path = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$aipc_repo   = 'unknown/unknown';
+		$aipc_gbranch = 'main';
+		if ( preg_match( '#^/([^/]+)/([^/]+)/([^/]+)/#', $aipc_path, $aipc_m ) ) {
+			$aipc_repo    = $aipc_m[1] . '/' . $aipc_m[2];
+			$aipc_gbranch = $aipc_m[3];
+		}
+		$aipc_notfound = ( false !== strpos( $aipc_repo . '/' . $aipc_gbranch, 'notfound' ) );
+		$aipc_badtoken = ( '' !== $aipc_git_auth && false !== strpos( $aipc_git_auth, 'bad' ) );
+		$aipc_gversion = ( 'old' === $aipc_gbranch ) ? '0.0.1' : '9.9.9';
+
+		aipc_mock_log( array(
+			'host'    => 'git-raw',
+			'repo'    => $aipc_repo,
+			'branch'  => $aipc_gbranch,
+			'auth'    => '' !== $aipc_git_auth,
+			'version' => $aipc_gversion,
+		) );
+
+		if ( $aipc_notfound ) {
+			return array(
+				'body'     => '404: Not Found',
+				'response' => array( 'code' => 404, 'message' => 'Not Found' ),
+			);
+		}
+		if ( $aipc_badtoken ) {
+			return array(
+				'body'     => '401: Bad credentials',
+				'response' => array( 'code' => 401, 'message' => 'Unauthorized' ),
+			);
+		}
+
 		return array(
-			'body'     => $aipc_zip_bytes,
+			'body'     => "<?php\n/**\n * Plugin Name: AI Post Creator\n * Version: {$aipc_gversion}\n */\n",
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+		);
+	}
+
+	if ( 'api.github.com' === $host || 'codeload.github.com' === $host ) {
+		$aipc_path = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$aipc_repo   = 'unknown/unknown';
+		$aipc_gbranch = 'main';
+		if ( preg_match( '#^/repos/([^/]+)/([^/]+)/zipball/(.+)$#', $aipc_path, $aipc_m ) ) {
+			$aipc_repo    = $aipc_m[1] . '/' . $aipc_m[2];
+			$aipc_gbranch = $aipc_m[3];
+		} elseif ( preg_match( '#^/([^/]+)/([^/]+)/zip/refs/heads/(.+)$#', $aipc_path, $aipc_m ) ) {
+			$aipc_repo    = $aipc_m[1] . '/' . $aipc_m[2];
+			$aipc_gbranch = $aipc_m[3];
+		}
+
+		$aipc_host_tag = ( 'api.github.com' === $host ) ? 'git-zip-api' : 'git-zip';
+		aipc_mock_log( array(
+			'host'   => $aipc_host_tag,
+			'repo'   => $aipc_repo,
+			'branch' => $aipc_gbranch,
+			'auth'   => '' !== $aipc_git_auth,
+		) );
+
+		if ( false !== strpos( $aipc_repo . '/' . $aipc_gbranch, 'notfound' ) ) {
+			return array(
+				'body'     => '404: Not Found',
+				'response' => array( 'code' => 404, 'message' => 'Not Found' ),
+			);
+		}
+
+		// 'bad' serves garbage; 'old' never reaches the download (version guard).
+		if ( 'bad' === $aipc_gbranch ) {
+			return array(
+				'body'     => 'this is definitely not a zip archive',
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}
+
+		return array(
+			'body'     => $aipc_git_zip( $aipc_gbranch ),
 			'response' => array( 'code' => 200, 'message' => 'OK' ),
 		);
 	}

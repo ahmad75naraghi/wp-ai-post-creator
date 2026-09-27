@@ -302,14 +302,6 @@ msgstr ""
 msgid "Bot token"
 msgstr ""
 
-#: admin/views/update.php
-msgid "Branch"
-msgstr ""
-
-#: admin/views/update.php
-msgid "Branch saved."
-msgstr ""
-
 #: includes/class-aipc-steps.php
 msgid "Builds the section outline for the chosen length."
 msgstr ""
@@ -440,6 +432,10 @@ msgstr ""
 
 #: includes/class-aipc-assets.php
 msgid "Connection successful!"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Connection test succeeded — latest version: %s"
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -822,8 +818,16 @@ msgstr ""
 msgid "German"
 msgstr ""
 
+#: admin/views/update.php
+msgid "GitHub repository"
+msgstr ""
+
 #: includes/class-aipc-updater.php
 msgid "GitHub returned HTTP %d while checking the version."
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "GitHub returned HTTP %d while testing the connection."
 msgstr ""
 
 #: includes/class-aipc-settings.php
@@ -1120,6 +1124,10 @@ msgstr ""
 msgid "Persian (Farsi)"
 msgstr ""
 
+#: admin/views/update.php
+msgid "Personal Access Token"
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Persuasive"
 msgstr ""
@@ -1342,10 +1350,6 @@ msgstr ""
 msgid "Save all"
 msgstr ""
 
-#: admin/views/update.php
-msgid "Save branch"
-msgstr ""
-
 #: admin/views/connections.php
 msgid "Save connection"
 msgstr ""
@@ -1358,7 +1362,7 @@ msgstr ""
 msgid "Save schedule"
 msgstr ""
 
-#: admin/views/schedule.php admin/views/settings.php
+#: admin/views/schedule.php admin/views/settings.php admin/views/update.php
 msgid "Save settings"
 msgstr ""
 
@@ -1412,6 +1416,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Section written (%1$d words) — %2$s"
+msgstr ""
+
+#: includes/class-aipc-admin.php
+msgid "Security check failed. Please go back and try again."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1522,7 +1530,7 @@ msgstr ""
 msgid "Temperature"
 msgstr ""
 
-#: admin/views/connections.php
+#: admin/views/connections.php admin/views/update.php
 msgid "Test connection"
 msgstr ""
 
@@ -1670,6 +1678,10 @@ msgstr ""
 msgid "The repository branch does not look like this plugin (no version header found)."
 msgstr ""
 
+#: includes/class-aipc-updater.php
+msgid "The repository or branch was not found (HTTP 404). Check the owner/name and branch — or the token for private repositories."
+msgstr ""
+
 #: includes/class-aipc-assets.php
 msgid "The request timed out."
 msgstr ""
@@ -1704,6 +1716,14 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "The site prompt (or a fallback note)"
+msgstr ""
+
+#: admin/views/update.php
+msgid "The test uses the values above; an empty token field tests the stored one."
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "The token was rejected (HTTP %d)."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -1826,6 +1846,14 @@ msgstr ""
 msgid "Update post"
 msgstr ""
 
+#: admin/views/update.php
+msgid "Update settings"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Update settings saved."
+msgstr ""
+
 #: admin/views/update.php includes/class-aipc-updater.php
 msgid "Updated successfully to %s."
 msgstr ""
@@ -1836,6 +1864,10 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "Use as the default connection"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Used for private repositories and higher rate limits. Stored on your site only, never displayed again, and sent only to github.com over HTTPS."
 msgstr ""
 
 #: includes/class-aipc-updater.php
@@ -1966,6 +1998,10 @@ msgstr ""
 msgid "not checked yet"
 msgstr ""
 
+#: admin/views/update.php
+msgid "owner/name — for example ahmad75naraghi/wp-ai-post-creator"
+msgstr ""
+
 #: admin/views/prompts.php
 msgid "restore the default prompt on save"
 msgstr ""
@@ -2014,7 +2050,7 @@ msgstr ""
 msgid "• %1$s — %2$d calls · %3$s tokens"
 msgstr ""
 
-#: admin/views/connections.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/schedule.php admin/views/update.php
 msgid "••••• (saved — leave empty to keep)"
 msgstr ""
 

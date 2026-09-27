@@ -3,6 +3,28 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.5.2] — 2026-09-27
+
+### Added
+- **Configurable Git connection** — repository (`owner/name`), branch and a
+  write-only Personal Access Token, stored in a dedicated non-autoloaded
+  option (`aipc_git`); all editable on the Update from Git page.
+- **Connection test** — validates repo + branch + token together against
+  GitHub (raw.githubusercontent.com) and reports the latest version; empty
+  form token falls back to the stored one, so the saved setup can be tested
+  as well as unsaved input.
+- **Private-repository support** — with a token: authenticated version
+  checks and downloads via the documented `api.github.com` zipball endpoint;
+  without a token: the public codeload URL. HTTP 404/401/403 are mapped to
+  human-readable messages (repo/branch not found, token rejected).
+
+### Verified
+- The e2e `git_updater` group grew to 32 assertions: repo/branch/token
+  sanitizing, write-only token keep-on-empty, autoload-off storage,
+  anonymous codeload download, authenticated api.github.com download,
+  connection test (ok / 404 / rejected token), downgrade guard, corrupt
+  package, real swap with backup/rollback, and the settings page fields.
+
 ## [1.5.1] — 2026-09-27
 
 ### Added

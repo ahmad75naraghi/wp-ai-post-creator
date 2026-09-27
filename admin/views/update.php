@@ -1,19 +1,21 @@
 <?php
 /**
- * Update-from-Git page: pull the latest plugin files straight from GitHub.
+ * Update-from-Git page: repository, branch and token + self-update.
  *
  * @package wp-ai-post-creator
  */
 
 defined( 'ABSPATH' ) || exit;
 
-$aipc_branch = AIPC_Settings::get( 'update_branch' );
-$aipc_remote = get_transient( 'aipc_git_v_' . md5( $aipc_branch ) );
-$aipc_remote = is_string( $aipc_remote ) ? $aipc_remote : '';
-$aipc_backup = AIPC_Updater::last_backup();
-$aipc_git    = isset( $_GET['aipc_git'] ) ? sanitize_key( wp_unslash( $_GET['aipc_git'] ) ) : '';
-$aipc_err    = isset( $_GET['err'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['err'] ) ) ) : '';
-$aipc_to     = isset( $_GET['to'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['to'] ) ) ) : '';
+$aipc_cfg        = AIPC_Updater::config();
+$aipc_remote_key = 'aipc_git_v_' . md5( $aipc_cfg['repo'] . '|' . $aipc_cfg['branch'] );
+$aipc_remote     = get_transient( $aipc_remote_key );
+$aipc_remote     = is_string( $aipc_remote ) ? $aipc_remote : '';
+$aipc_backup     = AIPC_Updater::last_backup();
+$aipc_git        = isset( $_GET['aipc_git'] ) ? sanitize_key( wp_unslash( $_GET['aipc_git'] ) ) : '';
+$aipc_err        = isset( $_GET['err'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['err'] ) ) ) : '';
+$aipc_to         = isset( $_GET['to'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['to'] ) ) ) : '';
+$aipc_ver        = isset( $_GET['ver'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['ver'] ) ) ) : '';
 ?>
 <div class="wrap aipc-wrap">
 
@@ -23,8 +25,10 @@ $aipc_to     = isset( $_GET['to'] ) ? sanitize_text_field( rawurldecode( wp_unsl
 			<h1><?php esc_html_e( 'Update from Git', 'wp-ai-post-creator' ); ?></h1>
 			<p class="aipc-sub"><?php esc_html_e( 'Download the latest plugin files straight from the GitHub repository and replace this installation in place.', 'wp-ai-post-creator' ); ?></p>
 			<p class="aipc-meta">
-				<span class="aipc-chip">📦 <?php echo esc_html( AIPC_Updater::REPO ); ?></span>
-				<a class="aipc-chip aipc-chip-link" href="https://github.com/<?php echo esc_attr( AIPC_Updater::REPO ); ?>" target="_blank" rel="noopener">GitHub ↗</a>
+				<span class="aipc-chip">📦 <?php echo esc_html( $aipc_cfg['repo'] ); ?></span>
+				<span class="aipc-chip">🌿 <?php echo esc_html( $aipc_cfg['branch'] ); ?></span>
+				<span class="aipc-chip"><?php echo '' !== $aipc_cfg['token'] ? '🔑 PAT' : '🌍 public'; ?></span>
+				<a class="aipc-chip aipc-chip-link" href="https://github.com/<?php echo esc_attr( $aipc_cfg['repo'] ); ?>" target="_blank" rel="noopener">GitHub ↗</a>
 			</p>
 		</div>
 	</div>
@@ -39,13 +43,64 @@ $aipc_to     = isset( $_GET['to'] ) ? sanitize_text_field( rawurldecode( wp_unsl
 			);
 			?>
 		</p></div>
-	<?php elseif ( 'failed' === $aipc_git || 'check_failed' === $aipc_git ) : ?>
+	<?php elseif ( 'tested' === $aipc_git ) : ?>
+		<div class="notice notice-success is-dismissible"><p>
+			<?php
+			printf(
+				/* translators: %s: version number. */
+				esc_html__( 'Connection test succeeded — latest version: %s', 'wp-ai-post-creator' ),
+				esc_html( $aipc_ver )
+			);
+			?>
+		</p></div>
+	<?php elseif ( 'failed' === $aipc_git || 'check_failed' === $aipc_git || 'test_failed' === $aipc_git ) : ?>
 		<div class="notice notice-error is-dismissible"><p>⚠ <?php echo esc_html( $aipc_err ); ?></p></div>
 	<?php elseif ( 'checked' === $aipc_git ) : ?>
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'The remote version was refreshed.', 'wp-ai-post-creator' ); ?></p></div>
 	<?php elseif ( 'saved' === $aipc_git ) : ?>
-		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Branch saved.', 'wp-ai-post-creator' ); ?></p></div>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Update settings saved.', 'wp-ai-post-creator' ); ?></p></div>
 	<?php endif; ?>
+
+	<section class="aipc-card">
+		<h2><?php esc_html_e( 'Update settings', 'wp-ai-post-creator' ); ?></h2>
+
+		<form class="aipc-conn-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<?php wp_nonce_field( 'aipc_save_update_settings' ); ?>
+			<?php wp_nonce_field( 'aipc_git_test', 'aipc_nonce_test' ); ?>
+			<input type="hidden" name="action" value="aipc_save_update_settings" />
+
+			<div class="aipc-grid">
+				<div class="aipc-field">
+					<label for="aipc-git-repo"><?php esc_html_e( 'GitHub repository', 'wp-ai-post-creator' ); ?></label>
+					<input type="text" id="aipc-git-repo" class="aipc-input code" name="repo"
+						placeholder="<?php esc_attr_e( 'owner/name — for example ahmad75naraghi/wp-ai-post-creator', 'wp-ai-post-creator' ); ?>"
+						value="<?php echo esc_attr( $aipc_cfg['repo'] ); ?>" />
+				</div>
+				<div class="aipc-field">
+					<label for="aipc-git-branch"><?php esc_html_e( 'Repository branch', 'wp-ai-post-creator' ); ?></label>
+					<input type="text" id="aipc-git-branch" class="aipc-input code" name="branch"
+						placeholder="main"
+						value="<?php echo esc_attr( $aipc_cfg['branch'] ); ?>" />
+					<p class="description"><?php esc_html_e( 'main for stable releases, or a development branch.', 'wp-ai-post-creator' ); ?></p>
+				</div>
+			</div>
+
+			<div class="aipc-field">
+				<label for="aipc-git-token"><?php esc_html_e( 'Personal Access Token', 'wp-ai-post-creator' ); ?></label>
+				<input type="password" id="aipc-git-token" class="aipc-input code" name="token" autocomplete="new-password"
+					placeholder="<?php echo '' !== $aipc_cfg['token'] ? esc_attr__( '••••• (saved — leave empty to keep)', 'wp-ai-post-creator' ) : 'ghp_… / github_pat_…'; ?>"
+					value="" />
+				<p class="description"><?php esc_html_e( 'Used for private repositories and higher rate limits. Stored on your site only, never displayed again, and sent only to github.com over HTTPS.', 'wp-ai-post-creator' ); ?></p>
+			</div>
+
+			<p style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+				<button type="submit" class="button button-primary">💾 <?php esc_html_e( 'Save settings', 'wp-ai-post-creator' ); ?></button>
+				<button type="submit" class="button"
+					formaction="<?php echo esc_url( admin_url( 'admin-post.php?action=aipc_git_test' ) ); ?>">🔌 <?php esc_html_e( 'Test connection', 'wp-ai-post-creator' ); ?></button>
+				<span class="description"><?php esc_html_e( 'The test uses the values above; an empty token field tests the stored one.', 'wp-ai-post-creator' ); ?></span>
+			</p>
+		</form>
+	</section>
 
 	<section class="aipc-card">
 		<h2><?php esc_html_e( 'Versions', 'wp-ai-post-creator' ); ?></h2>
@@ -72,28 +127,12 @@ $aipc_to     = isset( $_GET['to'] ) ? sanitize_text_field( rawurldecode( wp_unsl
 						<?php endif; ?>
 					</td>
 				</tr>
-				<tr>
-					<td><strong><?php esc_html_e( 'Branch', 'wp-ai-post-creator' ); ?></strong></td>
-					<td><code><?php echo esc_html( $aipc_branch ); ?></code></td>
-				</tr>
 			</tbody>
 		</table>
 
-		<form class="aipc-limit-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
-			style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-block-start:14px;">
-			<?php wp_nonce_field( 'aipc_save_update_settings' ); ?>
-			<input type="hidden" name="action" value="aipc_save_update_settings" />
-			<label for="aipc-git-branch" style="font-weight:600;"><?php esc_html_e( 'Repository branch', 'wp-ai-post-creator' ); ?></label>
-			<input type="text" id="aipc-git-branch" class="aipc-input" name="branch"
-				style="width:280px;" value="<?php echo esc_attr( $aipc_branch ); ?>" />
-			<button type="submit" class="button"><?php esc_html_e( 'Save branch', 'wp-ai-post-creator' ); ?></button>
-			<span class="description"><?php esc_html_e( 'main for stable releases, or a development branch.', 'wp-ai-post-creator' ); ?></span>
-		</form>
-
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-block-start:10px;">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-block-start:14px;">
 			<?php wp_nonce_field( 'aipc_git_check' ); ?>
 			<input type="hidden" name="action" value="aipc_git_check" />
-			<input type="hidden" name="branch" value="<?php echo esc_attr( $aipc_branch ); ?>" />
 			<button type="submit" class="button">🔄 <?php esc_html_e( 'Check for updates now', 'wp-ai-post-creator' ); ?></button>
 		</form>
 	</section>
@@ -110,7 +149,7 @@ $aipc_to     = isset( $_GET['to'] ) ? sanitize_text_field( rawurldecode( wp_unsl
 				printf(
 					/* translators: %s: branch name. */
 					esc_html__( 'The branch “%s” holds an OLDER version than the installed one — updating would downgrade the plugin.', 'wp-ai-post-creator' ),
-					esc_html( $aipc_branch )
+					esc_html( $aipc_cfg['branch'] )
 				);
 				?>
 			</p></div>
@@ -119,7 +158,6 @@ $aipc_to     = isset( $_GET['to'] ) ? sanitize_text_field( rawurldecode( wp_unsl
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<?php wp_nonce_field( 'aipc_git_update' ); ?>
 			<input type="hidden" name="action" value="aipc_git_update" />
-			<input type="hidden" name="branch" value="<?php echo esc_attr( $aipc_branch ); ?>" />
 			<p>
 				<button type="submit" class="button button-primary button-hero"
 					onclick="return confirm('<?php echo esc_js( __( 'Replace all plugin files with the latest version from GitHub?', 'wp-ai-post-creator' ) ); ?>');">

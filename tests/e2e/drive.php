@@ -995,20 +995,58 @@ $out['bale_traffic'] = array(
 );
 
 /* ------------------------------------------------------------------ *
- * v1.5.1 — Git self-updater (LAST: it replaces the plugin files)
+ * v1.5.1/1.5.2 — Git self-updater (LAST: it replaces the plugin files)
  * ------------------------------------------------------------------ */
 require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-$aipc_git_dir = WP_PLUGIN_DIR . '/wp-ai-post-creator';
+$aipc_git_dir  = WP_PLUGIN_DIR . '/wp-ai-post-creator';
 $aipc_git_main = $aipc_git_dir . '/wp-ai-post-creator.php';
+$aipc_git_repo = 'ahmad75naraghi/wp-ai-post-creator';
 
-$aipc_res_old = AIPC_Updater::run( 'old', false );          // downgrade guard
-$aipc_res_bad = AIPC_Updater::run( 'bad', true );           // corrupt package
+// -- configuration defaults + sanitizing (no token stored yet) --
+$aipc_git_cfg = AIPC_Updater::config();
+$out['git_updater'] = array(
+	'repo_default'     => $aipc_git_repo === $aipc_git_cfg['repo'],
+	'branch_default'   => 'main' === $aipc_git_cfg['branch'],
+	'no_token_default' => '' === $aipc_git_cfg['token'],
+	'repo_sanitized'   => $aipc_git_repo === AIPC_Updater::sanitize_repo( ' nonsense!! ' ) && 'acme/my-repo.v2' === AIPC_Updater::sanitize_repo( 'acme/my-repo.v2' ),
+	'branch_sanitized' => 'main' === AIPC_Updater::sanitize_branch( '../etc/passwd/../..' ) && 'feat/x.1_2-y' === AIPC_Updater::sanitize_branch( 'feat/x.1_2-y' ),
+);
+
+// -- remote version (anonymous): main / old / cache / missing branch --
+$out['git_updater']['remote_main']    = '9.9.9' === AIPC_Updater::remote_version( 'main', true );
+$out['git_updater']['remote_old']     = '0.0.1' === AIPC_Updater::remote_version( 'old', true );
+$out['git_updater']['remote_cached']  = '9.9.9' === get_transient( 'aipc_git_v_' . md5( $aipc_git_repo . '|main' ) );
+$out['git_updater']['remote_missing'] = is_wp_error( AIPC_Updater::remote_version( 'notfound', true ) );
+
+// -- connection test: ok / repo missing / token rejected --
+$aipc_test_ok  = AIPC_Updater::test_connection( $aipc_git_repo, 'main', 'ghp_e2e' );
+$aipc_test_404 = AIPC_Updater::test_connection( 'acme/notfound', 'main', '' );
+$aipc_test_bad = AIPC_Updater::test_connection( $aipc_git_repo, 'main', 'ghp_bad-token' );
+$out['git_updater']['test_ok']        = is_array( $aipc_test_ok ) && '9.9.9' === $aipc_test_ok['version'];
+$out['git_updater']['test_404']       = is_wp_error( $aipc_test_404 );
+$out['git_updater']['test_bad_token'] = is_wp_error( $aipc_test_bad );
+
+// -- corrupt package on the ANONYMOUS codeload path --
+$aipc_res_bad = AIPC_Updater::run( 'bad', true );
+$out['git_updater']['bad_package'] = is_wp_error( $aipc_res_bad );
+
+// -- token storage: write-only, kept when the field stays empty --
+AIPC_Updater::save_config( array( 'repo' => $aipc_git_repo, 'branch' => 'main', 'token' => 'ghp_e2e' ) );
+$out['git_updater']['token_stored'] = 'ghp_e2e' === AIPC_Updater::config()['token'];
+AIPC_Updater::save_config( array( 'repo' => $aipc_git_repo, 'branch' => 'main', 'token' => '' ) );
+$out['git_updater']['token_kept'] = 'ghp_e2e' === AIPC_Updater::config()['token'];
+$aipc_alloptions = wp_load_alloptions();
+$out['git_updater']['autoload_off'] = ! isset( $aipc_alloptions['aipc_git'] );
+
+// -- downgrade guard (token now stored; guard blocks before any download) --
+$aipc_res_old = AIPC_Updater::run( 'old', false );
 $aipc_guard_untouched = false !== strpos( (string) file_get_contents( $aipc_git_main ), "define( 'AIPC_VERSION', '" . AIPC_VERSION . "' )" );
 
 file_put_contents( $aipc_git_dir . '/stale-test.php', '<?php // stale file that must disappear on update' );
 
-$aipc_res_ok = AIPC_Updater::run( 'main', false );          // real swap
+// -- the real swap (token set → download via api.github.com) --
+$aipc_res_ok = AIPC_Updater::run( 'main', false );
 
 $aipc_data_new = get_plugin_data( $aipc_git_main );
 $aipc_backup   = AIPC_Updater::last_backup();
@@ -1017,18 +1055,35 @@ if ( '' !== $aipc_backup && is_readable( $aipc_backup . '/wp-ai-post-creator.php
 	$aipc_bak_ok = false !== strpos( (string) file_get_contents( $aipc_backup . '/wp-ai-post-creator.php' ), "define( 'AIPC_VERSION', '" . AIPC_VERSION . "' )" );
 }
 
+// -- what actually hit the (mocked) GitHub API --
+$aipc_raw_auth     = false;
+$aipc_api_auth     = false;
+$aipc_codeload     = false;
+if ( file_exists( $log_file ) ) {
+	foreach ( file( $log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $aipc_line ) {
+		$aipc_row = json_decode( $aipc_line, true );
+		if ( ! $aipc_row || ! isset( $aipc_row['host'] ) ) {
+			continue;
+		}
+		if ( 'git-raw' === $aipc_row['host'] && ! empty( $aipc_row['auth'] ) && 'ahmad75naraghi/wp-ai-post-creator' === $aipc_row['repo'] ) {
+			$aipc_raw_auth = true;
+		}
+		if ( 'git-zip-api' === $aipc_row['host'] && ! empty( $aipc_row['auth'] ) ) {
+			$aipc_api_auth = true;
+		}
+		if ( 'git-zip' === $aipc_row['host'] && 'bad' === $aipc_row['branch'] && empty( $aipc_row['auth'] ) ) {
+			$aipc_codeload = true;
+		}
+	}
+}
+
 ob_start();
 AIPC_Admin::render_update();
 $aipc_update_html = ob_get_clean();
 
-$out['git_updater'] = array(
-	'remote_main'      => '9.9.9' === AIPC_Updater::remote_version( 'main', true ),
-	'remote_old'       => '0.0.1' === AIPC_Updater::remote_version( 'old', true ),
-	'remote_cached'    => '9.9.9' === get_transient( 'aipc_git_v_' . md5( 'main' ) ),
+$out['git_updater'] += array(
 	'guard_blocks'     => is_wp_error( $aipc_res_old ),
-	'guard_msg'        => (string) ( is_wp_error( $aipc_res_old ) ? $aipc_res_old->get_error_message() : '' ),
 	'live_untouched'   => $aipc_guard_untouched, // captured BEFORE the successful swap
-	'bad_package'      => is_wp_error( $aipc_res_bad ),
 	'update_ok'        => is_array( $aipc_res_ok ) && ! empty( $aipc_res_ok['ok'] ),
 	'new_version'      => isset( $aipc_data_new['Version'] ) ? $aipc_data_new['Version'] : null, // expect 9.9.9
 	'marker'           => file_exists( $aipc_git_dir . '/updated-marker.txt' ),
@@ -1036,11 +1091,14 @@ $out['git_updater'] = array(
 	'backup_ok'        => $aipc_bak_ok,
 	'still_active'     => in_array( 'wp-ai-post-creator/wp-ai-post-creator.php', (array) get_option( 'active_plugins' ), true ),
 	'workdir_clean'    => 0 === count( (array) glob( WP_CONTENT_DIR . '/aipc-git-tmp-*' ) ),
+	'codeload_no_auth' => $aipc_codeload,
+	'api_with_auth'    => $aipc_api_auth,
+	'raw_auth'         => $aipc_raw_auth,
 	'page_renders'     => false !== strpos( $aipc_update_html, 'aipc_git_update' ),
-	'page_shows_button'=> false !== strpos( $aipc_update_html, __( 'Update from Git', 'wp-ai-post-creator' ) ),
-	'handlers_bound'   => has_action( 'admin_post_aipc_git_update' ) && has_action( 'admin_post_aipc_git_check' ),
-	'branch_setting'   => 'main' === AIPC_Settings::get( 'update_branch' ),
-	'branch_sanitized' => 'main' === AIPC_Updater::sanitize_branch( '../etc/passwd/../..' ) && 'feat/x.1_2-y' === AIPC_Updater::sanitize_branch( 'feat/x.1_2-y' ),
+	'page_repo_field'  => false !== strpos( $aipc_update_html, 'aipc-git-repo' ),
+	'page_token_field' => false !== strpos( $aipc_update_html, 'aipc-git-token' ),
+	'page_test_button' => false !== strpos( $aipc_update_html, 'aipc_git_test' ),
+	'handlers_bound'   => has_action( 'admin_post_aipc_git_update' ) && has_action( 'admin_post_aipc_git_check' ) && has_action( 'admin_post_aipc_git_test' ),
 );
 
 echo "\n===E2E_JSON===\n";

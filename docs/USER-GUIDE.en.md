@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.5.1)
+# AI Post Creator — Complete User Guide (v1.5.2)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -192,7 +192,7 @@ drafts, tokens, usage per connection) at your chosen time/day.
 
 ---
 
-## 10. Update from Git (new in 1.5.1)
+## 10. Update from Git (1.5.1 + 1.5.2)
 
 Path: **AI Post Creator → Update from Git**
 
@@ -205,7 +205,12 @@ Path: **AI Post Creator → Update from Git**
   4. the new files are swapped in atomically; on any failure the previous
      version is restored **automatically**
 - Settings, connections, schedules and posts live in the database and stay untouched.
-- **Branch:** `main` by default (stable releases); you can enter a development branch.
+- **Git connection (1.5.2):** under "Update settings" save the **GitHub repository** (`owner/name`), the **branch** (`main` by default, or a development branch) and a **Personal Access Token**:
+  - a token is only needed for private repositories and higher rate limits — leave it empty for public repos;
+  - the token is **write-only**: after saving it is never displayed again, and an empty field means "keep the stored one";
+  - it is stored in a separate non-autoloaded option on your site only and is sent solely to github.com over HTTPS.
+- **🔌 "Test connection"** validates the repository + branch + token together against GitHub and reports the **latest version** (with an empty token field, the stored token is tested).
+- **"Check for updates now"** re-reads the version of the stored branch.
 - To prevent accidental downgrades, updating from an older branch is blocked —
   unless you tick "Reinstall anyway".
 - Files removed upstream are deleted too (a complete refresh, not an overlay).

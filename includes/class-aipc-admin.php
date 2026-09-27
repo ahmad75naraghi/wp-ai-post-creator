@@ -32,6 +32,7 @@ final class AIPC_Admin {
 		add_action( 'admin_post_aipc_save_bale', array( __CLASS__, 'handle_save_bale' ) );
 		add_action( 'admin_post_aipc_save_schedule_settings', array( __CLASS__, 'handle_save_schedule_settings' ) );
 		add_action( 'admin_post_aipc_git_check', array( __CLASS__, 'handle_git_check' ) );
+		add_action( 'admin_post_aipc_git_test', array( __CLASS__, 'handle_git_test' ) );
 		add_action( 'admin_post_aipc_git_update', array( __CLASS__, 'handle_git_update' ) );
 		add_action( 'admin_post_aipc_save_update_settings', array( __CLASS__, 'handle_save_update_settings' ) );
 	}
@@ -469,16 +470,14 @@ final class AIPC_Admin {
 	}
 
 	/**
-	 * Save the Git branch used by the updater.
+	 * Save the Git connection (repository, branch, token).
 	 *
 	 * @return void
 	 */
 	public static function handle_save_update_settings() {
 		self::guard( 'aipc_save_update_settings' );
 
-		$all = AIPC_Settings::all();
-		$all['update_branch'] = AIPC_Updater::sanitize_branch( isset( $_POST['branch'] ) ? wp_unslash( $_POST['branch'] ) : 'main' );
-		update_option( AIPC_Settings::OPTION, $all );
+		AIPC_Updater::save_config( wp_unslash( $_POST ) );
 
 		wp_safe_redirect( add_query_arg(
 			array( 'page' => 'aipc-update', 'aipc_git' => 'saved' ),
@@ -488,15 +487,50 @@ final class AIPC_Admin {
 	}
 
 	/**
-	 * Refresh the remote version from GitHub.
+	 * Test the Git connection (repository, branch, token) against GitHub.
+	 *
+	 * Submitted from the settings form via the button's formaction, so it
+	 * carries its own nonce field next to the save nonce.
+	 *
+	 * @return void
+	 */
+	public static function handle_git_test() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'wp-ai-post-creator' ) );
+		}
+		if ( ! isset( $_POST['aipc_nonce_test'] )
+			|| ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['aipc_nonce_test'] ) ), 'aipc_git_test' ) ) {
+			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'wp-ai-post-creator' ) );
+		}
+
+		$result = AIPC_Updater::test_connection(
+			isset( $_POST['repo'] ) ? wp_unslash( $_POST['repo'] ) : '',
+			isset( $_POST['branch'] ) ? wp_unslash( $_POST['branch'] ) : '',
+			isset( $_POST['token'] ) ? wp_unslash( $_POST['token'] ) : ''
+		);
+
+		$args = array( 'page' => 'aipc-update' );
+		if ( is_wp_error( $result ) ) {
+			$args['aipc_git'] = 'test_failed';
+			$args['err']      = rawurlencode( sanitize_text_field( $result->get_error_message() ) );
+		} else {
+			$args['aipc_git'] = 'tested';
+			$args['ver']      = rawurlencode( sanitize_text_field( $result['version'] ) );
+		}
+
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
+	/**
+	 * Refresh the remote version from GitHub (stored configuration).
 	 *
 	 * @return void
 	 */
 	public static function handle_git_check() {
 		self::guard( 'aipc_git_check' );
 
-		$branch = AIPC_Updater::sanitize_branch( isset( $_POST['branch'] ) ? wp_unslash( $_POST['branch'] ) : 'main' );
-		$result = AIPC_Updater::remote_version( $branch, true );
+		$result = AIPC_Updater::remote_version( null, true );
 
 		$args = array( 'page' => 'aipc-update' );
 		if ( is_wp_error( $result ) ) {
@@ -511,16 +545,15 @@ final class AIPC_Admin {
 	}
 
 	/**
-	 * Run the Git update.
+	 * Run the Git update (stored configuration).
 	 *
 	 * @return void
 	 */
 	public static function handle_git_update() {
 		self::guard( 'aipc_git_update' );
 
-		$branch = AIPC_Updater::sanitize_branch( isset( $_POST['branch'] ) ? wp_unslash( $_POST['branch'] ) : 'main' );
 		$force  = ! empty( $_POST['force'] );
-		$result = AIPC_Updater::run( $branch, $force );
+		$result = AIPC_Updater::run( null, $force );
 
 		$args = array( 'page' => 'aipc-update' );
 		if ( is_wp_error( $result ) ) {

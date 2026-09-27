@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.5.1**. Audience: contributors and
+Technical reference for AI Post Creator **v1.5.2**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -39,7 +39,7 @@ the admin bar gets "New AI Post" + "Rewrite post" shortcuts for users with
 | `AIPC_Rest` (`class-aipc-rest.php`) | 411 | REST endpoints & permissions |
 | `AIPC_Post_Builder` (`class-aipc-post-builder.php`) | 367 | Assembles the final post: `create()` (new) and `update()` (rewrite), TOC/FAQ HTML, SEO meta, tags, featured image upload |
 | `AIPC_Connections` (`class-aipc-connections.php`) | 303 | Connection CRUD + sanitizing, default connection, write-only keys |
-| `AIPC_Updater` (`class-aipc-updater.php`) | ~340 | Git self-update: version check, zipball download, verification, backup + atomic swap with rollback |
+| `AIPC_Updater` (`class-aipc-updater.php`) | ~430 | Git self-update: repo/branch/token config, version check, connection test, zipball download (codeload or authenticated api.github.com), verification, backup + atomic swap with rollback |
 | `AIPC_Settings` (`class-aipc-settings.php`) | 245+ | Settings (site prompt, source sites, defaults) + option lists (tones, lengths, languages, image sizes) |
 | `AIPC_Assets` (`class-aipc-assets.php`) | 209 | Screen detection, enqueue, inline config for the console JS |
 
@@ -47,12 +47,13 @@ the admin bar gets "New AI Post" + "Rewrite post" shortcuts for users with
 
 | Option | Structure |
 |---|---|
-| `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `update_branch` (Git branch for the self-updater, default `main`), `image_enabled`, `image_size`, `add_toc`, `add_faq`, `system_prompt_extra`, `delete_on_uninstall` |
+| `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `image_enabled`, `image_size`, `add_toc`, `add_faq`, `system_prompt_extra`, `delete_on_uninstall` |
 | `aipc_connections` | array of `{id (c_*), name, base_url, api_key, chat_model, image_model, temperature (0–2, default 0.7), max_tokens (≤16000), request_timeout (≥15), is_default}` — keys never leave the server |
 | `aipc_steps` | `{step_id: {connections: [conn_id,…] (ordered fallback chain), prompt: '' = default}}` — reads also accept legacy `connection` (string) |
 | `aipc_jobs` (autoload off) | last 30 jobs, each: `id (job_*)`, `status` (`running`/`done`/`error`/`cancelled`), `mode` (`new`/`rewrite`), `topic`, `source` (`manual`/`cron`), `post_id`, `steps[]` (`{id,label,status}`), `cursor`, `log[]` (`{t,msg,level}`), `calls[]` (`{step,conn,model,ok,ms,error,tokens}`), `timings`, `usage{prompt,completion,calls}`, `args` (sanitized run options), `data` (plan/outline/content/rewrite/result), `notified` |
 | `aipc_stats` (autoload off) | aggregate: jobs, done, calls, tokens, drafts, `by_connection{name: {calls, ok, tokens}}` |
 | `aipc_schedule` | `entries[]` (`{id (sch_*), time HH:MM, days[0–6 Sun=0], enabled, topic, publish (draft/now/delay), publish_delay (15–10080), opts{tone,length,language,image,faq,toc}}`), `state{entry_id: Y-m-d fired}`, `settings{daily_limit}` |
+| `aipc_git` (autoload off) | Git self-update configuration: `repo` (`owner/name`, default `ahmad75naraghi/wp-ai-post-creator`), `branch` (default `main`), `token` (write-only PAT — an empty field keeps the stored token) |
 | `aipc_bale` | `enabled`, `token` (write-only), `chat_ids[]`, `report` (''/daily/weekly), `report_time`, `last_report` (Y-m-d) |
 
 Post meta written by the builder: `_aipc_generated`, `_aipc_job`,
@@ -218,7 +219,7 @@ assertion groups green at v1.5.0, zero PHP warnings.
 `aipc_post_published($post_id, $job_id)` · `aipc_cron_tick` ·
 `aipc_publish_post($post_id, $job_id)` · `aipc_daily_cleanup`
 
-**Filters:** `aipc_git_version_ttl($ttl, $branch)` · `aipc_git_request_args($args, $url)` · `aipc_step_connections($chain, $step)` ·
+**Filters:** `aipc_git_version_ttl($ttl, $repo, $branch)` · `aipc_git_request_args($args, $url)` · `aipc_step_connections($chain, $step)` ·
 `aipc_step_connection($primary_conn, $step)` (legacy) ·
 `aipc_step_attempts($attempts, $job, $step_id)` (default 3) ·
 `aipc_step_prompt($prompt, $step, $job)` · `aipc_messages($messages, $job, $step)` ·

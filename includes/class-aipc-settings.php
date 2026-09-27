@@ -28,7 +28,6 @@ final class AIPC_Settings {
 			'default_length'      => 'medium',
 			'site_prompt'         => '',
 			'source_sites'       => '',
-			'update_branch'     => 'main',
 			'image_enabled'       => 1,
 			'image_size'          => '1792x1024',
 			'add_toc'             => 1,
@@ -228,8 +227,6 @@ final class AIPC_Settings {
 		}
 		$out['source_sites'] = implode( "\n", array_slice( array_values( array_unique( $aipc_sources ) ), 0, 8 ) );
 
-		$aipc_branch = isset( $in['update_branch'] ) ? (string) wp_unslash( $in['update_branch'] ) : $old['update_branch'];
-		$out['update_branch'] = AIPC_Updater::sanitize_branch( $aipc_branch );
 
 		$out['image_size'] = isset( $in['image_size'] ) ? sanitize_text_field( $in['image_size'] ) : $old['image_size'];
 		if ( ! in_array( $out['image_size'], self::image_sizes(), true ) ) {

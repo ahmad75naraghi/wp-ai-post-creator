@@ -1,6 +1,7 @@
 <?php
 /**
- * Git self-updater: pull the latest plugin files straight from GitHub.
+ * Git self-updater: pull the latest plugin files straight from a GitHub
+ * repository (public or private, via a Personal Access Token).
  *
  * @package wp-ai-post-creator
  */
@@ -8,26 +9,122 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Downloads a repository snapshot (zipball) from GitHub, verifies it really
- * is this plugin, backs up the current files and swaps them in — with an
- * automatic rollback on failure.
+ * Stores the Git connection (repository, branch, PAT — write-only) in its own
+ * non-autoloaded option, checks the remote version and swaps the plugin files
+ * with a backup + automatic rollback.
  */
 final class AIPC_Updater {
 
-	const REPO     = 'ahmad75naraghi/wp-ai-post-creator';
-	const SLUG     = 'wp-ai-post-creator';
-	const MAINFILE = 'wp-ai-post-creator.php';
+	const OPTION      = 'aipc_git';
+	const DEFAULT_REPO = 'ahmad75naraghi/wp-ai-post-creator';
+	const SLUG        = 'wp-ai-post-creator';
+	const MAINFILE    = 'wp-ai-post-creator.php';
+
+	/* ---------------------------------------------------------------------
+	 * Configuration (repository / branch / token)
+	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Latest available version for a branch (cached in a transient).
+	 * The stored Git configuration merged with defaults.
 	 *
-	 * @param string $branch Repository branch (e.g. 'main').
-	 * @param bool   $force  Bypass the cache.
-	 * @return string|WP_Error Version string or error.
+	 * @return array { repo, branch, token }
 	 */
-	public static function remote_version( $branch, $force = false ) {
-		$branch = self::sanitize_branch( $branch );
-		$key    = 'aipc_git_v_' . md5( $branch );
+	public static function config() {
+		$cfg = get_option( self::OPTION, array() );
+		if ( ! is_array( $cfg ) ) {
+			$cfg = array();
+		}
+		return wp_parse_args( $cfg, array(
+			'repo'   => self::DEFAULT_REPO,
+			'branch' => 'main',
+			'token'  => '',
+		) );
+	}
+
+	/**
+	 * Sanitize and store the Git configuration.
+	 *
+	 * The token is write-only: an empty field keeps the stored token.
+	 *
+	 * @param array $in Raw input (repo, branch, token).
+	 * @return array Stored config.
+	 */
+	public static function save_config( array $in ) {
+		$old = self::config();
+
+		$repo   = isset( $in['repo'] ) ? self::sanitize_repo( (string) wp_unslash( $in['repo'] ) ) : $old['repo'];
+		$branch = isset( $in['branch'] ) ? self::sanitize_branch( (string) wp_unslash( $in['branch'] ) ) : $old['branch'];
+
+		$token = isset( $in['token'] ) ? trim( (string) wp_unslash( $in['token'] ) ) : '';
+		if ( '' === $token ) {
+			$token = $old['token']; // Write-only: empty = keep.
+		}
+		$token = substr( preg_replace( '/[^A-Za-z0-9_.\-]/', '', $token ), 0, 255 );
+
+		$cfg = array(
+			'repo'   => $repo,
+			'branch' => $branch,
+			'token'  => $token,
+		);
+
+		if ( false === get_option( self::OPTION, false ) ) {
+			add_option( self::OPTION, $cfg, '', false ); // Autoload off — holds a secret.
+		} else {
+			update_option( self::OPTION, $cfg );
+		}
+
+		return $cfg;
+	}
+
+	/**
+	 * Validate an "owner/name" repository slug.
+	 *
+	 * @param string $repo Raw input.
+	 * @return string Valid slug or the default repository.
+	 */
+	public static function sanitize_repo( $repo ) {
+		$repo = trim( (string) $repo );
+		if ( preg_match( '#^([A-Za-z0-9_.\-]{1,100})/([A-Za-z0-9_.\-]{1,100})$#', $repo, $m ) ) {
+			return $m[1] . '/' . $m[2];
+		}
+		return self::DEFAULT_REPO;
+	}
+
+	/**
+	 * Validate a branch name (letters, digits, . _ - / but no traversal).
+	 *
+	 * @param string $branch Raw branch.
+	 * @return string
+	 */
+	public static function sanitize_branch( $branch ) {
+		$branch = trim( (string) $branch );
+		if ( '' === $branch ) {
+			return 'main';
+		}
+		$branch = preg_replace( '/[^A-Za-z0-9._\-\/]/', '', $branch );
+		if ( false !== strpos( $branch, '..' ) || strlen( $branch ) > 100 ) {
+			return 'main';
+		}
+		return $branch;
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Version check + connection test
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Latest available version for a repo/branch (cached in a transient).
+	 *
+	 * @param string $branch Branch; null = the stored one.
+	 * @param bool   $force  Bypass the cache.
+	 * @param string $repo   Repository; null = the stored one.
+	 * @return string|WP_Error Version or error.
+	 */
+	public static function remote_version( $branch = null, $force = false, $repo = null ) {
+		$cfg    = self::config();
+		$repo   = null === $repo ? $cfg['repo'] : self::sanitize_repo( $repo );
+		$branch = null === $branch ? $cfg['branch'] : self::sanitize_branch( $branch );
+		$key    = 'aipc_git_v_' . md5( $repo . '|' . $branch );
 
 		if ( ! $force ) {
 			$cached = get_transient( $key );
@@ -36,24 +133,19 @@ final class AIPC_Updater {
 			}
 		}
 
-		$url  = 'https://raw.githubusercontent.com/' . self::REPO . '/' . rawurlencode( $branch ) . '/' . self::MAINFILE;
-		$args = array( 'timeout' => 30, 'redirection' => 3 );
-		$res  = wp_safe_remote_get( $url, apply_filters( 'aipc_git_request_args', $args, $url ) );
+		$res = self::http_get(
+			'https://raw.githubusercontent.com/' . $repo . '/' . rawurlencode( $branch ) . '/' . self::MAINFILE,
+			30
+		);
 
 		if ( is_wp_error( $res ) ) {
 			return $res;
 		}
+
 		$code = (int) wp_remote_retrieve_response_code( $res );
 		$body = (string) wp_remote_retrieve_body( $res );
 		if ( 200 !== $code || '' === $body ) {
-			return new WP_Error(
-				'aipc_git',
-				sprintf(
-					/* translators: %d: HTTP status code. */
-					__( 'GitHub returned HTTP %d while checking the version.', 'wp-ai-post-creator' ),
-					$code
-				)
-			);
+			return self::http_error( $code, 'check' );
 		}
 
 		$version = self::parse_version( $body );
@@ -61,31 +153,85 @@ final class AIPC_Updater {
 			return new WP_Error( 'aipc_git', __( 'The repository branch does not look like this plugin (no version header found).', 'wp-ai-post-creator' ) );
 		}
 
-		$ttl = (int) apply_filters( 'aipc_git_version_ttl', HOUR_IN_SECONDS, $branch );
+		$ttl = (int) apply_filters( 'aipc_git_version_ttl', HOUR_IN_SECONDS, $repo, $branch );
 		set_transient( $key, $version, max( 0, $ttl ) );
 
 		return $version;
 	}
 
 	/**
-	 * Drop the cached remote version for a branch.
+	 * Test the repository/branch/token combination against GitHub.
 	 *
+	 * Empty values fall back to the stored configuration, so the button can
+	 * test the saved setup as well as unsaved form input.
+	 *
+	 * @param string $repo   Repository slug.
 	 * @param string $branch Branch.
+	 * @param string $token  PAT (empty = the stored one).
+	 * @return array|WP_Error { version } or error.
+	 */
+	public static function test_connection( $repo, $branch, $token = '' ) {
+		$cfg    = self::config();
+		$repo   = self::sanitize_repo( '' !== trim( (string) $repo ) ? $repo : $cfg['repo'] );
+		$branch = self::sanitize_branch( '' !== trim( (string) $branch ) ? $branch : $cfg['branch'] );
+		$token  = trim( (string) $token );
+		if ( '' === $token ) {
+			$token = $cfg['token'];
+		}
+
+		$res = self::http_get(
+			'https://raw.githubusercontent.com/' . $repo . '/' . rawurlencode( $branch ) . '/' . self::MAINFILE,
+			30,
+			$token
+		);
+
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $res );
+		$body = (string) wp_remote_retrieve_body( $res );
+		if ( 200 !== $code || '' === $body ) {
+			return self::http_error( $code, 'test' );
+		}
+
+		$version = self::parse_version( $body );
+		if ( null === $version ) {
+			return new WP_Error( 'aipc_git', __( 'The repository branch does not look like this plugin (no version header found).', 'wp-ai-post-creator' ) );
+		}
+
+		return array( 'version' => $version );
+	}
+
+	/**
+	 * Drop the cached remote version for a repo/branch.
+	 *
+	 * @param string $repo   Repository; null = stored.
+	 * @param string $branch Branch; null = stored.
 	 * @return void
 	 */
-	public static function flush_cache( $branch ) {
-		delete_transient( 'aipc_git_v_' . md5( self::sanitize_branch( $branch ) ) );
+	public static function flush_cache( $repo = null, $branch = null ) {
+		$cfg    = self::config();
+		$repo   = null === $repo ? $cfg['repo'] : self::sanitize_repo( $repo );
+		$branch = null === $branch ? $cfg['branch'] : self::sanitize_branch( $branch );
+		delete_transient( 'aipc_git_v_' . md5( $repo . '|' . $branch ) );
 	}
+
+	/* ---------------------------------------------------------------------
+	 * The update itself
+	 * ------------------------------------------------------------------- */
 
 	/**
 	 * Run the full update: download → verify → backup → swap → verify.
 	 *
-	 * @param string $branch Repository branch.
+	 * @param string $branch Branch override; null = the stored one.
 	 * @param bool   $force  Allow reinstalling the same or an older version.
 	 * @return array|WP_Error { ok, version, backup, message } or error.
 	 */
-	public static function run( $branch, $force = false ) {
-		$branch     = self::sanitize_branch( $branch );
+	public static function run( $branch = null, $force = false ) {
+		$cfg        = self::config();
+		$repo       = $cfg['repo'];
+		$branch     = null === $branch ? $cfg['branch'] : self::sanitize_branch( $branch );
 		$plugin_dir = WP_PLUGIN_DIR . '/' . self::SLUG;
 		$main_file  = $plugin_dir . '/' . self::MAINFILE;
 
@@ -98,7 +244,7 @@ final class AIPC_Updater {
 		}
 
 		$installed = AIPC_VERSION;
-		$remote    = self::remote_version( $branch, true );
+		$remote    = self::remote_version( $branch, true, $repo );
 
 		if ( is_wp_error( $remote ) ) {
 			return $remote;
@@ -126,7 +272,7 @@ final class AIPC_Updater {
 		$zip_path = $work . '/package.zip';
 
 		try {
-			self::download_zip( $branch, $zip_path );
+			self::download_zip( $repo, $branch, $cfg['token'], $zip_path );
 
 			$extract_to = $work . '/extracted';
 			if ( ! wp_mkdir_p( $extract_to ) || ! self::extract_zip( $zip_path, $extract_to ) ) {
@@ -159,7 +305,6 @@ final class AIPC_Updater {
 			clearstatcache();
 			if ( ! @rename( $src, $plugin_dir ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors
 				if ( ! self::rcopy( $src, $plugin_dir ) ) {
-					// Rollback: put the previous version back.
 					@rename( $backup, $plugin_dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
 					throw new Exception( __( 'Moving the new files into place failed — the previous version was restored.', 'wp-ai-post-creator' ) );
 				}
@@ -173,7 +318,7 @@ final class AIPC_Updater {
 
 			self::prune_backups( $backup_root );
 			self::rrmdir( $work );
-			self::flush_cache( $branch );
+			self::flush_cache( $repo, $branch );
 			if ( function_exists( 'wp_clean_plugins_cache' ) ) {
 				wp_clean_plugins_cache();
 			}
@@ -213,21 +358,66 @@ final class AIPC_Updater {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Validate a branch name (letters, digits, . _ - / but no traversal).
+	 * Authenticated GET (adds the PAT header when a token is given).
 	 *
-	 * @param string $branch Raw branch.
-	 * @return string
+	 * @param string $url     URL.
+	 * @param int    $timeout Timeout seconds.
+	 * @param string $token   Optional PAT; null = the stored one.
+	 * @return array|WP_Error Response.
 	 */
-	public static function sanitize_branch( $branch ) {
-		$branch = trim( (string) $branch );
-		if ( '' === $branch ) {
-			return 'main';
+	private static function http_get( $url, $timeout, $token = null ) {
+		$args = array( 'timeout' => $timeout, 'redirection' => 3 );
+		if ( null === $token ) {
+			$token = self::config()['token'];
 		}
-		$branch = preg_replace( '/[^A-Za-z0-9._\-\/]/', '', $branch );
-		if ( false !== strpos( $branch, '..' ) || strlen( $branch ) > 100 ) {
-			return 'main';
+		if ( '' !== $token ) {
+			$args['headers'] = array(
+				'Authorization' => 'Bearer ' . $token,
+				'Accept'        => 'application/vnd.github+json',
+			);
 		}
-		return $branch;
+		$res = wp_safe_remote_get( $url, apply_filters( 'aipc_git_request_args', $args, $url ) );
+
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		return $res;
+	}
+
+	/**
+	 * Map a GitHub HTTP status to a human-readable error.
+	 *
+	 * @param int    $code HTTP status.
+	 * @param string $mode 'check' or 'test' (for the message wording).
+	 * @return WP_Error
+	 */
+	private static function http_error( $code, $mode ) {
+		if ( 404 === $code ) {
+			return new WP_Error(
+				'aipc_git',
+				__( 'The repository or branch was not found (HTTP 404). Check the owner/name and branch — or the token for private repositories.', 'wp-ai-post-creator' )
+			);
+		}
+		if ( 401 === $code || 403 === $code ) {
+			return new WP_Error(
+				'aipc_git',
+				sprintf(
+					/* translators: %d: HTTP status code. */
+					__( 'The token was rejected (HTTP %d).', 'wp-ai-post-creator' ),
+					$code
+				)
+			);
+		}
+		return new WP_Error(
+			'aipc_git',
+			sprintf(
+				/* translators: %d: HTTP status code. */
+				'check' === $mode
+					? __( 'GitHub returned HTTP %d while checking the version.', 'wp-ai-post-creator' )
+					: __( 'GitHub returned HTTP %d while testing the connection.', 'wp-ai-post-creator' ),
+				$code
+			)
+		);
 	}
 
 	/**
@@ -247,17 +437,27 @@ final class AIPC_Updater {
 	}
 
 	/**
-	 * Download the repository zipball.
+	 * Download the repository snapshot.
 	 *
-	 * @param string $branch   Branch.
+	 * Without a token: the public codeload zipball URL.
+	 * With a token: the api.github.com zipball endpoint (documented PAT auth,
+	 * also works for private repositories).
+	 *
+	 * @param string $repo    Repository.
+	 * @param string $branch  Branch.
+	 * @param string $token   PAT ('' = anonymous).
 	 * @param string $to_path Destination file.
 	 * @return void
 	 * @throws Exception On download errors.
 	 */
-	private static function download_zip( $branch, $to_path ) {
-		$url  = 'https://codeload.github.com/' . self::REPO . '/zip/refs/heads/' . $branch;
-		$args = array( 'timeout' => 300, 'redirection' => 5 );
-		$res  = wp_safe_remote_get( $url, apply_filters( 'aipc_git_request_args', $args, $url ) );
+	private static function download_zip( $repo, $branch, $token, $to_path ) {
+		if ( '' !== $token ) {
+			$url = 'https://api.github.com/repos/' . $repo . '/zipball/' . rawurlencode( $branch );
+		} else {
+			$url = 'https://codeload.github.com/' . $repo . '/zip/refs/heads/' . $branch;
+		}
+
+		$res = self::http_get( $url, 300, '' !== $token ? $token : null );
 
 		if ( is_wp_error( $res ) ) {
 			throw new Exception( $res->get_error_message() );

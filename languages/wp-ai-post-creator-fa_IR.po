@@ -38,7 +38,7 @@ msgstr "آدرس پایه API"
 msgid "API key"
 msgstr "کلید API"
 
-#: admin/views/connections.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/schedule.php admin/views/update.php
 msgid "••••• (saved — leave empty to keep)"
 msgstr "••••• (ذخیره شده — برای حفظ آن خالی بگذارید)"
 
@@ -74,7 +74,7 @@ msgstr "استفاده به‌عنوان اتصال پیش‌فرض"
 msgid "Save connection"
 msgstr "ذخیره اتصال"
 
-#: admin/views/connections.php
+#: admin/views/connections.php admin/views/update.php
 msgid "Test connection"
 msgstr "تست اتصال"
 
@@ -714,7 +714,7 @@ msgstr "روز گزارش (گزارش‌های هفتگی)"
 msgid "Send a Bale message after every generated post"
 msgstr "بعد از هر نوشتهٔ تولیدشده، پیام بله ارسال شود"
 
-#: admin/views/schedule.php admin/views/settings.php
+#: admin/views/schedule.php admin/views/settings.php admin/views/update.php
 msgid "Save settings"
 msgstr "ذخیره تنظیمات"
 
@@ -1891,14 +1891,6 @@ msgid "Available on GitHub"
 msgstr "موجود در گیت‌هاب"
 
 #: admin/views/update.php
-msgid "Branch"
-msgstr "شاخه"
-
-#: admin/views/update.php
-msgid "Branch saved."
-msgstr "شاخه ذخیره شد."
-
-#: admin/views/update.php
 msgid "Check for updates now"
 msgstr "همین حالا بررسی کن"
 
@@ -1957,10 +1949,6 @@ msgstr "همهٔ فایل‌های افزونه با آخرین نسخهٔ گی�
 #: admin/views/update.php
 msgid "Repository branch"
 msgstr "شاخهٔ مخزن"
-
-#: admin/views/update.php
-msgid "Save branch"
-msgstr "ذخیرهٔ شاخه"
 
 #: includes/class-aipc-updater.php
 msgid "The branch “%1$s” holds version %2$s, which is not newer than the installed %3$s. Tick “Reinstall anyway” to force it."
@@ -2041,3 +2029,51 @@ msgstr "main برای نسخه‌های پایدار، یا یک شاخهٔ تو
 #: admin/views/update.php
 msgid "not checked yet"
 msgstr "هنوز بررسی نشده"
+
+#: admin/views/update.php
+msgid "Connection test succeeded — latest version: %s"
+msgstr "تست اتصال موفق بود — آخرین نسخه: %s"
+
+#: admin/views/update.php
+msgid "GitHub repository"
+msgstr "مخزن گیت‌هاب"
+
+#: includes/class-aipc-updater.php
+msgid "GitHub returned HTTP %d while testing the connection."
+msgstr "گیت‌هاب هنگام تست اتصال، کد HTTP %d را برگرداند."
+
+#: admin/views/update.php
+msgid "Personal Access Token"
+msgstr "توکن دسترسی شخصی"
+
+#: includes/class-aipc-admin.php
+msgid "Security check failed. Please go back and try again."
+msgstr "بررسی امنیتی ناموفق بود. لطفاً برگردید و دوباره تلاش کنید."
+
+#: includes/class-aipc-updater.php
+msgid "The repository or branch was not found (HTTP 404). Check the owner/name and branch — or the token for private repositories."
+msgstr "مخزن یا شاخه پیدا نشد (HTTP 404). مالک/نام و شاخه را بررسی کنید — یا توکن را برای مخازن خصوصی."
+
+#: admin/views/update.php
+msgid "The test uses the values above; an empty token field tests the stored one."
+msgstr "تست با همین مقادیر بالا انجام می‌شود؛ اگر فیلد توکن خالی باشد، توکن ذخیره‌شده تست می‌شود."
+
+#: includes/class-aipc-updater.php
+msgid "The token was rejected (HTTP %d)."
+msgstr "توکن رد شد (HTTP %d)."
+
+#: admin/views/update.php
+msgid "Update settings"
+msgstr "تنظیمات به‌روزرسانی"
+
+#: admin/views/update.php
+msgid "Update settings saved."
+msgstr "تنظیمات به‌روزرسانی ذخیره شد."
+
+#: admin/views/update.php
+msgid "Used for private repositories and higher rate limits. Stored on your site only, never displayed again, and sent only to github.com over HTTPS."
+msgstr "برای مخازن خصوصی و سقف درخواست بالاتر. فقط روی سایت خودتان ذخیره می‌شود، دوباره نمایش داده نمی‌شود و تنها از طریق HTTPS به github.com ارسال می‌شود."
+
+#: admin/views/update.php
+msgid "owner/name — for example ahmad75naraghi/wp-ai-post-creator"
+msgstr "owner/name — برای نمونه ahmad75naraghi/wp-ai-post-creator"
