@@ -88,6 +88,24 @@ $out['rest_permissions'] = array(
 wp_set_current_user( 1 );
 
 /* ------------------------------------------------------------------ *
+ * Persian translation bundle loads and resolves (fa_IR) — loaded early
+ * so the whole run (and the Bale notification texts) go through it.
+ * ------------------------------------------------------------------ */
+unload_textdomain( 'wp-ai-post-creator' );
+$mo_loaded = load_textdomain(
+	'wp-ai-post-creator',
+	trailingslashit( WP_PLUGIN_DIR ) . 'wp-ai-post-creator/languages/wp-ai-post-creator-fa_IR.mo'
+);
+$out['i18n_fa'] = array(
+	'mo_loaded'    => $mo_loaded,
+	'delete_job'   => __( 'Delete job', 'wp-ai-post-creator' ) === 'حذف کار',
+	'logs_title'   => __( 'AI Logs', 'wp-ai-post-creator' ) === 'گزارش‌های هوش مصنوعی',
+	'old_string'   => __( 'Starting the agent…', 'wp-ai-post-creator' ) !== 'Starting the agent…',
+	'plural_form'  => sprintf( _n( 'Outline ready — %d section.', 'Outline ready — %d sections.', 3, 'wp-ai-post-creator' ), 3 ),
+	'placeholder'  => __( 'Default (%s)', 'wp-ai-post-creator' ) === 'پیش‌فرض (%s)',
+);
+
+/* ------------------------------------------------------------------ *
  * REST: full agent run (empty topic -> invented from the site prompt)
  * ------------------------------------------------------------------ */
 $req = new WP_REST_Request( 'POST', '/aipc/v1/start' );
@@ -258,7 +276,7 @@ $html = ob_get_clean();
 $out['admin_pages']['logs_detail'] = array(
 	'rendered'     => false !== strpos( $html, 'Job details' ) || false !== strpos( $html, 'aipc-terminal-static' ),
 	'shows_calls'  => false !== strpos( $html, 'Image Mock' ) && false !== strpos( $html, 'Chat Mock' ),
-	'shows_steps'  => false !== strpos( $html, 'Copywriting' ),
+	'shows_steps'  => false !== strpos( $html, __( 'Copywriting & SEO pass', 'wp-ai-post-creator' ) ),
 );
 unset( $_GET['job'] );
 
@@ -330,7 +348,7 @@ $image_requests = array_values( array_filter( $requests, function ( $r ) {
 	return 'images.invalid' === $r['host'];
 } ) );
 $faq_requests = array_values( array_filter( $requests, function ( $r ) {
-	return false !== strpos( (string) $r['prompt'], 'FAQ-QUESTIONS-CUSTOM' );
+	return isset( $r['prompt'] ) && false !== strpos( (string) $r['prompt'], 'FAQ-QUESTIONS-CUSTOM' );
 } ) );
 
 $out['provider_requests'] = array(
@@ -405,20 +423,168 @@ if ( 'error' === $state3['status'] ) {
 }
 
 /* ------------------------------------------------------------------ *
- * Persian translation bundle loads and resolves (fa_IR)
+ * Scheduler: cron registration + automatic run via tick()
  * ------------------------------------------------------------------ */
-unload_textdomain( 'wp-ai-post-creator' );
-$mo_loaded = load_textdomain(
-	'wp-ai-post-creator',
-	trailingslashit( WP_PLUGIN_DIR ) . 'wp-ai-post-creator/languages/wp-ai-post-creator-fa_IR.mo'
+$aipc_schedules = wp_get_schedules();
+$out['scheduler_setup'] = array(
+	'cron_scheduled' => false !== wp_get_scheduled_event( AIPC_Scheduler::CRON_HOOK ),
+	'interval'       => isset( $aipc_schedules['aipc_quarter_hour'] ) && 900 === (int) $aipc_schedules['aipc_quarter_hour']['interval'],
+	'entries'        => count( AIPC_Scheduler::entries() ),
 );
-$out['i18n_fa'] = array(
-	'mo_loaded'    => $mo_loaded,
-	'delete_job'   => __( 'Delete job', 'wp-ai-post-creator' ) === 'حذف کار',
-	'logs_title'   => __( 'AI Logs', 'wp-ai-post-creator' ) === 'گزارش‌های هوش مصنوعی',
-	'old_string'   => __( 'Starting the agent…', 'wp-ai-post-creator' ) !== 'Starting the agent…',
-	'plural_form'  => sprintf( _n( 'Outline ready — %d section.', 'Outline ready — %d sections.', 3, 'wp-ai-post-creator' ), 3 ),
-	'placeholder'  => __( 'Default (%s)', 'wp-ai-post-creator' ) === 'پیش‌فرض (%s)',
+
+$aipc_jobs_before = count( AIPC_Agent::instance()->get_all_jobs() );
+
+// First tick: fires the due entry and drives the whole run synchronously.
+AIPC_Scheduler::tick();
+
+$aipc_cron_job = null;
+foreach ( AIPC_Agent::instance()->get_all_jobs() as $aipc_j ) {
+	if ( 'cron' === ( isset( $aipc_j['source'] ) ? $aipc_j['source'] : 'manual' ) ) {
+		$aipc_cron_job = $aipc_j;
+	}
+}
+
+$out['scheduler_run'] = array(
+	'job_created'   => is_array( $aipc_cron_job ),
+	'status'        => $aipc_cron_job ? $aipc_cron_job['status'] : null,
+	'topic'         => $aipc_cron_job ? $aipc_cron_job['topic'] : null,
+	'post_id'       => $aipc_cron_job ? (int) $aipc_cron_job['post_id'] : 0,
+	'no_image'      => $aipc_cron_job ? 0 === (int) get_post_thumbnail_id( $aipc_cron_job['post_id'] ) : false,
+	'bale_logged'   => false,
+);
+
+if ( $aipc_cron_job && $aipc_cron_job['post_id'] ) {
+	$aipc_cron_post = get_post( $aipc_cron_job['post_id'] );
+	$out['scheduler_run']['post_status'] = $aipc_cron_post ? $aipc_cron_post->post_status : null;
+	$out['scheduler_run']['has_faq']     = false !== strpos( $aipc_cron_post->post_content, 'aipc-faq' );
+	$out['scheduler_run']['has_toc']     = false !== strpos( $aipc_cron_post->post_content, 'aipc-toc' );
+	$out['scheduler_run']['title']       = $aipc_cron_post->post_title;
+
+	$aipc_bale_line = __( 'Bale notification sent (image, summary and link).', 'wp-ai-post-creator' );
+	foreach ( $aipc_cron_job['log'] as $aipc_log_entry ) {
+		if ( false !== strpos( (string) $aipc_log_entry['msg'], $aipc_bale_line ) ) {
+			$out['scheduler_run']['bale_logged'] = true;
+		}
+	}
+}
+
+// Second tick: the entry already fired today — no new job.
+AIPC_Scheduler::tick();
+$out['scheduler_no_double_fire'] = count( AIPC_Agent::instance()->get_all_jobs() ) === $aipc_jobs_before + 1;
+
+// Due-state checks.
+$aipc_due_state = AIPC_Scheduler::config();
+$aipc_due_entry = null;
+$aipc_paused_entry = null;
+foreach ( AIPC_Scheduler::entries() as $aipc_e ) {
+	if ( ! empty( $aipc_e['enabled'] ) ) {
+		$aipc_due_entry = $aipc_e;
+	} else {
+		$aipc_paused_entry = $aipc_e;
+	}
+}
+$out['scheduler_due_state'] = array(
+	'fired_today' => isset( $aipc_due_state['state'][ $aipc_due_entry['id'] ] ) && wp_date( 'Y-m-d' ) === $aipc_due_state['state'][ $aipc_due_entry['id'] ],
+	'entry_not_due_anymore' => ! AIPC_Scheduler::entry_due( $aipc_due_entry ),
+	'paused_not_due'        => ! AIPC_Scheduler::entry_due( $aipc_paused_entry ),
+);
+
+// Sanitization.
+$aipc_clean_entry = AIPC_Scheduler::sanitize_entry( array(
+	'time' => '25:99',
+	'days' => array( 3, 3, 9 ),
+	'opts' => array( 'tone' => 'nope', 'length' => 'huge', 'language' => '' ),
+) );
+$aipc_bale_kept = AIPC_Bale::sanitize( array( 'enabled' => 1, 'token' => '', 'chat_id' => '' ), AIPC_Bale::all() );
+$aipc_set = AIPC_Settings::all();
+$out['sanitize_v130'] = array(
+	'time_clamped'  => '09:00' === $aipc_clean_entry['time'],
+	'days_clean'    => array( 3 ) === $aipc_clean_entry['days'],
+	'opts_defaults' => $aipc_set['default_tone'] === $aipc_clean_entry['opts']['tone']
+		&& $aipc_set['default_length'] === $aipc_clean_entry['opts']['length']
+		&& $aipc_set['content_language'] === $aipc_clean_entry['opts']['language'],
+	'bale_key_kept' => 'bale-token-123' === $aipc_bale_kept['token'],
+);
+
+// Schedule admin page renders.
+ob_start();
+AIPC_Admin::render_schedule();
+$aipc_sched_html = ob_get_clean();
+$out['admin_pages']['schedule'] = array(
+	'rendered'     => false !== strpos( $aipc_sched_html, 'aipc-btn-bale-test' ),
+	'shows_entry'  => false !== strpos( $aipc_sched_html, 'شروع کاشت قارچ در خانه' ),
+	'shows_bale'   => false !== strpos( $aipc_sched_html, 'aipc_save_bale' ),
+);
+
+/* ------------------------------------------------------------------ *
+ * Bale REST endpoints
+ * ------------------------------------------------------------------ */
+$req = new WP_REST_Request( 'POST', '/aipc/v1/bale/test' );
+$req->set_param( 'token', 'bad-token' );
+$req->set_param( 'chat_id', '12345' );
+$resp = rest_do_request( $req );
+$aipc_bad = $resp->get_data();
+$out['rest_bale'] = array(
+	'bad_token_rejected' => 200 === $resp->get_status() && empty( $aipc_bad['ok'] ) && false !== strpos( (string) $aipc_bad['error'], 'mock bale' ),
+);
+
+$req = new WP_REST_Request( 'POST', '/aipc/v1/bale/test' );
+$resp = rest_do_request( $req );
+$aipc_ok = $resp->get_data();
+$out['rest_bale']['stored_ok'] = 200 === $resp->get_status() && ! empty( $aipc_ok['ok'] );
+
+$req = new WP_REST_Request( 'POST', '/aipc/v1/bale/chat-id' );
+$resp = rest_do_request( $req );
+$aipc_chat = $resp->get_data();
+$out['rest_bale']['chat_id_detected'] = ! empty( $aipc_chat['ok'] ) && '98765' === (string) $aipc_chat['chat_id'];
+
+wp_set_current_user( 0 );
+$req = new WP_REST_Request( 'POST', '/aipc/v1/bale/test' );
+$resp = rest_do_request( $req );
+$out['rest_bale']['anonymous_401'] = 401 === $resp->get_status();
+wp_set_current_user( 1 );
+
+/* ------------------------------------------------------------------ *
+ * Bale mock traffic: one notification per created post (+ test calls)
+ * ------------------------------------------------------------------ */
+$aipc_bale_requests = array();
+if ( file_exists( $log_file ) ) {
+	foreach ( file( $log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $line ) {
+		$aipc_row = json_decode( $line, true );
+		if ( $aipc_row && 'bale' === $aipc_row['host'] ) {
+			$aipc_bale_requests[] = $aipc_row;
+		}
+	}
+}
+$aipc_methods = array();
+foreach ( $aipc_bale_requests as $aipc_r ) {
+	$aipc_methods[ $aipc_r['method'] ] = ( isset( $aipc_methods[ $aipc_r['method'] ] ) ? $aipc_methods[ $aipc_r['method'] ] : 0 ) + 1;
+}
+$aipc_photo_calls = array_values( array_filter( $aipc_bale_requests, function ( $r ) {
+	return 'sendPhoto' === $r['method'];
+} ) );
+$aipc_notify_texts = 0;
+foreach ( $aipc_bale_requests as $aipc_r ) {
+	if ( 'sendMessage' === $aipc_r['method'] && 'bale-token-123' === $aipc_r['token'] ) {
+		$aipc_body = null === $aipc_r['text'] ? (string) $aipc_r['caption'] : (string) $aipc_r['text'];
+		if ( false !== strpos( $aipc_body, 'http://localhost' ) ) {
+			$aipc_notify_texts++;
+		}
+	}
+}
+
+$out['bale_traffic'] = array(
+	'total'            => count( $aipc_bale_requests ),
+	'methods'          => $aipc_methods,
+	'photo_caption_ok' => ! empty( $aipc_photo_calls )
+		&& false !== strpos( (string) $aipc_photo_calls[0]['caption'], 'راهنمای کامل سبزی‌کاری در بالکن' )
+		&& false !== strpos( (string) $aipc_photo_calls[0]['caption'], 'http://localhost' )
+		&& ! empty( $aipc_photo_calls[0]['photo'] )
+		&& '12345' === (string) $aipc_photo_calls[0]['chat_id'],
+	'notify_texts'     => $aipc_notify_texts, // retry-flow + scheduled-run notifications
+	'all_chat_ids_ok'  => ! array_filter( $aipc_bale_requests, function ( $r ) {
+		return 'getUpdates' !== $r['method'] && '12345' !== (string) $r['chat_id'];
+	} ),
 );
 
 echo "\n===E2E_JSON===\n";

@@ -9,9 +9,18 @@ routes, permission checks, the whole agent pipeline (plan → outline → intro 
 sections → conclusion → copywrite → FAQ → SEO → image → finalize), post
 creation, terms, SEO meta, FAQ schema, media library upload, cancel/retry
 flows, connection & settings sanitization, the fa_IR translation bundle and
-JSON extraction — 45+ assertion groups in total.
+JSON extraction — plus the 1.3.0 coverage: the cron scheduler (event
+registration, a due entry firing through `AIPC_Scheduler::tick()` into a
+complete draft post, no double-firing, paused entries never due), the Bale
+REST endpoints (test message, chat-id detection, bad-token rejection,
+anonymous 401) and a full audit of the Bale traffic (one sendPhoto per imaged
+post with title + permalink in the caption, sendMessage for text-only posts,
+correct chat id and token on every call) — 70+ assertion groups in total.
 
-The two mock hosts verify **per-step connection routing at the HTTP level**:
+A third mock host (`https://tapi.bale.ai`) emulates the **Bale Bot API**
+(sendMessage / sendPhoto / getUpdates) to verify the notification flow.
+
+The two mock AI hosts verify **per-step connection routing at the HTTP level**:
 
 | Host | Purpose | Assigned to |
 |---|---|---|

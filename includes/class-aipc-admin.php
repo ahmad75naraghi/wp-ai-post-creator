@@ -26,6 +26,10 @@ final class AIPC_Admin {
 		add_action( 'admin_post_aipc_save_steps', array( __CLASS__, 'handle_save_steps' ) );
 		add_action( 'admin_post_aipc_clear_logs', array( __CLASS__, 'handle_clear_logs' ) );
 		add_action( 'admin_post_aipc_delete_job', array( __CLASS__, 'handle_delete_job' ) );
+		add_action( 'admin_post_aipc_save_schedule', array( __CLASS__, 'handle_save_schedule' ) );
+		add_action( 'admin_post_aipc_delete_schedule', array( __CLASS__, 'handle_delete_schedule' ) );
+		add_action( 'admin_post_aipc_run_now', array( __CLASS__, 'handle_run_now' ) );
+		add_action( 'admin_post_aipc_save_bale', array( __CLASS__, 'handle_save_bale' ) );
 	}
 
 	/**
@@ -78,6 +82,15 @@ final class AIPC_Admin {
 			'manage_options',
 			'aipc-logs',
 			array( __CLASS__, 'render_logs' )
+		);
+
+		add_submenu_page(
+			'aipc',
+			__( 'AI Schedule', 'wp-ai-post-creator' ),
+			__( 'Schedule', 'wp-ai-post-creator' ),
+			'manage_options',
+			'aipc-schedule',
+			array( __CLASS__, 'render_schedule' )
 		);
 
 		add_submenu_page(
@@ -173,6 +186,13 @@ final class AIPC_Admin {
 	 *
 	 * @return void
 	 */
+	public static function render_schedule() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
+		}
+		require AIPC_PLUGIN_DIR . 'admin/views/schedule.php';
+	}
+
 	public static function render_settings() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
@@ -300,6 +320,103 @@ final class AIPC_Admin {
 
 		wp_safe_redirect( add_query_arg(
 			array( 'page' => 'aipc-logs', 'aipc_msg' => 'deleted' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Save (create or update) a schedule entry.
+	 *
+	 * @return void
+	 */
+	public static function handle_save_schedule() {
+		self::guard( 'aipc_save_schedule' );
+
+		$raw = isset( $_POST['days'] ) && is_array( $_POST['days'] ) ? array_map( 'absint', wp_unslash( $_POST['days'] ) ) : array();
+
+		$entry = AIPC_Scheduler::save_entry( array(
+			'id'      => isset( $_POST['id'] ) ? sanitize_key( wp_unslash( $_POST['id'] ) ) : '',
+			'time'    => isset( $_POST['time'] ) ? sanitize_text_field( wp_unslash( $_POST['time'] ) ) : '',
+			'days'    => $raw,
+			'enabled' => ! empty( $_POST['enabled'] ),
+			'topic'   => isset( $_POST['topic'] ) ? wp_unslash( $_POST['topic'] ) : '',
+			'opts'    => array(
+				'tone'     => isset( $_POST['tone'] ) ? sanitize_key( wp_unslash( $_POST['tone'] ) ) : '',
+				'length'   => isset( $_POST['length'] ) ? sanitize_key( wp_unslash( $_POST['length'] ) ) : '',
+				'language' => isset( $_POST['language'] ) ? sanitize_key( wp_unslash( $_POST['language'] ) ) : '',
+				'image'    => ! empty( $_POST['image'] ),
+				'faq'      => ! empty( $_POST['faq'] ),
+				'toc'      => ! empty( $_POST['toc'] ),
+			),
+		) );
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'schedule_saved', 'edit' => $entry['id'] ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Delete a schedule entry.
+	 *
+	 * @return void
+	 */
+	public static function handle_delete_schedule() {
+		self::guard( 'aipc_delete_schedule' );
+
+		$id = isset( $_GET['id'] ) ? sanitize_key( wp_unslash( $_GET['id'] ) ) : '';
+		if ( $id ) {
+			AIPC_Scheduler::delete_entry( $id );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'schedule_deleted' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Start a schedule entry immediately and open the console on it.
+	 *
+	 * @return void
+	 */
+	public static function handle_run_now() {
+		self::guard( 'aipc_run_now' );
+
+		$id  = isset( $_GET['id'] ) ? sanitize_key( wp_unslash( $_GET['id'] ) ) : '';
+		$job = $id ? AIPC_Scheduler::start_job_for_entry( $id, 'manual' ) : null;
+
+		if ( is_wp_error( $job ) || ! $job ) {
+			wp_safe_redirect( add_query_arg(
+				array( 'page' => 'aipc-schedule', 'aipc_msg' => 'run_failed' ),
+				admin_url( 'admin.php' )
+			) );
+			exit;
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc', 'job' => $job['id'], 'aipc_msg' => 'run_started' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Save the Bale notification settings.
+	 *
+	 * @return void
+	 */
+	public static function handle_save_bale() {
+		self::guard( 'aipc_save_bale' );
+
+		$cfg = AIPC_Bale::sanitize( wp_unslash( $_POST ), AIPC_Bale::all() );
+		AIPC_Bale::save( $cfg );
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'bale_saved' ),
 			admin_url( 'admin.php' )
 		) );
 		exit;

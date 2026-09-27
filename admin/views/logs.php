@@ -127,6 +127,9 @@ function aipc_status_badge( $status ) {
 						<td><?php echo esc_html( date_i18n( 'Y/m/d H:i', (int) $aipc_job['created'] ) ); ?></td>
 						<td>
 							<strong><?php echo esc_html( mb_substr( $aipc_job['topic'], 0, 70 ) ); ?></strong>
+							<?php if ( 'cron' === ( isset( $aipc_job['source'] ) ? $aipc_job['source'] : 'manual' ) ) : ?>
+								<span class="aipc-badge aipc-badge-cron">⏱ <?php esc_html_e( 'Scheduled', 'wp-ai-post-creator' ); ?></span>
+							<?php endif; ?>
 							<?php if ( $aipc_post_id ) : ?>
 								<a href="<?php echo esc_url( get_edit_post_link( $aipc_post_id, 'raw' ) ); ?>" target="_blank" rel="noopener">#<?php echo esc_html( $aipc_post_id ); ?></a>
 							<?php endif; ?>

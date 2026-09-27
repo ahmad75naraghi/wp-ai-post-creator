@@ -117,6 +117,33 @@ final class AIPC_REST {
 				'args'                => self::connection_args(),
 			)
 		);
+
+		register_rest_route(
+			self::NS,
+			'/bale/test',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'bale_test' ),
+				'permission_callback' => array( __CLASS__, 'can_manage' ),
+				'args'                => array(
+					'token'   => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+					'chat_id' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/bale/chat-id',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'bale_chat_id' ),
+				'permission_callback' => array( __CLASS__, 'can_manage' ),
+				'args'                => array(
+					'token' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -149,6 +176,63 @@ final class AIPC_REST {
 	 */
 	public static function can_manage() {
 		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * Send a Bale test message (posted values win over the stored ones).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return array|WP_Error
+	 */
+	public static function bale_test( $request ) {
+		$cfg = AIPC_Bale::all();
+
+		$token = trim( (string) $request->get_param( 'token' ) );
+		if ( '' === $token ) {
+			$token = $cfg['token'];
+		}
+		$chat = trim( (string) $request->get_param( 'chat_id' ) );
+		if ( '' === $chat ) {
+			$chat = $cfg['chat_id'];
+		}
+
+		if ( '' === $token || '' === $chat ) {
+			return new WP_Error( 'aipc_bale', __( 'Enter a Bale bot token and chat ID first.', 'wp-ai-post-creator' ), array( 'status' => 400 ) );
+		}
+
+		$res = AIPC_Bale::test( $token, $chat );
+		if ( is_wp_error( $res ) ) {
+			return array( 'ok' => false, 'error' => $res->get_error_message() );
+		}
+		return array( 'ok' => true );
+	}
+
+	/**
+	 * Detect the latest chat id for a Bale bot (from getUpdates).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return array|WP_Error
+	 */
+	public static function bale_chat_id( $request ) {
+		$cfg = AIPC_Bale::all();
+
+		$token = trim( (string) $request->get_param( 'token' ) );
+		if ( '' === $token ) {
+			$token = $cfg['token'];
+		}
+		if ( '' === $token ) {
+			return new WP_Error( 'aipc_bale', __( 'Enter a Bale bot token first.', 'wp-ai-post-creator' ), array( 'status' => 400 ) );
+		}
+
+		$res = AIPC_Bale::latest_chat_id( $token );
+		if ( is_wp_error( $res ) ) {
+			return array( 'ok' => false, 'error' => $res->get_error_message() );
+		}
+		return array(
+			'ok'      => true,
+			'chat_id' => $res['chat_id'],
+			'name'    => $res['name'],
+		);
 	}
 
 	/**

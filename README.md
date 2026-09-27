@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.2.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later
+**Version:** 1.3.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later
 
 ---
 
@@ -10,6 +10,11 @@
 **AI Post Creator** یک افزونهٔ فوق‌حرفه‌ای و «ایجنت‌مانند» برای وردپرس است که با اتصال به هر سرویس API هوش مصنوعیِ سازگار با OpenAI (OpenAI، OpenRouter، Groq، DeepSeek، Ollama، LM Studio و…)، یک پست کامل را **از صفر تا صد** تولید می‌کند:
 
 ابتدا **پرامپت سایت** (سایت چیست، درباره چیست، هدف و مخاطبانش کدامند — در تنظیمات) و **دسته‌بندی‌های موجود نوشته‌ها** را می‌خواند، یکی از دسته‌بندی‌ها را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد (یا از پیشنهاد شما استفاده می‌کند). بعد محتوا را می‌نویسد، یک **پاس کپی‌رایتینگ و سئو** روی کل متن اجرا می‌کند، **خلاصه سئو برای Rank Math** می‌سازد، از روی موضوع و خلاصه **تصویر شاخص** تولید می‌کند و نتیجه را همیشه به‌صورت **پیش‌نویس** ذخیره می‌کند — تمام مراحل به‌صورت زنده در یک **کنسول ایجنت** نمایش داده می‌شوند و در هر مرحله در صورت خطا، به‌طور خودکار تا سه بار دوباره تلاش می‌شود.
+
+### 🆕 جدید در نسخهٔ ۱.۳.۰ — زمان‌بندی خودکار + اطلاع‌رسانی بله
+
+- ⏰ **کران‌جاب زمان‌بندی‌شده**: هر تعداد زمان‌بندی با ساعت، روزهای هفته، موضوع (ثابت یا خودکار از پرامپت سایت) و گزینه‌های اجرا (لحن/طول/زبان/تصویر/FAQ/فهرست مطالب) تعریف کنید؛ ایجنت خودش در آن ساعت‌ها پست کامل می‌سازد. دکمهٔ «همین حالا اجرا کن» هم هر زمان‌بندی را فوری اجرا می‌کند و کنسول ایجنت آن را زنده نشان می‌دهد.
+- 📨 **ربات بله**: بعد از ساخته‌شدن هر پست (دستی یا زمان‌بندی‌شده) به‌طور خودکار به شخص/کانال دلخواه در بله پیام بفرستید شامل **تصویر شاخص + خلاصه + لینک مقاله**؛ توکن ربات (write-only)، شناسهٔ گفتگو با دکمهٔ «شناسایی خودکار»، پیام آزمایشی و گزارش ارسال/خطا در لاگ کار.
 
 ### 🆕 جدید در نسخهٔ ۱.۲.۰ — چند اتصال، چند هوش مصنوعی
 
@@ -21,6 +26,7 @@
 
 ویژگی‌ها:
 
+- ⏰ زمان‌بندی خودکار تولید پست + 📨 اطلاع‌رسانی بله (عکس + خلاصه + لینک) بعد از هر پست
 - 🎯 **پرامپت سایت**: هویت و هدف سایت را یک بار تعریف کنید؛ ایجنت همیشه on-brand می‌نویسد
 - 🗂 **انتخاب خودکار دسته‌بندی** از بین دسته‌بندی‌های موجود نوشته‌ها
 - 💡 **موضوع خودکار**: فیلد موضوع اختیاری است — خالی بگذارید تا ایجنت خودش موضوع بسازد
@@ -38,6 +44,11 @@
 ## English — Overview
 
 AI Post Creator turns the WordPress admin into an AI content agent. Set a **site prompt** once (what your site is about), and the agent picks one of your **existing post categories**, invents a topic that fits, writes the article, runs a **copywriting + SEO revision pass**, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** — with every step visible live and auto-retried until it passes.
+
+**New in 1.3.0 — automatic schedules + Bale notifications:**
+
+* **Cron scheduling** — define any number of schedules (local time, weekdays, fixed or auto-invented topic, run options). The scheduler ticks every 15 minutes, fires due entries (one job per tick, same-day catch-up, no double firing), resumes interrupted automatic jobs and auto-retries failed ones up to 3 times. A **Run now** button starts any schedule immediately in the live agent console.
+* **Bale messenger notifications** — after every generated post (manual or scheduled) the agent messages a Bale chat with the **featured image + summary + link**. Write-only bot token, a *Detect chat ID* helper, a test-message button, and send/failure lines in the job log.
 
 **New in 1.2.0 — multi-AI, multi-connection:**
 
@@ -108,6 +119,7 @@ Every step runs in its own REST request (`POST /aipc/v1/step`) against **the con
 | **AI Post Creator** (top level) | `edit_posts` | Agent console — options, live terminal, step checklist, result card |
 | **Connections** | `manage_options` | Add/edit/delete connections, set the default, test + load models |
 | **Prompts & Steps** | `manage_options` | Per-step connection assignment + editable prompt templates with placeholder docs |
+| **Schedule** | `manage_options` | Automatic schedules (time/days/topic/options, run-now) + Bale notification settings + cron status |
 | **Logs** | `manage_options` | Summary stats, usage per connection, job history (paged), per-job drilldown with API-call details |
 | **Settings** | `manage_options` | Site prompt + content defaults (language, tone, length, TOC/FAQ/image defaults, extras) |
 
@@ -140,6 +152,8 @@ wp-ai-post-creator/
 | `/step` | POST | `edit_posts` | Execute exactly one step, return state + new logs |
 | `/cancel` | POST | `edit_posts` | Cancel a running job |
 | `/retry` | POST | `edit_posts` | Reset the failed step and resume |
+| `/bale/test` | POST | `manage_options` | Send a Bale test message |
+| `/bale/chat-id` | POST | `manage_options` | Detect the latest Bale chat id |
 | `/connection/test` | POST | `manage_options` | Test a connection (saved id or raw values) |
 | `/connection/models` | POST | `manage_options` | List models for a connection (saved id or raw values) |
 
@@ -180,6 +194,11 @@ add_filter( 'aipc_post_args', function ( $postarr, $job ) {
 
 // Change the automatic retry count (default 3).
 add_filter( 'aipc_step_attempts', function ( $attempts ) { return 5; } );
+
+// React to every created post (e.g. custom notifications).
+add_action( 'aipc_post_created', function ( $post_id, $job_id ) {
+    // $post_id: the draft post, $job_id: the agent job.
+}, 10, 2 );
 ```
 
 ## Security & privacy
@@ -194,7 +213,7 @@ add_filter( 'aipc_step_attempts', function ( $attempts ) { return 5; } );
 
 The plugin ships with an end-to-end suite (WordPress 6.7 + SQLite via php-wasm, **two mock providers** — a chat host and a dedicated image host) covering the full pipeline through the real REST stack:
 
-✅ 45+ checks pass — including: job lifecycle (start → all 12 steps → done), progress/manifest correctness, auto-invented topic from the site prompt, **AI-chosen category from the existing categories**, Persian content generation, TOC anchors, **copywriting/SEO revision pass applied**, FAQ + JSON-LD schema, Rank Math summary + focus keyword, SEO meta (plugin + Yoast + Rank Math), tags, featured image uploaded to the media library, draft-only saving, anonymous-request rejection (401), **per-step connection routing verified at the HTTP level (chat host for text steps, image host for the image step, correct Bearer key per host)**, **custom FAQ prompt actually sent to the provider**, connection test + model loading (saved and raw), logs/connections/prompts page rendering, connection & settings sanitization (key preservation, clamping), the fa_IR translation bundle loading in WordPress (incl. plural forms), cancel flow, provider-failure → 3 automatic retries → error state → manual retry succeeds, request-shape verification (endpoints, auth headers, models).
+✅ 70+ checks pass — including everything from 1.2.0 (job lifecycle through the real REST stack, auto-invented topic from the site prompt, AI-chosen category, Persian content, TOC anchors, copywriting/SEO revision pass, FAQ + JSON-LD schema, Rank Math summary, SEO meta, tags, featured image, draft-only saving, 401s for anonymous calls, per-step connection routing verified at the HTTP level, custom FAQ prompt sent to the provider, page rendering, sanitization, fa_IR bundle incl. plural forms, cancel/failure/retry flows) plus the new 1.3.0 coverage: **cron event + 15-minute interval registration**, **a due schedule firing through `AIPC_Scheduler::tick()` and producing a complete draft post (fixed topic, FAQ/TOC per entry options, no image when disabled)**, **no double-firing on the second tick**, paused entries never due, schedule-entry sanitization (time clamp, day cleanup, option defaults), the schedule admin page rendering, **Bale REST endpoints** (bad token rejected, stored settings work, chat-id detection, anonymous 401) and **the full Bale traffic audit**: exactly one `sendPhoto` per imaged post with caption containing title + permalink, `sendMessage` for text-only posts, correct chat id and token on every call — all with zero PHP warnings.
 
 ## Frequently asked questions
 
@@ -209,6 +228,10 @@ The plugin ships with an end-to-end suite (WordPress 6.7 + SQLite via php-wasm, 
 **Can I use a local model?** — Yes — Ollama and LM Studio work out of the box. Increase the connection's timeout for slower local models.
 
 **I updated from 1.1 — where did my API settings go?** — They were migrated into a default connection under *AI Post Creator → Connections*. Nothing needs to be re-entered.
+
+**How precise are the schedules?** — The scheduler ticks every 15 minutes; a run starts within ~15 minutes of its time (same-day catch-up, at most once per entry per day). For exact timing, disable WP-Cron and call `wp-cron.php` from a server cron job (the Schedule page shows the recommended line).
+
+**What does the Bale message contain?** — The featured image (when the post has one), the title, the SEO summary and the link to the draft. If image sending fails, it falls back to a text-only message; every attempt is logged in the job's log.
 
 **Persian/RTL support?** — The admin UI ships with a complete `fa_IR` translation and RTL-aware styling; the content language is switchable per run (Persian is auto-detected as default on Persian sites).
 

@@ -252,6 +252,20 @@
 		};
 	}
 
+	function resumeAgent(jobId) {
+		state.t0 = Date.now();
+		state.since = 0;
+		state.jobId = jobId;
+		if (el.terminal) { el.terminal.innerHTML = ''; }
+		if (el.result) { el.result.classList.add('aipc-hidden'); }
+		if (el.bar) { el.bar.style.width = '0%'; }
+		if (el.pct) { el.pct.textContent = '…'; }
+		log('info', t('resuming'));
+		setRunningUI(true);
+		showConsole();
+		loop();
+	}
+
 	function startAgent() {
 		var args = collectArgs();
 
@@ -378,4 +392,9 @@
 
 	fillSelects();
 	bindEvents();
+
+	// Adopt a job handed over by another screen (e.g. Schedule → Run now).
+	if (CFG.resumeJobId) {
+		resumeAgent(String(CFG.resumeJobId));
+	}
 })();

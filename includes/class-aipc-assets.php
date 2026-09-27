@@ -33,6 +33,7 @@ final class AIPC_Assets {
 			'ai-post-creator_page_aipc-connections' => 'connections',
 			'ai-post-creator_page_aipc-prompts'     => 'prompts',
 			'ai-post-creator_page_aipc-logs'        => 'logs',
+			'ai-post-creator_page_aipc-schedule'    => 'schedule',
 			'ai-post-creator_page_aipc-settings'    => 'settings',
 		);
 
@@ -66,6 +67,15 @@ final class AIPC_Assets {
 				true
 			);
 			self::inline_data( 'aipc-connections', self::data_for_connections() );
+		} elseif ( 'schedule' === $screen ) {
+			wp_enqueue_script(
+				'aipc-schedule',
+				AIPC_PLUGIN_URL . 'assets/admin-schedule.js',
+				array(),
+				AIPC_VERSION,
+				true
+			);
+			self::inline_data( 'aipc-schedule', self::data_for_schedule() );
 		}
 	}
 
@@ -96,9 +106,24 @@ final class AIPC_Assets {
 		$s    = AIPC_Settings::all();
 		$conn = AIPC_Connections::get_default();
 
+		$resume_id = '';
+		if ( isset( $_GET['job'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$candidate = sanitize_key( wp_unslash( $_GET['job'] ) );
+			$job       = AIPC_Agent::instance()->get_job( $candidate );
+			if ( $job && in_array( $job['status'], array( 'running', 'error', 'done' ), true ) ) {
+				$owner = isset( $job['user'] ) ? (int) $job['user'] : 0;
+				if ( get_current_user_id() === $owner
+					|| current_user_can( 'edit_others_posts' )
+					|| ( 'cron' === $job['source'] && current_user_can( 'manage_options' ) ) ) {
+					$resume_id = $job['id'];
+				}
+			}
+		}
+
 		return array(
 			'restUrl'       => esc_url_raw( rest_url( 'aipc/v1/' ) ),
 			'nonce'         => wp_create_nonce( 'wp_rest' ),
+			'resumeJobId'   => $resume_id,
 			'model'         => $conn ? $conn['chat_model'] : '',
 			'provider'      => $conn ? (string) wp_parse_url( $conn['base_url'], PHP_URL_HOST ) : '',
 			'hasConnection' => (bool) $conn,
@@ -116,6 +141,7 @@ final class AIPC_Assets {
 			),
 			'i18n'          => array(
 				'starting'      => __( 'Starting the agent…', 'wp-ai-post-creator' ),
+				'resuming'      => __( 'Resuming the running agent…', 'wp-ai-post-creator' ),
 				'planning'      => __( 'Planning…', 'wp-ai-post-creator' ),
 				'working'       => __( 'The agent is working — keep this tab open.', 'wp-ai-post-creator' ),
 				'networkError'  => __( 'Connection error:', 'wp-ai-post-creator' ),
@@ -129,6 +155,27 @@ final class AIPC_Assets {
 				'words'         => __( 'words', 'wp-ai-post-creator' ),
 				'tokens'        => __( 'tokens', 'wp-ai-post-creator' ),
 				'sec'           => __( 's', 'wp-ai-post-creator' ),
+			),
+		);
+	}
+
+	/**
+	 * Data for the schedule page.
+	 *
+	 * @return array
+	 */
+	private static function data_for_schedule() {
+		return array(
+			'restUrl' => esc_url_raw( rest_url( 'aipc/v1/' ) ),
+			'nonce'   => wp_create_nonce( 'wp_rest' ),
+			'i18n'    => array(
+				'testing'    => __( 'Sending test message…', 'wp-ai-post-creator' ),
+				'ok'         => __( 'Test message sent — check Bale!', 'wp-ai-post-creator' ),
+				'failed'     => __( 'Failed:', 'wp-ai-post-creator' ),
+				'fetching'   => __( 'Detecting chat ID…', 'wp-ai-post-creator' ),
+				'noChat'     => __( 'No messages found. Send any message to your bot in Bale first, then try again.', 'wp-ai-post-creator' ),
+				'chatFound'  => __( 'Chat ID detected: %s', 'wp-ai-post-creator' ),
+				'needToken'  => __( 'Enter a bot token first.', 'wp-ai-post-creator' ),
 			),
 		);
 	}

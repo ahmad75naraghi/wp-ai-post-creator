@@ -117,6 +117,42 @@ foreach ( array( 'باغبانی', 'آشپزی', 'فناوری' ) as $aipc_cat )
 	}
 }
 
+// Bale notifications: enabled, mock token + chat id.
+AIPC_Bale::save( AIPC_Bale::sanitize( array(
+	'enabled' => 1,
+	'token'   => 'bale-token-123',
+	'chat_id' => '12345',
+), array() ) );
+
+// Schedule entries: one due entry (fires ~5 minutes ago, so the first tick
+// catches it) plus one paused entry that must never fire on its own.
+$aipc_now  = current_time( 'timestamp' );
+$aipc_slot = $aipc_now - 5 * MINUTE_IN_SECONDS;
+if ( wp_date( 'Y-m-d', $aipc_slot ) !== wp_date( 'Y-m-d', $aipc_now ) ) {
+	$aipc_slot = $aipc_now; // midnight edge: fire exactly now
+}
+$aipc_sched = AIPC_Scheduler::save_entry( array(
+	'time'    => wp_date( 'H:i', $aipc_slot ),
+	'days'    => array( 0, 1, 2, 3, 4, 5, 6 ),
+	'enabled' => 1,
+	'topic'   => 'شروع کاشت قارچ در خانه',
+	'opts'    => array(
+		'tone'     => 'friendly',
+		'length'   => 'short',
+		'language' => 'fa',
+		'image'    => 0,
+		'faq'      => 1,
+		'toc'      => 1,
+	),
+) );
+$aipc_paused = AIPC_Scheduler::save_entry( array(
+	'time'    => '23:58',
+	'days'    => array( 0 ),
+	'enabled' => 0,
+	'topic'   => '',
+	'opts'    => array(),
+) );
+
 echo json_encode( array(
 	'installed'      => true,
 	'user_id'        => $result['user_id'],
@@ -127,6 +163,17 @@ echo json_encode( array(
 	'faq_custom'     => AIPC_Steps::has_custom_prompt( 'faq' ),
 	'image_step'     => AIPC_Steps::get( 'image' )['connection'],
 	'categories'     => wp_list_pluck( get_categories( array( 'hide_empty' => false ) ), 'name' ),
+	'bale'           => array(
+		'enabled' => (int) AIPC_Bale::all()['enabled'],
+		'has_key' => '' !== AIPC_Bale::all()['token'],
+		'chat_id' => AIPC_Bale::all()['chat_id'],
+	),
+	'schedule'       => array(
+		'entries'  => count( AIPC_Scheduler::entries() ),
+		'due_id'   => $aipc_sched['id'],
+		'paused'   => $aipc_paused['id'],
+		'cron'     => (bool) wp_get_scheduled_event( AIPC_Scheduler::CRON_HOOK ),
+	),
 	'php'            => PHP_VERSION,
 	'gd'             => extension_loaded( 'gd' ),
 	'sqlite'         => extension_loaded( 'pdo_sqlite' ),

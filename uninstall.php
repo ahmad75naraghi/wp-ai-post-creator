@@ -19,6 +19,9 @@ delete_option( 'aipc_jobs' );
 delete_option( 'aipc_connections' );
 delete_option( 'aipc_steps' );
 delete_option( 'aipc_stats' );
+delete_option( 'aipc_schedule' );
+delete_option( 'aipc_bale' );
+wp_clear_scheduled_hook( 'aipc_cron_tick' );
 
 // Remove plugin meta from all posts.
 global $wpdb;

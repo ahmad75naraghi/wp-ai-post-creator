@@ -4,11 +4,11 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Agent-style AI post generator for any OpenAI-compatible API — unlimited AI connections, per-step prompts and routing, complete logs, from a site prompt and a chosen category to a full, SEO-revised draft post.
+Agent-style AI post generator for any OpenAI-compatible API — unlimited AI connections, per-step prompts and routing, complete logs, automatic schedules and Bale notifications, from a site prompt to a full, SEO-revised draft post.
 
 == Description ==
 
@@ -20,6 +20,11 @@ It talks to **any OpenAI-compatible REST API** — OpenAI, OpenRouter, Groq, Dee
 * **Per-step routing** — assign every pipeline step its own connection: e.g. write with OpenAI and generate images with a different provider.
 * **Per-step prompt templates** — every step's prompt is editable, with a documented placeholder table. Untouched prompts stay in "default" mode and are auto-improved on plugin updates.
 * **Complete admin management panel** — connections manager, prompts & steps editor, and a logs panel with summary stats, usage per connection, full job history and per-job drilldown (step timings, every API call with model/tokens/duration/errors, console replay).
+
+**New in 1.3.0 — schedules + Bale:**
+
+* **Automatic schedules (cron)** — any number of entries: local time, weekdays, fixed or auto-invented topic and full run options. The scheduler ticks every 15 minutes, catches up same-day, never double-fires, resumes interrupted runs and auto-retries failed ones. A "Run now" button starts any entry immediately in the live console.
+* **Bale notifications** — after every generated post, message any Bale chat with the featured image + summary + link. Write-only bot token, automatic chat-ID detection, test button, delivery logged per job.
 
 Your API keys stay on your own site.
 
@@ -43,9 +48,11 @@ Your API keys stay on your own site.
 * Per-run options: tone, length (short/medium/long), 12+ content languages (incl. Persian), FAQ/TOC/image toggles
 * The result is always a draft — you review before anything goes live
 * Token usage tracking per job, per connection and in aggregate
+* Automatic post generation on a schedule (weekdays + times, per-entry options)
+* Bale message (image + summary + link) after every generated post
 * Works without PHP execution-time problems — one step per request
 * RTL-friendly, full Persian (fa_IR) translation included
-* Developer filters: `aipc_system_prompt`, `aipc_step_prompt`, `aipc_step_connection`, `aipc_messages`, `aipc_post_args`, `aipc_step_attempts`
+* Developer filters & hooks: `aipc_system_prompt`, `aipc_step_prompt`, `aipc_step_connection`, `aipc_messages`, `aipc_post_args`, `aipc_step_attempts`, `aipc_post_created`
 * Automatic migration of 1.1 provider settings into a default connection
 * Clean uninstall (opt-in data removal)
 
@@ -56,7 +63,8 @@ Your API keys stay on your own site.
 3. Open **AI Post Creator → Connections**, add a connection (base URL + API key), click **Test connection** and **Load models from provider**. Add as many connections as you need — one image-focused provider can be added for the featured-image step.
 4. Open **AI Post Creator → Settings** and write the **Site prompt** (what your site is about).
 5. (Optional) Under **AI Post Creator → Prompts & Steps**, assign connections to steps and adjust prompt templates.
-6. Go to **AI Post Creator** — optionally type a topic (empty = the agent invents one) and click **Generate post**.
+6. (Optional) Under **AI Post Creator → Schedule**, add automatic schedules (e.g. every day at 09:00) and configure Bale notifications (bot token + chat ID).
+7. Go to **AI Post Creator** — optionally type a topic (empty = the agent invents one) and click **Generate post**.
 
 Example base URLs:
 
@@ -85,6 +93,14 @@ Never. The agent always saves a draft so you can review the AI content first.
 
 Yes. Point a connection's base URL at your local server and use any dummy API key.
 
+= How do the automatic schedules work? =
+
+The scheduler ticks every 15 minutes (via WP-Cron) and fires every due entry — at most one full run per entry per day, with same-day catch-up. For precise timing, disable WP-Cron in wp-config.php and call wp-cron.php from a server cron job every 15 minutes.
+
+= How do I set up Bale notifications? =
+
+Create a bot with @Bot_Father in Bale, paste its token under AI Post Creator → Schedule, then either enter the chat ID of the recipient or press "Detect chat ID" (send any message to your bot first). Use "Send test message" to verify. Every generated post then sends the featured image, the summary and the link to that chat.
+
 = Is my API key safe? =
 
 Keys are stored in your own WordPress database and sent only to the provider you configured. They are never exposed to the browser, REST responses or the connections list, and the key field is write-only (leave it empty to keep the stored key).
@@ -94,6 +110,14 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.3.0 =
+* Automatic schedules: any number of entries (time, weekdays, topic, run options), 15-minute cron tick with same-day catch-up and no double-firing
+* "Run now" button starts a schedule immediately in the live agent console
+* Bale messenger notifications after every generated post (featured image + summary + link), with automatic chat-ID detection and test messages
+* Failed scheduled runs are auto-retried (up to 3 ticks) and interrupted runs are resumed
+* New admin page: Schedule & Notifications (entries, Bale settings, cron status)
+* Job logs show the source (scheduled vs manual) and Bale delivery results
 
 = 1.2.0 =
 * Unlimited AI connections (base URL, key, chat/image models, temperature, max tokens, timeout) with a default connection

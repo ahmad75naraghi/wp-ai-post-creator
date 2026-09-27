@@ -727,3 +727,54 @@
 	border-color: var(--aipc-primary);
 	color: #fff;
 }
+
+/* ---------- schedule page ---------- */
+
+.aipc-lead {
+	font-size: 14px;
+	color: var(--aipc-ink-soft);
+	max-width: 860px;
+}
+
+.aipc-details {
+	margin-block-start: 14px;
+}
+
+.aipc-details summary {
+	cursor: pointer;
+	font-weight: 700;
+	padding: 8px 0;
+}
+
+.aipc-days {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 14px;
+	margin-block-start: 6px;
+}
+
+.aipc-day {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+}
+
+.aipc-checks {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 20px;
+	margin: 14px 0;
+}
+
+.aipc-checks .aipc-check {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+}
+
+.aipc-badge-cron {
+	background: #ede9fe;
+	color: #5b21b6;
+}

@@ -27,6 +27,64 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 	}
 
 	$host = (string) wp_parse_url( $url, PHP_URL_HOST );
+
+	// ---- Bale Bot API mock ----
+	if ( 'tapi.bale.ai' === $host ) {
+		$path   = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$method = '';
+		if ( preg_match( '#/bot([^/]+)/([A-Za-z]+)#', $path, $m ) ) {
+			$bale_token  = $m[1];
+			$bale_method = $m[2];
+		} else {
+			$bale_token  = '';
+			$bale_method = '';
+		}
+		$bale_body = isset( $args['body'] ) ? json_decode( $args['body'], true ) : array();
+
+		aipc_mock_log( array(
+			'host'    => 'bale',
+			'token'   => $bale_token,
+			'method'  => $bale_method,
+			'chat_id' => isset( $bale_body['chat_id'] ) ? $bale_body['chat_id'] : null,
+			'photo'   => isset( $bale_body['photo'] ) ? $bale_body['photo'] : null,
+			'caption' => isset( $bale_body['caption'] ) ? $bale_body['caption'] : null,
+			'text'    => isset( $bale_body['text'] ) ? $bale_body['text'] : null,
+		) );
+
+		// Invalid tokens are rejected.
+		if ( false !== strpos( $bale_token, 'bad' ) ) {
+			return array(
+				'body'     => json_encode( array( 'ok' => false, 'description' => 'mock bale: invalid token' ) ),
+				'response' => array( 'code' => 401, 'message' => 'Unauthorized' ),
+			);
+		}
+
+		if ( 'getUpdates' === $bale_method ) {
+			return array(
+				'body'     => json_encode( array(
+					'ok'     => true,
+					'result' => array(
+						array(
+							'update_id' => 1,
+							'message'   => array(
+								'message_id' => 1,
+								'from'       => array( 'id' => 11, 'first_name' => 'Test' ),
+								'chat'       => array( 'id' => 98765, 'first_name' => 'Test Person' ),
+								'text'       => '/start',
+							),
+						),
+					),
+				) ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}
+
+		return array(
+			'body'     => json_encode( array( 'ok' => true, 'result' => array( 'message_id' => 42 ) ) ),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+		);
+	}
+
 	if ( ! in_array( $host, array( 'mock.invalid', 'images.invalid' ), true ) ) {
 		return $preempt;
 	}
@@ -112,9 +170,14 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 	}
 
 	if ( $has( '"toc_title"' ) ) { // plan step (category + topic from the site prompt)
+		$aipc_title = 'راهنمای کامل سبزی‌کاری در بالکن';
+		if ( preg_match( '/suggests this topic: "([^"]+)/u', $prompt, $aipc_m )
+			|| preg_match( '/پیشنهاد داده: «([^»]+)/u', $prompt, $aipc_m ) ) {
+			$aipc_title = trim( $aipc_m[1] );
+		}
 		return $chat( json_encode( array(
 			'category'             => 'باغبانی',
-			'title'                => 'راهنمای کامل سبزی‌کاری در بالکن',
+			'title'                => $aipc_title,
 			'title_options'        => array( 'سبزی‌کاری آپارتمانی از صفر تا برداشت' ),
 			'topic_brief'          => 'راهنمای عملی کاشت سبزیجات در بالکن کوچک از انتخاب خاک تا برداشت.',
 			'audience'             => 'ساکنان آپارتمان‌های کوچک و مبتدیان باغبانی',

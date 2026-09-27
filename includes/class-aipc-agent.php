@@ -404,7 +404,7 @@ final class AIPC_Agent {
 	 * @param array  $args  Options from the request.
 	 * @return array|WP_Error Job or error.
 	 */
-	public function create_job( $topic, $args = array() ) {
+	public function create_job( $topic, $args = array(), $source = 'manual' ) {
 		if ( ! AIPC_Connections::get_default() ) {
 			return new WP_Error( 'aipc_config', __( 'No AI connection is configured yet. Add one under AI Post Creator → Connections.', 'wp-ai-post-creator' ) );
 		}
@@ -421,6 +421,8 @@ final class AIPC_Agent {
 			'created'    => time(),
 			'updated'    => time(),
 			'status'     => 'running',
+			'source'     => ( 'cron' === $source ) ? 'cron' : 'manual',
+			'user'       => get_current_user_id(),
 			'topic'      => $topic,
 			'args'       => $this->sanitize_args( $args, $s ),
 			'model'      => '',
@@ -608,6 +610,26 @@ final class AIPC_Agent {
 
 		$this->save_job( $job );
 		delete_transient( $lock_key );
+
+		if ( 'done' === $job['status'] && empty( $job['notified'] ) ) {
+			$job['notified'] = 1;
+			$this->save_job( $job );
+
+			/**
+			 * Fires once after a job has successfully created its draft post.
+			 *
+			 * @param int    $post_id Created post id.
+			 * @param string $job_id  Job id.
+			 */
+			do_action( 'aipc_post_created', (int) $job['post_id'], $job['id'] );
+
+			// Reload so late log lines (e.g. notifications) reach the client.
+			$fresh = $this->get_job( $job['id'] );
+			if ( $fresh ) {
+				$job = $fresh;
+			}
+		}
+
 		return $this->client_state( $job, $since );
 	}
 
@@ -655,6 +677,24 @@ final class AIPC_Agent {
 				}
 				throw new Exception( 'Unknown step: ' . $step_id );
 		}
+	}
+
+	/**
+	 * Append a log line to a stored job (used after the run, e.g. notifications).
+	 *
+	 * @param string $id      Job id.
+	 * @param string $message Message.
+	 * @param string $level   info|success|warn|error.
+	 * @return bool
+	 */
+	public function append_log( $id, $message, $level = 'info' ) {
+		$job = $this->get_job( $id );
+		if ( ! $job ) {
+			return false;
+		}
+		$this->log( $job, $message, $level );
+		$this->save_job( $job );
+		return true;
 	}
 
 	/**
