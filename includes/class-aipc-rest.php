@@ -126,8 +126,9 @@ final class AIPC_REST {
 				'callback'            => array( __CLASS__, 'bale_test' ),
 				'permission_callback' => array( __CLASS__, 'can_manage' ),
 				'args'                => array(
-					'token'   => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
-					'chat_id' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+					'token'    => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+					'chat_id'  => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+					'chat_ids' => array( 'type' => 'string' ),
 				),
 			)
 		);
@@ -191,20 +192,40 @@ final class AIPC_REST {
 		if ( '' === $token ) {
 			$token = $cfg['token'];
 		}
-		$chat = trim( (string) $request->get_param( 'chat_id' ) );
-		if ( '' === $chat ) {
-			$chat = $cfg['chat_id'];
-		}
 
-		if ( '' === $token || '' === $chat ) {
+		// Recipients: posted (list or single) win over the stored ones.
+		$raw = trim( (string) $request->get_param( 'chat_ids' ) );
+		if ( '' === $raw ) {
+			$raw = trim( (string) $request->get_param( 'chat_id' ) );
+		}
+		$recipients = '' !== $raw ? AIPC_Bale::parse_recipients( $raw ) : AIPC_Bale::recipients( $cfg );
+
+		if ( '' === $token || empty( $recipients ) ) {
 			return new WP_Error( 'aipc_bale', __( 'Enter a Bale bot token and chat ID first.', 'wp-ai-post-creator' ), array( 'status' => 400 ) );
 		}
 
-		$res = AIPC_Bale::test( $token, $chat );
-		if ( is_wp_error( $res ) ) {
-			return array( 'ok' => false, 'error' => $res->get_error_message() );
+		$sent   = 0;
+		$error  = null;
+		$errors = array();
+		foreach ( $recipients as $chat_id ) {
+			$res = AIPC_Bale::test( $token, $chat_id );
+			if ( is_wp_error( $res ) ) {
+				$errors[ $chat_id ] = $res->get_error_message();
+				if ( null === $error ) {
+					$error = $res->get_error_message();
+				}
+			} else {
+				$sent++;
+			}
 		}
-		return array( 'ok' => true );
+
+		return array(
+			'ok'     => $sent === count( $recipients ),
+			'sent'   => $sent,
+			'total'  => count( $recipients ),
+			'error'  => $error,
+			'errors' => (object) $errors,
+		);
 	}
 
 	/**

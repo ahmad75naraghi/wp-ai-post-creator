@@ -44,8 +44,8 @@
 		return el ? el.value.trim() : '';
 	}
 
-	function chatField() {
-		var el = document.getElementById('aipc-bale-chat');
+	function chatsField() {
+		var el = document.getElementById('aipc-bale-chats');
 		return el ? el.value.trim() : '';
 	}
 
@@ -54,13 +54,13 @@
 		if (!btn) { return; }
 		btn.addEventListener('click', function () {
 			var token = tokenField();
-			var chat = chatField();
-			if (!token || !chat) {
-				setStatus(t('needToken'), 'is-err');
+			var chats = chatsField();
+			if (!token || !chats) {
+				setStatus(token ? t('needChat') : t('needToken'), 'is-err');
 				return;
 			}
 			setStatus(t('testing'));
-			api('bale/test', { token: token, chat_id: chat }).then(function (r) {
+			api('bale/test', { token: token, chat_ids: chats }).then(function (r) {
 				if (r.ok && r.json && r.json.ok) {
 					setStatus(t('ok'), 'is-ok');
 				} else {
@@ -85,8 +85,13 @@
 			setStatus(t('fetching'));
 			api('bale/chat-id', { token: token }).then(function (r) {
 				if (r.ok && r.json && r.json.ok) {
-					var input = document.getElementById('aipc-bale-chat');
-					if (input) { input.value = r.json.chat_id; }
+					var box = document.getElementById('aipc-bale-chats');
+					if (box) {
+						var current = box.value.trim();
+						if (current.split(/[\n,]+/).map(function (s) { return s.trim(); }).indexOf(r.json.chat_id) === -1) {
+							box.value = current ? current + '\n' + r.json.chat_id : r.json.chat_id;
+						}
+					}
 					setStatus(t('chatFound').replace('%s', r.json.chat_id + (r.json.name ? ' (' + r.json.name + ')' : '')), 'is-ok');
 				} else {
 					var msg = (r.json && (r.json.error || r.json.message)) || '';

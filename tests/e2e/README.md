@@ -15,7 +15,10 @@ complete draft post, no double-firing, paused entries never due), the Bale
 REST endpoints (test message, chat-id detection, bad-token rejection,
 anonymous 401) and a full audit of the Bale traffic (one sendPhoto per imaged
 post with title + permalink in the caption, sendMessage for text-only posts,
-correct chat id and token on every call) — 70+ assertion groups in total.
+correct chat id and token on every call) — plus the 1.4.0 coverage: two Bale recipients receiving every notification
+(per-chat verification), the daily report delivered exactly once to both
+chats, and the daily scheduled-post limit blocking a second due entry —
+85+ assertion groups in total.
 
 A third mock host (`https://tapi.bale.ai`) emulates the **Bale Bot API**
 (sendMessage / sendPhoto / getUpdates) to verify the notification flow.

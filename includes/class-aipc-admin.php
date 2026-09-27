@@ -30,6 +30,7 @@ final class AIPC_Admin {
 		add_action( 'admin_post_aipc_delete_schedule', array( __CLASS__, 'handle_delete_schedule' ) );
 		add_action( 'admin_post_aipc_run_now', array( __CLASS__, 'handle_run_now' ) );
 		add_action( 'admin_post_aipc_save_bale', array( __CLASS__, 'handle_save_bale' ) );
+		add_action( 'admin_post_aipc_save_schedule_settings', array( __CLASS__, 'handle_save_schedule_settings' ) );
 	}
 
 	/**
@@ -399,6 +400,25 @@ final class AIPC_Admin {
 
 		wp_safe_redirect( add_query_arg(
 			array( 'page' => 'aipc', 'job' => $job['id'], 'aipc_msg' => 'run_started' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Save the schedule settings (daily post limit).
+	 *
+	 * @return void
+	 */
+	public static function handle_save_schedule_settings() {
+		self::guard( 'aipc_save_schedule_settings' );
+
+		AIPC_Scheduler::save_settings( array(
+			'daily_limit' => isset( $_POST['daily_limit'] ) ? absint( wp_unslash( $_POST['daily_limit'] ) ) : 0,
+		) );
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'schedule_settings_saved' ),
 			admin_url( 'admin.php' )
 		) );
 		exit;

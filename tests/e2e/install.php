@@ -117,20 +117,31 @@ foreach ( array( 'باغبانی', 'آشپزی', 'فناوری' ) as $aipc_cat )
 	}
 }
 
-// Bale notifications: enabled, mock token + chat id.
-AIPC_Bale::save( AIPC_Bale::sanitize( array(
-	'enabled' => 1,
-	'token'   => 'bale-token-123',
-	'chat_id' => '12345',
-), array() ) );
-
-// Schedule entries: one due entry (fires ~5 minutes ago, so the first tick
-// catches it) plus one paused entry that must never fire on its own.
+// Shared slot timestamps (already in the past so the first tick catches them).
 $aipc_now  = current_time( 'timestamp' );
 $aipc_slot = $aipc_now - 5 * MINUTE_IN_SECONDS;
 if ( wp_date( 'Y-m-d', $aipc_slot ) !== wp_date( 'Y-m-d', $aipc_now ) ) {
 	$aipc_slot = $aipc_now; // midnight edge: fire exactly now
 }
+$aipc_slot2 = $aipc_now - 2 * MINUTE_IN_SECONDS;
+if ( wp_date( 'Y-m-d', $aipc_slot2 ) !== wp_date( 'Y-m-d', $aipc_now ) ) {
+	$aipc_slot2 = $aipc_now;
+}
+
+// Bale notifications: enabled, mock token, TWO recipients and a due daily report.
+AIPC_Bale::save( AIPC_Bale::sanitize( array(
+	'enabled'     => 1,
+	'token'       => 'bale-token-123',
+	'chat_ids'    => array( '12345', '67890' ),
+	'report'      => 'daily',
+	'report_time' => wp_date( 'H:i', $aipc_slot ),
+), array() ) );
+
+// Schedule settings: at most ONE automatic post per day (tested by the ticks).
+AIPC_Scheduler::save_settings( array( 'daily_limit' => 1 ) );
+
+// Schedule entries: one due entry (fires on the first tick), a second due
+// entry that must be blocked by the daily limit, and one paused entry.
 $aipc_sched = AIPC_Scheduler::save_entry( array(
 	'time'    => wp_date( 'H:i', $aipc_slot ),
 	'days'    => array( 0, 1, 2, 3, 4, 5, 6 ),
@@ -143,6 +154,20 @@ $aipc_sched = AIPC_Scheduler::save_entry( array(
 		'image'    => 0,
 		'faq'      => 1,
 		'toc'      => 1,
+	),
+) );
+$aipc_sched2 = AIPC_Scheduler::save_entry( array(
+	'time'    => wp_date( 'H:i', $aipc_slot2 ),
+	'days'    => array( 0, 1, 2, 3, 4, 5, 6 ),
+	'enabled' => 1,
+	'topic'   => 'دومین موضوع آزمایشی برای تست سقف روزانه',
+	'opts'    => array(
+		'tone'     => 'friendly',
+		'length'   => 'short',
+		'language' => 'fa',
+		'image'    => 0,
+		'faq'      => 0,
+		'toc'      => 0,
 	),
 ) );
 $aipc_paused = AIPC_Scheduler::save_entry( array(
@@ -164,15 +189,18 @@ echo json_encode( array(
 	'image_step'     => AIPC_Steps::get( 'image' )['connection'],
 	'categories'     => wp_list_pluck( get_categories( array( 'hide_empty' => false ) ), 'name' ),
 	'bale'           => array(
-		'enabled' => (int) AIPC_Bale::all()['enabled'],
-		'has_key' => '' !== AIPC_Bale::all()['token'],
-		'chat_id' => AIPC_Bale::all()['chat_id'],
+		'enabled'    => (int) AIPC_Bale::all()['enabled'],
+		'has_key'    => '' !== AIPC_Bale::all()['token'],
+		'recipients' => AIPC_Bale::recipients(),
+		'report'     => AIPC_Bale::all()['report'],
 	),
 	'schedule'       => array(
-		'entries'  => count( AIPC_Scheduler::entries() ),
-		'due_id'   => $aipc_sched['id'],
-		'paused'   => $aipc_paused['id'],
-		'cron'     => (bool) wp_get_scheduled_event( AIPC_Scheduler::CRON_HOOK ),
+		'entries'     => count( AIPC_Scheduler::entries() ),
+		'due_id'      => $aipc_sched['id'],
+		'limited_id'  => $aipc_sched2['id'],
+		'paused'      => $aipc_paused['id'],
+		'daily_limit' => AIPC_Scheduler::daily_limit(),
+		'cron'        => (bool) wp_get_scheduled_event( AIPC_Scheduler::CRON_HOOK ),
 	),
 	'php'            => PHP_VERSION,
 	'gd'             => extension_loaded( 'gd' ),

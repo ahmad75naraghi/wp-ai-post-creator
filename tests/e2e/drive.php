@@ -430,11 +430,28 @@ $out['scheduler_setup'] = array(
 	'cron_scheduled' => false !== wp_get_scheduled_event( AIPC_Scheduler::CRON_HOOK ),
 	'interval'       => isset( $aipc_schedules['aipc_quarter_hour'] ) && 900 === (int) $aipc_schedules['aipc_quarter_hour']['interval'],
 	'entries'        => count( AIPC_Scheduler::entries() ),
+	'daily_limit'    => 1 === AIPC_Scheduler::daily_limit(),
+	'recipients'     => 2 === count( AIPC_Bale::recipients() ),
 );
+
+// Identify the entries by their configured topics.
+$aipc_fired_entry   = null;
+$aipc_limited_entry = null;
+$aipc_paused_entry  = null;
+foreach ( AIPC_Scheduler::entries() as $aipc_e ) {
+	if ( false !== strpos( (string) $aipc_e['topic'], 'سقف روزانه' ) ) {
+		$aipc_limited_entry = $aipc_e;
+	} elseif ( false !== strpos( (string) $aipc_e['topic'], 'قارچ' ) ) {
+		$aipc_fired_entry = $aipc_e;
+	} elseif ( empty( $aipc_e['enabled'] ) ) {
+		$aipc_paused_entry = $aipc_e;
+	}
+}
 
 $aipc_jobs_before = count( AIPC_Agent::instance()->get_all_jobs() );
 
-// First tick: fires the due entry and drives the whole run synchronously.
+// First tick: sends the due daily report, then fires the due entry and
+// drives the whole run synchronously.
 AIPC_Scheduler::tick();
 
 $aipc_cron_job = null;
@@ -460,7 +477,7 @@ if ( $aipc_cron_job && $aipc_cron_job['post_id'] ) {
 	$out['scheduler_run']['has_toc']     = false !== strpos( $aipc_cron_post->post_content, 'aipc-toc' );
 	$out['scheduler_run']['title']       = $aipc_cron_post->post_title;
 
-	$aipc_bale_line = __( 'Bale notification sent (image, summary and link).', 'wp-ai-post-creator' );
+	$aipc_bale_line = sprintf( __( 'Bale notification sent to %d chats (image, summary and link).', 'wp-ai-post-creator' ), 2 );
 	foreach ( $aipc_cron_job['log'] as $aipc_log_entry ) {
 		if ( false !== strpos( (string) $aipc_log_entry['msg'], $aipc_bale_line ) ) {
 			$out['scheduler_run']['bale_logged'] = true;
@@ -468,25 +485,28 @@ if ( $aipc_cron_job && $aipc_cron_job['post_id'] ) {
 	}
 }
 
-// Second tick: the entry already fired today — no new job.
+// Second tick: the fired entry is done for today AND the daily limit (1)
+// blocks the second due entry — no new job, no second report.
 AIPC_Scheduler::tick();
-$out['scheduler_no_double_fire'] = count( AIPC_Agent::instance()->get_all_jobs() ) === $aipc_jobs_before + 1;
+
+$out['scheduler_limit'] = array(
+	'no_new_job'       => count( AIPC_Agent::instance()->get_all_jobs() ) === $aipc_jobs_before + 1,
+	'cron_jobs_today'  => 1 === AIPC_Scheduler::cron_jobs_today(),
+	'second_not_fired' => ! isset( AIPC_Scheduler::config()['state'][ $aipc_limited_entry['id'] ] ),
+	'second_still_due' => AIPC_Scheduler::entry_due( $aipc_limited_entry ),
+);
 
 // Due-state checks.
 $aipc_due_state = AIPC_Scheduler::config();
-$aipc_due_entry = null;
-$aipc_paused_entry = null;
-foreach ( AIPC_Scheduler::entries() as $aipc_e ) {
-	if ( ! empty( $aipc_e['enabled'] ) ) {
-		$aipc_due_entry = $aipc_e;
-	} else {
-		$aipc_paused_entry = $aipc_e;
-	}
-}
 $out['scheduler_due_state'] = array(
-	'fired_today' => isset( $aipc_due_state['state'][ $aipc_due_entry['id'] ] ) && wp_date( 'Y-m-d' ) === $aipc_due_state['state'][ $aipc_due_entry['id'] ],
-	'entry_not_due_anymore' => ! AIPC_Scheduler::entry_due( $aipc_due_entry ),
+	'fired_today' => isset( $aipc_due_state['state'][ $aipc_fired_entry['id'] ] ) && wp_date( 'Y-m-d' ) === $aipc_due_state['state'][ $aipc_fired_entry['id'] ],
+	'entry_not_due_anymore' => ! AIPC_Scheduler::entry_due( $aipc_fired_entry ),
 	'paused_not_due'        => ! AIPC_Scheduler::entry_due( $aipc_paused_entry ),
+);
+
+// Report state: sent once today, not re-sent by the second tick.
+$out['report_state'] = array(
+	'last_report_today' => wp_date( 'Y-m-d' ) === AIPC_Bale::all()['last_report'],
 );
 
 // Sanitization.
@@ -496,6 +516,9 @@ $aipc_clean_entry = AIPC_Scheduler::sanitize_entry( array(
 	'opts' => array( 'tone' => 'nope', 'length' => 'huge', 'language' => '' ),
 ) );
 $aipc_bale_kept = AIPC_Bale::sanitize( array( 'enabled' => 1, 'token' => '', 'chat_id' => '' ), AIPC_Bale::all() );
+AIPC_Scheduler::save_settings( array( 'daily_limit' => 999 ) );
+$aipc_limit_clamped = 50 === AIPC_Scheduler::daily_limit();
+AIPC_Scheduler::save_settings( array( 'daily_limit' => 1 ) );
 $aipc_set = AIPC_Settings::all();
 $out['sanitize_v130'] = array(
 	'time_clamped'  => '09:00' === $aipc_clean_entry['time'],
@@ -504,6 +527,7 @@ $out['sanitize_v130'] = array(
 		&& $aipc_set['default_length'] === $aipc_clean_entry['opts']['length']
 		&& $aipc_set['content_language'] === $aipc_clean_entry['opts']['language'],
 	'bale_key_kept' => 'bale-token-123' === $aipc_bale_kept['token'],
+	'limit_clamped' => $aipc_limit_clamped,
 );
 
 // Schedule admin page renders.
@@ -514,6 +538,8 @@ $out['admin_pages']['schedule'] = array(
 	'rendered'     => false !== strpos( $aipc_sched_html, 'aipc-btn-bale-test' ),
 	'shows_entry'  => false !== strpos( $aipc_sched_html, 'شروع کاشت قارچ در خانه' ),
 	'shows_bale'   => false !== strpos( $aipc_sched_html, 'aipc_save_bale' ),
+	'shows_limit'  => false !== strpos( $aipc_sched_html, __( 'Max scheduled posts per day', 'wp-ai-post-creator' ) ),
+	'shows_report' => false !== strpos( $aipc_sched_html, __( 'Periodic report', 'wp-ai-post-creator' ) ),
 );
 
 /* ------------------------------------------------------------------ *
@@ -560,30 +586,70 @@ $aipc_methods = array();
 foreach ( $aipc_bale_requests as $aipc_r ) {
 	$aipc_methods[ $aipc_r['method'] ] = ( isset( $aipc_methods[ $aipc_r['method'] ] ) ? $aipc_methods[ $aipc_r['method'] ] : 0 ) + 1;
 }
-$aipc_photo_calls = array_values( array_filter( $aipc_bale_requests, function ( $r ) {
-	return 'sendPhoto' === $r['method'];
+$aipc_msg_calls = array_values( array_filter( $aipc_bale_requests, function ( $r ) {
+	return 'sendMessage' === $r['method'];
 } ) );
-$aipc_notify_texts = 0;
-foreach ( $aipc_bale_requests as $aipc_r ) {
-	if ( 'sendMessage' === $aipc_r['method'] && 'bale-token-123' === $aipc_r['token'] ) {
-		$aipc_body = null === $aipc_r['text'] ? (string) $aipc_r['caption'] : (string) $aipc_r['text'];
-		if ( false !== strpos( $aipc_body, 'http://localhost' ) ) {
-			$aipc_notify_texts++;
+
+$aipc_count_photos_where = function ( $needle ) use ( $aipc_bale_requests ) {
+	$chats = array();
+	foreach ( $aipc_bale_requests as $aipc_r ) {
+		if ( 'sendPhoto' === $aipc_r['method'] && false !== strpos( (string) $aipc_r['caption'], $needle ) ) {
+			$chats[] = (string) $aipc_r['chat_id'];
 		}
 	}
-}
+	sort( $chats );
+	return $chats;
+};
+
+$aipc_count_msgs_where = function ( $needle, $with_link ) use ( $aipc_msg_calls ) {
+	$chats = array();
+	foreach ( $aipc_msg_calls as $aipc_r ) {
+		$aipc_body = (string) $aipc_r['text'];
+		if ( false !== strpos( $aipc_body, $needle )
+			&& ( ! $with_link || false !== strpos( $aipc_body, 'http://localhost' ) ) ) {
+			$chats[] = (string) $aipc_r['chat_id'];
+		}
+	}
+	sort( $chats );
+	return $chats;
+};
+
+$aipc_photo_ok = function ( $needle ) use ( $aipc_bale_requests ) {
+	$chats = array();
+	$caption_ok = true;
+	foreach ( $aipc_bale_requests as $aipc_r ) {
+		if ( 'sendPhoto' === $aipc_r['method'] && false !== strpos( (string) $aipc_r['caption'], $needle ) ) {
+			$chats[] = (string) $aipc_r['chat_id'];
+			if ( false === strpos( (string) $aipc_r['caption'], 'http://localhost' ) || empty( $aipc_r['photo'] ) ) {
+				$caption_ok = false;
+			}
+		}
+	}
+	sort( $chats );
+	return $caption_ok && array( '12345', '67890' ) === $chats;
+};
 
 $out['bale_traffic'] = array(
-	'total'            => count( $aipc_bale_requests ),
-	'methods'          => $aipc_methods,
-	'photo_caption_ok' => ! empty( $aipc_photo_calls )
-		&& false !== strpos( (string) $aipc_photo_calls[0]['caption'], 'راهنمای کامل سبزی‌کاری در بالکن' )
-		&& false !== strpos( (string) $aipc_photo_calls[0]['caption'], 'http://localhost' )
-		&& ! empty( $aipc_photo_calls[0]['photo'] )
-		&& '12345' === (string) $aipc_photo_calls[0]['chat_id'],
-	'notify_texts'     => $aipc_notify_texts, // retry-flow + scheduled-run notifications
-	'all_chat_ids_ok'  => ! array_filter( $aipc_bale_requests, function ( $r ) {
-		return 'getUpdates' !== $r['method'] && '12345' !== (string) $r['chat_id'];
+	'total'             => count( $aipc_bale_requests ),
+	'methods'           => $aipc_methods,
+	'balcony_photo_chats'    => $aipc_photo_ok( 'راهنمای کامل سبزی‌کاری در بالکن' ), // main run → both chats
+	'retry_notify_chats'     => ( function () use ( $aipc_count_msgs_where ) {
+		$chats = $aipc_count_msgs_where( 'failure flow topic', true );
+		sort( $chats );
+		return array( '12345', '67890' ) === $chats; // retry run (image off) → both chats via text
+	} )(),
+	'scheduled_msg_chats'    => ( function () use ( $aipc_count_msgs_where ) {
+		$chats = $aipc_count_msgs_where( 'شروع کاشت قارچ در خانه', true );
+		sort( $chats );
+		return array( '12345', '67890' ) === $chats; // scheduled run (no image) → both chats
+	} )(),
+	'report_msg_chats'       => ( function () use ( $aipc_count_msgs_where ) {
+		$chats = $aipc_count_msgs_where( '🧾', false );
+		sort( $chats );
+		return array( '12345', '67890' ) === $chats; // exactly one report per chat
+	} )(),
+	'no_bad_chats'       => ! array_filter( $aipc_bale_requests, function ( $r ) {
+		return 'getUpdates' !== $r['method'] && ! in_array( (string) $r['chat_id'], array( '12345', '67890' ), true );
 	} ),
 );
 

@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.3.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later
+**Version:** 1.4.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later
 
 ---
 
@@ -10,6 +10,12 @@
 **AI Post Creator** یک افزونهٔ فوق‌حرفه‌ای و «ایجنت‌مانند» برای وردپرس است که با اتصال به هر سرویس API هوش مصنوعیِ سازگار با OpenAI (OpenAI، OpenRouter، Groq، DeepSeek، Ollama، LM Studio و…)، یک پست کامل را **از صفر تا صد** تولید می‌کند:
 
 ابتدا **پرامپت سایت** (سایت چیست، درباره چیست، هدف و مخاطبانش کدامند — در تنظیمات) و **دسته‌بندی‌های موجود نوشته‌ها** را می‌خواند، یکی از دسته‌بندی‌ها را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد (یا از پیشنهاد شما استفاده می‌کند). بعد محتوا را می‌نویسد، یک **پاس کپی‌رایتینگ و سئو** روی کل متن اجرا می‌کند، **خلاصه سئو برای Rank Math** می‌سازد، از روی موضوع و خلاصه **تصویر شاخص** تولید می‌کند و نتیجه را همیشه به‌صورت **پیش‌نویس** ذخیره می‌کند — تمام مراحل به‌صورت زنده در یک **کنسول ایجنت** نمایش داده می‌شوند و در هر مرحله در صورت خطا، به‌طور خودکار تا سه بار دوباره تلاش می‌شود.
+
+### 🆕 جدید در نسخهٔ ۱.۴.۰ — چندگیرنده، گزارش دوره‌ای، سقف روزانه
+
+- 👥 **گیرنده‌های متعدد بله**: هر تعداد شناسهٔ گفتگو (شخص یا @کانال) — هر خط یک شناسه؛ هر پست به همه ارسال می‌شود و نتیجهٔ تک‌تک آن‌ها در لاگ کار ثبت می‌شود.
+- 🧾 **گزارش دوره‌ای در بله**: خلاصهٔ فعالیت روزانه یا هفتگی (کارها، موفق/ناموفق، پیش‌نویس‌ها، توکن‌ها، مصرف به تفکیک اتصال) در ساعت/روز دلخواه به همهٔ گیرنده‌ها.
+- 🛑 **سقف پست‌های زمان‌بندی‌شده در روز**: حداکثر N پست خودکار در روز (۰ = بی‌نهایت)؛ شمارش امروز همیشه در صفحه نمایش داده می‌شود.
 
 ### 🆕 جدید در نسخهٔ ۱.۳.۰ — زمان‌بندی خودکار + اطلاع‌رسانی بله
 
@@ -44,6 +50,12 @@
 ## English — Overview
 
 AI Post Creator turns the WordPress admin into an AI content agent. Set a **site prompt** once (what your site is about), and the agent picks one of your **existing post categories**, invents a topic that fits, writes the article, runs a **copywriting + SEO revision pass**, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** — with every step visible live and auto-retried until it passes.
+
+**New in 1.4.0 — multiple recipients, periodic reports, daily limit:**
+
+* **Multiple Bale recipients** — list any number of chat IDs (people or @channels, one per line); every generated post is delivered to all of them, with per-chat results logged.
+* **Periodic Bale report** — a daily or weekly activity summary (jobs, success/fail, drafts, tokens, usage per connection) sent at your chosen time/day to every recipient.
+* **Daily scheduled-post limit** — cap automatic posts at N per day (0 = unlimited); today's count is always visible on the Schedule page.
 
 **New in 1.3.0 — automatic schedules + Bale notifications:**
 
@@ -213,7 +225,7 @@ add_action( 'aipc_post_created', function ( $post_id, $job_id ) {
 
 The plugin ships with an end-to-end suite (WordPress 6.7 + SQLite via php-wasm, **two mock providers** — a chat host and a dedicated image host) covering the full pipeline through the real REST stack:
 
-✅ 70+ checks pass — including everything from 1.2.0 (job lifecycle through the real REST stack, auto-invented topic from the site prompt, AI-chosen category, Persian content, TOC anchors, copywriting/SEO revision pass, FAQ + JSON-LD schema, Rank Math summary, SEO meta, tags, featured image, draft-only saving, 401s for anonymous calls, per-step connection routing verified at the HTTP level, custom FAQ prompt sent to the provider, page rendering, sanitization, fa_IR bundle incl. plural forms, cancel/failure/retry flows) plus the new 1.3.0 coverage: **cron event + 15-minute interval registration**, **a due schedule firing through `AIPC_Scheduler::tick()` and producing a complete draft post (fixed topic, FAQ/TOC per entry options, no image when disabled)**, **no double-firing on the second tick**, paused entries never due, schedule-entry sanitization (time clamp, day cleanup, option defaults), the schedule admin page rendering, **Bale REST endpoints** (bad token rejected, stored settings work, chat-id detection, anonymous 401) and **the full Bale traffic audit**: exactly one `sendPhoto` per imaged post with caption containing title + permalink, `sendMessage` for text-only posts, correct chat id and token on every call — all with zero PHP warnings.
+✅ 85+ checks pass — including everything from 1.2.0 (job lifecycle through the real REST stack, auto-invented topic from the site prompt, AI-chosen category, Persian content, TOC anchors, copywriting/SEO revision pass, FAQ + JSON-LD schema, Rank Math summary, SEO meta, tags, featured image, draft-only saving, 401s for anonymous calls, per-step connection routing verified at the HTTP level, custom FAQ prompt sent to the provider, page rendering, sanitization, fa_IR bundle incl. plural forms, cancel/failure/retry flows) plus the new 1.3.0 coverage: **cron event + 15-minute interval registration**, **a due schedule firing through `AIPC_Scheduler::tick()` and producing a complete draft post (fixed topic, FAQ/TOC per entry options, no image when disabled)**, **no double-firing on the second tick**, paused entries never due, schedule-entry sanitization (time clamp, day cleanup, option defaults), the schedule admin page rendering, **Bale REST endpoints** (bad token rejected, stored settings work, chat-id detection, anonymous 401) and **the full Bale traffic audit**: exactly one `sendPhoto` per imaged post with caption containing title + permalink, `sendMessage` for text-only posts, correct chat id and token on every call — all with zero PHP warnings — plus the 1.4.0 coverage: **two Bale recipients receiving every notification** (per-chat verification at the HTTP level), the **daily report** delivered exactly once to both chats (and not re-sent by the next tick), and the **daily limit** blocking a second due schedule entry while leaving it due for the next day.
 
 ## Frequently asked questions
 
@@ -232,6 +244,8 @@ The plugin ships with an end-to-end suite (WordPress 6.7 + SQLite via php-wasm, 
 **How precise are the schedules?** — The scheduler ticks every 15 minutes; a run starts within ~15 minutes of its time (same-day catch-up, at most once per entry per day). For exact timing, disable WP-Cron and call `wp-cron.php` from a server cron job (the Schedule page shows the recommended line).
 
 **What does the Bale message contain?** — The featured image (when the post has one), the title, the SEO summary and the link to the draft. If image sending fails, it falls back to a text-only message; every attempt is logged in the job's log.
+
+**Can several people receive the notifications?** — Yes: list every chat ID on the Schedule page (one per line — a person's numeric ID or a @channel username). Each post and each periodic report is delivered to all of them, and partial failures are logged per chat.
 
 **Persian/RTL support?** — The admin UI ships with a complete `fa_IR` translation and RTL-aware styling; the content language is switchable per run (Persian is auto-detected as default on Persian sites).
 

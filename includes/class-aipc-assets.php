@@ -176,6 +176,7 @@ final class AIPC_Assets {
 				'noChat'     => __( 'No messages found. Send any message to your bot in Bale first, then try again.', 'wp-ai-post-creator' ),
 				'chatFound'  => __( 'Chat ID detected: %s', 'wp-ai-post-creator' ),
 				'needToken'  => __( 'Enter a bot token first.', 'wp-ai-post-creator' ),
+				'needChat'   => __( 'Enter at least one chat ID.', 'wp-ai-post-creator' ),
 			),
 		);
 	}

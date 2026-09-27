@@ -19,6 +19,7 @@ $aipc_next_tick = wp_get_scheduled_event( AIPC_Scheduler::CRON_HOOK );
 $aipc_notices = array(
 	'schedule_saved'   => __( 'Schedule saved.', 'wp-ai-post-creator' ),
 	'schedule_deleted' => __( 'Schedule deleted.', 'wp-ai-post-creator' ),
+	'schedule_settings_saved' => __( 'Schedule settings saved.', 'wp-ai-post-creator' ),
 	'run_started'      => __( 'The agent just started — the console page is now running it.', 'wp-ai-post-creator' ),
 	'run_failed'       => __( 'Could not start the agent. Check that a connection is configured.', 'wp-ai-post-creator' ),
 	'bale_saved'       => __( 'Bale notification settings saved.', 'wp-ai-post-creator' ),
@@ -105,6 +106,27 @@ $aipc_notices = array(
 				</tbody>
 			</table>
 		<?php endif; ?>
+
+		<form class="aipc-limit-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+			style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-block-start:14px;">
+			<?php wp_nonce_field( 'aipc_save_schedule_settings' ); ?>
+			<input type="hidden" name="action" value="aipc_save_schedule_settings" />
+			<label for="aipc-daily-limit" style="font-weight:600;"><?php esc_html_e( 'Max scheduled posts per day', 'wp-ai-post-creator' ); ?></label>
+			<input type="number" id="aipc-daily-limit" class="aipc-input" name="daily_limit" min="0" max="50" step="1"
+				style="width:90px;" value="<?php echo esc_attr( AIPC_Scheduler::daily_limit() ); ?>" />
+			<span class="description"><?php esc_html_e( '0 = unlimited', 'wp-ai-post-creator' ); ?></span>
+			<button type="submit" class="button"><?php esc_html_e( 'Save', 'wp-ai-post-creator' ); ?></button>
+			<span class="description">
+				<?php
+				printf(
+					/* translators: 1: created today, 2: limit (or infinity). */
+					esc_html__( 'Scheduled posts today: %1$d of %2$s', 'wp-ai-post-creator' ),
+					esc_html( number_format_i18n( AIPC_Scheduler::cron_jobs_today() ) ),
+					esc_html( AIPC_Scheduler::daily_limit() ? number_format_i18n( AIPC_Scheduler::daily_limit() ) : '∞' )
+				);
+				?>
+			</span>
+		</form>
 
 		<?php
 		$aipc_e      = $aipc_editing ? $aipc_editing : array( 'time' => '09:00', 'days' => array( 0, 1, 2, 3, 4, 5, 6 ), 'enabled' => 1, 'topic' => '', 'opts' => array( 'tone' => $aipc_s['default_tone'], 'length' => $aipc_s['default_length'], 'language' => $aipc_s['content_language'], 'image' => (int) $aipc_s['image_enabled'], 'faq' => (int) $aipc_s['add_faq'], 'toc' => (int) $aipc_s['add_toc'] ) );
@@ -203,11 +225,31 @@ $aipc_notices = array(
 						value="" />
 				</div>
 				<div class="aipc-field">
-					<label><?php esc_html_e( 'Chat ID', 'wp-ai-post-creator' ); ?></label>
-					<input type="text" class="aipc-input code" name="chat_id" id="aipc-bale-chat"
-						placeholder="123456789"
-						value="<?php echo esc_attr( $aipc_bale['chat_id'] ); ?>" />
-					<p class="description"><?php esc_html_e( 'The numeric ID of the person. Send any message to your bot, then use the button below to detect it automatically.', 'wp-ai-post-creator' ); ?></p>
+					<label><?php esc_html_e( 'Chat IDs (one per line)', 'wp-ai-post-creator' ); ?></label>
+					<textarea class="aipc-input code" name="chat_ids" id="aipc-bale-chats" rows="3"
+						placeholder="123456789&#10;@mychannel"><?php echo esc_textarea( implode( "\n", AIPC_Bale::recipients( $aipc_bale ) ) ); ?></textarea>
+					<p class="description"><?php esc_html_e( 'One chat ID per line — a person’s numeric ID or a @channel username. Send any message to your bot, then use the button below to detect it automatically.', 'wp-ai-post-creator' ); ?></p>
+				</div>
+				<div class="aipc-field">
+					<label><?php esc_html_e( 'Periodic report', 'wp-ai-post-creator' ); ?></label>
+					<select class="aipc-input" name="report">
+						<option value="" <?php selected( $aipc_bale['report'], '' ); ?>><?php esc_html_e( 'Off', 'wp-ai-post-creator' ); ?></option>
+						<option value="daily" <?php selected( $aipc_bale['report'], 'daily' ); ?>><?php esc_html_e( 'Daily', 'wp-ai-post-creator' ); ?></option>
+						<option value="weekly" <?php selected( $aipc_bale['report'], 'weekly' ); ?>><?php esc_html_e( 'Weekly', 'wp-ai-post-creator' ); ?></option>
+					</select>
+					<p class="description"><?php esc_html_e( 'Reports are sent once per day/week at this time, after it has passed.', 'wp-ai-post-creator' ); ?></p>
+				</div>
+				<div class="aipc-field">
+					<label><?php esc_html_e( 'Report time', 'wp-ai-post-creator' ); ?></label>
+					<input type="time" class="aipc-input" name="report_time" value="<?php echo esc_attr( $aipc_bale['report_time'] ); ?>" />
+				</div>
+				<div class="aipc-field">
+					<label><?php esc_html_e( 'Report day (weekly reports)', 'wp-ai-post-creator' ); ?></label>
+					<select class="aipc-input" name="report_day">
+						<?php foreach ( AIPC_Scheduler::day_labels() as $aipc_num => $aipc_label ) : ?>
+							<option value="<?php echo esc_attr( $aipc_num ); ?>" <?php selected( (int) $aipc_bale['report_day'], $aipc_num ); ?>><?php echo esc_html( $aipc_label ); ?></option>
+						<?php endforeach; ?>
+					</select>
 				</div>
 			</div>
 

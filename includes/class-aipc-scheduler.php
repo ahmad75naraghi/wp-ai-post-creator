@@ -85,8 +85,9 @@ final class AIPC_Scheduler {
 		$cfg = get_option( self::OPTION, array() );
 		$cfg = is_array( $cfg ) ? $cfg : array();
 		return wp_parse_args( $cfg, array(
-			'entries' => array(),
-			'state'   => array(),
+			'entries'  => array(),
+			'state'    => array(),
+			'settings' => array( 'daily_limit' => 0 ),
 		) );
 	}
 
@@ -249,6 +250,58 @@ final class AIPC_Scheduler {
 		return true;
 	}
 
+	/**
+	 * Save the schedule settings (currently: the daily post limit).
+	 *
+	 * @param array $in Raw input.
+	 * @return void
+	 */
+	public static function save_settings( $in ) {
+		$in   = is_array( $in ) ? $in : array();
+		$cfg  = self::config();
+		$limit = isset( $in['daily_limit'] ) ? absint( $in['daily_limit'] ) : 0;
+		if ( $limit > 50 ) {
+			$limit = 50;
+		}
+
+		$cfg['settings'] = array( 'daily_limit' => $limit );
+		self::persist( $cfg );
+	}
+
+	/**
+	 * The maximum number of automatic (scheduled) posts per day (0 = no limit).
+	 *
+	 * @return int
+	 */
+	public static function daily_limit() {
+		$cfg   = self::config();
+		$limit = isset( $cfg['settings']['daily_limit'] ) ? absint( $cfg['settings']['daily_limit'] ) : 0;
+		return min( $limit, 50 );
+	}
+
+	/**
+	 * How many automatic (cron) jobs were created today.
+	 *
+	 * @param int|null $now Local now (default: current).
+	 * @return int
+	 */
+	public static function cron_jobs_today( $now = null ) {
+		$now      = $now ? $now : current_time( 'timestamp' );
+		$h        = (int) wp_date( 'H', $now );
+		$i        = (int) wp_date( 'i', $now );
+		$s        = (int) wp_date( 's', $now );
+		$midnight = $now - ( $h * 3600 + $i * 60 + $s );
+
+		$count = 0;
+		foreach ( AIPC_Agent::instance()->get_all_jobs() as $job ) {
+			if ( 'cron' === ( isset( $job['source'] ) ? $job['source'] : 'manual' )
+				&& (int) $job['created'] >= $midnight ) {
+				$count++;
+			}
+		}
+		return $count;
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Due logic
 	 * ------------------------------------------------------------------- */
@@ -308,6 +361,9 @@ final class AIPC_Scheduler {
 	 * @return void
 	 */
 	public static function tick() {
+		// Periodic Bale activity report (independent of the job runs).
+		AIPC_Bale::maybe_send_report();
+
 		$cfg = self::config();
 		if ( empty( $cfg['entries'] ) ) {
 			return;
@@ -336,7 +392,13 @@ final class AIPC_Scheduler {
 			}
 		}
 
-		// 2. Fire the earliest due entry.
+		// 2. Respect the daily limit on automatic posts.
+		$limit = self::daily_limit();
+		if ( $limit > 0 && self::cron_jobs_today() >= $limit ) {
+			return;
+		}
+
+		// 3. Fire the earliest due entry.
 		$now = current_time( 'timestamp' );
 		$due = null;
 		foreach ( $cfg['entries'] as $entry ) {

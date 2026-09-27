@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,12 @@ It talks to **any OpenAI-compatible REST API** — OpenAI, OpenRouter, Groq, Dee
 * **Per-step routing** — assign every pipeline step its own connection: e.g. write with OpenAI and generate images with a different provider.
 * **Per-step prompt templates** — every step's prompt is editable, with a documented placeholder table. Untouched prompts stay in "default" mode and are auto-improved on plugin updates.
 * **Complete admin management panel** — connections manager, prompts & steps editor, and a logs panel with summary stats, usage per connection, full job history and per-job drilldown (step timings, every API call with model/tokens/duration/errors, console replay).
+
+**New in 1.4.0 — recipients, reports, limit:**
+
+* **Multiple Bale recipients** — any number of chat IDs (people or @channels); every post is delivered to all of them with per-chat results logged
+* **Periodic Bale report** — daily/weekly activity summary (jobs, success/fail, drafts, tokens, usage per connection) at your chosen time/day
+* **Daily scheduled-post limit** — cap automatic posts per day (0 = unlimited), with today's count shown on the Schedule page
 
 **New in 1.3.0 — schedules + Bale:**
 
@@ -48,8 +54,8 @@ Your API keys stay on your own site.
 * Per-run options: tone, length (short/medium/long), 12+ content languages (incl. Persian), FAQ/TOC/image toggles
 * The result is always a draft — you review before anything goes live
 * Token usage tracking per job, per connection and in aggregate
-* Automatic post generation on a schedule (weekdays + times, per-entry options)
-* Bale message (image + summary + link) after every generated post
+* Automatic post generation on a schedule (weekdays + times, per-entry options, optional daily cap)
+* Bale message (image + summary + link) after every generated post — to any number of recipients, plus a daily/weekly activity report
 * Works without PHP execution-time problems — one step per request
 * RTL-friendly, full Persian (fa_IR) translation included
 * Developer filters & hooks: `aipc_system_prompt`, `aipc_step_prompt`, `aipc_step_connection`, `aipc_messages`, `aipc_post_args`, `aipc_step_attempts`, `aipc_post_created`
@@ -110,6 +116,12 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.4.0 =
+* Multiple Bale recipients: any number of chat IDs (people or @channels), per-chat delivery results in the job log
+* Periodic Bale report (daily/weekly): jobs, success/fail, drafts, tokens and per-connection usage at a chosen time/day
+* Daily limit for scheduled posts (0 = unlimited) with today's count on the Schedule page
+* REST bale/test now tests every recipient at once
 
 = 1.3.0 =
 * Automatic schedules: any number of entries (time, weekdays, topic, run options), 15-minute cron tick with same-day catch-up and no double-firing
