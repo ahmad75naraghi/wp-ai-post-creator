@@ -5,6 +5,21 @@
 
 ---
 
+## 📚 Documentation
+
+| Document | Audience |
+|---|---|
+| [راهنمای کامل کاربر (فارسی)](docs/USER-GUIDE.fa.md) | کاربران افزونه |
+| [Complete User Guide (English)](docs/USER-GUIDE.en.md) | Plugin users |
+| [Architecture](docs/ARCHITECTURE.md) | Contributors — full system reference |
+| [AGENTS.md](AGENTS.md) | AI agents / developers — working rules, environment, verification |
+| [Contributing](CONTRIBUTING.md) | Human contributors |
+| [E2E Test Suite](tests/e2e/README.md) | How to run and extend the tests |
+| [Release Checklist](docs/RELEASE-CHECKLIST.md) | Cutting a version |
+| [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Code of Conduct](CODE_OF_CONDUCT.md) | Everyone |
+
+---
+
 ## فارسی — معرفی
 
 **AI Post Creator** یک افزونهٔ فوق‌حرفه‌ای و «ایجنت‌مانند» برای وردپرس است که با اتصال به هر سرویس API هوش مصنوعیِ سازگار با OpenAI (OpenAI، OpenRouter، Groq، DeepSeek، Ollama، LM Studio و…)، یک پست کامل را **از صفر تا صد** تولید می‌کند:
