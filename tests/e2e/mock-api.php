@@ -105,6 +105,96 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		);
 	}
 
+	// ---- Git self-updater mocks ----
+	if ( 'raw.githubusercontent.com' === $host ) {
+		$aipc_git_branch = 'main';
+		if ( preg_match( '#/wp-ai-post-creator\.php$#', (string) wp_parse_url( $url, PHP_URL_PATH ) ) ) {
+			preg_match( '#raw\.githubusercontent\.com/[^/]+/[^/]+/([^/]+)/#', $url, $aipc_m );
+			$aipc_git_branch = isset( $aipc_m[1] ) ? $aipc_m[1] : 'main';
+		}
+		$aipc_git_version = ( 'old' === $aipc_git_branch ) ? '0.0.1' : '9.9.9';
+		aipc_mock_log( array(
+			'host'    => 'git-raw',
+			'branch'  => $aipc_git_branch,
+			'version' => $aipc_git_version,
+		) );
+		return array(
+			'body'     => "<?php\n/**\n * Plugin Name: AI Post Creator\n * Version: {$aipc_git_version}\n */\n",
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+		);
+	}
+
+	if ( 'codeload.github.com' === $host ) {
+		$aipc_git_branch = 'main';
+		if ( preg_match( '#/zip/refs/heads/(.+)$#', (string) wp_parse_url( $url, PHP_URL_PATH ), $aipc_m ) ) {
+			$aipc_git_branch = $aipc_m[1];
+		}
+		aipc_mock_log( array(
+			'host'   => 'git-zip',
+			'branch' => $aipc_git_branch,
+		) );
+
+		// 'bad' serves garbage; 'old' never reaches the download (version guard).
+		if ( 'bad' === $aipc_git_branch ) {
+			return array(
+				'body'     => 'this is definitely not a zip archive',
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}
+
+		// Build a zipball from the CURRENT live plugin folder with the version
+		// bumped to 9.9.9, plus a marker file the assertions look for.
+		require_once ABSPATH . 'wp-admin/includes/class-pclzip.php';
+
+		$aipc_work = WP_CONTENT_DIR . '/aipc-mock-git-' . time();
+		$aipc_src  = WP_PLUGIN_DIR . '/wp-ai-post-creator';
+		$aipc_dst  = $aipc_work . '/wp-ai-post-creator';
+
+		$aipc_copy_dir = function ( $from, $to ) use ( &$aipc_copy_dir ) {
+			wp_mkdir_p( $to );
+			foreach ( scandir( $from ) as $f ) {
+				if ( '.' === $f || '..' === $f || '.git' === $f || 'stale-test.php' === $f ) {
+					continue;
+				}
+				if ( is_dir( $from . '/' . $f ) ) {
+					$aipc_copy_dir( $from . '/' . $f, $to . '/' . $f );
+				} else {
+					copy( $from . '/' . $f, $to . '/' . $f );
+				}
+			}
+		};
+		$aipc_copy_dir( $aipc_src, $aipc_dst );
+
+		$aipc_main = $aipc_dst . '/wp-ai-post-creator.php';
+		file_put_contents( $aipc_main, str_replace( AIPC_VERSION, '9.9.9', file_get_contents( $aipc_main ) ) );
+		file_put_contents( $aipc_dst . '/updated-marker.txt', 'updated-9.9.9' );
+
+		$aipc_zipfile = $aipc_work . '.zip';
+		$aipc_archive = new PclZip( $aipc_zipfile );
+		$aipc_archive->create( $aipc_work, PCLZIP_OPT_REMOVE_PATH, $aipc_work );
+		$aipc_zip_bytes = (string) file_get_contents( $aipc_zipfile );
+
+		$aipc_rm_dir = function ( $dir ) use ( &$aipc_rm_dir ) {
+			if ( ! is_dir( $dir ) ) {
+				return;
+			}
+			foreach ( scandir( $dir ) as $f ) {
+				if ( '.' !== $f && '..' !== $f ) {
+					$path = $dir . '/' . $f;
+					is_dir( $path ) ? $aipc_rm_dir( $path ) : unlink( $path );
+				}
+			}
+			rmdir( $dir );
+		};
+		$aipc_rm_dir( $aipc_work );
+		unlink( $aipc_zipfile );
+
+		return array(
+			'body'     => $aipc_zip_bytes,
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+		);
+	}
+
 	if ( ! in_array( $host, array( 'mock.invalid', 'images.invalid', 'flaky.invalid' ), true ) ) {
 		return $preempt;
 	}

@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.5.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later
+**Version:** 1.5.1 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later
 
 ---
 
@@ -29,6 +29,10 @@
 **AI Post Creator** یک افزونهٔ فوق‌حرفه‌ای و «ایجنت‌مانند» برای وردپرس است که با اتصال به هر سرویس API هوش مصنوعیِ سازگار با OpenAI (OpenAI، OpenRouter، Groq، DeepSeek، Ollama، LM Studio و…)، یک پست کامل را **از صفر تا صد** تولید می‌کند:
 
 ابتدا **پرامپت سایت** (سایت چیست، درباره چیست، هدف و مخاطبانش کدامند — در تنظیمات) و **دسته‌بندی‌های موجود نوشته‌ها** را می‌خواند، یکی از دسته‌بندی‌ها را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد (یا از پیشنهاد شما استفاده می‌کند). بعد محتوا را می‌نویسد، یک **پاس کپی‌رایتینگ و سئو** روی کل متن اجرا می‌کند، **خلاصه سئو برای Rank Math** می‌سازد، از روی موضوع و خلاصه **تصویر شاخص** تولید می‌کند و نتیجه را همیشه به‌صورت **پیش‌نویس** ذخیره می‌کند — تمام مراحل به‌صورت زنده در یک **کنسول ایجنت** نمایش داده می‌شوند و در هر مرحله در صورت خطا، به‌طور خودکار تا سه بار دوباره تلاش می‌شود.
+
+### 🆕 جدید در نسخهٔ ۱.۵.۱ — به‌روزرسانی مستقیم از گیت
+
+- ⬇️ **صفحهٔ «به‌روزرسانی از گیت»**: آخرین فایل‌های افزونه را مستقیم از مخزن گیت‌هاب دانلود و همین نصب را درجا جایگزین می‌کند — بررسی نسخه (با جلوگیری از تنزل نسخه)، پشتیبان خودکار از نسخهٔ قبلی، جایگزینی اتمی و **بازگردانی خودکار در صورت خطا**. شاخهٔ مخزن (main یا شاخهٔ توسعه) قابل انتخاب است.
 
 ### 🆕 جدید در نسخهٔ ۱.۵.۰ — بازنویسی، لینک‌سازی داخلی، انتشار خودکار، زنجیرهٔ جایگزین
 
@@ -78,6 +82,10 @@
 ## English — Overview
 
 AI Post Creator turns the WordPress admin into an AI content agent. Set a **site prompt** once (what your site is about), and the agent picks one of your **existing post categories**, invents a topic that fits, writes the article, runs a **copywriting + SEO revision pass**, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** — with every step visible live and auto-retried until it passes.
+
+**New in 1.5.1 — update straight from Git:**
+
+* **"Update from Git" admin page** — downloads the latest plugin files from the GitHub repository and replaces this installation in place: version check with a downgrade guard (plus a force-reinstall option), automatic backup of the previous version, atomic swap with automatic rollback on failure, and a selectable repository branch (main or a development branch).
 
 **New in 1.5.0 — rewrite, internal linking, auto-publish, fallback chains, research sources:**
 

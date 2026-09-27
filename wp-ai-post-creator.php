@@ -3,7 +3,7 @@
  * Plugin Name:       AI Post Creator
  * Plugin URI:        https://github.com/ahmad75naraghi/wp-ai-post-creator
  * Description:       Agent-style AI content engine. Connect any OpenAI-compatible API (OpenAI, OpenRouter, Groq, DeepSeek, Ollama, LM Studio …) and generate complete, SEO-optimized posts from scratch — outline to featured image — on a schedule, with Bale notifications and a live agent console.
- * Version:           1.5.0
+ * Version:           1.5.1
  * Requires at least: 5.7
  * Requires PHP:      7.4
  * Author:            Ahmad Naraghi
@@ -16,7 +16,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AIPC_VERSION', '1.5.0' );
+define( 'AIPC_VERSION', '1.5.1' );
 define( 'AIPC_PLUGIN_FILE', __FILE__ );
 define( 'AIPC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AIPC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -28,6 +28,7 @@ require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-api-client.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-agent.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-post-builder.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-scheduler.php';
+require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-updater.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-bale.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-rest.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-admin.php';

@@ -3,6 +3,25 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.5.1] — 2026-09-27
+
+### Added
+- **Git self-updater** — new "Update from Git" admin page (manage_options):
+  downloads the repository zipball from codeload.github.com, verifies the
+  plugin header, backs up the current files to `wp-content/aipc-backups/`,
+  swaps the new files in atomically and rolls back automatically on failure.
+  Remote version check against raw.githubusercontent.com (transient-cached),
+  downgrade guard with an explicit "Reinstall anyway" option, selectable
+  branch (`update_branch` setting, default `main`), stale-file cleanup,
+  backup pruning (newest two kept) and full uninstall cleanup.
+
+### Verified
+- New e2e group `git_updater` (16 assertions): mocked GitHub raw + zipball
+  hosts, downgrade guard leaves the live files untouched, corrupt package
+  fails gracefully, a real swap updates the version on disk, removes a stale
+  file, keeps the plugin active, creates a rollback-able backup and cleans
+  the temp dirs.
+
 ## [1.5.0] — 2026-09-27
 
 ### Added

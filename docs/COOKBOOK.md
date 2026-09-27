@@ -242,5 +242,6 @@ push the arena branch, REST-PATCH PR #1, verify mergeable).
 | Console UI/behavior | `admin/views/new-post.php`/`rewrite.php` + `assets/admin-agent.js` + `AIPC_Assets::data_for_agent()` |
 | Scheduler semantics | `AIPC_Scheduler::tick()/entry_due()/start_job_for_entry()` |
 | Bale messages | `AIPC_Bale::notify()/notify_published()/build_report()` |
+| Git self-update behavior | `AIPC_Updater::run()/remote_version()` + the `aipc-update` page |
 | Mocked test world | `tests/e2e/mock-api.php` |
 | Assertions | `tests/e2e/drive.php` |

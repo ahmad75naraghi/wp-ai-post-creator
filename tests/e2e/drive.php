@@ -994,5 +994,54 @@ $out['bale_traffic'] = array(
 	} )(),
 );
 
+/* ------------------------------------------------------------------ *
+ * v1.5.1 — Git self-updater (LAST: it replaces the plugin files)
+ * ------------------------------------------------------------------ */
+require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+$aipc_git_dir = WP_PLUGIN_DIR . '/wp-ai-post-creator';
+$aipc_git_main = $aipc_git_dir . '/wp-ai-post-creator.php';
+
+$aipc_res_old = AIPC_Updater::run( 'old', false );          // downgrade guard
+$aipc_res_bad = AIPC_Updater::run( 'bad', true );           // corrupt package
+$aipc_guard_untouched = false !== strpos( (string) file_get_contents( $aipc_git_main ), "define( 'AIPC_VERSION', '" . AIPC_VERSION . "' )" );
+
+file_put_contents( $aipc_git_dir . '/stale-test.php', '<?php // stale file that must disappear on update' );
+
+$aipc_res_ok = AIPC_Updater::run( 'main', false );          // real swap
+
+$aipc_data_new = get_plugin_data( $aipc_git_main );
+$aipc_backup   = AIPC_Updater::last_backup();
+$aipc_bak_ok   = false;
+if ( '' !== $aipc_backup && is_readable( $aipc_backup . '/wp-ai-post-creator.php' ) ) {
+	$aipc_bak_ok = false !== strpos( (string) file_get_contents( $aipc_backup . '/wp-ai-post-creator.php' ), "define( 'AIPC_VERSION', '" . AIPC_VERSION . "' )" );
+}
+
+ob_start();
+AIPC_Admin::render_update();
+$aipc_update_html = ob_get_clean();
+
+$out['git_updater'] = array(
+	'remote_main'      => '9.9.9' === AIPC_Updater::remote_version( 'main', true ),
+	'remote_old'       => '0.0.1' === AIPC_Updater::remote_version( 'old', true ),
+	'remote_cached'    => '9.9.9' === get_transient( 'aipc_git_v_' . md5( 'main' ) ),
+	'guard_blocks'     => is_wp_error( $aipc_res_old ),
+	'guard_msg'        => (string) ( is_wp_error( $aipc_res_old ) ? $aipc_res_old->get_error_message() : '' ),
+	'live_untouched'   => $aipc_guard_untouched, // captured BEFORE the successful swap
+	'bad_package'      => is_wp_error( $aipc_res_bad ),
+	'update_ok'        => is_array( $aipc_res_ok ) && ! empty( $aipc_res_ok['ok'] ),
+	'new_version'      => isset( $aipc_data_new['Version'] ) ? $aipc_data_new['Version'] : null, // expect 9.9.9
+	'marker'           => file_exists( $aipc_git_dir . '/updated-marker.txt' ),
+	'stale_gone'       => ! file_exists( $aipc_git_dir . '/stale-test.php' ),
+	'backup_ok'        => $aipc_bak_ok,
+	'still_active'     => in_array( 'wp-ai-post-creator/wp-ai-post-creator.php', (array) get_option( 'active_plugins' ), true ),
+	'workdir_clean'    => 0 === count( (array) glob( WP_CONTENT_DIR . '/aipc-git-tmp-*' ) ),
+	'page_renders'     => false !== strpos( $aipc_update_html, 'aipc_git_update' ),
+	'page_shows_button'=> false !== strpos( $aipc_update_html, __( 'Update from Git', 'wp-ai-post-creator' ) ),
+	'handlers_bound'   => has_action( 'admin_post_aipc_git_update' ) && has_action( 'admin_post_aipc_git_check' ),
+	'branch_setting'   => 'main' === AIPC_Settings::get( 'update_branch' ),
+	'branch_sanitized' => 'main' === AIPC_Updater::sanitize_branch( '../etc/passwd/../..' ) && 'feat/x.1_2-y' === AIPC_Updater::sanitize_branch( 'feat/x.1_2-y' ),
+);
+
 echo "\n===E2E_JSON===\n";
 echo json_encode( $out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );

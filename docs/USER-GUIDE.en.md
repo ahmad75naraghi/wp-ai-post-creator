@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.5.0)
+# AI Post Creator — Complete User Guide (v1.5.1)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -192,7 +192,27 @@ drafts, tokens, usage per connection) at your chosen time/day.
 
 ---
 
-## 10. Logs
+## 10. Update from Git (new in 1.5.1)
+
+Path: **AI Post Creator → Update from Git**
+
+- The page shows the installed version next to the version available on GitHub.
+- **Check for updates now** refreshes the remote version for the selected branch.
+- **Update from Git** updates the whole plugin in place:
+  1. the repository snapshot (zip) is downloaded
+  2. the plugin header is verified (corrupt packages are rejected)
+  3. the current files are backed up to `wp-content/aipc-backups`
+  4. the new files are swapped in atomically; on any failure the previous
+     version is restored **automatically**
+- Settings, connections, schedules and posts live in the database and stay untouched.
+- **Branch:** `main` by default (stable releases); you can enter a development branch.
+- To prevent accidental downgrades, updating from an older branch is blocked —
+  unless you tick "Reinstall anyway".
+- Files removed upstream are deleted too (a complete refresh, not an overlay).
+
+> ⚠️ Note: if you installed via `git clone`, the `.git` folder is lost by this update.
+
+## 11. Logs
 
 Path: **AI Post Creator → Logs**
 
@@ -204,7 +224,7 @@ Path: **AI Post Creator → Logs**
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 | Problem | Fix |
 |---|---|
@@ -219,7 +239,7 @@ Path: **AI Post Creator → Logs**
 
 ---
 
-## 12. FAQ
+## 13. FAQ
 
 **Where is my API key stored?**
 Only in your own site's database; it never appears in the browser, REST

@@ -6,7 +6,7 @@ inside [php-wasm](https://github.com/WordPress/php-wasm), activates the plugin,
 configures connections/schedules/Bale, and drives the agent **through the real
 REST stack** against scripted mock providers.
 
-Status at v1.5.0: **141/141 assertion groups green, zero PHP warnings.**
+Status at v1.5.1: **157/157 assertion groups green, zero PHP warnings.**
 
 ## Files
 
@@ -88,6 +88,8 @@ return so counters never lie; `$preempt` is returned untouched when non-null.
 | `tapi.bale.ai` | Bale Bot API: tokens containing `bad` → 401; `getUpdates` → chat 98765; otherwise `ok:true` |
 | `news.invalid/*/feed/` | RSS 2.0 with 2 Persian gardening items (research sources) |
 | `flaky.invalid` | Always 500 (fallback-chain test) |
+| `raw.githubusercontent.com` | Git version check: branch `old` → `Version: 0.0.1`, everything else → `Version: 9.9.9` (host logged as `git-raw`) |
+| `codeload.github.com` | Git zipball (host logged as `git-zip`): branch `bad` → garbage; otherwise a PclZip archive built from the **live plugin folder** with the version string bumped to 9.9.9 plus an `updated-marker.txt` (v1.5.1) |
 | `mock.invalid` / `images.invalid` | OpenAI-compatible provider, routed by prompt substring |
 | `GET /models` | `mock-mini`, `mock-pro`, `dall-e-3` |
 | `POST /images/generations` | 1×1 PNG as `b64_json` |
@@ -122,6 +124,7 @@ deep inside the plan prompt).
 - **v1.5:** fallback chain — plan step chained [Flaky → Chat Mock]: 3 failed
   attempts on Flaky (6 logged HTTP calls — the client retries 5xx once
   internally), switch + retry log lines, then success on Chat Mock
+- **v1.5.1:** the Git self-updater end-to-end — mocked remote version (9.9.9 / 0.0.1), downgrade guard leaves the live files untouched, corrupt package fails gracefully, and a real swap updates the version on disk (9.9.9 via `get_plugin_data`), removes a stale file, keeps the plugin active, writes a restorable backup and cleans the temp dirs. This group runs **last** — it replaces the plugin files.
 - **v1.5:** sanitizing of `source_sites` (scheme guard — `esc_url_raw` would
   invent `http://`) and of schedule publish fields
 - Cancel / failure / manual-retry flows; scheduler tick (fires the due entry,

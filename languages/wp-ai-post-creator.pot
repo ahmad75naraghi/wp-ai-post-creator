@@ -242,6 +242,10 @@ msgstr ""
 msgid "Automatic schedules"
 msgstr ""
 
+#: admin/views/update.php
+msgid "Available on GitHub"
+msgstr ""
+
 #: admin/views/prompts.php
 msgid "Available placeholders"
 msgstr ""
@@ -296,6 +300,14 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Bot token"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Branch"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Branch saved."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -364,6 +376,10 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "Chat model"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Check for updates now"
 msgstr ""
 
 #: includes/class-aipc-settings.php
@@ -462,6 +478,14 @@ msgstr ""
 msgid "Copywriting & SEO pass complete (%1$d → %2$d words)"
 msgstr ""
 
+#: includes/class-aipc-updater.php
+msgid "Could not create a temporary folder for the update."
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "Could not create the backup folder."
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "Could not download the generated image — continuing without one."
 msgstr ""
@@ -470,8 +494,16 @@ msgstr ""
 msgid "Could not download the generated image."
 msgstr ""
 
+#: includes/class-aipc-updater.php
+msgid "Could not extract the update package."
+msgstr ""
+
 #: includes/class-aipc-assets.php
 msgid "Could not load the model list:"
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "Could not move the current plugin folder to the backup location."
 msgstr ""
 
 #: includes/class-aipc-bale.php
@@ -480,6 +512,10 @@ msgstr ""
 
 #: includes/class-aipc-api-client.php
 msgid "Could not reach the AI provider: %s"
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "Could not save the downloaded package."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -600,6 +636,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Done — %1$d words · %2$d prompt + %3$d completion tokens"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Download the latest plugin files straight from the GitHub repository and replace this installation in place."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -782,6 +822,10 @@ msgstr ""
 msgid "German"
 msgstr ""
 
+#: includes/class-aipc-updater.php
+msgid "GitHub returned HTTP %d while checking the version."
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Hindi"
 msgstr ""
@@ -820,6 +864,10 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "Improvement notes from the analysis step"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Installed version"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -868,6 +916,10 @@ msgstr ""
 
 #: admin/views/new-post.php admin/views/rewrite.php
 msgid "Language (write its English name)"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Last backup of the previous version: %s"
 msgstr ""
 
 #: admin/views/new-post.php
@@ -928,6 +980,10 @@ msgstr ""
 
 #: admin/views/new-post.php
 msgid "Model: %s"
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "Moving the new files into place failed — the previous version was restored."
 msgstr ""
 
 #: admin/views/connections.php
@@ -1008,6 +1064,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Off"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Older than the installed version"
 msgstr ""
 
 #: admin/views/schedule.php
@@ -1152,8 +1212,16 @@ msgstr ""
 msgid "Rank Math summary: %s"
 msgstr ""
 
+#: admin/views/update.php
+msgid "Reinstall anyway (also when the branch is not newer)"
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Reminder of the internal links that must survive the revision"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Replace all plugin files with the latest version from GitHub?"
 msgstr ""
 
 #: admin/views/schedule.php
@@ -1166,6 +1234,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Reports are sent once per day/week at this time, after it has passed."
+msgstr ""
+
+#: admin/views/update.php
+msgid "Repository branch"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1268,6 +1340,10 @@ msgstr ""
 
 #: admin/views/prompts.php
 msgid "Save all"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Save branch"
 msgstr ""
 
 #: admin/views/connections.php
@@ -1494,6 +1570,18 @@ msgstr ""
 msgid "The agent stopped with an error. You can retry the failed step."
 msgstr ""
 
+#: includes/class-aipc-updater.php
+msgid "The branch “%1$s” holds version %2$s, which is not newer than the installed %3$s. Tick “Reinstall anyway” to force it."
+msgstr ""
+
+#: admin/views/update.php
+msgid "The branch “%s” holds an OLDER version than the installed one — updating would downgrade the plugin."
+msgstr ""
+
+#: admin/views/update.php
+msgid "The button downloads the repository snapshot, verifies the plugin header, backs up the current files to wp-content/aipc-backups and swaps the new files in. If anything fails, the previous version is restored automatically."
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "The cron event is not scheduled."
 msgstr ""
@@ -1502,12 +1590,28 @@ msgstr ""
 msgid "The current content of the post being rewritten"
 msgstr ""
 
+#: includes/class-aipc-updater.php
+msgid "The download from GitHub failed (HTTP %d or invalid archive)."
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "The downloaded package does not contain a valid plugin header."
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "The downloaded package is not a valid plugin archive."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "The full assembled draft HTML"
 msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "The image prompt step failed."
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "The installed plugin folder was not found."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -1534,6 +1638,10 @@ msgstr ""
 msgid "The plan did not include a title. Please retry."
 msgstr ""
 
+#: includes/class-aipc-updater.php
+msgid "The plugins folder is not writable — update by FTP instead."
+msgstr ""
+
 #: admin/views/new-post.php
 msgid "The post is always saved as a draft for your review."
 msgstr ""
@@ -1552,6 +1660,14 @@ msgstr ""
 
 #: includes/class-aipc-api-client.php
 msgid "The provider returned no image data."
+msgstr ""
+
+#: admin/views/update.php
+msgid "The remote version was refreshed."
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "The repository branch does not look like this plugin (no version header found)."
 msgstr ""
 
 #: includes/class-aipc-assets.php
@@ -1690,8 +1806,28 @@ msgstr ""
 msgid "Unknown connection"
 msgstr ""
 
+#: admin/views/update.php
+msgid "Up to date"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Update available"
+msgstr ""
+
+#: admin/views/update.php includes/class-aipc-admin.php
+msgid "Update from Git"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Update now"
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "Update post"
+msgstr ""
+
+#: admin/views/update.php includes/class-aipc-updater.php
+msgid "Updated successfully to %s."
 msgstr ""
 
 #: admin/views/logs.php includes/class-aipc-bale.php
@@ -1700,6 +1836,14 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "Use as the default connection"
+msgstr ""
+
+#: includes/class-aipc-updater.php
+msgid "Verification of the new files failed — the previous version was restored."
+msgstr ""
+
+#: admin/views/update.php
+msgid "Versions"
 msgstr ""
 
 #: admin/views/log-detail.php admin/views/new-post.php admin/views/rewrite.php
@@ -1778,6 +1922,10 @@ msgstr ""
 msgid "Your post was rewritten!"
 msgstr ""
 
+#: admin/views/update.php
+msgid "Your settings, connections, schedules and posts are files-independent and stay untouched."
+msgstr ""
+
 #: admin/views/new-post.php admin/views/rewrite.php
 msgid "answers + Google rich-results schema"
 msgstr ""
@@ -1808,6 +1956,14 @@ msgstr ""
 
 #: admin/views/new-post.php admin/views/rewrite.php
 msgid "linked jump menu"
+msgstr ""
+
+#: admin/views/update.php
+msgid "main for stable releases, or a development branch."
+msgstr ""
+
+#: admin/views/update.php
+msgid "not checked yet"
 msgstr ""
 
 #: admin/views/prompts.php

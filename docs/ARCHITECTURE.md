@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.5.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.5.1**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -39,14 +39,15 @@ the admin bar gets "New AI Post" + "Rewrite post" shortcuts for users with
 | `AIPC_Rest` (`class-aipc-rest.php`) | 411 | REST endpoints & permissions |
 | `AIPC_Post_Builder` (`class-aipc-post-builder.php`) | 367 | Assembles the final post: `create()` (new) and `update()` (rewrite), TOC/FAQ HTML, SEO meta, tags, featured image upload |
 | `AIPC_Connections` (`class-aipc-connections.php`) | 303 | Connection CRUD + sanitizing, default connection, write-only keys |
-| `AIPC_Settings` (`class-aipc-settings.php`) | 245 | Settings (site prompt, source sites, defaults) + option lists (tones, lengths, languages, image sizes) |
+| `AIPC_Updater` (`class-aipc-updater.php`) | ~340 | Git self-update: version check, zipball download, verification, backup + atomic swap with rollback |
+| `AIPC_Settings` (`class-aipc-settings.php`) | 245+ | Settings (site prompt, source sites, defaults) + option lists (tones, lengths, languages, image sizes) |
 | `AIPC_Assets` (`class-aipc-assets.php`) | 209 | Screen detection, enqueue, inline config for the console JS |
 
 ## 3. Data model (wp_options)
 
 | Option | Structure |
 |---|---|
-| `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `image_enabled`, `image_size`, `add_toc`, `add_faq`, `system_prompt_extra`, `delete_on_uninstall` |
+| `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `update_branch` (Git branch for the self-updater, default `main`), `image_enabled`, `image_size`, `add_toc`, `add_faq`, `system_prompt_extra`, `delete_on_uninstall` |
 | `aipc_connections` | array of `{id (c_*), name, base_url, api_key, chat_model, image_model, temperature (0–2, default 0.7), max_tokens (≤16000), request_timeout (≥15), is_default}` — keys never leave the server |
 | `aipc_steps` | `{step_id: {connections: [conn_id,…] (ordered fallback chain), prompt: '' = default}}` — reads also accept legacy `connection` (string) |
 | `aipc_jobs` (autoload off) | last 30 jobs, each: `id (job_*)`, `status` (`running`/`done`/`error`/`cancelled`), `mode` (`new`/`rewrite`), `topic`, `source` (`manual`/`cron`), `post_id`, `steps[]` (`{id,label,status}`), `cursor`, `log[]` (`{t,msg,level}`), `calls[]` (`{step,conn,model,ok,ms,error,tokens}`), `timings`, `usage{prompt,completion,calls}`, `args` (sanitized run options), `data` (plan/outline/content/rewrite/result), `notified` |
@@ -158,6 +159,7 @@ logs since cursor, usage, result (`post_id/title/edit/view/words/status`).
 | Logs (`aipc-logs`) | `manage_options` | `logs.php` / `log-detail.php` | — |
 | Schedule (`aipc-schedule`) | `manage_options` | `schedule.php` | `admin-schedule.js` |
 | Settings (`aipc-settings`) | `manage_options` | `settings.php` | — |
+| Update from Git (`aipc-update`) | `manage_options` | `update.php` | — (inline confirm) |
 
 `admin_post_*` handlers: `aipc_save_connection`, `aipc_delete_connection`,
 `aipc_save_steps`, `aipc_clear_logs`, `aipc_delete_job`, `aipc_save_schedule`,
@@ -216,7 +218,7 @@ assertion groups green at v1.5.0, zero PHP warnings.
 `aipc_post_published($post_id, $job_id)` · `aipc_cron_tick` ·
 `aipc_publish_post($post_id, $job_id)` · `aipc_daily_cleanup`
 
-**Filters:** `aipc_step_connections($chain, $step)` ·
+**Filters:** `aipc_git_version_ttl($ttl, $branch)` · `aipc_git_request_args($args, $url)` · `aipc_step_connections($chain, $step)` ·
 `aipc_step_connection($primary_conn, $step)` (legacy) ·
 `aipc_step_attempts($attempts, $job, $step_id)` (default 3) ·
 `aipc_step_prompt($prompt, $step, $job)` · `aipc_messages($messages, $job, $step)` ·

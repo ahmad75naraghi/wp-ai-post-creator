@@ -39,3 +39,27 @@ foreach ( $aipc_meta_keys as $aipc_key ) {
 }
 
 wp_clear_scheduled_hook( 'aipc_daily_cleanup' );
+
+// Updater leftovers: cached versions, backups, temp folders.
+global $wpdb;
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_aipc\\_git\\_v\\_%' OR option_name LIKE '\\_transient\\_timeout\\_aipc\\_git\\_v\\_%'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+
+$aipc_rrmdir = function ( $dir ) use ( &$aipc_rrmdir ) {
+	if ( ! is_dir( $dir ) ) {
+		return;
+	}
+	foreach ( scandir( $dir ) as $f ) {
+		if ( '.' !== $f && '..' !== $f ) {
+			$path = $dir . '/' . $f;
+			is_dir( $path ) ? $aipc_rrmdir( $path ) : @unlink( $path );
+		}
+	}
+	@rmdir( $dir );
+};
+
+if ( is_dir( WP_CONTENT_DIR . '/aipc-backups' ) ) {
+	$aipc_rrmdir( WP_CONTENT_DIR . '/aipc-backups' );
+}
+foreach ( glob( WP_CONTENT_DIR . '/aipc-git-tmp-*' ) as $aipc_tmp_dir ) {
+	$aipc_rrmdir( $aipc_tmp_dir );
+}

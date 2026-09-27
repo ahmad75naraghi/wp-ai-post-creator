@@ -1885,3 +1885,159 @@ msgid "Rewrite plan ready — %d section."
 msgid_plural "Rewrite plan ready — %d sections."
 msgstr[0] ""
 msgstr[1] ""
+
+#: admin/views/update.php
+msgid "Available on GitHub"
+msgstr "موجود در گیت‌هاب"
+
+#: admin/views/update.php
+msgid "Branch"
+msgstr "شاخه"
+
+#: admin/views/update.php
+msgid "Branch saved."
+msgstr "شاخه ذخیره شد."
+
+#: admin/views/update.php
+msgid "Check for updates now"
+msgstr "همین حالا بررسی کن"
+
+#: includes/class-aipc-updater.php
+msgid "Could not create a temporary folder for the update."
+msgstr "ساخت پوشهٔ موقت برای به‌روزرسانی ممکن نشد."
+
+#: includes/class-aipc-updater.php
+msgid "Could not create the backup folder."
+msgstr "ساخت پوشهٔ پشتیبان ممکن نشد."
+
+#: includes/class-aipc-updater.php
+msgid "Could not extract the update package."
+msgstr "استخراج بستهٔ به‌روزرسانی ممکن نشد."
+
+#: includes/class-aipc-updater.php
+msgid "Could not move the current plugin folder to the backup location."
+msgstr "انتقال پوشهٔ فعلی افزونه به محل پشتیبان ممکن نشد."
+
+#: includes/class-aipc-updater.php
+msgid "Could not save the downloaded package."
+msgstr "ذخیرهٔ بستهٔ دانلودشده ممکن نشد."
+
+#: admin/views/update.php
+msgid "Download the latest plugin files straight from the GitHub repository and replace this installation in place."
+msgstr "آخرین فایل‌های افزونه را مستقیم از مخزن گیت‌هاب دانلود کنید و همین نصب را درجا جایگزین کنید."
+
+#: includes/class-aipc-updater.php
+msgid "GitHub returned HTTP %d while checking the version."
+msgstr "گیت‌هاب هنگام بررسی نسخه، کد HTTP %d را برگرداند."
+
+#: admin/views/update.php
+msgid "Installed version"
+msgstr "نسخهٔ نصب‌شده"
+
+#: admin/views/update.php
+msgid "Last backup of the previous version: %s"
+msgstr "آخرین پشتیبان نسخهٔ قبلی: %s"
+
+#: includes/class-aipc-updater.php
+msgid "Moving the new files into place failed — the previous version was restored."
+msgstr "جابه‌جایی فایل‌های جدید انجام نشد — نسخهٔ قبلی بازگردانده شد."
+
+#: admin/views/update.php
+msgid "Older than the installed version"
+msgstr "قدیمی‌تر از نسخهٔ نصب‌شده"
+
+#: admin/views/update.php
+msgid "Reinstall anyway (also when the branch is not newer)"
+msgstr "به هر حال نصب مجدد کن (حتی وقتی شاخه جدیدتر نیست)"
+
+#: admin/views/update.php
+msgid "Replace all plugin files with the latest version from GitHub?"
+msgstr "همهٔ فایل‌های افزونه با آخرین نسخهٔ گیت‌هاب جایگزین شود؟"
+
+#: admin/views/update.php
+msgid "Repository branch"
+msgstr "شاخهٔ مخزن"
+
+#: admin/views/update.php
+msgid "Save branch"
+msgstr "ذخیرهٔ شاخه"
+
+#: includes/class-aipc-updater.php
+msgid "The branch “%1$s” holds version %2$s, which is not newer than the installed %3$s. Tick “Reinstall anyway” to force it."
+msgstr "شاخهٔ «%1$s» نسخهٔ %2$s را دارد که از نسخهٔ نصب‌شدهٔ %3$s جدیدتر نیست. برای اجبار، گزینهٔ «نصب مجدد به هر حال» را علامت بزنید."
+
+#: admin/views/update.php
+msgid "The branch “%s” holds an OLDER version than the installed one — updating would downgrade the plugin."
+msgstr "شاخهٔ «%s» نسخه‌ای قدیمی‌تر از نسخهٔ نصب‌شده دارد — به‌روزرسانی، افزونه را تنزل می‌دهد."
+
+#: admin/views/update.php
+msgid "The button downloads the repository snapshot, verifies the plugin header, backs up the current files to wp-content/aipc-backups and swaps the new files in. If anything fails, the previous version is restored automatically."
+msgstr "این دکمه تصویر لحظه‌ای مخزن را دانلود می‌کند، سرآیند افزونه را راستی‌آزمایی می‌کند، از فایل‌های فعلی در wp-content/aipc-backups پشتیبان می‌گیرد و فایل‌های جدید را جایگزین می‌کند. اگر چیزی شکست بخورد، نسخهٔ قبلی خودکار بازگردانده می‌شود."
+
+#: includes/class-aipc-updater.php
+msgid "The download from GitHub failed (HTTP %d or invalid archive)."
+msgstr "دانلود از گیت‌هاب ناموفق بود (HTTP %d یا بستهٔ نامعتبر)."
+
+#: includes/class-aipc-updater.php
+msgid "The downloaded package does not contain a valid plugin header."
+msgstr "بستهٔ دانلودشده سرآیند معتبر افزونه ندارد."
+
+#: includes/class-aipc-updater.php
+msgid "The downloaded package is not a valid plugin archive."
+msgstr "بستهٔ دانلودشده یک بستهٔ افزونهٔ معتبر نیست."
+
+#: includes/class-aipc-updater.php
+msgid "The installed plugin folder was not found."
+msgstr "پوشهٔ افزونهٔ نصب‌شده پیدا نشد."
+
+#: includes/class-aipc-updater.php
+msgid "The plugins folder is not writable — update by FTP instead."
+msgstr "پوشهٔ افزونه‌ها قابل نوشتن نیست — با FTP به‌روزرسانی کنید."
+
+#: admin/views/update.php
+msgid "The remote version was refreshed."
+msgstr "نسخهٔ راه دور تازه‌سازی شد."
+
+#: includes/class-aipc-updater.php
+msgid "The repository branch does not look like this plugin (no version header found)."
+msgstr "شاخهٔ مخزن شبیه این افزونه نیست (سرآیند نسخه پیدا نشد)."
+
+#: admin/views/update.php
+msgid "Up to date"
+msgstr "به‌روز است"
+
+#: admin/views/update.php
+msgid "Update available"
+msgstr "به‌روزرسانی موجود است"
+
+#: admin/views/update.php includes/class-aipc-admin.php
+msgid "Update from Git"
+msgstr "به‌روزرسانی از گیت"
+
+#: admin/views/update.php
+msgid "Update now"
+msgstr "همین حالا به‌روزرسانی کن"
+
+#: admin/views/update.php includes/class-aipc-updater.php
+msgid "Updated successfully to %s."
+msgstr "با موفقیت به %s به‌روزرسانی شد."
+
+#: includes/class-aipc-updater.php
+msgid "Verification of the new files failed — the previous version was restored."
+msgstr "راستی‌آزمایی فایل‌های جدید ناموفق بود — نسخهٔ قبلی بازگردانده شد."
+
+#: admin/views/update.php
+msgid "Versions"
+msgstr "نسخه‌ها"
+
+#: admin/views/update.php
+msgid "Your settings, connections, schedules and posts are files-independent and stay untouched."
+msgstr "تنظیمات، اتصال‌ها، زمان‌بندی‌ها و نوشته‌های شما مستقل از فایل‌ها هستند و دست نمی‌خورند."
+
+#: admin/views/update.php
+msgid "main for stable releases, or a development branch."
+msgstr "main برای نسخه‌های پایدار، یا یک شاخهٔ توسعه."
+
+#: admin/views/update.php
+msgid "not checked yet"
+msgstr "هنوز بررسی نشده"

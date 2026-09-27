@@ -31,6 +31,9 @@ final class AIPC_Admin {
 		add_action( 'admin_post_aipc_run_now', array( __CLASS__, 'handle_run_now' ) );
 		add_action( 'admin_post_aipc_save_bale', array( __CLASS__, 'handle_save_bale' ) );
 		add_action( 'admin_post_aipc_save_schedule_settings', array( __CLASS__, 'handle_save_schedule_settings' ) );
+		add_action( 'admin_post_aipc_git_check', array( __CLASS__, 'handle_git_check' ) );
+		add_action( 'admin_post_aipc_git_update', array( __CLASS__, 'handle_git_update' ) );
+		add_action( 'admin_post_aipc_save_update_settings', array( __CLASS__, 'handle_save_update_settings' ) );
 	}
 
 	/**
@@ -110,6 +113,15 @@ final class AIPC_Admin {
 			'manage_options',
 			'aipc-settings',
 			array( __CLASS__, 'render_settings' )
+		);
+
+		add_submenu_page(
+			'aipc',
+			__( 'Update from Git', 'wp-ai-post-creator' ),
+			__( 'Update from Git', 'wp-ai-post-creator' ),
+			'manage_options',
+			'aipc-update',
+			array( __CLASS__, 'render_update' )
 		);
 	}
 
@@ -449,6 +461,80 @@ final class AIPC_Admin {
 	 *
 	 * @return void
 	 */
+	public static function render_update() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
+		}
+		require AIPC_PLUGIN_DIR . 'admin/views/update.php';
+	}
+
+	/**
+	 * Save the Git branch used by the updater.
+	 *
+	 * @return void
+	 */
+	public static function handle_save_update_settings() {
+		self::guard( 'aipc_save_update_settings' );
+
+		$all = AIPC_Settings::all();
+		$all['update_branch'] = AIPC_Updater::sanitize_branch( isset( $_POST['branch'] ) ? wp_unslash( $_POST['branch'] ) : 'main' );
+		update_option( AIPC_Settings::OPTION, $all );
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-update', 'aipc_git' => 'saved' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Refresh the remote version from GitHub.
+	 *
+	 * @return void
+	 */
+	public static function handle_git_check() {
+		self::guard( 'aipc_git_check' );
+
+		$branch = AIPC_Updater::sanitize_branch( isset( $_POST['branch'] ) ? wp_unslash( $_POST['branch'] ) : 'main' );
+		$result = AIPC_Updater::remote_version( $branch, true );
+
+		$args = array( 'page' => 'aipc-update' );
+		if ( is_wp_error( $result ) ) {
+			$args['aipc_git'] = 'check_failed';
+			$args['err']      = rawurlencode( sanitize_text_field( $result->get_error_message() ) );
+		} else {
+			$args['aipc_git'] = 'checked';
+		}
+
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
+	/**
+	 * Run the Git update.
+	 *
+	 * @return void
+	 */
+	public static function handle_git_update() {
+		self::guard( 'aipc_git_update' );
+
+		$branch = AIPC_Updater::sanitize_branch( isset( $_POST['branch'] ) ? wp_unslash( $_POST['branch'] ) : 'main' );
+		$force  = ! empty( $_POST['force'] );
+		$result = AIPC_Updater::run( $branch, $force );
+
+		$args = array( 'page' => 'aipc-update' );
+		if ( is_wp_error( $result ) ) {
+			$args['aipc_git'] = 'failed';
+			$args['err']      = rawurlencode( sanitize_text_field( $result->get_error_message() ) );
+		} else {
+			$args['aipc_git'] = 'updated';
+			$args['to']       = rawurlencode( sanitize_text_field( $result['version'] ) );
+		}
+
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
 	public static function handle_save_bale() {
 		self::guard( 'aipc_save_bale' );
 
