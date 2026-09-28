@@ -55,7 +55,9 @@ python3 tests/e2e/make-translations.py
 cd <E2E_WORKSPACE> && node e2e.js
 ```
 
-Run all four before every commit. The e2e phase-2 JSON must contain **no `false`**
+Run all four before every commit — CI (`.github/workflows/ci.yml`) runs the
+same checks on GitHub runners for every push/PR and blocks merges while red.
+The e2e phase-2 JSON must contain **no `false`**
 boolean leaf — a helper to check is:
 
 ```bash
@@ -111,6 +113,15 @@ block with all assertion groups.
   (find the sha via `git ls-remote origin refs/heads/arena/01a0de38-wp-ai-post-creator`).
 - **No PHP CLI**, apt is blocked, GitHub release binaries fail SSL.
   `codeload.github.com`, `api.github.com` and `registry.npmjs.org` work.
+- **wp-sqlite-db (e2e drop-in) SQL quirks** — all verified the hard way:
+  - `SELECT 1 FROM <missing table>` returns **int(1)**, not false — an
+    existence probe must use `SHOW TABLES LIKE` (`AIPC_Job_Store::table_exists`).
+  - `DROP TABLE` inside a php-wasm request is **silently ignored** — never rely
+    on it in tests; wipe `wp-content/database/*` files instead (install.php does).
+  - `dbDelta` on an **existing** table sees SQLite's type mapping (VARCHAR→TEXT)
+    as a diff and issues `ALTER TABLE … CHANGE COLUMN`, which the drop-in fails
+    with a `trim(null)` deprecation — so `ensure_table()` must only dbDelta when
+    the table is missing, never to "upgrade" it.
 - **`gh pr edit` fails** (GraphQL "Projects (classic)" error). Update PR #1 with
   REST instead: `gh api -X PATCH repos/ahmad75naraghi/wp-ai-post-creator/pulls/1
   --input <json with title/body>`.
@@ -184,6 +195,11 @@ breaks naive matching — match exact tab counts or use line-based surgery).
 - **`aipc_post_created` fires once per job** from `execute_step()` when the
   finished state is saved — do not also fire it from `step_*finalize()` or Bale
   will notify twice.
+- **Never run two edit_file calls on the SAME file in one parallel batch** —
+  each is applied to the same base snapshot and the last writer silently drops
+  the others' changes (this corrupted class-aipc-agent.php and class-aipc-rest.php
+  during v1.6). Sequential edits or a Python patch script with `assert`ed
+  anchors only (see "Patching strategy").
 - **drive.php style:** named closures + `foreach`, `use ($log_file)` on closures
   that need outer variables; no nested `array_map(array_filter(closure))` one-liners.
 - **install.php** sets `WP_INSTALLING` before requiring `wp-load.php` and clears
@@ -207,9 +223,10 @@ REST PATCH, confirm mergeable.
 Full plan with rationale and the binding decision log:
 [`docs/ROADMAP.md`](docs/ROADMAP.md). Summary:
 
-- **1.6 — infrastructure:** CI (GitHub Actions running this e2e), custom DB table
-  for jobs + schema versioning, Action Scheduler / true background execution,
-  SSRF hardening + REST rate limiting.
+- **1.6 — infrastructure (SHIPPED in v1.6.0):** CI (GitHub Actions running this
+  e2e), custom DB table for jobs + schema versioning, self-rescheduling cron
+  runner for true background execution (no Action Scheduler — decision D4),
+  SSRF hardening + REST rate limiting, plus a draft review inbox.
 - **1.7 — content/SEO:** topic clusters (pillar–cluster), topic queue + content
   calendar, automatic old-post refresh schedules, E-E-A-T signals.
 - **1.8 — distribution:** wp.org submission prep, freemium/Pro licensing, SaaS-y

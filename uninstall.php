@@ -22,8 +22,13 @@ delete_option( 'aipc_stats' );
 delete_option( 'aipc_schedule' );
 delete_option( 'aipc_bale' );
 delete_option( 'aipc_git' );
+delete_option( 'aipc_schema_version' );
 wp_clear_scheduled_hook( 'aipc_cron_tick' );
 wp_clear_scheduled_hook( 'aipc_publish_post' );
+wp_clear_scheduled_hook( 'aipc_run_job' );
+
+// The 1.6 jobs table.
+$GLOBALS['wpdb']->query( 'DROP TABLE IF EXISTS ' . $GLOBALS['wpdb']->prefix . 'aipc_jobs' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 
 // Remove plugin meta from all posts.
 global $wpdb;

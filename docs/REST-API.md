@@ -5,10 +5,17 @@ connections. Base URL: `{$site}/wp-json/aipc/v1/` — authentication is the
 standard WordPress cookie + nonce (the bundled admin JS sends the `wp_rest`
 nonce created for logged-in users).
 
-**Capabilities:** `start/step/cancel/retry` require **`edit_posts`**;
+**Capabilities:** `start/step/state/cancel/retry` require **`edit_posts`**;
 `connection/*` and `bale/*` require **`manage_options`**. Anonymous requests
 get HTTP 401. Auto-publish params are only honored for users with
 `publish_posts`.
+
+**Rate limits (v1.6+):** `/start`, `/step` and `/state` enforce a per-user,
+per-minute cap (30/240/300; 0 disables) — exceeding it returns HTTP 429 with
+`{"code":"aipc_rate"}`. Adjust via the `aipc_rest_rate_limit` filter.
+
+**Background runner (v1.6+):** `/start` arms a server-side runner that drives
+the job to completion on its own; the console only watches via `/state`.
 
 ---
 
@@ -38,9 +45,23 @@ Creates a job and returns its initial state.
 **Response:** a `client_state` object (see below). Errors → 400 with the
 plugin's message (e.g. invalid rewrite target).
 
+### POST `/aipc/v1/state`
+
+Read-only view of a job — returns the same `client_state` object as `/step`
+**without executing anything**. This is what the console polls while the
+background runner does the work.
+
+| Param | Type | Notes |
+|---|---|---|
+| `job_id` | string | **required** |
+| `since` | int | log cursor from the previous response |
+
+Unknown job → 404.
+
 ### POST `/aipc/v1/step`
 
-Executes exactly one pending step of the job (the console loops this).
+Executes exactly one pending step of the job (kept for compatibility and for
+manual drivers; the console no longer loops this since v1.6).
 
 | Param | Type | Notes |
 |---|---|---|

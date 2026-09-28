@@ -4,11 +4,11 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.5.2
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Agent-style AI post generator for any OpenAI-compatible API — unlimited AI connections with per-step fallback chains, per-step prompts, post rewriting, internal linking, research sources, scheduled auto-publishing, complete logs and Bale notifications.
+Agent-style AI post generator for any OpenAI-compatible API — jobs run in the background on their own database table, unlimited AI connections with per-step fallback chains, per-step prompts, post rewriting, internal linking, research sources, scheduled auto-publishing, a draft review inbox, complete logs and Bale notifications.
 
 == Description ==
 
@@ -125,6 +125,15 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.6.0 =
+* Background job execution: a self-rescheduling cron event (aipc_run_job) drives every job server-side with a 600 s budget and automatic re-arming; the agent console became a read-only viewer polling the new /aipc/v1/state endpoint, so closing the tab never stops a run
+* Jobs live in a dedicated database table ({prefix}aipc_jobs) with automatic migration from the old option, light-row log queries, SQL counters for the scheduler and configurable retention (aipc_job_retention_days, default 90 days; 0 = keep forever) — with a transparent fallback to the option when the table cannot be created
+* SSRF hardening: new outbound network guard (AIPC_Network) validates every outbound URL — connection base URLs, research source sites and provider-returned image URLs; private/reserved IP ranges are blocked, loopback stays allowed for local LLMs (Ollama, LM Studio), and filters (aipc_outbound_allowlist, aipc_allow_private_hosts, aipc_allow_loopback) tune the policy
+* REST rate limiting per user and per minute on /start, /step and /state (30/240/300; HTTP 429); adjustable via the aipc_rest_rate_limit filter
+* New "Review drafts" page (edit_posts): all AI-generated drafts with status, word count, origin and modified time — edit, preview, one-click publish and rewrite-again actions
+* CI with GitHub Actions: PHP/JS syntax lint, translation completeness and the full php-wasm e2e suite (WordPress 6.7.1 on SQLite) on every push and pull request
+* Fix: deleting a connection now also cleans it out of every per-step fallback chain (and legacy single-connection step configs)
 
 = 1.5.2 =
 * Git connection settings: repository, branch and Personal Access Token (write-only, stored in a non-autoloaded option) — configurable right on the Update from Git page

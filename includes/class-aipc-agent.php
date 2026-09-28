@@ -24,10 +24,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class AIPC_Agent {
 
-	const OPTION        = 'aipc_jobs';
 	const STATS_OPTION  = 'aipc_stats';
-	const MAX_JOBS      = 30;
-	const STALE_SECONDS = 86400;
 
 	/**
 	 * Singleton.
@@ -204,56 +201,36 @@ final class AIPC_Agent {
 	}
 
 	/* ---------------------------------------------------------------------
-	 * Job storage
+	 * Job storage (AIPC_Job_Store: dedicated table, legacy option fallback)
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Load all jobs.
-	 *
-	 * @return array
-	 */
-	private function all_jobs() {
-		$jobs = get_option( self::OPTION, array() );
-		return is_array( $jobs ) ? $jobs : array();
-	}
-
-	/**
-	 * Persist all jobs (autoload off).
-	 *
-	 * @param array $jobs Jobs keyed by id.
-	 * @return void
-	 */
-	private function save_all_jobs( $jobs ) {
-		if ( false === get_option( self::OPTION, false ) ) {
-			add_option( self::OPTION, $jobs, '', false );
-		} else {
-			update_option( self::OPTION, $jobs );
-		}
-	}
-
-	/**
-	 * Fetch one job.
+	 * Fetch one job (full payload).
 	 *
 	 * @param string $id Job id.
 	 * @return array|null
 	 */
 	public function get_job( $id ) {
-		$jobs = $this->all_jobs();
-		$id   = (string) $id;
-		return isset( $jobs[ $id ] ) && is_array( $jobs[ $id ] ) ? $jobs[ $id ] : null;
+		return AIPC_Job_Store::get( (string) $id );
 	}
 
 	/**
-	 * All jobs, newest first (for the logs screen).
+	 * Light job rows (no payloads), newest first — lists and counters.
 	 *
-	 * @return array
+	 * @return array[]
 	 */
 	public function get_all_jobs() {
-		$jobs = $this->all_jobs();
-		uasort( $jobs, function ( $a, $b ) {
-			return (int) $b['created'] - (int) $a['created'];
-		} );
-		return $jobs;
+		return AIPC_Job_Store::all();
+	}
+
+	/**
+	 * Full jobs created at/after a timestamp (oldest first) — reports.
+	 *
+	 * @param int $ts Unix timestamp.
+	 * @return array[]
+	 */
+	public function get_jobs_since( $ts ) {
+		return AIPC_Job_Store::since( (int) $ts );
 	}
 
 	/**
@@ -263,13 +240,7 @@ final class AIPC_Agent {
 	 * @return bool
 	 */
 	public function delete_job( $id ) {
-		$jobs = $this->all_jobs();
-		if ( ! isset( $jobs[ (string) $id ] ) ) {
-			return false;
-		}
-		unset( $jobs[ (string) $id ] );
-		$this->save_all_jobs( $jobs );
-		return true;
+		return AIPC_Job_Store::delete( (string) $id );
 	}
 
 	/**
@@ -278,7 +249,7 @@ final class AIPC_Agent {
 	 * @return void
 	 */
 	public function clear_jobs() {
-		$this->save_all_jobs( array() );
+		AIPC_Job_Store::clear();
 	}
 
 	/**
@@ -288,37 +259,20 @@ final class AIPC_Agent {
 	 * @return void
 	 */
 	public function save_job( $job ) {
-		$jobs           = $this->all_jobs();
+		if ( ! is_array( $job ) || empty( $job['id'] ) ) {
+			return;
+		}
 		$job['updated'] = time();
-		$jobs[ $job['id'] ] = $job;
-		$this->save_all_jobs( $jobs );
+		AIPC_Job_Store::save( $job );
 	}
 
 	/**
-	 * Remove old jobs (daily cron + on job creation).
+	 * Prune jobs older than the retention window (daily cron + on creation).
 	 *
 	 * @return void
 	 */
 	public function cleanup() {
-		$jobs = $this->all_jobs();
-		if ( empty( $jobs ) ) {
-			return;
-		}
-		uasort( $jobs, function ( $a, $b ) {
-			return (int) $b['created'] - (int) $a['created'];
-		} );
-		$keep = array();
-		$i    = 0;
-		foreach ( $jobs as $id => $job ) {
-			$i++;
-			$stale = ( time() - (int) $job['created'] ) > self::STALE_SECONDS;
-			if ( $i <= self::MAX_JOBS && ! $stale ) {
-				$keep[ $id ] = $job;
-			}
-		}
-		if ( count( $keep ) !== count( $jobs ) ) {
-			$this->save_all_jobs( $keep );
-		}
+		AIPC_Job_Store::prune();
 	}
 
 	/**
@@ -561,6 +515,10 @@ final class AIPC_Agent {
 
 		$this->save_job( $job );
 		$this->cleanup();
+
+		// Hand the job to the background runner (the console only watches).
+		AIPC_Scheduler::schedule_runner( $job['id'] );
+
 		return $job;
 	}
 
@@ -580,6 +538,7 @@ final class AIPC_Agent {
 			$this->log( $job, __( 'Agent cancelled by user.', 'wp-ai-post-creator' ), 'warn' );
 			$this->record_stats( $job );
 			$this->save_job( $job );
+			AIPC_Scheduler::unschedule_runner( $id );
 		}
 		return $job;
 	}
@@ -606,6 +565,7 @@ final class AIPC_Agent {
 		$job['error']  = null;
 		$this->log( $job, __( 'Retrying failed step…', 'wp-ai-post-creator' ), 'info' );
 		$this->save_job( $job );
+		AIPC_Scheduler::schedule_runner( $id );
 		return $job;
 	}
 
@@ -731,12 +691,18 @@ final class AIPC_Agent {
 			), 'error' );
 			$this->record_stats( $job );
 			$this->save_job( $job );
+			AIPC_Scheduler::unschedule_runner( $job['id'] );
 			delete_transient( $lock_key );
 			return $this->client_state( $job, $since );
 		}
 
 		$this->save_job( $job );
 		delete_transient( $lock_key );
+
+		if ( 'done' === $job['status'] ) {
+			// Nothing left to run in the background.
+			AIPC_Scheduler::unschedule_runner( $job['id'] );
+		}
 
 		if ( 'done' === $job['status'] && empty( $job['notified'] ) ) {
 			$job['notified'] = 1;

@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.5.2)
+# AI Post Creator — Complete User Guide (v1.6.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -100,9 +100,32 @@ Path: **AI Post Creator → New AI Post**
 usage. If a step fails after all retries, **Retry step** re-runs just that
 step; **Cancel** stops the agent anytime.
 
+**Background execution (new in 1.6):** the job runs on the server itself —
+you can close the browser tab and it keeps going. The console is just a live
+viewer, and it warns you if progress stalls for a while (for example when
+WP-Cron is not running on your site).
+
 **Internal linking:** while planning, the agent looks at your existing related
 posts and weaves up to 4 internal links naturally into the content — no action
 needed from you.
+
+---
+
+## 5.5. Draft review inbox (new in 1.6)
+
+Path: **AI Post Creator → Review drafts**
+
+Every AI-generated draft — manual or scheduled, new or rewritten — is
+collected on one page: title, status, word count, origin (manual / scheduled /
+rewrite) and the last-modified time. For each draft:
+
+- ✎ **Edit post** — open the WordPress editor
+- 👁 **Preview** — see the rendered result in your browser
+- 🚀 **Publish** — one-click publishing with a confirmation (users who can
+  publish only)
+- ♻️ **Rewrite** — send that very post straight to the Rewrite page
+
+Nothing goes live until you say so — the plugin's standing policy.
 
 ---
 

@@ -6,7 +6,8 @@ inside [php-wasm](https://github.com/WordPress/php-wasm), activates the plugin,
 configures connections/schedules/Bale, and drives the agent **through the real
 REST stack** against scripted mock providers.
 
-Status at v1.5.2: **173/173 assertion groups green, zero PHP warnings.**
+Status at v1.6.0: **44 result groups / 328 assertions green, zero PHP warnings
+or deprecations.** The same suite runs in CI (`.github/workflows/ci.yml`).
 
 ## Files
 
@@ -17,6 +18,7 @@ Status at v1.5.2: **173/173 assertion groups green, zero PHP warnings.**
 | `drive.php` | Phase 2: all assertions — prints `===E2E_JSON===` + a JSON object whose boolean leaves must all be true |
 | `mock-api.php` | mu-plugin: intercepts `wp_remote_*` (AI providers, Bale, RSS) and logs every request to `wp-content/mock-api-log.jsonl` |
 | `lint.js` | Syntax lint of all plugin PHP files (PHP 7.4 target) with php-parser |
+| `.github/workflows/ci.yml` | CI: lint + `node --check` + translations freshness + this e2e suite on GitHub runners (workspace built per this README; `node_modules` + WordPress cached) |
 | `make-translations.py` | Translation pipeline (extract → validate → pot/po/mo); see the file header |
 
 ## Workspace setup (once per environment)
@@ -126,6 +128,20 @@ deep inside the plan prompt).
   attempts on Flaky (6 logged HTTP calls — the client retries 5xx once
   internally), switch + retry log lines, then success on Chat Mock
 - **v1.5.1/1.5.2:** the Git self-updater end-to-end (runs **last** — it replaces the plugin files): repo/branch/token sanitizing, write-only token storage (empty keeps) in a non-autoloaded option, remote version (9.9.9 / 0.0.1 / missing branch → error), connection test (ok / repo 404 / rejected token), anonymous codeload download for the corrupt-package case, authenticated api.github.com download for the real swap, downgrade guard leaves the live files untouched, a real swap updates the version on disk (9.9.9 via `get_plugin_data`), removes a stale file, keeps the plugin active, writes a restorable backup and cleans the temp dirs.
+- **v1.6:** the outbound network guard (public/loopback allowed; private IPv4
+  + IPv6 ULA/link-local/mapped/metadata ranges blocked; allowlist wildcard and
+  both toggle filters; call sites: connections sanitize, source_sites, REST
+  connection test, image download); the jobs table (round-trip, light-row
+  columns, counters, `running_ids`, retention pruning, legacy-option fallback
+  via filter, and a full migration from a 1.5-style option); the background
+  runner (event armed by `create_job`, whole run driven server-side with zero
+  REST `/step` calls, event dropped on completion, idempotent re-run); the
+  read-only `/state` endpoint (shape, read-only-ness, 404, anonymous 401,
+  cancel drops the runner event); REST rate limiting (limit 2 → third call
+  429 `aipc_rate`); the draft review inbox (renders the AI drafts with
+  origin/publish/rewrite actions, publish flow fires `aipc_post_published`,
+  published posts leave the inbox, double-publish refused); and the
+  connection-delete fallback-chain cleanup (array + legacy key formats).
 - **v1.5:** sanitizing of `source_sites` (scheme guard — `esc_url_raw` would
   invent `http://`) and of schedule publish fields
 - Cancel / failure / manual-retry flows; scheduler tick (fires the due entry,

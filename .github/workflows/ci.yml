@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint + syntax + translations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install php-parser (lint dependency)
+        run: |
+          mkdir -p "$HOME/wp-e2e" && cd "$HOME/wp-e2e"
+          npm init -y >/dev/null
+          npm i php-parser@3 --no-audit --no-fund
+
+      - name: PHP syntax lint (PHP 7.4 target)
+        run: E2E_HOME="$HOME/wp-e2e" node tests/e2e/lint.js
+
+      - name: JS syntax check
+        run: |
+          node --check assets/admin-agent.js
+          node --check assets/admin-connections.js
+          node --check assets/admin-schedule.js
+
+      - name: Translations complete and compiled (fa_IR)
+        run: |
+          python3 tests/e2e/make-translations.py
+          git diff --exit-code -- languages/ || {
+            echo '::error::languages/ is stale — run python3 tests/e2e/make-translations.py and commit the result'
+            exit 1
+          }
+
+  e2e:
+    name: E2E (WordPress 6.7.1 on SQLite via php-wasm)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Restore e2e workspace (WordPress + node_modules)
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/wp-e2e
+          key: e2e-wp-6.7.1-sqlite-master-node20-v1
+
+      - name: Build e2e workspace (cache miss only)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "$HOME/wp-e2e" && cd "$HOME/wp-e2e"
+          npm init -y >/dev/null
+          npm i php-parser@3 @php-wasm/universal @php-wasm/node --no-audit --no-fund
+          curl -sSfL -o wp.tar.gz  "https://codeload.github.com/WordPress/WordPress/tar.gz/refs/tags/6.7.1"
+          tar -xzf wp.tar.gz && mv WordPress-6.7.1 wordpress
+          curl -sSfL -o sql.tar.gz "https://codeload.github.com/aaemnnosttv/wp-sqlite-db/tar.gz/refs/heads/master"
+          tar -xzf sql.tar.gz && cp wp-sqlite-db-master/src/db.php wordpress/wp-content/db.php
+          mkdir -p wordpress/wp-content/mu-plugins wordpress/wp-content/plugins
+
+      - name: Copy plugin + runner files (always fresh)
+        run: |
+          REPO="$GITHUB_WORKSPACE"
+          WP="$HOME/wp-e2e/wordpress"
+          rm -rf "$WP/wp-content/plugins/wp-ai-post-creator"
+          cp -r "$REPO" "$WP/wp-content/plugins/wp-ai-post-creator"
+          rm -rf "$WP/wp-content/plugins/wp-ai-post-creator/.git"
+          cp "$REPO"/tests/e2e/{e2e.js,install.php,drive.php} "$HOME/wp-e2e/"
+          cp "$REPO/tests/e2e/mock-api.php" "$WP/wp-content/mu-plugins/"
+
+      - name: Run the suite
+        run: |
+          set -o pipefail
+          cd "$HOME/wp-e2e"
+          node e2e.js | tee /tmp/e2e.log
+
+      - name: Assert zero false leaves + zero PHP warnings
+        run: |
+          ! grep -Eq 'PHP (Warning|Deprecated|Fatal error|Notice)' /tmp/e2e.log || {
+            echo '::error::PHP warnings in the e2e output'; grep -E 'PHP (Warning|Deprecated|Fatal error|Notice)' /tmp/e2e.log; exit 1; }
+          python3 - <<'PY'
+          import json, sys
+          src = open('/tmp/e2e.log', encoding='utf-8').read()
+          data = json.loads(src[src.index('{\n    "unit_extract_json"):])
+          def flat(d, p=''):
+              for k, v in d.items():
+                  yield from (flat(v, p + '.' + k) if isinstance(v, dict) else [(p + '.' + k, v)])
+          bad = [k for k, v in flat(data) if v is False]
+          print('groups:', len(data), '| FALSE leaves:', bad or 'none')
+          sys.exit(1 if bad else 0)
+          PY

@@ -208,8 +208,11 @@ final class AIPC_Settings {
 		$site_prompt = isset( $in['site_prompt'] ) ? sanitize_textarea_field( $in['site_prompt'] ) : $old['site_prompt'];
 		$out['site_prompt'] = mb_substr( trim( $site_prompt ), 0, 4000 );
 
-		// Research source sites: one URL per line, max 8, http(s) only.
-		$aipc_sources = array();
+		// Research source sites: one URL per line, max 8, http(s) only,
+		// private/reserved hosts blocked (AIPC_Network). Already-stored
+		// values are grandfathered.
+		$aipc_old_sources = array_filter( array_map( 'trim', preg_split( '/\r?\n/', (string) $old['source_sites'] ) ) );
+		$aipc_sources     = array();
 		if ( isset( $in['source_sites'] ) ) {
 			foreach ( preg_split( '/\r?\n/', (string) $in['source_sites'] ) as $aipc_raw ) {
 				$aipc_raw = trim( $aipc_raw );
@@ -217,13 +220,14 @@ final class AIPC_Settings {
 				// http:// scheme for bare strings, so check the input first.
 				if ( 0 === strpos( $aipc_raw, 'http' ) ) {
 					$aipc_line = untrailingslashit( esc_url_raw( $aipc_raw ) );
-					if ( '' !== $aipc_line ) {
+					$kept      = '' !== $aipc_line && ( AIPC_Network::is_safe_url( $aipc_line ) || in_array( $aipc_line, $aipc_old_sources, true ) );
+					if ( $kept ) {
 						$aipc_sources[] = $aipc_line;
 					}
 				}
 			}
 		} else {
-			$aipc_sources = array_filter( array_map( 'trim', preg_split( '/\r?\n/', (string) $old['source_sites'] ) ) );
+			$aipc_sources = $aipc_old_sources;
 		}
 		$out['source_sites'] = implode( "\n", array_slice( array_values( array_unique( $aipc_sources ) ), 0, 8 ) );
 

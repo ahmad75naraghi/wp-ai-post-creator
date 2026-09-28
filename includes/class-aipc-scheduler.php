@@ -15,8 +15,9 @@ defined( 'ABSPATH' ) || exit;
 
 final class AIPC_Scheduler {
 
-	const OPTION    = 'aipc_schedule';
-	const CRON_HOOK = 'aipc_cron_tick';
+	const OPTION     = 'aipc_schedule';
+	const CRON_HOOK  = 'aipc_cron_tick';
+	const RUNNER_HOOK = 'aipc_run_job';
 
 	/**
 	 * Cron tick length in seconds.
@@ -36,6 +37,7 @@ final class AIPC_Scheduler {
 	public static function register() {
 		add_filter( 'cron_schedules', array( __CLASS__, 'cron_schedules' ) );
 		add_action( self::CRON_HOOK, array( __CLASS__, 'tick' ) );
+		add_action( self::RUNNER_HOOK, array( __CLASS__, 'run_job' ), 10, 1 );
 		add_action( 'aipc_publish_post', array( __CLASS__, 'publish_post' ), 10, 2 );
 	}
 
@@ -71,6 +73,68 @@ final class AIPC_Scheduler {
 	 */
 	public static function unschedule() {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Background runner (one self-rescheduling event per job)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Schedule (or replace) the background runner event for a job. The event
+	 * drives the job's steps server-side, so runs keep going after the
+	 * browser tab is closed; the console only watches via /state.
+	 *
+	 * @param string $job_id Job id.
+	 * @param int    $delay  Seconds from now.
+	 * @return void
+	 */
+	public static function schedule_runner( $job_id, $delay = 10 ) {
+		$job_id = (string) $job_id;
+		if ( '' === $job_id ) {
+			return;
+		}
+		wp_clear_scheduled_hook( self::RUNNER_HOOK, array( $job_id ) );
+		wp_schedule_single_event( time() + max( 1, (int) $delay ), self::RUNNER_HOOK, array( $job_id ) );
+	}
+
+	/**
+	 * Remove the runner event for a job.
+	 *
+	 * @param string $job_id Job id.
+	 * @return void
+	 */
+	public static function unschedule_runner( $job_id ) {
+		wp_clear_scheduled_hook( self::RUNNER_HOOK, array( (string) $job_id ) );
+	}
+
+	/**
+	 * Cron callback: drive a job in the background until it finishes or the
+	 * budget runs out, then re-arm itself when there is more to do.
+	 *
+	 * @param string $job_id Job id.
+	 * @return void
+	 */
+	public static function run_job( $job_id ) {
+		$job_id = (string) $job_id;
+		$agent  = AIPC_Agent::instance();
+		$job    = $agent->get_job( $job_id );
+
+		if ( ! $job || 'running' !== $job['status'] ) {
+			self::unschedule_runner( $job_id ); // Stale leftover event.
+			return;
+		}
+
+		$state = self::run_steps( $job_id );
+
+		if ( is_wp_error( $state ) ) {
+			self::schedule_runner( $job_id, 60 ); // Transient problem — retry soon.
+			return;
+		}
+		if ( isset( $state['status'] ) && 'running' === $state['status'] ) {
+			self::schedule_runner( $job_id, 30 ); // Budget exhausted — continue.
+			return;
+		}
+		self::unschedule_runner( $job_id ); // done / error / cancelled.
 	}
 
 	/* ---------------------------------------------------------------------
@@ -308,13 +372,7 @@ final class AIPC_Scheduler {
 		$s        = (int) wp_date( 's', $now );
 		$midnight = $now - ( $h * 3600 + $i * 60 + $s );
 
-		$count = 0;
-		foreach ( AIPC_Agent::instance()->get_all_jobs() as $job ) {
-			if ( 'cron' === ( isset( $job['source'] ) ? $job['source'] : 'manual' )
-				&& (int) $job['created'] >= $midnight ) {
-				$count++;
-			}
-		}
+		$count = AIPC_Job_Store::count_since( 'cron', $midnight );
 		return $count;
 	}
 
@@ -380,6 +438,14 @@ final class AIPC_Scheduler {
 		// Periodic Bale activity report (independent of the job runs).
 		AIPC_Bale::maybe_send_report();
 
+		// 0. Safety net: re-arm the background runner for any running job
+		// whose runner event was lost (e.g. after a WP-Cron wipe).
+		foreach ( AIPC_Job_Store::running_ids() as $aipc_rid ) {
+			if ( ! wp_next_scheduled( self::RUNNER_HOOK, array( (string) $aipc_rid ) ) ) {
+				self::schedule_runner( $aipc_rid, 30 );
+			}
+		}
+
 		$cfg = self::config();
 		if ( empty( $cfg['entries'] ) ) {
 			return;
@@ -388,21 +454,18 @@ final class AIPC_Scheduler {
 		$agent = AIPC_Agent::instance();
 
 		// 1. Resume or retry an unfinished automatic job first.
-		foreach ( array_reverse( $agent->get_all_jobs() ) as $job ) {
-			if ( 'cron' !== ( isset( $job['source'] ) ? $job['source'] : 'manual' ) ) {
-				continue;
-			}
-			if ( 'running' === $job['status'] ) {
-				self::run_steps( $job['id'] );
+		foreach ( AIPC_Job_Store::unfinished_cron() as $unfinished ) {
+			if ( 'running' === $unfinished['status'] ) {
+				self::run_steps( $unfinished['id'] );
 				return;
 			}
-			if ( 'error' === $job['status'] ) {
-				$retries = isset( $cfg['state']['retries'][ $job['id'] ] ) ? (int) $cfg['state']['retries'][ $job['id'] ] : 0;
-				if ( $retries < 3 && ( time() - (int) $job['updated'] ) < DAY_IN_SECONDS ) {
-					$cfg['state']['retries'][ $job['id'] ] = $retries + 1;
+			if ( 'error' === $unfinished['status'] ) {
+				$retries = isset( $cfg['state']['retries'][ $unfinished['id'] ] ) ? (int) $cfg['state']['retries'][ $unfinished['id'] ] : 0;
+				if ( $retries < 3 && ( time() - (int) $unfinished['updated'] ) < DAY_IN_SECONDS ) {
+					$cfg['state']['retries'][ $unfinished['id'] ] = $retries + 1;
 					self::persist( $cfg );
-					$agent->retry_job( $job['id'] );
-					self::run_steps( $job['id'] );
+					$agent->retry_job( $unfinished['id'] );
+					self::run_steps( $unfinished['id'] );
 				}
 				return;
 			}

@@ -526,10 +526,7 @@ final class AIPC_Bale {
 		$calls      = 0;
 		$by_conn    = array();
 
-		foreach ( AIPC_Agent::instance()->get_all_jobs() as $job ) {
-			if ( (int) $job['created'] < $since ) {
-				continue;
-			}
+		foreach ( AIPC_Agent::instance()->get_jobs_since( $since ) as $job ) {
 			$total++;
 			if ( 'done' === $job['status'] ) {
 				$done++;

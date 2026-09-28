@@ -23,6 +23,7 @@ final class AIPC_Admin {
 
 		add_action( 'admin_post_aipc_save_connection', array( __CLASS__, 'handle_save_connection' ) );
 		add_action( 'admin_post_aipc_delete_connection', array( __CLASS__, 'handle_delete_connection' ) );
+		add_action( 'admin_post_aipc_publish_draft', array( __CLASS__, 'handle_publish_draft' ) );
 		add_action( 'admin_post_aipc_save_steps', array( __CLASS__, 'handle_save_steps' ) );
 		add_action( 'admin_post_aipc_clear_logs', array( __CLASS__, 'handle_clear_logs' ) );
 		add_action( 'admin_post_aipc_delete_job', array( __CLASS__, 'handle_delete_job' ) );
@@ -69,6 +70,15 @@ final class AIPC_Admin {
 			'edit_posts',
 			'aipc-rewrite',
 			array( __CLASS__, 'render_rewrite' )
+		);
+
+		add_submenu_page(
+			'aipc',
+			__( 'Review drafts', 'wp-ai-post-creator' ),
+			__( 'Review drafts', 'wp-ai-post-creator' ),
+			'edit_posts',
+			'aipc-review',
+			array( __CLASS__, 'render_review' )
 		);
 
 		add_submenu_page(
@@ -170,6 +180,18 @@ final class AIPC_Admin {
 		require AIPC_PLUGIN_DIR . 'admin/views/rewrite.php';
 	}
 
+	public static function render_review() {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
+		}
+		require AIPC_PLUGIN_DIR . 'admin/views/review.php';
+	}
+
+	/**
+	 * Render the connections screen.
+	 *
+	 * @return void
+	 */
 	public static function render_connections() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
@@ -286,6 +308,73 @@ final class AIPC_Admin {
 			admin_url( 'admin.php' )
 		) );
 		exit;
+	}
+
+	/**
+	 * Publish a reviewed AI draft (from the Review page).
+	 *
+	 * @return void
+	 */
+	public static function handle_publish_draft() {
+		if ( ! current_user_can( 'publish_posts' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'wp-ai-post-creator' ) );
+		}
+		check_admin_referer( 'aipc_publish_draft' );
+
+		$id     = isset( $_GET['id'] ) ? absint( wp_unslash( $_GET['id'] ) ) : 0;
+		$result = self::publish_draft( $id );
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-review', 'aipc_msg' => $result ? 'published' : 'publish_failed' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Publish one AI-generated draft (shared by the review handler).
+	 *
+	 * Fires aipc_post_published so Bale subscribers get the 🎉 notice.
+	 *
+	 * @param int $post_id Post id.
+	 * @return bool
+	 */
+	public static function publish_draft( $post_id ) {
+		$post_id = (int) $post_id;
+		$post    = $post_id ? get_post( $post_id ) : null;
+		if ( ! $post || 'post' !== $post->post_type ) {
+			return false;
+		}
+		if ( ! current_user_can( 'publish_posts' ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			return false;
+		}
+		if ( ! in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) {
+			return false;
+		}
+
+		$res = wp_update_post( array(
+			'ID'          => $post_id,
+			'post_status' => 'publish',
+		), true );
+
+		if ( is_wp_error( $res ) ) {
+			return false;
+		}
+
+		$job_id = (string) get_post_meta( $post_id, '_aipc_job', true );
+		if ( '' !== $job_id ) {
+			AIPC_Agent::instance()->append_log( $job_id, __( 'Post published.', 'wp-ai-post-creator' ), 'success' );
+		}
+
+		/**
+		 * Fires after a reviewed AI draft has been published from the inbox.
+		 *
+		 * @param int    $post_id Post id.
+		 * @param string $job_id  Originating job id (may be empty).
+		 */
+		do_action( 'aipc_post_published', $post_id, $job_id );
+
+		return true;
 	}
 
 	/**

@@ -3,6 +3,65 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.6.0] — 2026-09-29
+
+### Added
+- **Background job execution** — every job now runs server-side: a
+  self-rescheduling cron event (`aipc_run_job`) drives the steps under the
+  existing transient lock with a 600 s budget per run, then re-arms itself
+  (30 s continue / 60 s on transient errors). The console became a pure
+  **viewer**: it polls the new read-only `POST /aipc/v1/state` endpoint, so
+  closing the browser tab never stops a run (with a stall warning after ~90 s
+  without progress). The 15-min scheduler tick is a safety net that re-arms
+  lost runner events. No Action Scheduler dependency (decision D4).
+- **Jobs database table** — jobs moved from the `aipc_jobs` option (last 30,
+  whole-blob rewrites) to a dedicated `{$wpdb->prefix}aipc_jobs` table
+  (id, created/updated, status, mode, source, post_id, steps counters, call
+  and token counters, topic, JSON payload; indexes on status/created/source)
+  with schema versioning (`aipc_schema_version`) and an automatic migration
+  from the option. A compatibility layer keeps `get_job()` /
+  `get_all_jobs()` (now returning light rows) / `get_jobs_since()`, logs are
+  served from the same queries, and retention is configurable
+  (`aipc_job_retention_days`, default 90, 0 = keep forever) replacing the
+  30-job/24 h caps. When the table cannot be created the store falls back to
+  the legacy option transparently (`aipc_jobs_table_enabled` filter).
+- **Outbound network guard (SSRF)** — new `AIPC_Network` class: all
+  plugin-initiated outbound URLs (connection base URLs, research source
+  sites, provider-returned image URLs, raw connection-test input) are checked
+  — http(s) only, private/reserved/CGNAT/multicast and IPv6 ULA/link-local/
+  mapped ranges blocked, loopback allowed by default for local LLMs (Ollama,
+  LM Studio). Filters: `aipc_outbound_allowlist` (exact + `*.suffix`
+  wildcards), `aipc_allow_private_hosts`, `aipc_allow_loopback`. Already
+  stored URLs are grandfathered.
+- **REST rate limiting** — per-user per-minute limits on `/start` (30),
+  `/step` (240) and `/state` (300); HTTP 429 with code `aipc_rate`.
+  Adjustable via `aipc_rest_rate_limit`.
+- **Draft review inbox** — new "Review drafts" page (cap `edit_posts`):
+  every AI-generated draft/pending post with status, word count, origin
+  (manual/scheduled/rewrite) and modified time, plus quick actions — edit,
+  preview, one-click publish (nonce + `publish_posts`, fires
+  `aipc_post_published`) and rewrite-again deep link (preselects the post on
+  the Rewrite page).
+- **CI (GitHub Actions)** — `.github/workflows/ci.yml`: PHP syntax lint
+  (PHP 7.4 target), `node --check` on the three JS bundles, translation
+  completeness check (regenerate + `git diff`), and the full php-wasm e2e
+  suite (WordPress 6.7.1 + SQLite) failing on any `false` boolean leaf or
+  PHP warning; `node_modules` and the WordPress tarball are cached.
+
+### Fixed
+- Deleting a connection now also removes it from every per-step fallback
+  chain (`connections[]`) and from legacy single-`connection` step configs —
+  previously a deleted connection could stay referenced and stall a step.
+
+### Changed
+- The console's "working" copy and step driver were reworked for the
+  background runner; `/step` still executes one step synchronously for
+  compatibility.
+- Scheduler internals now query the jobs table (`unfinished_cron`,
+  `count_since`, `running_ids`) instead of loading every payload.
+- Bale daily/weekly reports read job rows created since the last report
+  (`get_jobs_since`) instead of scanning all stored jobs.
+
 ## [1.5.2] — 2026-09-27
 
 ### Added

@@ -12,6 +12,9 @@ How to cut a release of AI Post Creator. Current version target: see the
 - [ ] Full e2e run green: **no `false` boolean leaf** in the `===E2E_JSON===`
       output and **zero PHP warnings/deprecations** in the log.
       (Recipe and workspace setup: `tests/e2e/README.md`.)
+- [ ] CI green on the PR: `.github/workflows/ci.yml` runs the same four checks
+      (lint, `node --check`, translations freshness, full php-wasm e2e) on
+      GitHub's runners — the PR cannot merge while it is red.
 
 ## 2. Version bump
 

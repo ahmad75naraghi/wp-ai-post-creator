@@ -735,7 +735,8 @@ AIPC_Scheduler::tick();
 $aipc_cron_job = null;
 foreach ( AIPC_Agent::instance()->get_all_jobs() as $aipc_j ) {
 	if ( 'cron' === ( isset( $aipc_j['source'] ) ? $aipc_j['source'] : 'manual' ) ) {
-		$aipc_cron_job = $aipc_j;
+		$aipc_cron_job = AIPC_Agent::instance()->get_job( $aipc_j['id'] ); // Full payload.
+		break;
 	}
 }
 
@@ -993,6 +994,403 @@ $out['bale_traffic'] = array(
 		return true;
 	} )(),
 );
+
+/* ------------------------------------------------------------------ *
+ * v1.6 — outbound network guard (SSRF protection)
+ * ------------------------------------------------------------------ */
+$aipc_is_safe = function ( $url ) {
+	return AIPC_Network::is_safe_url( $url );
+};
+
+$out['network_guard'] = array(
+	'public_ok'       => $aipc_is_safe( 'https://api.openai.com/v1' ),
+	'host_ok'         => $aipc_is_safe( 'https://mock.invalid/v1' ),
+	'loopback_ok'     => $aipc_is_safe( 'http://localhost:11434/v1' ) && $aipc_is_safe( 'http://127.0.0.1:1234/v1' ) && $aipc_is_safe( 'http://[::1]:9000/v1' ),
+	'private_10'      => ! $aipc_is_safe( 'http://10.0.0.5/v1' ),
+	'private_172'     => ! $aipc_is_safe( 'http://172.20.3.4/v1' ),
+	'private_192'     => ! $aipc_is_safe( 'http://192.168.1.10/v1' ),
+	'metadata'        => ! $aipc_is_safe( 'http://169.254.169.254/latest/meta-data' ),
+	'carrier_nat'     => ! $aipc_is_safe( 'http://100.64.7.7/v1' ),
+	'v6_ula'          => ! $aipc_is_safe( 'http://[fd00::5]/v1' ),
+	'v6_link_local'   => ! $aipc_is_safe( 'http://[fe80::1]/v1' ),
+	'v4_mapped'       => ! $aipc_is_safe( 'http://[::ffff:10.0.0.5]/v1' ),
+	'bad_scheme'      => ! $aipc_is_safe( 'ftp://example.com/x' ),
+	'no_host'         => ! $aipc_is_safe( 'https://' ),
+);
+
+// Allowlist filter: exact IP + wildcard suffix, others still blocked.
+$aipc_allow_hosts = function () {
+	return array( '10.1.2.3', '*.corp.example' );
+};
+add_filter( 'aipc_outbound_allowlist', $aipc_allow_hosts );
+$out['network_guard']['allowlist'] = $aipc_is_safe( 'http://10.1.2.3/v1' )
+	&& $aipc_is_safe( 'http://intranet.corp.example/feed/' )
+	&& ! $aipc_is_safe( 'http://10.9.9.9/v1' );
+remove_filter( 'aipc_outbound_allowlist', $aipc_allow_hosts );
+
+// Private-hosts filter opens internal ranges; loopback filter closes them.
+$aipc_priv_on = function () {
+	return true;
+};
+add_filter( 'aipc_allow_private_hosts', $aipc_priv_on );
+$out['network_guard']['private_filter'] = $aipc_is_safe( 'http://10.0.0.5/v1' );
+remove_filter( 'aipc_allow_private_hosts', $aipc_priv_on );
+
+$aipc_lb_off = function () {
+	return false;
+};
+add_filter( 'aipc_allow_loopback', $aipc_lb_off );
+$out['network_guard']['loopback_filter'] = ! $aipc_is_safe( 'http://localhost:11434/v1' );
+remove_filter( 'aipc_allow_loopback', $aipc_lb_off );
+
+// Call sites: connections, settings and image downloads all go through it.
+$aipc_conn_blocked = AIPC_Connections::sanitize( array( 'name' => 'Blocked', 'base_url' => 'http://192.168.0.9/v1' ), array() );
+$aipc_conn_kept    = AIPC_Connections::sanitize( array( 'name' => 'Kept', 'base_url' => 'http://192.168.0.9/v1' ), array( 'name' => 'Old', 'base_url' => 'http://192.168.0.9/v1', 'api_key' => 'k' ) );
+$aipc_src_net      = AIPC_Settings::sanitize( array( 'source_sites' => "https://good.example\nhttp://10.0.0.7\nhttps://better.example" ) );
+$aipc_dl_blocked   = ( new AIPC_API_Client( array( 'base_url' => 'https://mock.invalid/v1' ) ) )->download( 'http://169.254.169.254/x' );
+$out['network_guard'] += array(
+	'conn_new_blocked'   => '' === $aipc_conn_blocked['base_url'],
+	'conn_grandfathered' => 'http://192.168.0.9/v1' === $aipc_conn_kept['base_url'],
+	'sources_filtered'   => "https://good.example\nhttps://better.example" === $aipc_src_net['source_sites'],
+	'download_blocked'   => is_wp_error( $aipc_dl_blocked ),
+);
+
+// REST connection test: an unsaved blocked URL is rejected with 400.
+$aipc_net_req = new WP_REST_Request( 'POST', '/aipc/v1/connection/test' );
+$aipc_net_req->set_param( 'base_url', 'http://10.1.2.3/v1' );
+$aipc_net_req->set_param( 'api_key', 'sk-x' );
+$out['network_guard']['rest_raw_blocked'] = 400 === rest_do_request( $aipc_net_req )->get_status();
+
+/* ------------------------------------------------------------------ *
+ * v1.6 — jobs database table (AIPC_Job_Store)
+ * ------------------------------------------------------------------ */
+$out['db_jobs'] = array(
+	'available'      => AIPC_Job_Store::available(),
+	'schema_version' => AIPC_Job_Store::SCHEMA_VERSION === (string) get_option( 'aipc_schema_version' ),
+	'legacy_gone'    => false === get_option( 'aipc_jobs', false ),
+);
+
+$aipc_store_job = array(
+	'id'      => 'job_storeref1',
+	'created' => time(),
+	'updated' => time(),
+	'status'  => 'running',
+	'mode'    => 'new',
+	'source'  => 'cron',
+	'user'    => 1,
+	'topic'   => 'تست ذخیره در جدول',
+	'args'    => array(),
+	'cursor'  => 1,
+	'steps'   => array(
+		array( 'id' => 'plan', 'label' => 'P', 'status' => 'done' ),
+		array( 'id' => 'outline', 'label' => 'O', 'status' => 'pending' ),
+	),
+	'data'    => array(),
+	'usage'   => array( 'prompt' => 11, 'completion' => 7, 'calls' => 1 ),
+	'calls'   => array(),
+	'timings' => array(),
+	'log'     => array( array( 't' => time(), 'level' => 'info', 'msg' => 'stored' ) ),
+	'post_id' => 0,
+	'error'   => null,
+	'stats_recorded' => 0,
+);
+AIPC_Agent::instance()->save_job( $aipc_store_job );
+
+$aipc_store_back = AIPC_Agent::instance()->get_job( 'job_storeref1' );
+$aipc_store_light = null;
+foreach ( AIPC_Agent::instance()->get_all_jobs() as $aipc_row ) {
+	if ( 'job_storeref1' === $aipc_row['id'] ) {
+		$aipc_store_light = $aipc_row;
+		break;
+	}
+}
+$out['db_jobs'] += array(
+	'roundtrip'     => is_array( $aipc_store_back ) && 'stored' === $aipc_store_back['log'][0]['msg'] && 'running' === $aipc_store_back['status'] && 'تست ذخیره در جدول' === $aipc_store_back['topic'],
+	'light_columns' => is_array( $aipc_store_light ) && 2 === (int) $aipc_store_light['steps_total'] && 1 === (int) $aipc_store_light['steps_done'] && 1 === (int) $aipc_store_light['calls'] && 18 === (int) $aipc_store_light['prompt_tokens'] + (int) $aipc_store_light['completion_tokens'],
+	'count_since'   => AIPC_Job_Store::count_since( 'cron', 0 ) >= 1,
+	'unfinished'    => in_array( 'job_storeref1', array_map( function ( $r ) { return $r['id']; }, AIPC_Job_Store::unfinished_cron() ), true ),
+	'running_ids'   => in_array( 'job_storeref1', AIPC_Job_Store::running_ids(), true ),
+);
+
+// Retention: jobs older than the window are pruned, newer ones kept.
+$aipc_old_job = $aipc_store_job;
+$aipc_old_job['id']      = 'job_agedout1';
+$aipc_old_job['source']  = 'manual';
+$aipc_old_job['status']  = 'done';
+$aipc_old_job['created'] = time() - 100 * DAY_IN_SECONDS;
+$aipc_old_job['updated'] = time() - 100 * DAY_IN_SECONDS;
+AIPC_Agent::instance()->save_job( $aipc_old_job );
+AIPC_Agent::instance()->cleanup();
+$out['db_jobs']['pruned'] = null === AIPC_Agent::instance()->get_job( 'job_agedout1' );
+$out['db_jobs']['kept']   = is_array( AIPC_Agent::instance()->get_job( 'job_storeref1' ) );
+
+// Legacy option fallback when the table is disabled by filter.
+add_filter( 'aipc_jobs_table_enabled', '__return_false' );
+$aipc_legacy_job = $aipc_store_job;
+$aipc_legacy_job['id']     = 'job_legacyref1';
+$aipc_legacy_job['source'] = 'manual';
+$aipc_legacy_job['status'] = 'done';
+AIPC_Agent::instance()->save_job( $aipc_legacy_job );
+$aipc_legacy_opt = get_option( 'aipc_jobs', array() );
+$out['db_jobs'] += array(
+	'legacy_roundtrip' => is_array( AIPC_Agent::instance()->get_job( 'job_legacyref1' ) ),
+	'legacy_in_option' => isset( $aipc_legacy_opt['job_legacyref1'] ),
+);
+remove_filter( 'aipc_jobs_table_enabled', '__return_false' );
+delete_option( 'aipc_jobs' );
+
+// Migration: a 1.5-style option is folded into the table on upgrade.
+$aipc_legacy_payload = array();
+foreach ( array( 'job_legacy_a', 'job_legacy_b' ) as $aipc_lid ) {
+	$aipc_legacy_payload[ $aipc_lid ] = array(
+		'id'      => $aipc_lid,
+		'created' => time() - 120,
+		'updated' => time() - 60,
+		'status'  => 'done',
+		'mode'    => 'new',
+		'source'  => 'manual',
+		'user'    => 1,
+		'topic'   => 'مهاجرت ' . $aipc_lid,
+		'args'    => array(),
+		'cursor'  => 3,
+		'steps'   => array( array( 'id' => 'plan', 'label' => 'P', 'status' => 'done' ) ),
+		'data'    => array( 'k' => 'v' ),
+		'usage'   => array( 'prompt' => 5, 'completion' => 4, 'calls' => 1 ),
+		'calls'   => array(),
+		'timings' => array(),
+		'log'     => array(),
+		'post_id' => 0,
+		'error'   => null,
+		'stats_recorded' => 0,
+	);
+}
+update_option( 'aipc_jobs', $aipc_legacy_payload, false );
+delete_option( 'aipc_schema_version' );
+AIPC_Job_Store::maybe_upgrade();
+$out['db_jobs'] += array(
+	'migrated_rows'  => is_array( AIPC_Agent::instance()->get_job( 'job_legacy_a' ) ) && is_array( AIPC_Agent::instance()->get_job( 'job_legacy_b' ) ),
+	'migrated_data'  => 'v' === AIPC_Agent::instance()->get_job( 'job_legacy_b' )['data']['k'],
+	'option_dropped' => false === get_option( 'aipc_jobs', false ),
+	'version_stored' => AIPC_Job_Store::SCHEMA_VERSION === (string) get_option( 'aipc_schema_version' ),
+);
+AIPC_Agent::instance()->delete_job( 'job_legacy_a' );
+AIPC_Agent::instance()->delete_job( 'job_legacy_b' );
+AIPC_Agent::instance()->delete_job( 'job_storeref1' );
+
+/* ------------------------------------------------------------------ *
+ * v1.6 — background runner (server-side job execution)
+ * ------------------------------------------------------------------ */
+$out['background_runner'] = array(
+	'hook_registered' => (bool) has_action( AIPC_Scheduler::RUNNER_HOOK ),
+	'runner_bound'    => (bool) has_action( AIPC_Scheduler::RUNNER_HOOK, array( 'AIPC_Scheduler', 'run_job' ) ),
+);
+
+$aipc_bg_job = AIPC_Agent::instance()->create_job( 'اجرا در پس‌زمینه', array(
+	'tone'     => 'friendly',
+	'length'   => 'short',
+	'language' => 'fa',
+	'image'    => 0,
+	'faq'      => 0,
+	'toc'      => 0,
+) );
+$out['background_runner']['event_scheduled'] = is_array( $aipc_bg_job ) && (bool) wp_next_scheduled( AIPC_Scheduler::RUNNER_HOOK, array( $aipc_bg_job['id'] ) );
+
+// Drive the ENTIRE run server-side: no REST /step call anywhere.
+AIPC_Scheduler::run_job( $aipc_bg_job['id'] );
+$aipc_bg_after = AIPC_Agent::instance()->get_job( $aipc_bg_job['id'] );
+
+$out['background_runner'] += array(
+	'done'         => is_array( $aipc_bg_after ) && 'done' === $aipc_bg_after['status'],
+	'post_created' => is_array( $aipc_bg_after ) && ! empty( $aipc_bg_after['post_id'] ),
+	'all_steps'    => is_array( $aipc_bg_after ) && 0 === count( array_filter( $aipc_bg_after['steps'], function ( $s ) {
+		return 'done' !== $s['status'] && 'skipped' !== $s['status'];
+	} ) ),
+	'post_is_draft'=> is_array( $aipc_bg_after ) && 'draft' === get_post_status( $aipc_bg_after['post_id'] ),
+	'no_event'     => false === wp_next_scheduled( AIPC_Scheduler::RUNNER_HOOK, array( $aipc_bg_job['id'] ) ),
+	'idempotent'   => ( function () use ( $aipc_bg_job ) {
+		AIPC_Scheduler::run_job( $aipc_bg_job['id'] ); // Terminal → no-op.
+		$job = AIPC_Agent::instance()->get_job( $aipc_bg_job['id'] );
+		return is_array( $job ) && 'done' === $job['status'] && false === wp_next_scheduled( AIPC_Scheduler::RUNNER_HOOK, array( $aipc_bg_job['id'] ) );
+	} )(),
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.6 — read-only /state endpoint (console becomes a viewer)
+ * ------------------------------------------------------------------ */
+$aipc_state_job = AIPC_Agent::instance()->create_job( 'تست حالت', array(
+	'tone'     => 'friendly',
+	'length'   => 'short',
+	'language' => 'fa',
+	'image'    => 0,
+	'faq'      => 0,
+	'toc'      => 0,
+) );
+AIPC_Agent::instance()->execute_step( $aipc_state_job['id'], 0 ); // plan only.
+
+$aipc_state_req = new WP_REST_Request( 'POST', '/aipc/v1/state' );
+$aipc_state_req->set_param( 'job_id', $aipc_state_job['id'] );
+$aipc_state_req->set_param( 'since', 0 );
+$aipc_state_resp = rest_do_request( $aipc_state_req );
+$aipc_st1        = $aipc_state_resp->get_data();
+$aipc_st2        = rest_do_request( $aipc_state_req )->get_data();
+
+$out['rest_state'] = array(
+	'status'       => 200 === $aipc_state_resp->get_status(),
+	'shape'        => isset( $aipc_st1['status'], $aipc_st1['steps'], $aipc_st1['logs'], $aipc_st1['since'], $aipc_st1['usage'] ),
+	'read_only'    => 'running' === $aipc_st2['status'] && count( $aipc_st2['steps'] ) === count( $aipc_st1['steps'] ),
+	'cursor_stable'=> $aipc_st2['since'] === $aipc_st1['since'],
+	'not_found'    => ( function () {
+		$req = new WP_REST_Request( 'POST', '/aipc/v1/state' );
+		$req->set_param( 'job_id', 'job_missing' );
+		return 404 === rest_do_request( $req )->get_status();
+	} )(),
+);
+
+wp_set_current_user( 0 );
+$aipc_state_req2 = new WP_REST_Request( 'POST', '/aipc/v1/state' );
+$aipc_state_req2->set_param( 'job_id', $aipc_state_job['id'] );
+$out['rest_state']['anonymous_401'] = 401 === rest_do_request( $aipc_state_req2 )->get_status();
+wp_set_current_user( 1 );
+
+// Cancelling drops the runner event.
+AIPC_Agent::instance()->cancel_job( $aipc_state_job['id'] );
+$out['rest_state']['cancel_drops_event'] = false === wp_next_scheduled( AIPC_Scheduler::RUNNER_HOOK, array( $aipc_state_job['id'] ) );
+
+/* ------------------------------------------------------------------ *
+ * v1.6 — REST rate limiting (per user, per minute)
+ * ------------------------------------------------------------------ */
+$aipc_limit_two = function ( $limit, $route ) {
+	return 'start' === $route ? 2 : $limit;
+};
+add_filter( 'aipc_rest_rate_limit', $aipc_limit_two, 10, 2 );
+
+// Fresh bucket so earlier /start calls in this run don't count.
+delete_transient( 'aipc_rl_' . md5( '1|start|' . (int) ( time() / MINUTE_IN_SECONDS ) ) );
+
+$aipc_rl_codes   = array();
+$aipc_rl_bodies  = array();
+$aipc_rl_started = array();
+for ( $aipc_i = 0; $aipc_i < 3; $aipc_i++ ) {
+	$aipc_rl_req = new WP_REST_Request( 'POST', '/aipc/v1/start' );
+	$aipc_rl_req->set_param( 'topic', 'تست محدودیت نرخ ' . $aipc_i );
+	$aipc_rl_req->set_param( 'tone', 'friendly' );
+	$aipc_rl_req->set_param( 'length', 'short' );
+	$aipc_rl_req->set_param( 'language', 'fa' );
+	$aipc_rl_req->set_param( 'image', 0 );
+	$aipc_rl_req->set_param( 'faq', 0 );
+	$aipc_rl_req->set_param( 'toc', 0 );
+	$aipc_rl_resp  = rest_do_request( $aipc_rl_req );
+	$aipc_rl_codes[] = $aipc_rl_resp->get_status();
+	$aipc_rl_bodies[] = $aipc_rl_resp->get_data();
+	if ( 200 === $aipc_rl_resp->get_status() ) {
+		$aipc_rl_started[] = $aipc_rl_bodies[ $aipc_i ]['id'];
+	}
+}
+remove_filter( 'aipc_rest_rate_limit', $aipc_limit_two, 10, 2 );
+
+foreach ( $aipc_rl_started as $aipc_rl_id ) {
+	AIPC_Agent::instance()->cancel_job( $aipc_rl_id );
+}
+
+$out['rate_limit'] = array(
+	'first_ok'   => 200 === $aipc_rl_codes[0],
+	'second_ok'  => 200 === $aipc_rl_codes[1],
+	'third_429'  => 429 === $aipc_rl_codes[2],
+	'error_code' => isset( $aipc_rl_bodies[2]['code'] ) && 'aipc_rate' === $aipc_rl_bodies[2]['code'],
+	'jobs_kept'  => count( $aipc_rl_started ) === 2,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.6 — draft review inbox
+ * ------------------------------------------------------------------ */
+$aipc_review_html = ( function () {
+	ob_start();
+	AIPC_Admin::render_review();
+	return ob_get_clean();
+} )();
+
+$out['review_page'] = array(
+	'rendered'      => false !== strpos( $aipc_review_html, 'aipc-review-actions' ) && false !== strpos( $aipc_review_html, 'پیش‌نویس‌های در انتظار بازبینی' ),
+	'lists_draft'   => false !== strpos( $aipc_review_html, 'راهنمای کامل سبزی‌کاری در بالکن' ),
+	'lists_bg'      => false !== strpos( $aipc_review_html, 'اجرا در پس‌زمینه' ),
+	'shows_publish' => false !== strpos( $aipc_review_html, 'aipc_publish_draft' ),
+	'shows_rewrite' => false !== strpos( $aipc_review_html, 'aipc-rewrite' ),
+	'shows_origin'  => false !== strpos( $aipc_review_html, '⏱' ),
+	'no_published'  => false === strpos( $aipc_review_html, 'تست انتشار فوری' ),
+	'handler_bound' => (bool) has_action( 'admin_post_aipc_publish_draft' ),
+);
+
+// Publishing through the review flow: post goes live, fires the hook,
+// disappears from the inbox.
+$aipc_review_pid   = is_array( $aipc_bg_after ) ? (int) $aipc_bg_after['post_id'] : 0;
+$aipc_pub_fired    = false;
+$aipc_pub_capture  = function () use ( & $aipc_pub_fired ) {
+	$aipc_pub_fired = true;
+};
+add_action( 'aipc_post_published', $aipc_pub_capture );
+$aipc_review_ok = AIPC_Admin::publish_draft( $aipc_review_pid );
+remove_action( 'aipc_post_published', $aipc_pub_capture );
+
+$aipc_review_after = ( function () {
+	ob_start();
+	AIPC_Admin::render_review();
+	return ob_get_clean();
+} )();
+
+$out['review_page'] += array(
+	'publish_ok'    => $aipc_review_ok,
+	'publish_status'=> 'publish' === get_post_status( $aipc_review_pid ),
+	'hook_fired'    => $aipc_pub_fired,
+	'gone_from_list'=> false === strpos( $aipc_review_after, 'اجرا در پس‌زمینه' ),
+	'double_publish'=> ! AIPC_Admin::publish_draft( $aipc_review_pid ), // Already live → refused.
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.6 fix — deleting a connection cleans per-step fallback chains
+ * ------------------------------------------------------------------ */
+$aipc_chain_snapshot = array();
+foreach ( AIPC_Steps::registry() as $aipc_step_id => $aipc_step_meta ) {
+	$aipc_step_cfg = AIPC_Steps::get( $aipc_step_id );
+	$aipc_chain_snapshot[ $aipc_step_id ] = array(
+		'connections' => $aipc_step_cfg['connections'],
+		'prompt'      => AIPC_Steps::has_custom_prompt( $aipc_step_id ) ? $aipc_step_cfg['prompt'] : '',
+	);
+}
+
+$aipc_chain_c1 = AIPC_Connections::save( array(
+	'name'       => 'Chain One',
+	'base_url'   => 'https://one.invalid/v1',
+	'api_key'    => 'k1',
+	'chat_model' => 'mock-mini',
+	'image_model' => 'dall-e-3',
+) );
+$aipc_chain_c2 = AIPC_Connections::save( array(
+	'name'       => 'Chain Two',
+	'base_url'   => 'https://two.invalid/v1',
+	'api_key'    => 'k2',
+	'chat_model' => 'mock-mini',
+	'image_model' => 'dall-e-3',
+) );
+
+$aipc_chain_cfg = $aipc_chain_snapshot;
+$aipc_chain_cfg['conclusion'] = array( 'connections' => array( $aipc_chain_c1['id'], $aipc_chain_c2['id'] ), 'prompt' => '' );
+AIPC_Steps::save_all( $aipc_chain_cfg );
+
+AIPC_Connections::delete( $aipc_chain_c1['id'] );
+$out['chain_cleanup'] = array(
+	'array_cleaned' => array( $aipc_chain_c2['id'] ) === AIPC_Steps::get( 'conclusion' )['connections'],
+);
+
+// Legacy single-connection key stored raw (as an old 1.4 option would have it).
+$aipc_chain_raw = $aipc_chain_snapshot;
+$aipc_chain_raw['conclusion'] = array( 'connection' => $aipc_chain_c2['id'], 'prompt' => '' );
+update_option( 'aipc_steps', $aipc_chain_raw, false );
+AIPC_Connections::delete( $aipc_chain_c2['id'] );
+$out['chain_cleanup'] += array(
+	'legacy_cleaned' => array() === AIPC_Steps::get( 'conclusion' )['connections'],
+);
+
+AIPC_Steps::save_all( $aipc_chain_snapshot ); // Restore.
 
 /* ------------------------------------------------------------------ *
  * v1.5.1/1.5.2 — Git self-updater (LAST: it replaces the plugin files)

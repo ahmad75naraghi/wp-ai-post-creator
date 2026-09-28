@@ -18,6 +18,12 @@ msgstr ""
 msgid "%d API calls"
 msgstr ""
 
+#: admin/views/review.php
+msgid "%d draft waiting"
+msgid_plural "%d drafts waiting"
+msgstr[0] ""
+msgstr[1] ""
+
 #: includes/class-aipc-assets.php
 msgid "%d models loaded — pick one in the list."
 msgstr ""
@@ -106,6 +112,10 @@ msgstr ""
 msgid "AI time (sum of steps)"
 msgstr ""
 
+#: admin/views/review.php
+msgid "AI-generated drafts waiting for your review. Publish, edit or rewrite them — nothing goes live until you say so."
+msgstr ""
+
 #: admin/views/connections.php
 msgid "API base URL"
 msgstr ""
@@ -130,7 +140,7 @@ msgstr ""
 msgid "API key or endpoint is not configured. Open Settings and connect a provider first."
 msgstr ""
 
-#: admin/views/connections.php admin/views/logs.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Actions"
 msgstr ""
 
@@ -292,6 +302,14 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "Base identity sent with every request, before the step prompt."
+msgstr ""
+
+#: includes/class-aipc-network.php
+msgid "Blocked: loopback hosts are disabled on this site (aipc_allow_loopback filter)."
+msgstr ""
+
+#: includes/class-aipc-network.php
+msgid "Blocked: the host is a private or reserved address. Add it to the “aipc_outbound_allowlist” filter (or enable “aipc_allow_private_hosts”) to allow it."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -502,6 +520,10 @@ msgstr ""
 msgid "Could not move the current plugin folder to the backup location."
 msgstr ""
 
+#: admin/views/review.php
+msgid "Could not publish the draft. Please try again from the editor."
+msgstr ""
+
 #: includes/class-aipc-bale.php
 msgid "Could not reach Bale: %s"
 msgstr ""
@@ -638,6 +660,10 @@ msgstr ""
 msgid "Download the latest plugin files straight from the GitHub repository and replace this installation in place."
 msgstr ""
 
+#: admin/views/review.php
+msgid "Draft"
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "Draft created: #%d"
 msgstr ""
@@ -646,8 +672,16 @@ msgstr ""
 msgid "Draft post #%1$d · %2$d words"
 msgstr ""
 
+#: admin/views/review.php
+msgid "Draft published."
+msgstr ""
+
 #: includes/class-aipc-bale.php
 msgid "Drafts created: %d"
+msgstr ""
+
+#: admin/views/review.php
+msgid "Drafts waiting for review"
 msgstr ""
 
 #: admin/views/logs.php
@@ -670,7 +704,7 @@ msgstr ""
 msgid "Edit connection"
 msgstr ""
 
-#: admin/views/log-detail.php admin/views/new-post.php admin/views/rewrite.php
+#: admin/views/log-detail.php admin/views/new-post.php admin/views/review.php admin/views/rewrite.php
 msgid "Edit post"
 msgstr ""
 
@@ -680,6 +714,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Empty = invented from the site prompt"
+msgstr ""
+
+#: includes/class-aipc-network.php
+msgid "Empty URL."
 msgstr ""
 
 #: includes/class-aipc-post-builder.php
@@ -802,7 +840,7 @@ msgstr ""
 msgid "Friendly"
 msgstr ""
 
-#: admin/views/new-post.php
+#: admin/views/new-post.php admin/views/review.php
 msgid "Generate post"
 msgstr ""
 
@@ -906,7 +944,7 @@ msgstr ""
 msgid "Job not found or already cleaned up."
 msgstr ""
 
-#: includes/class-aipc-agent.php
+#: includes/class-aipc-agent.php includes/class-aipc-rest.php
 msgid "Job not found or expired. Please start again."
 msgstr ""
 
@@ -950,7 +988,7 @@ msgstr ""
 msgid "Loading models…"
 msgstr ""
 
-#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/new-post.php admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Logs"
 msgstr ""
 
@@ -960,6 +998,10 @@ msgstr ""
 
 #: includes/class-aipc-connections.php
 msgid "Main connection"
+msgstr ""
+
+#: admin/views/review.php
+msgid "Manual"
 msgstr ""
 
 #: admin/views/schedule.php
@@ -986,6 +1028,10 @@ msgstr ""
 msgid "Model: %s"
 msgstr ""
 
+#: admin/views/review.php
+msgid "Modified"
+msgstr ""
+
 #: includes/class-aipc-updater.php
 msgid "Moving the new files into place failed — the previous version was restored."
 msgstr ""
@@ -998,7 +1044,7 @@ msgstr ""
 msgid "Neutral"
 msgstr ""
 
-#: admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "New AI Post"
 msgstr ""
 
@@ -1066,6 +1112,10 @@ msgstr ""
 msgid "No topic given — invent the single best topic yourself. It must fit the site context AND the chosen category."
 msgstr ""
 
+#: admin/views/review.php
+msgid "Nothing to review. The agent always saves new posts as drafts — they will appear here."
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "Off"
 msgstr ""
@@ -1076,6 +1126,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "One chat ID per line — a person’s numeric ID or a @channel username. Send any message to your bot, then use the button below to detect it automatically."
+msgstr ""
+
+#: includes/class-aipc-network.php
+msgid "Only http(s) URLs are allowed."
 msgstr ""
 
 #: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php includes/class-aipc-assets.php
@@ -1098,6 +1152,10 @@ msgstr ""
 msgid "Options"
 msgstr ""
 
+#: admin/views/review.php
+msgid "Origin"
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Other…"
 msgstr ""
@@ -1114,6 +1172,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Paused"
+msgstr ""
+
+#: admin/views/review.php
+msgid "Pending"
 msgstr ""
 
 #: admin/views/schedule.php
@@ -1152,7 +1214,7 @@ msgstr ""
 msgid "Portuguese"
 msgstr ""
 
-#: includes/class-aipc-agent.php includes/class-aipc-scheduler.php
+#: includes/class-aipc-admin.php includes/class-aipc-agent.php includes/class-aipc-scheduler.php
 msgid "Post published."
 msgstr ""
 
@@ -1170,6 +1232,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Posts are always created as drafts first; pick what happens next."
+msgstr ""
+
+#: admin/views/review.php
+msgid "Preview"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1208,8 +1274,12 @@ msgstr ""
 msgid "Prompts & assignments saved."
 msgstr ""
 
-#: admin/views/schedule.php
+#: admin/views/review.php admin/views/schedule.php
 msgid "Publish"
+msgstr ""
+
+#: admin/views/review.php
+msgid "Publish “%s” now?"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1276,8 +1346,16 @@ msgstr ""
 msgid "Retrying failed step…"
 msgstr ""
 
+#: admin/views/review.php includes/class-aipc-admin.php
+msgid "Review drafts"
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Revises the whole draft for copy quality, SEO and originality."
+msgstr ""
+
+#: admin/views/review.php
+msgid "Rewrite"
 msgstr ""
 
 #: admin/views/rewrite.php
@@ -1294,7 +1372,7 @@ msgid_plural "Rewrite plan ready — %d sections."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/new-post.php admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Rewrite post"
 msgstr ""
 
@@ -1386,7 +1464,7 @@ msgstr ""
 msgid "Schedule settings saved."
 msgstr ""
 
-#: admin/views/logs.php
+#: admin/views/logs.php admin/views/review.php
 msgid "Scheduled"
 msgstr ""
 
@@ -1474,7 +1552,7 @@ msgstr ""
 msgid "Starting the agent…"
 msgstr ""
 
-#: admin/views/log-detail.php admin/views/logs.php admin/views/schedule.php
+#: admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Status"
 msgstr ""
 
@@ -1550,16 +1628,16 @@ msgstr ""
 msgid "The FAQ step returned no usable questions. Please retry."
 msgstr ""
 
+#: includes/class-aipc-network.php
+msgid "The URL has no host."
+msgstr ""
+
 #: admin/views/new-post.php
 msgid "The agent always picks one of your existing post categories and builds the topic from the site prompt."
 msgstr ""
 
 #: admin/views/rewrite.php
 msgid "The agent analyzes the post, rewrites every paragraph (keeping the facts and the links), refreshes the SEO metadata and can generate a new featured image."
-msgstr ""
-
-#: includes/class-aipc-assets.php
-msgid "The agent is working — keep this tab open."
 msgstr ""
 
 #: admin/views/schedule.php
@@ -1572,6 +1650,10 @@ msgstr ""
 
 #: admin/views/rewrite.php
 msgid "The agent rewrites the post live — you can cancel anytime."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "The agent runs on the server — you can close this tab, it keeps going."
 msgstr ""
 
 #: includes/class-aipc-assets.php
@@ -1612,6 +1694,10 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "The full assembled draft HTML"
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "The image URL was rejected by the outbound network guard."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -1714,6 +1800,10 @@ msgstr ""
 msgid "The scheduler runs every 15 minutes. Next tick: %1$s (site timezone: %2$s)."
 msgstr ""
 
+#: includes/class-aipc-assets.php
+msgid "The server-side runner seems stalled — progress has not changed for a while. Check that WP-Cron works on your site (see the Schedule page)."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "The site prompt (or a fallback note)"
 msgstr ""
@@ -1734,6 +1824,10 @@ msgstr ""
 msgid "The user’s topic hint, or “invent one” instruction"
 msgstr ""
 
+#: includes/class-aipc-rest.php
+msgid "This base URL is blocked by the outbound network guard (private or reserved address)."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "This section’s heading"
 msgstr ""
@@ -1752,6 +1846,10 @@ msgstr ""
 
 #: admin/views/prompts.php
 msgid "Tip: leaving a prompt exactly as its default keeps it in “default” mode (auto-improved on plugin updates)."
+msgstr ""
+
+#: admin/views/review.php
+msgid "Title"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1776,6 +1874,10 @@ msgstr ""
 
 #: admin/views/log-detail.php
 msgid "Tone / length / language"
+msgstr ""
+
+#: includes/class-aipc-rest.php
+msgid "Too many requests — please wait a moment and try again."
 msgstr ""
 
 #: admin/views/log-detail.php admin/views/schedule.php
@@ -1900,6 +2002,10 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "Word target for this section"
+msgstr ""
+
+#: admin/views/review.php
+msgid "Words"
 msgstr ""
 
 #: includes/class-aipc-steps.php

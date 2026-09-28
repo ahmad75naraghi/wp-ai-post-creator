@@ -114,7 +114,7 @@ msgstr "آدرس سرویس"
 msgid "Default"
 msgstr "پیش‌فرض"
 
-#: admin/views/connections.php admin/views/logs.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Actions"
 msgstr "عملیات"
 
@@ -166,7 +166,7 @@ msgstr "نمای کلی"
 msgid "Topic"
 msgstr "موضوع"
 
-#: admin/views/log-detail.php admin/views/logs.php admin/views/schedule.php
+#: admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Status"
 msgstr "وضعیت"
 
@@ -190,7 +190,7 @@ msgstr "نتیجه"
 msgid "Draft post #%1$d · %2$d words"
 msgstr "پیش‌نویس نوشته #%1$d · %2$d واژه"
 
-#: admin/views/log-detail.php admin/views/new-post.php admin/views/rewrite.php
+#: admin/views/log-detail.php admin/views/new-post.php admin/views/review.php admin/views/rewrite.php
 msgid "Edit post"
 msgstr "ویرایش پست"
 
@@ -338,7 +338,7 @@ msgstr "توکن‌ها"
 msgid "Duration"
 msgstr "مدت"
 
-#: admin/views/logs.php
+#: admin/views/logs.php admin/views/review.php
 msgid "Scheduled"
 msgstr "زمان‌بندی‌شده"
 
@@ -374,7 +374,7 @@ msgstr "اتصال‌ها"
 msgid "Prompts & Steps"
 msgstr "پرامپت‌ها و مراحل"
 
-#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/new-post.php admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Logs"
 msgstr "گزارش‌ها"
 
@@ -474,7 +474,7 @@ msgstr "فهرست مطالب"
 msgid "linked jump menu"
 msgstr "منوی پرشِ لینک‌شده"
 
-#: admin/views/new-post.php
+#: admin/views/new-post.php admin/views/review.php
 msgid "Generate post"
 msgstr "تولید پست"
 
@@ -838,7 +838,7 @@ msgstr "حذف افزونه"
 msgid "Delete all plugin data (settings, connections, jobs, SEO meta) when the plugin is uninstalled"
 msgstr "هنگام حذف افزونه، همه داده‌های آن (تنظیمات، اتصال‌ها، کارها، فراداده سئو) حذف شوند"
 
-#: admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "New AI Post"
 msgstr "پست جدید با هوش مصنوعی"
 
@@ -902,7 +902,7 @@ msgstr "ایجنت توسط کاربر لغو شد."
 msgid "Retrying failed step…"
 msgstr "در حال تلاش دوباره برای مرحله ناموفق…"
 
-#: includes/class-aipc-agent.php
+#: includes/class-aipc-agent.php includes/class-aipc-rest.php
 msgid "Job not found or expired. Please start again."
 msgstr "کار پیدا نشد یا منقضی شده است. لطفاً دوباره شروع کنید."
 
@@ -1117,10 +1117,6 @@ msgstr "از سرگیری ایجنتِ در حال اجرا…"
 #: includes/class-aipc-assets.php
 msgid "Planning…"
 msgstr "در حال برنامه‌ریزی…"
-
-#: includes/class-aipc-assets.php
-msgid "The agent is working — keep this tab open."
-msgstr "ایجنت در حال کار است — این برگه را باز نگه دارید."
 
 #: includes/class-aipc-assets.php
 msgid "Connection error:"
@@ -1714,7 +1710,7 @@ msgstr "اختیاری: هر خط یک نشانی (حداکثر ۸ مورد). ا
 msgid "Pick a post to rewrite first."
 msgstr "اول یک نوشته برای بازنویسی انتخاب کنید."
 
-#: includes/class-aipc-agent.php includes/class-aipc-scheduler.php
+#: includes/class-aipc-admin.php includes/class-aipc-agent.php includes/class-aipc-scheduler.php
 msgid "Post published."
 msgstr "نوشته منتشر شد."
 
@@ -1734,7 +1730,7 @@ msgstr "نوشته به‌روزرسانی شد: #%d"
 msgid "Posts are always created as drafts first; pick what happens next."
 msgstr "نوشته‌ها همیشه ابتدا به‌صورت پیش‌نویس ساخته می‌شوند؛ انتخاب کنید بعدش چه اتفاقی بیفتد."
 
-#: admin/views/schedule.php
+#: admin/views/review.php admin/views/schedule.php
 msgid "Publish"
 msgstr "انتشار"
 
@@ -1758,7 +1754,7 @@ msgstr "بازنویسی نوشتهٔ دیگر"
 msgid "Rewrite complete (%1$d → %2$d words)"
 msgstr "بازنویسی کامل شد (%1$d → %2$d کلمه)"
 
-#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/new-post.php admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Rewrite post"
 msgstr "بازنویسی نوشته"
 
@@ -2077,3 +2073,113 @@ msgstr "برای مخازن خصوصی و سقف درخواست بالاتر. ف
 #: admin/views/update.php
 msgid "owner/name — for example ahmad75naraghi/wp-ai-post-creator"
 msgstr "owner/name — برای نمونه ahmad75naraghi/wp-ai-post-creator"
+
+#: admin/views/review.php
+msgid "%d draft waiting"
+msgid_plural "%d drafts waiting"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/views/review.php
+msgid "AI-generated drafts waiting for your review. Publish, edit or rewrite them — nothing goes live until you say so."
+msgstr "پیش‌نویس‌های تولیدشده با هوش مصنوعی در انتظار بازبینی شما هستند. منتشر کنید، ویرایش کنید یا بازنویسی کنید — تا خودتان نگویید چیزی منتشر نمی‌شود."
+
+#: includes/class-aipc-network.php
+msgid "Blocked: loopback hosts are disabled on this site (aipc_allow_loopback filter)."
+msgstr "مسدود: هاست‌های لوکال‌هاست در این سایت غیرفعال‌اند (فیلتر aipc_allow_loopback)."
+
+#: includes/class-aipc-network.php
+msgid "Blocked: the host is a private or reserved address. Add it to the “aipc_outbound_allowlist” filter (or enable “aipc_allow_private_hosts”) to allow it."
+msgstr "مسدود: این هاست نشانی خصوصی یا رزروشده است. برای مجاز کردن، آن را به فیلتر «aipc_outbound_allowlist» اضافه کنید (یا «aipc_allow_private_hosts» را فعال کنید)."
+
+#: admin/views/review.php
+msgid "Could not publish the draft. Please try again from the editor."
+msgstr "انتشار پیش‌نویس ممکن نشد. لطفاً از ویرایشگر دوباره تلاش کنید."
+
+#: admin/views/review.php
+msgid "Draft"
+msgstr "پیش‌نویس"
+
+#: admin/views/review.php
+msgid "Draft published."
+msgstr "پیش‌نویس منتشر شد."
+
+#: admin/views/review.php
+msgid "Drafts waiting for review"
+msgstr "پیش‌نویس‌های در انتظار بازبینی"
+
+#: includes/class-aipc-network.php
+msgid "Empty URL."
+msgstr "نشانی خالی است."
+
+#: admin/views/review.php
+msgid "Manual"
+msgstr "دستی"
+
+#: admin/views/review.php
+msgid "Modified"
+msgstr "آخرین تغییر"
+
+#: admin/views/review.php
+msgid "Nothing to review. The agent always saves new posts as drafts — they will appear here."
+msgstr "چیزی برای بازبینی نیست. ایجنت نوشته‌های جدید را همیشه به‌صورت پیش‌نویس ذخیره می‌کند — اینجا نمایش داده می‌شوند."
+
+#: includes/class-aipc-network.php
+msgid "Only http(s) URLs are allowed."
+msgstr "فقط نشانی‌های http(s) مجاز هستند."
+
+#: admin/views/review.php
+msgid "Origin"
+msgstr "مبدأ"
+
+#: admin/views/review.php
+msgid "Pending"
+msgstr "در انتظار بررسی"
+
+#: admin/views/review.php
+msgid "Preview"
+msgstr "پیش‌نمایش"
+
+#: admin/views/review.php
+msgid "Publish “%s” now?"
+msgstr "«%s» همین حالا منتشر شود؟"
+
+#: admin/views/review.php includes/class-aipc-admin.php
+msgid "Review drafts"
+msgstr "بازبینی پیش‌نویس‌ها"
+
+#: admin/views/review.php
+msgid "Rewrite"
+msgstr "بازنویسی"
+
+#: includes/class-aipc-network.php
+msgid "The URL has no host."
+msgstr "نشانی هاست ندارد."
+
+#: includes/class-aipc-assets.php
+msgid "The agent runs on the server — you can close this tab, it keeps going."
+msgstr "ایجنت روی سرور اجرا می‌شود — می‌توانید این برگه را ببندید، کار ادامه پیدا می‌کند."
+
+#: includes/class-aipc-api-client.php
+msgid "The image URL was rejected by the outbound network guard."
+msgstr "نشانی تصویر توسط گارد شبکهٔ خروجی رد شد."
+
+#: includes/class-aipc-assets.php
+msgid "The server-side runner seems stalled — progress has not changed for a while. Check that WP-Cron works on your site (see the Schedule page)."
+msgstr "به نظر می‌رسد اجراکنندهٔ سمت سرور متوقف شده — مدتی است پیشرفتی دیده نمی‌شود. از کارکرد WP-Cron در سایت خود مطمئن شوید (صفحهٔ زمان‌بندی را ببینید)."
+
+#: includes/class-aipc-rest.php
+msgid "This base URL is blocked by the outbound network guard (private or reserved address)."
+msgstr "این نشانی پایه توسط گارد شبکهٔ خروجی مسدود شده است (نشانی خصوصی یا رزروشده)."
+
+#: admin/views/review.php
+msgid "Title"
+msgstr "عنوان"
+
+#: includes/class-aipc-rest.php
+msgid "Too many requests — please wait a moment and try again."
+msgstr "درخواست‌های زیادی ارسال شده — لطفاً کمی صبر کنید و دوباره تلاش کنید."
+
+#: admin/views/review.php
+msgid "Words"
+msgstr "کلمات"

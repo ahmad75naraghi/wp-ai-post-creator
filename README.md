@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.5.2 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later
+**Version:** 1.6.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later
 
 ---
 
@@ -29,6 +29,14 @@
 **AI Post Creator** یک افزونهٔ فوق‌حرفه‌ای و «ایجنت‌مانند» برای وردپرس است که با اتصال به هر سرویس API هوش مصنوعیِ سازگار با OpenAI (OpenAI، OpenRouter، Groq، DeepSeek، Ollama، LM Studio و…)، یک پست کامل را **از صفر تا صد** تولید می‌کند:
 
 ابتدا **پرامپت سایت** (سایت چیست، درباره چیست، هدف و مخاطبانش کدامند — در تنظیمات) و **دسته‌بندی‌های موجود نوشته‌ها** را می‌خواند، یکی از دسته‌بندی‌ها را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد (یا از پیشنهاد شما استفاده می‌کند). بعد محتوا را می‌نویسد، یک **پاس کپی‌رایتینگ و سئو** روی کل متن اجرا می‌کند، **خلاصه سئو برای Rank Math** می‌سازد، از روی موضوع و خلاصه **تصویر شاخص** تولید می‌کند و نتیجه را همیشه به‌صورت **پیش‌نویس** ذخیره می‌کند — تمام مراحل به‌صورت زنده در یک **کنسول ایجنت** نمایش داده می‌شوند و در هر مرحله در صورت خطا، به‌طور خودکار تا سه بار دوباره تلاش می‌شود.
+
+### 🆕 جدید در نسخهٔ ۱.۶.۰ — اجرای پس‌زمینه، جدول کارها، امنیت شبکه و صندوق بازبینی
+
+- 🚀 **اجرای پس‌زمینهٔ واقعی**: هر کار روی سرور با یک رویداد کرون خودادامه‌دار اجرا می‌شود — بستن تب مرورگر کار را متوقف نمی‌کند و کنسول فقط تماشا می‌کند (اندپوینت فقط-خواندنی `/state`).
+- 🗄 **جدول اختصاصی کارها**: کارها از option به جدول `aipc_jobs` منتقل شدند (مهاجرت خودکار، ماندگاری قابل تنظیم ۹۰ روز پیش‌فرض، پرس‌وجوی سبک برای گزارش‌ها).
+- 🛡 **گارد شبکهٔ خروجی (SSRF)**: نشانی‌های خصوصی/رزروشده مسدود می‌شوند؛ لوکال‌هاست برای Ollama و LM Studio باز است و با فیلترها قابل تنظیم است. به‌علاوه **محدودیت نرخ REST** برای هر کاربر در دقیقه.
+- 📥 **صندوق بازبینی پیش‌نویس‌ها**: همهٔ پیش‌نویس‌های هوش مصنوعی در یک صفحه — ویرایش، پیش‌نمایش، انتشار یک‌کلیکی و بازنویسی مجدد.
+- ✅ **CI با GitHub Actions**: لینت، بررسی ترجمه‌ها و کل مجموعهٔ تست e2e روی هر push و PR اجرا می‌شود.
 
 ### 🆕 جدید در نسخهٔ ۱.۵.۲ — اتصال گیت قابل تنظیم (مخزن، برنچ، توکن)
 
@@ -88,6 +96,14 @@
 ## English — Overview
 
 AI Post Creator turns the WordPress admin into an AI content agent. Set a **site prompt** once (what your site is about), and the agent picks one of your **existing post categories**, invents a topic that fits, writes the article, runs a **copywriting + SEO revision pass**, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** — with every step visible live and auto-retried until it passes.
+
+**New in 1.6.0 — background execution, jobs table, network guard, review inbox:**
+
+* **True background execution** — every job runs server-side on a self-rescheduling cron event; closing the browser tab never stops a run and the console became a read-only viewer (new `/aipc/v1/state` endpoint)
+* **Dedicated jobs table** — jobs moved from an option to a real database table with automatic migration, configurable 90-day retention and light-row queries for the logs screen
+* **Outbound network guard (SSRF) + REST rate limiting** — private/reserved addresses are blocked (loopback stays open for Ollama/LM Studio, tunable via filters) and the agent endpoints enforce per-user per-minute limits
+* **Draft review inbox** — every AI draft in one page with edit / preview / one-click publish / rewrite-again actions
+* **CI with GitHub Actions** — lint, translation completeness and the full php-wasm e2e suite on every push and pull request
 
 **New in 1.5.2 — configurable Git connection (repository, branch, token):**
 
@@ -185,7 +201,9 @@ Every step runs in its own REST request (`POST /aipc/v1/step`) against **the con
 
 | Page | Capability | Purpose |
 |---|---|---|
-| **AI Post Creator** (top level) | `edit_posts` | Agent console — options, live terminal, step checklist, result card |
+| **AI Post Creator** (top level) | `edit_posts` | Agent console — options, live terminal (viewer for the background runner), step checklist, result card |
+| **Rewrite post** | `edit_posts` | Rewrite an existing post with the agent |
+| **Review drafts** | `edit_posts` | Every AI-generated draft in one inbox — edit, preview, publish, rewrite again |
 | **Connections** | `manage_options` | Add/edit/delete connections, set the default, test + load models |
 | **Prompts & Steps** | `manage_options` | Per-step connection assignment + editable prompt templates with placeholder docs |
 | **Schedule** | `manage_options` | Automatic schedules (time/days/topic/options, run-now) + Bale notification settings + cron status |

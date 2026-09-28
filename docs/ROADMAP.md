@@ -1,20 +1,21 @@
 # Roadmap & Product Decisions
 
 Where AI Post Creator goes next — agreed with the product owner. Status at
-**v1.5.0** (all shipped work lives in PR #1).
+**v1.6.0** (all shipped work lives in PR #1).
 
 ## Version plan
 
-### 1.6 — Infrastructure & quality *(recommended next)*
+### 1.6 — Infrastructure & quality ✅ *shipped in v1.6.0*
 
-The groundwork everything else builds on. Do these before more features.
+All four items landed (plus a draft review inbox and a fallback-chain cleanup fix):
 
-| # | Item | Why / scope |
+| # | Item | Status |
 |---|---|---|
-| 1 | **CI with GitHub Actions** | Run `lint.js` + full e2e (php-wasm) on every push/PR. The suite is already self-contained — the workflow mostly installs Node + Python, builds the workspace per `tests/e2e/README.md` and fails on any `false` boolean leaf or PHP warning. Cache `node_modules` + the WordPress tarball. |
-| 2 | **Custom DB table for jobs** | Jobs currently live in the `aipc_jobs` option (last 30, whole-blob rewrite per step, autoload off). Move to a real table (`{$wpdb->prefix}aipc_jobs`: id, created, status, mode, source, post_id, topic JSON, payload JSON, indexes on status/created) **with schema versioning** (`aipc_schema_version` option + migration routine on upgrade). Keep a thin compatibility layer (`get_job()/get_all_jobs()`). Add scheduled pruning of old jobs. |
-| 3 | **True background execution** | Today the console drives steps from the browser; only cron runs are self-contained. Integrate Action Scheduler (or a cron-loop runner) so a job keeps running server-side after the tab closes; the console becomes a viewer (poll the same `client_state()`). Keep per-step execution + the lock transient — just change the driver. |
-| 4 | **SSRF hardening + REST rate limiting** | `base_url` and `source_sites` accept any http(s) host: block private/loopback IP ranges, add an optional outbound allowlist filter, and rate-limit the agent REST endpoints (e.g. `rest_authentication_errors`-based cap per user). See SECURITY.md "Known hardening roadmap". |
+| 1 | **CI with GitHub Actions** | ✅ `.github/workflows/ci.yml`: lint (PHP 7.4-target parse) + `node --check` + translations freshness + full e2e (php-wasm, WordPress 6.7.1/SQLite); cached `node_modules` + WordPress tarball; fails on any `false` boolean leaf or PHP warning. |
+| 2 | **Custom DB table for jobs** | ✅ `AIPC_Job_Store` → `{$wpdb->prefix}aipc_jobs` (id, created/updated, status, mode, source, post_id, steps_total/steps_done, calls, tokens, topic, payload JSON; KEY status/created/source), `aipc_schema_version` + automatic migration from the old `aipc_jobs` option, compatibility layer on `AIPC_Agent` (`get_job` / `get_all_jobs` light rows / `get_jobs_since`), retention pruning (`aipc_job_retention_days`, default 90) and a legacy-option fallback (`aipc_jobs_table_enabled`). |
+| 3 | **True background execution** | ✅ Self-rescheduling single cron event per job (`aipc_run_job` → `AIPC_Scheduler::run_job`) drives `execute_step()` under the existing transient lock with a 600 s budget then re-arms (30 s; 60 s on transient errors); the console became a **viewer** polling the new read-only `/aipc/v1/state` endpoint; the 15-min tick is a safety net that re-arms lost runner events. No Action Scheduler (decision D4). |
+| 4 | **SSRF hardening + REST rate limiting** | ✅ `AIPC_Network` guard (http(s)-only, private/reserved/IPv4-mapped ranges blocked, loopback allowed for local LLMs; filters `aipc_outbound_allowlist`, `aipc_allow_private_hosts`, `aipc_allow_loopback`) wired into `AIPC_Connections::sanitize`, `AIPC_Settings::sanitize` (source_sites), the REST connection test and `AIPC_API_Client::download()`. Per-user per-minute REST rate limits on `/start` `/step` `/state` (filter `aipc_rest_rate_limit`, HTTP 429). |
+| 5 | **Draft review inbox** *(added during implementation)* | ✅ "Review drafts" submenu (cap `edit_posts`): every `_aipc_generated` draft/pending post with status/word count/origin (manual/scheduled/rewrite)/modified time and quick actions (edit, preview, publish with nonce, rewrite-again deep link). |
 
 ### 1.7 — Content & SEO
 
@@ -65,3 +66,5 @@ The groundwork everything else builds on. Do these before more features.
 | 1.3.0 | Cron schedules + Bale notifications | `aa29342` |
 | 1.4.0 | Multiple Bale recipients, periodic reports, daily limit | `beda31b` |
 | 1.5.0 | Rewrite mode, internal linking, auto-publish, fallback chains, research sources | `a327601` |
+| 1.5.2 | Git self-updater | — |
+| 1.6.0 | Jobs DB table, background runner, SSRF guard + rate limiting, review inbox, CI | — |
