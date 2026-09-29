@@ -3,7 +3,7 @@
  * Plugin Name:       AI Post Creator
  * Plugin URI:        https://github.com/ahmad75naraghi/wp-ai-post-creator
  * Description:       Agent-style AI content engine. Connect any OpenAI-compatible API (OpenAI, OpenRouter, Groq, DeepSeek, Ollama, LM Studio …) and generate complete, SEO-optimized posts from scratch — outline to featured image — in the background, on a schedule, with two-way Bale commands, a topic queue and a live agent console.
- * Version:           1.6.0
+ * Version:           1.7.0
  * Requires at least: 5.7
  * Requires PHP:      7.4
  * Author:            Ahmad Naraghi
