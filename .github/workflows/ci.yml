@@ -21,7 +21,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install php-parser (lint dependency)
         run: |
@@ -55,14 +55,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Restore e2e workspace (WordPress + node_modules)
         id: cache
         uses: actions/cache@v4
         with:
           path: ~/wp-e2e
-          key: e2e-wp-6.7.1-sqlite-master-node20-v1
+          key: e2e-wp-6.7.1-sqlite-master-node22-v1
 
       - name: Build e2e workspace (cache miss only)
         if: steps.cache.outputs.cache-hit != 'true'

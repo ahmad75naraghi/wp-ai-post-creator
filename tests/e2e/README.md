@@ -40,6 +40,9 @@ mkdir -p wordpress/wp-content/mu-plugins wordpress/wp-content/plugins
 Notes:
 - No PHP CLI is needed — php-wasm runs PHP 8.3 in Node; php-parser (lint) parses
   with a **7.4 target** so 7.4-only syntax is enforced.
+- **Use Node 22+** — under Node 20 the php-wasm host-filesystem layer
+  misbehaves on the Git-updater group's heavy file operations (PclZip
+  extraction, recursive backup/swap), producing false leaves. CI pins Node 22.
 - The repo copies of `lint.js`/`make-translations.py` resolve their plugin root
   from the script location (`$AIPC_ROOT` overrides) and `lint.js` looks for
   php-parser in `$E2E_HOME`, the cwd, or `~/.cache/e2e`.

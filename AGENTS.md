@@ -204,6 +204,9 @@ breaks naive matching — match exact tab counts or use line-based surgery).
   that need outer variables; no nested `array_map(array_filter(closure))` one-liners.
 - **install.php** sets `WP_INSTALLING` before requiring `wp-load.php` and clears
   `wp-content/database/*` + `mock-api-log.jsonl` for a fresh run.
+- **Run e2e on Node 22+** — under Node 20 the php-wasm host-filesystem layer
+  fails the Git-updater group (false `update_ok`/`backup_ok` leaves). CI pins
+  Node 22; the sandbox default (v22) is fine.
 - **The .mo is compiled by hand** (`make-translations.py`) — if you change the
   header or plural handling, verify with a real `load_textdomain()` round-trip
   in the e2e run (the `i18n_fa` group covers this).
