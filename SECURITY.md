@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.5.x   | ✅ |
+| 1.6.x   | ✅ |
+| 1.5.x   | ✅ (security fixes only) |
 | < 1.5   | ❌ — update first |
 
 ## Reporting a vulnerability

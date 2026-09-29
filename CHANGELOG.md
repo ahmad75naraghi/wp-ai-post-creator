@@ -42,6 +42,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the 
   preview, one-click publish (nonce + `publish_posts`, fires
   `aipc_post_published`) and rewrite-again deep link (preselects the post on
   the Rewrite page).
+- **Community files** — full GPL-2.0 `LICENSE` text, refreshed
+  `CONTRIBUTING.md`, new `SUPPORT.md` (bilingual help map), GitHub issue
+  templates (bug report / feature request, bilingual) and a PR template
+  carrying the verification checklist; README's docs/security/quality sections
+  brought up to 1.6.
 - **CI (GitHub Actions)** — `.github/workflows/ci.yml`: PHP syntax lint
   (PHP 7.4 target), `node --check` on the three JS bundles, translation
   completeness check (regenerate + `git diff`), and the full php-wasm e2e

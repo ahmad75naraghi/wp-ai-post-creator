@@ -133,21 +133,24 @@ block with all assertion groups.
 | Path | Role |
 |---|---|
 | `wp-ai-post-creator.php` | Bootstrap: constants, requires, activation, cron hooks, admin-bar link |
-| `includes/class-aipc-agent.php` | The state machine: jobs, step manifests, chain-retry loop, all `step_*()` implementations, context helpers, stats |
+| `includes/class-aipc-agent.php` | The state machine: job facade over `AIPC_Job_Store`, step manifests, chain-retry loop, all `step_*()` implementations, context helpers, stats |
 | `includes/class-aipc-steps.php` | 13-step registry (prompts + kinds) and per-step `connections[]` config |
 | `includes/class-aipc-post-builder.php` | Assembles/saves posts (`create()` new, `update()` rewrite), TOC/FAQ HTML, SEO meta, featured image |
 | `includes/class-aipc-connections.php` | CRUD + sanitize for AI connections (write-only API keys) |
-| `includes/class-aipc-api-client.php` | OpenAI-compatible HTTP client: chat (JSON extraction + corrective retries), images, models; one internal retry on 429/5xx |
-| `includes/class-aipc-scheduler.php` | Cron tick (every 15 min), schedule entries, daily limit, `aipc_publish_post` handler |
+| `includes/class-aipc-api-client.php` | OpenAI-compatible HTTP client: chat (JSON extraction + corrective retries), images, models, downloads (guard-checked); one internal retry on 429/5xx |
+| `includes/class-aipc-job-store.php` | Jobs storage: `{prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
+| `includes/class-aipc-network.php` | Outbound network guard (SSRF): `is_safe_url()`/`validate_url()`, private-range blocking, allowlist + loopback filters |
+| `includes/class-aipc-scheduler.php` | Cron tick (every 15 min, safety net), schedule entries, daily limit, `aipc_publish_post` handler, background runner (`aipc_run_job`) |
 | `includes/class-aipc-bale.php` | Bale Bot API: notify per post, publish notifications, periodic reports |
 | `includes/class-aipc-settings.php` | Plugin settings incl. `site_prompt`, `source_sites`, defaults for tone/length/language |
-| `includes/class-aipc-rest.php` | REST namespace `aipc/v1` (start/step/cancel/retry, connection, bale) |
+| `includes/class-aipc-rest.php` | REST namespace `aipc/v1` (start/step/state/cancel/retry with per-user rate limits, connection, bale) |
 | `includes/class-aipc-admin.php` | Menu, admin-post handlers, view rendering |
 | `includes/class-aipc-assets.php` | Per-screen JS/CSS + `wp_add_inline_script` config for the console |
-| `admin/views/*.php` | One template per screen (new-post, rewrite, connections, prompts, schedule, settings, logs, log-detail) |
-| `assets/admin-agent.js` | The live console driver (poll loop, retry/cancel, publish controls) |
+| `admin/views/*.php` | One template per screen (new-post, rewrite, review, connections, prompts, schedule, settings, logs, log-detail) |
+| `assets/admin-agent.js` | The console viewer: polls the read-only `/state` endpoint while the background runner drives the job; retry/cancel, publish controls |
 | `tests/e2e/` | `e2e.js` (runner), `install.php`, `drive.php` (assertions), `mock-api.php` (AI/Bale/RSS mocks), `lint.js`, `make-translations.py` |
-| `languages/` | `wp-ai-post-creator.pot`, `-fa_IR.po/.mo` (468 msgids, incl. 2 plural entries) |
+| `languages/` | `wp-ai-post-creator.pot`, `-fa_IR.po/.mo` (540 msgids, incl. 3 plural entries) |
+| Root/community MDs | `README.md`, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`, `SUPPORT.md`, `CODE_OF_CONDUCT.md`, `AGENTS.md`, `LICENSE` (GPL-2.0), `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/workflows/ci.yml` |
 
 ## Conventions that matter
 

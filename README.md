@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.6.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later
+**Version:** 1.6.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
 
 ---
 
@@ -18,9 +18,10 @@
 | [Roadmap & Decisions](docs/ROADMAP.md) | Everyone — 1.6/1.7/1.8 plan, backlog, binding product principles |
 | [AGENTS.md](AGENTS.md) | AI agents / developers — working rules, environment, verification |
 | [Contributing](CONTRIBUTING.md) | Human contributors |
+| [Getting Help / Support](SUPPORT.md) | Everyone — where to ask, how to report |
 | [E2E Test Suite](tests/e2e/README.md) | How to run and extend the tests |
 | [Release Checklist](docs/RELEASE-CHECKLIST.md) | Cutting a version |
-| [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Code of Conduct](CODE_OF_CONDUCT.md) | Everyone |
+| [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [License](LICENSE) | Everyone |
 
 ---
 
@@ -294,13 +295,32 @@ add_action( 'aipc_post_created', function ( $post_id, $job_id ) {
 * All AI output is sanitized: content with `wp_kses_post`, titles/slugs/terms with the matching `sanitize_*` functions.
 * API keys never leave the server (server-to-provider only) and are never returned by any REST response or the connections list.
 * The API key field is write-only in the UI (leave it empty to keep the stored key).
+* **Outbound network guard (SSRF), 1.6+:** every outbound URL (connection base URLs, research source sites, provider-returned image URLs) is validated — private/reserved IP ranges are blocked, loopback stays allowed for local LLMs (Ollama, LM Studio); tunable via the `aipc_outbound_allowlist` / `aipc_allow_private_hosts` / `aipc_allow_loopback` filters.
+* **REST rate limiting (1.6+):** the agent endpoints enforce per-user per-minute limits (HTTP 429); adjustable via the `aipc_rest_rate_limit` filter.
+* See [SECURITY.md](SECURITY.md) for the full policy and design notes.
 * Uninstall removes options and post meta only when explicitly enabled in settings.
 
 ## Quality — tested end to end
 
-The plugin ships with an end-to-end suite (WordPress 6.7 + SQLite via php-wasm, **two mock providers** — a chat host and a dedicated image host) covering the full pipeline through the real REST stack:
+The plugin ships with a real-WordPress end-to-end suite (WordPress 6.7.1 on
+SQLite via php-wasm, **two mock providers** — a chat host and a dedicated image
+host — plus mock Bale/RSS/Git endpoints) that drives the agent through the
+genuine REST stack:
 
-✅ 85+ checks pass — including everything from 1.2.0 (job lifecycle through the real REST stack, auto-invented topic from the site prompt, AI-chosen category, Persian content, TOC anchors, copywriting/SEO revision pass, FAQ + JSON-LD schema, Rank Math summary, SEO meta, tags, featured image, draft-only saving, 401s for anonymous calls, per-step connection routing verified at the HTTP level, custom FAQ prompt sent to the provider, page rendering, sanitization, fa_IR bundle incl. plural forms, cancel/failure/retry flows) plus the new 1.3.0 coverage: **cron event + 15-minute interval registration**, **a due schedule firing through `AIPC_Scheduler::tick()` and producing a complete draft post (fixed topic, FAQ/TOC per entry options, no image when disabled)**, **no double-firing on the second tick**, paused entries never due, schedule-entry sanitization (time clamp, day cleanup, option defaults), the schedule admin page rendering, **Bale REST endpoints** (bad token rejected, stored settings work, chat-id detection, anonymous 401) and **the full Bale traffic audit**: exactly one `sendPhoto` per imaged post with caption containing title + permalink, `sendMessage` for text-only posts, correct chat id and token on every call — all with zero PHP warnings — plus the 1.4.0 coverage: **two Bale recipients receiving every notification** (per-chat verification at the HTTP level), the **daily report** delivered exactly once to both chats (and not re-sent by the next tick), and the **daily limit** blocking a second due schedule entry while leaving it due for the next day.
+- ✅ **44 result groups / 328 assertions green at v1.6.0, with zero PHP
+  warnings** — job lifecycle, auto-invented topics, AI-chosen categories,
+  Persian content, TOC anchors, copywriting/SEO pass, FAQ + JSON-LD, Rank Math
+  summary, featured images, draft-only saving, per-step connection routing
+  verified at the HTTP level, fallback chains, rewrite runs, schedules +
+  daily limits, Bale traffic audits (per-chat), the fa_IR bundle incl. plural
+  forms, and since 1.6: the network-guard matrix, the jobs table (migration,
+  retention, legacy fallback), the background runner (a whole run server-side
+  with zero `/step` calls), the `/state` endpoint, rate limiting, the review
+  inbox and the Git self-updater end-to-end.
+- The full coverage list lives in [`tests/e2e/README.md`](tests/e2e/README.md).
+- **CI runs the same suite on every push and pull request**
+  (`.github/workflows/ci.yml`): PHP 7.4-target lint, `node --check`, translation
+  completeness and the e2e run — a red CI blocks the merge.
 
 ## Frequently asked questions
 

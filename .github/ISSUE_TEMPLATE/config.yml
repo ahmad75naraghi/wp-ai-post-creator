@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 راهنمای کامل کاربر (فارسی)
+    url: https://github.com/ahmad75naraghi/wp-ai-post-creator/blob/main/docs/USER-GUIDE.fa.md
+    about: راهنمای گام‌به‌گام فارسی — نصب، اتصال، تولید نوشته، زمان‌بندی و رفع اشکال
+  - name: 📖 Complete User Guide (English)
+    url: https://github.com/ahmad75naraghi/wp-ai-post-creator/blob/main/docs/USER-GUIDE.en.md
+    about: Step-by-step manual — installation, connections, generating, schedules, troubleshooting
+  - name: 🛠 Debugging Guide
+    url: https://github.com/ahmad75naraghi/wp-ai-post-creator/blob/main/docs/DEBUGGING.md
+    about: Symptom → cause → fix tables, how to read job logs and HTTP traffic
+  - name: 🔒 Security vulnerabilities
+    url: https://github.com/ahmad75naraghi/wp-ai-post-creator/security/advisories/new
+    about: Please do not open public issues for security problems
