@@ -433,7 +433,7 @@ final class AIPC_Agent {
 			'created'    => time(),
 			'updated'    => time(),
 			'status'     => 'running',
-			'source'     => ( 'cron' === $source ) ? 'cron' : 'manual',
+			'source'     => in_array( $source, array( 'cron', 'bale' ), true ) ? $source : 'manual',
 			'user'       => get_current_user_id(),
 			'topic'      => $topic,
 			'args'       => $this->sanitize_args( $args, $s ),

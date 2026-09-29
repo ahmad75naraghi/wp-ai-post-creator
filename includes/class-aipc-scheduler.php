@@ -256,6 +256,7 @@ final class AIPC_Scheduler {
 			'time'          => $time,
 			'days'          => $days,
 			'enabled'       => empty( $in['enabled'] ) ? 0 : 1,
+			'use_queue'     => empty( $in['use_queue'] ) ? 0 : 1,
 			'topic'         => mb_substr( sanitize_text_field( isset( $in['topic'] ) ? $in['topic'] : '' ), 0, 400 ),
 			'publish'       => $publish,
 			'publish_delay' => $delay,
@@ -518,7 +519,25 @@ final class AIPC_Scheduler {
 		$opts['publish_mode']  = isset( $entry['publish'] ) ? $entry['publish'] : 'draft';
 		$opts['publish_delay'] = isset( $entry['publish_delay'] ) ? $entry['publish_delay'] : 60;
 
-		return AIPC_Agent::instance()->create_job( $entry['topic'], $opts, $source );
+		// Take the topic from the queue when the entry wants that; the
+		// fixed topic (or the site prompt) stays the fallback.
+		$topic = isset( $entry['topic'] ) ? $entry['topic'] : '';
+		$queue_item = null;
+		if ( ! empty( $entry['use_queue'] ) ) {
+			$queue_item = AIPC_Topic_Queue::peek();
+			if ( $queue_item ) {
+				$topic = $queue_item['text'];
+			}
+		}
+
+		$job = AIPC_Agent::instance()->create_job( $topic, $opts, $source );
+
+		// Consume the queued topic only when the run actually started.
+		if ( ! is_wp_error( $job ) && $queue_item ) {
+			AIPC_Topic_Queue::mark_used( $queue_item['id'], $job['id'] );
+		}
+
+		return $job;
 	}
 
 	/**

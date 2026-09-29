@@ -31,8 +31,10 @@ the admin bar gets "New AI Post" + "Rewrite post" shortcuts for users with
 | Class (file) | ~LOC | Responsibility |
 |---|---|---|
 | `AIPC_Agent` (`class-aipc-agent.php`) | ~2100 | The heart: job facade over `AIPC_Job_Store`, step manifests, the chain-retry execution loop, every `step_*()` implementation, context helpers (recent posts, link candidates, RSS sources), stats |
-| `AIPC_Bale` (`class-aipc-bale.php`) | 609 | Bale Bot API client: per-post notify (sendPhoto/sendMessage), publish notify, periodic reports, chat-ID detection |
-| `AIPC_Scheduler` (`class-aipc-scheduler.php`) | ~640 | Cron tick, entries, daily limit, catch-up state, `aipc_publish_post` handler, **background runner** (`aipc_run_job`) |
+| `AIPC_Bale` (`class-aipc-bale.php`) | ~680 | Bale Bot API client: per-post notify (sendPhoto/sendMessage), publish notify, periodic reports, chat-ID detection, `getUpdates` with offset |
+| `AIPC_Bale_Commands` (`class-aipc-bale-commands.php`) | ~430 | Two-way Bale: 5-min poll (safety net on the scheduler tick), command parsing (نوشتن/وضعیت/آخرین/انتشار/صف/راهنما), authorized-chats-only, daily cap, `last_update_id` persistence |
+| `AIPC_Topic_Queue` (`class-aipc-topic-queue.php`) | ~330 | FIFO topic bank (option-backed, pending/used with dedup memory), RSS suggestions (cleaned headlines, deduped vs queue + recent posts) |
+| `AIPC_Scheduler` (`class-aipc-scheduler.php`) | ~660 | Cron tick, entries (incl. `use_queue`), daily limit, catch-up state, `aipc_publish_post` handler, **background runner** (`aipc_run_job`) |
 | `AIPC_Job_Store` (`class-aipc-job-store.php`) | ~390 | Jobs storage: `{$wpdb->prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
 | `AIPC_Network` (`class-aipc-network.php`) | ~150 | Outbound network guard (SSRF): `is_safe_url()` / `validate_url()`, private-range blocking, allowlist + loopback filters |
 | `AIPC_API_Client` (`class-aipc-api-client.php`) | 491 | OpenAI-compatible HTTP: chat completions (JSON extraction + corrective retries), image generations, model listing; one internal retry on 429/5xx |
@@ -245,8 +247,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 45 result
-groups / 401 assertions green at v1.6.0, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 46 result
+groups / 441 assertions green at v1.7.0, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference

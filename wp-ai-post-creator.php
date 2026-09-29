@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       AI Post Creator
  * Plugin URI:        https://github.com/ahmad75naraghi/wp-ai-post-creator
- * Description:       Agent-style AI content engine. Connect any OpenAI-compatible API (OpenAI, OpenRouter, Groq, DeepSeek, Ollama, LM Studio …) and generate complete, SEO-optimized posts from scratch — outline to featured image — in the background, on a schedule, with Bale notifications and a live agent console.
+ * Description:       Agent-style AI content engine. Connect any OpenAI-compatible API (OpenAI, OpenRouter, Groq, DeepSeek, Ollama, LM Studio …) and generate complete, SEO-optimized posts from scratch — outline to featured image — in the background, on a schedule, with two-way Bale commands, a topic queue and a live agent console.
  * Version:           1.6.0
  * Requires at least: 5.7
  * Requires PHP:      7.4
@@ -16,7 +16,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AIPC_VERSION', '1.6.0' );
+define( 'AIPC_VERSION', '1.7.0' );
 define( 'AIPC_PLUGIN_FILE', __FILE__ );
 define( 'AIPC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AIPC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -29,9 +29,11 @@ require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-api-client.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-job-store.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-agent.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-post-builder.php';
+require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-topic-queue.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-scheduler.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-updater.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-bale.php';
+require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-bale-commands.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-rest.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-admin.php';
 require_once AIPC_PLUGIN_DIR . 'includes/class-aipc-assets.php';
@@ -55,6 +57,8 @@ function aipc_boot() {
 	AIPC_Scheduler::register();
 	AIPC_Scheduler::maybe_schedule();
 	AIPC_Bale::register();
+	AIPC_Bale_Commands::register();
+	AIPC_Bale_Commands::maybe_schedule();
 
 	// REST routes must be registered on rest_api_init.
 	add_action( 'rest_api_init', array( 'AIPC_REST', 'register' ) );
@@ -117,5 +121,6 @@ function aipc_deactivate() {
 	wp_clear_scheduled_hook( 'aipc_daily_cleanup' );
 	wp_clear_scheduled_hook( 'aipc_cron_tick' );
 	wp_clear_scheduled_hook( AIPC_Scheduler::RUNNER_HOOK ); // All runner events.
+	wp_clear_scheduled_hook( AIPC_Bale_Commands::POLL_HOOK );
 }
 register_deactivation_hook( __FILE__, 'aipc_deactivate' );

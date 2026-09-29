@@ -37,14 +37,16 @@ final class AIPC_Bale {
 		$cfg = get_option( self::OPTION, array() );
 		$cfg = is_array( $cfg ) ? $cfg : array();
 		return wp_parse_args( $cfg, array(
-			'enabled'     => 0,
-			'token'       => '',
-			'chat_ids'    => array(),
-			'chat_id'     => '', // Legacy single recipient (1.3.0).
-			'report'      => '', // '' | daily | weekly.
-			'report_time' => '21:00',
-			'report_day'  => 6, // Weekday for weekly reports (Saturday).
-			'last_report' => '', // Y-m-d when the last report was sent.
+			'enabled'        => 0,
+			'token'          => '',
+			'chat_ids'       => array(),
+			'chat_id'        => '', // Legacy single recipient (1.3.0).
+			'report'         => '', // '' | daily | weekly.
+			'report_time'    => '21:00',
+			'report_day'     => 6, // Weekday for weekly reports (Saturday).
+			'last_report'    => '', // Y-m-d when the last report was sent.
+			'two_way'        => 0, // Accept commands from chats (1.7.0).
+			'last_update_id' => 0, // Last processed getUpdates id.
 		) );
 	}
 
@@ -133,14 +135,16 @@ final class AIPC_Bale {
 		}
 
 		return array(
-			'enabled'     => empty( $in['enabled'] ) ? 0 : 1,
-			'token'       => sanitize_text_field( $token ),
-			'chat_ids'    => $chat_ids,
-			'chat_id'     => isset( $old['chat_id'] ) ? $old['chat_id'] : '',
-			'report'      => $report,
-			'report_time' => $report_time,
-			'report_day'  => $report_day,
-			'last_report' => isset( $old['last_report'] ) ? $old['last_report'] : '',
+			'enabled'        => empty( $in['enabled'] ) ? 0 : 1,
+			'token'          => sanitize_text_field( $token ),
+			'chat_ids'       => $chat_ids,
+			'chat_id'        => isset( $old['chat_id'] ) ? $old['chat_id'] : '',
+			'report'         => $report,
+			'report_time'    => $report_time,
+			'report_day'     => $report_day,
+			'last_report'    => isset( $old['last_report'] ) ? $old['last_report'] : '',
+			'two_way'        => empty( $in['two_way'] ) ? 0 : 1,
+			'last_update_id' => isset( $old['last_update_id'] ) ? absint( $old['last_update_id'] ) : 0,
 		);
 	}
 
@@ -240,6 +244,23 @@ final class AIPC_Bale {
 			$body['caption'] = $caption;
 		}
 		return self::api( $token, 'sendPhoto', $body );
+	}
+
+	/**
+	 * Fetch new bot messages (getUpdates). Passing the last processed
+	 * update id + 1 confirms everything before it, so already-handled
+	 * commands never run twice.
+	 *
+	 * @param string $token  Bot token.
+	 * @param int    $offset Return updates with a greater update id.
+	 * @param int    $limit  Maximum updates.
+	 * @return array|WP_Error
+	 */
+	public static function get_updates( $token, $offset = 0, $limit = 20 ) {
+		return self::api( $token, 'getUpdates', array(
+			'offset' => max( 0, (int) $offset ),
+			'limit'  => max( 1, min( 100, (int) $limit ) ),
+		) );
 	}
 
 	/**

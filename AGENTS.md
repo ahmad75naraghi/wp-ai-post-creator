@@ -141,9 +141,11 @@ block with all assertion groups.
 | `includes/class-aipc-job-store.php` | Jobs storage: `{prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
 | `includes/class-aipc-network.php` | Outbound network guard (SSRF): `is_safe_url()`/`validate_url()`, private-range blocking, allowlist + loopback filters |
 | `includes/class-aipc-scheduler.php` | Cron tick (every 15 min, safety net), schedule entries, daily limit, `aipc_publish_post` handler, background runner (`aipc_run_job`) |
-| `includes/class-aipc-bale.php` | Bale Bot API: notify per post, publish notifications, periodic reports |
+| `includes/class-aipc-bale.php` | Bale Bot API: notify per post, publish notifications, periodic reports, getUpdates |
+| `includes/class-aipc-bale-commands.php` | Two-way Bale commands: 5-min poll, authorized chats only, written-topic runs (source `bale`, daily cap) |
+| `includes/class-aipc-topic-queue.php` | FIFO topic queue (pending/used, dedup memory) + RSS topic suggestions |
 | `includes/class-aipc-settings.php` | Plugin settings incl. `site_prompt`, `source_sites`, defaults for tone/length/language |
-| `includes/class-aipc-rest.php` | REST namespace `aipc/v1` (start/step/state/cancel/retry with per-user rate limits, connection, bale) |
+| `includes/class-aipc-rest.php` | REST namespace `aipc/v1` (start/step/state/cancel/retry with per-user rate limits, connection, bale, topics suggest/add) |
 | `includes/class-aipc-admin.php` | Menu, admin-post handlers, view rendering |
 | `includes/class-aipc-assets.php` | Per-screen JS/CSS + `wp_add_inline_script` config for the console |
 | `admin/views/*.php` | One template per screen (new-post, rewrite, review, connections, prompts, schedule, settings, logs, log-detail) |
@@ -198,6 +200,14 @@ breaks naive matching — match exact tab counts or use line-based surgery).
 - **`aipc_post_created` fires once per job** from `execute_step()` when the
   finished state is saved — do not also fire it from `step_*finalize()` or Bale
   will notify twice.
+- **`trim()` with a multi-byte character mask operates on BYTES** and can split
+  a UTF-8 sequence (e.g. trimming `«»،` from a string starting with `خ` deletes
+  its first byte). Use a `/u` regex instead — see `AIPC_Topic_Queue::clean_title`.
+- **Bale command replies must start with a stable emoji** (✍️📊📄🚀📋🤖) — the
+  e2e suite matches replies by emoji because the surrounding text is translated.
+- **`create_job()` whitelists the `source` column** (`cron`, `bale`, else
+  `manual`) — a new source value needs a whitelist entry AND its own
+  `Job_Store::count_since()` assertions (daily caps key off it).
 - **Never run two edit_file calls on the SAME file in one parallel batch** —
   each is applied to the same base snapshot and the last writer silently drops
   the others' changes (this corrupted class-aipc-agent.php and class-aipc-rest.php

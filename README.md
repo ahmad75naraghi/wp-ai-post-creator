@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.6.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
+**Version:** 1.7.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
 
 ---
 
@@ -38,6 +38,8 @@
 - 🛡 **گارد شبکهٔ خروجی (SSRF)**: نشانی‌های خصوصی/رزروشده مسدود می‌شوند؛ لوکال‌هاست برای Ollama و LM Studio باز است و با فیلترها قابل تنظیم است. به‌علاوه **محدودیت نرخ REST** برای هر کاربر در دقیقه.
 - 📥 **صندوق بازبینی پیش‌نویس‌ها**: همهٔ پیش‌نویس‌های هوش مصنوعی در یک صفحه — ویرایش، پیش‌نمایش، انتشار یک‌کلیکی و بازنویسی مجدد.
 - ❓ **راهنمای درون‌صفحه‌ای**: کنار هر بخش از صفحه‌های مدیریت یک آیکون «؟» است که با کلیک، توضیح کوتاه همان بخش را باز می‌کند.
+- 📋 **صف موضوع‌ها**: انباری از موضوع‌ها که زمان‌بندی‌ها یکی‌یکی از آن می‌کشند — دستی پرش کنید یا با یک کلیک، پیشنهاد تازه از منابع خبری خودتان بگیرید (بدون تکرار).
+- 💬 **فرمان از داخل بله**: افزونه فقط اطلاع‌رسان نیست؛ از داخل بله بنویسید «نوشتن: موضوع X» تا پیش‌نویس ساخته شود، «وضعیت»، «آخرین»، «انتشار» و «صف» هم کار می‌کنند — فقط برای گفتگوهای مجاز.
 - ✅ **CI با GitHub Actions**: لینت، بررسی ترجمه‌ها و کل مجموعهٔ تست e2e روی هر push و PR اجرا می‌شود.
 
 ### 🆕 جدید در نسخهٔ ۱.۵.۲ — اتصال گیت قابل تنظیم (مخزن، برنچ، توکن)
@@ -99,6 +101,8 @@
 
 AI Post Creator turns the WordPress admin into an AI content agent. Set a **site prompt** once (what your site is about), and the agent picks one of your **existing post categories**, invents a topic that fits, writes the article, runs a **copywriting + SEO revision pass**, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** — with every step visible live and auto-retried until it passes.
 
+**New in 1.7.0 — topic queue + two-way Bale commands:**
+
 **New in 1.6.0 — background execution, jobs table, network guard, review inbox:**
 
 * **True background execution** — every job runs server-side on a self-rescheduling cron event; closing the browser tab never stops a run and the console became a read-only viewer (new `/aipc/v1/state` endpoint)
@@ -106,6 +110,8 @@ AI Post Creator turns the WordPress admin into an AI content agent. Set a **site
 * **Outbound network guard (SSRF) + REST rate limiting** — private/reserved addresses are blocked (loopback stays open for Ollama/LM Studio, tunable via filters) and the agent endpoints enforce per-user per-minute limits
 * **Draft review inbox** — every AI draft in one page with edit / preview / one-click publish / rewrite-again actions
 * **Contextual help** — a "?" icon beside every section expands into a short explanation of what it does (all admin pages, fully translated)
+* **Topic queue** — a FIFO bank of topics schedules pull from; fill it by hand or pull fresh, deduplicated suggestions straight from your research sources
+* **Two-way Bale commands** — drive the plugin from inside Bale: «نوشتن: a topic» starts a draft, «وضعیت» / «آخرین» / «انتشار» / «صف» report and publish — authorized chats only
 * **CI with GitHub Actions** — lint, translation completeness and the full php-wasm e2e suite on every push and pull request
 
 **New in 1.5.2 — configurable Git connection (repository, branch, token):**
@@ -299,6 +305,7 @@ add_action( 'aipc_post_created', function ( $post_id, $job_id ) {
 * The API key field is write-only in the UI (leave it empty to keep the stored key).
 * **Outbound network guard (SSRF), 1.6+:** every outbound URL (connection base URLs, research source sites, provider-returned image URLs) is validated — private/reserved IP ranges are blocked, loopback stays allowed for local LLMs (Ollama, LM Studio); tunable via the `aipc_outbound_allowlist` / `aipc_allow_private_hosts` / `aipc_allow_loopback` filters.
 * **REST rate limiting (1.6+):** the agent endpoints enforce per-user per-minute limits (HTTP 429); adjustable via the `aipc_rest_rate_limit` filter.
+* **Two-way Bale commands (1.7+):** only the chat IDs configured in the plugin settings are obeyed; messages from any other chat are ignored silently, processed update ids are never re-run, and at most 20 posts per day can be started from Bale.
 * See [SECURITY.md](SECURITY.md) for the full policy and design notes.
 * Uninstall removes options and post meta only when explicitly enabled in settings.
 
@@ -309,7 +316,7 @@ SQLite via php-wasm, **two mock providers** — a chat host and a dedicated imag
 host — plus mock Bale/RSS/Git endpoints) that drives the agent through the
 genuine REST stack:
 
-- ✅ **45 result groups / 401 assertions green at v1.6.0, with zero PHP
+- ✅ **46 result groups / 441 assertions green at v1.7.0, with zero PHP
   warnings** — job lifecycle, auto-invented topics, AI-chosen categories,
   Persian content, TOC anchors, copywriting/SEO pass, FAQ + JSON-LD, Rank Math
   summary, featured images, draft-only saving, per-step connection routing

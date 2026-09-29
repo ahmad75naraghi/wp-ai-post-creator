@@ -2112,7 +2112,7 @@ msgstr "پیش‌نویس‌های در انتظار بازبینی"
 msgid "Empty URL."
 msgstr "نشانی خالی است."
 
-#: admin/views/review.php
+#: admin/views/review.php admin/views/schedule.php
 msgid "Manual"
 msgstr "دستی"
 
@@ -2295,3 +2295,251 @@ msgstr "این بخش برای چیست؟"
 #: admin/views/update.php
 msgid "Where updates come from: the GitHub repository, the branch to track, and an optional Personal Access Token for private repositories (write-only, stored on your site only)."
 msgstr "منبع به‌روزرسانی‌ها: مخزن گیت‌هاب، برنچ مورد پیگیری و توکن دسترسی شخصی اختیاری برای مخازن خصوصی (فقط نوشتنی، تنها روی سایت خودتان ذخیره می‌شود)."
+
+#: admin/views/schedule.php
+msgid "A FIFO bank of topics for the schedules above: an entry with “Take the topic from the queue” consumes the oldest pending topic each time it fires, then the queue moves on — so every run writes about something new. Fill it by hand, or pull fresh ideas from your research sources with the suggest button."
+msgstr "انباری از موضوع‌ها برای زمان‌بندی‌های بالا: هر زمان‌بندی که «موضوع را از صف بردارد» هنگام اجرا، قدیمی‌ترین موضوع در انتظار را برمی‌دارد و صف جلو می‌رود — پس هر اجرا دربارهٔ چیزی تازه می‌نویسد. صف را دستی پر کنید یا با دکمهٔ پیشنهاد، ایده‌های تازه را از منابع پژوهشی بکشید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "AI Post Creator — commands:"
+msgstr "دستورهای ساخت نوشته با هوش مصنوعی:"
+
+#: admin/views/schedule.php
+msgid "Accept commands from Bale chats"
+msgstr "پذیرش فرمان از گفتگوهای بله"
+
+#: admin/views/schedule.php
+msgid "Add selected to queue"
+msgstr "افزودن انتخاب‌شده‌ها به صف"
+
+#: admin/views/schedule.php
+msgid "Add to queue"
+msgstr "افزودن به صف"
+
+#: admin/views/schedule.php
+msgid "Add topics (one per line)"
+msgstr "افزودن موضوع (یکی در هر خط)"
+
+#: includes/class-aipc-assets.php
+msgid "Added! Reloading…"
+msgstr "اضافه شد! در حال بازخوانی…"
+
+#: includes/class-aipc-assets.php
+msgid "Adding…"
+msgstr "در حال افزودن…"
+
+#: admin/views/schedule.php
+msgid "Clear queue"
+msgstr "خالی کردن صف"
+
+#: admin/views/schedule.php
+msgid "Commands: نوشتن: <topic> · وضعیت · آخرین · انتشار · صف · راهنما"
+msgstr "فرمان‌ها: نوشتن: <موضوع> · وضعیت · آخرین · انتشار · صف · راهنما"
+
+#: includes/class-aipc-assets.php
+msgid "Could not add the topics:"
+msgstr "افزودن موضوع‌ها ممکن نشد:"
+
+#: includes/class-aipc-assets.php
+msgid "Could not fetch suggestions:"
+msgstr "دریافت پیشنهادها ممکن نشد:"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Could not publish: %s"
+msgstr "انتشار ممکن نشد: %s"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Daily limit reached: at most %d posts per day can be started from Bale. Try again tomorrow."
+msgstr "به سقف روزانه رسیده‌اید: حداکثر %d نوشته در روز را می‌توان از داخل بله شروع کرد. فردا دوباره تلاش کنید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Drafts waiting for review: %d"
+msgstr "پیش‌نویس‌های در انتظار بازبینی: %d"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Every 5 minutes (AI Post Creator — Bale commands)"
+msgstr "هر ۵ دقیقه (ساخت نوشته با هوش مصنوعی — فرمان‌های بله)"
+
+#: includes/class-aipc-assets.php
+msgid "Fetching suggestions from your sources…"
+msgstr "در حال دریافت پیشنهاد از منابع شما…"
+
+#: admin/views/schedule.php
+msgid "From sources"
+msgstr "از منابع"
+
+#: includes/class-aipc-bale-commands.php
+msgid "I did not understand that command. Send «راهنما» (or help) for the list of commands."
+msgstr "دستور را متوجه نشدم. برای فهرست فرمان‌ها «راهنما» یا help را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "No AI drafts yet — start one with «نوشتن: <topic>»."
+msgstr "هنوز پیش‌نویسی از هوش مصنوعی نیست — با «نوشتن: <موضوع>» یکی شروع کنید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "No draft found at that position — send «آخرین» to see the newest draft."
+msgstr "در آن موقعیت پیش‌نویسی پیدا نشد — «آخرین» را بفرستید تا جدیدترین پیش‌نویس را ببینید."
+
+#: includes/class-aipc-assets.php
+msgid "No new topics found in your sources — try again later or add topics manually."
+msgstr "موضوع تازه‌ای در منابع شما پیدا نشد — بعداً دوباره تلاش کنید یا موضوع‌ها را دستی اضافه کنید."
+
+#: includes/class-aipc-assets.php
+msgid "No research sources are configured. Add them on the Settings page first."
+msgstr "هیچ منبع پژوهشی‌ای تنظیم نشده است. اول آنها را در صفحهٔ تنظیمات اضافه کنید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Only chats listed in the plugin settings can use commands."
+msgstr "فقط گفتگوهایی که در تنظیمات افزونه ثبت شده‌اند می‌توانند فرمان بدهند."
+
+#: admin/views/schedule.php
+msgid "Pending topics are used one by one (oldest first). Nothing is wasted: used topics are remembered so they are never suggested again."
+msgstr "موضوع‌های در انتظار یکی‌یکی (از قدیمی‌ترین) استفاده می‌شوند. چیزی هدر نمی‌رود: موضوع‌های استفاده‌شده به خاطر سپرده می‌شوند تا دوباره پیشنهاد نشوند."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Pending topics in the queue: %d"
+msgstr "موضوع‌های در انتظار در صف: %d"
+
+#: admin/views/schedule.php
+msgid "Pending topics: %d"
+msgstr "موضوع‌های در انتظار: %d"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Post published via a Bale command."
+msgstr "پست با فرمان بله منتشر شد."
+
+#: admin/views/schedule.php
+msgid "Queue"
+msgstr "صف"
+
+#: admin/views/schedule.php
+msgid "Queue cleared."
+msgstr "صف خالی شد."
+
+#: admin/views/schedule.php
+msgid "Remove"
+msgstr "حذف"
+
+#: admin/views/schedule.php
+msgid "Remove every pending topic from the queue?"
+msgstr "همهٔ موضوع‌های در انتظار از صف حذف شوند؟"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Runs: %1$d (⏳ %2$d · ✅ %3$d · ❌ %4$d)"
+msgstr "اجراها: %1$d (⏳ %2$d · ✅ %3$d · ❌ %4$d)"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: draft — send «انتشار» to publish it."
+msgstr "وضعیت: پیش‌نویس — برای انتشارش «انتشار» را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: published"
+msgstr "وضعیت: منتشرشده"
+
+#: admin/views/schedule.php
+msgid "Suggest topics from my sources"
+msgstr "پیشنهاد موضوع از منابع من"
+
+#: admin/views/schedule.php
+msgid "Take the topic from the queue"
+msgstr "موضوع را از صف بردار"
+
+#: admin/views/schedule.php
+msgid "The bot checks for new messages every ~5 minutes (via WP-Cron) and only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Up to 20 posts per day can be started from Bale."
+msgstr "ربات تقریباً هر ۵ دقیقه (از طریق WP-Cron) پیام‌های تازه را بررسی می‌کند و فقط به شناسه‌های گفتگوی بالا گوش می‌دهد. هر کس در آن گفتگوها می‌تواند: با «نوشتن: یک موضوع» یک پیش‌نویس شروع کند، «وضعیت» برای اجراهای امروز، «آخرین» برای جدیدترین پیش‌نویس، «انتشار» برای انتشار آن، «صف» برای صف موضوع‌ها و «راهنما» برای فهرست کامل. حداکثر ۲۰ نوشته در روز را می‌توان از داخل بله شروع کرد."
+
+#: admin/views/schedule.php
+msgid "The queue is empty. Add topics below or suggest them from your research sources."
+msgstr "صف خالی است. موضوع‌ها را در پایین اضافه کنید یا از منابع پژوهشی پیشنهاد بگیرید."
+
+#: includes/class-aipc-topic-queue.php
+msgid "The topic is empty."
+msgstr "موضوع خالی است."
+
+#: includes/class-aipc-bale-commands.php
+msgid "The topic is too short — send e.g. «نوشتن: balcony gardening»."
+msgstr "موضوع خیلی کوتاه است — مثلاً «نوشتن: باغبانی بالکن» را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "The topic queue is empty. Add topics on the Schedule page."
+msgstr "صف موضوع‌ها خالی است. در صفحهٔ زمان‌بندی موضوع اضافه کنید."
+
+#: includes/class-aipc-topic-queue.php
+msgid "The topic queue is full."
+msgstr "صف موضوع‌ها پر است."
+
+#: includes/class-aipc-topic-queue.php
+msgid "This topic is already in the queue: %s"
+msgstr "این موضوع از قبل در صف است: %s"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Today’s status"
+msgstr "وضعیت امروز"
+
+#: admin/views/schedule.php
+msgid "Topic queue"
+msgstr "صف موضوع‌ها"
+
+#: admin/views/schedule.php
+msgid "Topic removed."
+msgstr "موضوع حذف شد."
+
+#: admin/views/schedule.php
+msgid "Topics added to the queue."
+msgstr "موضوع‌ها به صف اضافه شدند."
+
+#: admin/views/schedule.php
+msgid "Two-way commands"
+msgstr "فرمان‌های دوسویه"
+
+#: admin/views/schedule.php
+msgid "When this entry fires, it takes the oldest pending topic from the topic queue (box above). If the queue is empty it falls back to the fixed topic field — or to the site prompt when that is empty too."
+msgstr "هنگام اجرای این زمان‌بندی، قدیمی‌ترین موضوع در انتظار از صف موضوع‌ها (کادر بالا) برداشته می‌شود. اگر صف خالی باشد به فیلد موضوع ثابت برمی‌گردد — و اگر آن هم خالی باشد، از توضیح سایت موضوع ساخته می‌شود."
+
+#: admin/views/schedule.php
+msgid "e.g. Growing mushrooms at home&#10;A small balcony water garden"
+msgstr "مثلاً پرورش قارچ در خانه&#10;باغچهٔ آبی کوچک در بالکن"
+
+#: includes/class-aipc-bale-commands.php
+msgid "…and %d more"
+msgstr "…و %d مورد دیگر"
+
+#: admin/views/schedule.php
+msgid "…and %d more in the queue."
+msgstr "…و %d مورد دیگر در صف."
+
+#: includes/class-aipc-bale-commands.php
+msgid "✍️ Got it — I’m writing a draft about “%s” now. I’ll message you here as soon as it’s ready."
+msgstr "✍️ دریافت شد — همین حالا پیش‌نویسی دربارهٔ «%s» می‌نویسم. به محض آماده‌شدن، همین‌جا خبر می‌دهم."
+
+#: includes/class-aipc-bale-commands.php
+msgid "✍️ نوشتن: <topic> — start a new draft about the topic"
+msgstr "✍️ نوشتن: <موضوع> — شروع پیش‌نویس تازه دربارهٔ موضوع"
+
+#: includes/class-aipc-bale-commands.php
+msgid "❓ راهنما — this list"
+msgstr "❓ راهنما — همین فهرست"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📄 آخرین — the newest AI draft"
+msgstr "📄 آخرین — جدیدترین پیش‌نویس هوش مصنوعی"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📊 وضعیت — today’s runs, drafts and queue"
+msgstr "📊 وضعیت — اجراهای امروز، پیش‌نویس‌ها و صف"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📋 Pending topics (%d):"
+msgstr "📋 موضوع‌های در انتظار (%d):"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📋 صف — pending topics in the queue"
+msgstr "📋 صف — موضوع‌های در انتظار در صف"
+
+#: includes/class-aipc-bale-commands.php
+msgid "🚀 Published: %s"
+msgstr "🚀 منتشر شد: %s"
+
+#: includes/class-aipc-bale-commands.php
+msgid "🚀 انتشار [number] — publish the newest (or n-th) draft"
+msgstr "🚀 انتشار [شماره] — انتشار جدیدترین (یا نهایی) پیش‌نویس"

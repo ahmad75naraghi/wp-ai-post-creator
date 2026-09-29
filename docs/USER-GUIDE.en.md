@@ -170,6 +170,23 @@ empty = auto-invented), run options and — new in 1.5 — **publish settings**
 > then a secure scheduled event publishes it at the chosen time (only if it is
 > still a draft) and sends a 🎉 Bale message to every recipient.
 
+### 📋 Topic queue (new in 1.7)
+
+On the same Schedule page, see the **Topic queue** card:
+
+- Schedule entries with **"Take the topic from the queue"** consume the oldest
+  pending topic when they fire; if the queue is empty they fall back to the
+  entry's fixed topic (or the site prompt).
+- **Add by hand:** type several topics, one per line, and press "Add to queue".
+- **Smart suggestions:** the **"Suggest topics from my sources"** button reads
+  the latest headlines from the research sources configured in Settings,
+  strips source-name suffixes and drops duplicates (against the queue *and*
+  your recent posts) — you tick the ones you like and they join the queue.
+- Used topics are remembered so they are never suggested twice; "Clear queue"
+  only removes the pending ones.
+
+> The queue is also visible from Bale — send the «صف» command (section 9).
+
 ---
 
 ## 8. Connections per step: multiple AIs with automatic fallback
@@ -214,6 +231,28 @@ variants). Per-recipient delivery results are written to the job log.
 
 **Periodic report:** daily or weekly — an activity summary (jobs, success/fail,
 drafts, tokens, usage per connection) at your chosen time/day.
+
+### 💬 Two-way Bale commands (new in 1.7)
+
+In the same Bale section, enable **"Accept commands from Bale chats"**. The
+bot then checks for new messages roughly every 5 minutes and obeys only the
+chat IDs configured on this page — messages from anywhere else are ignored
+silently.
+
+| Command | What it does |
+|---|---|
+| `نوشتن: a topic` | Starts a background draft run about that topic |
+| `وضعیت` | Today's runs, drafts awaiting review and queue state |
+| `آخرین` | The newest AI draft + its link |
+| `انتشار` or `انتشار ۲` | Publishes the newest (or 2nd) draft — Persian digits work |
+| `صف` | Pending topics in the queue |
+| `راهنما` | The full command list |
+
+- At most **20 posts per day** can be started from Bale (a cost guard).
+- When the draft is ready you get the usual image + summary + link message;
+  `انتشار` also fires the 🎉 published notification.
+- English aliases work too: `/new <topic>`, `status`, `latest`, `publish`,
+  `queue`, `help`.
 
 ---
 

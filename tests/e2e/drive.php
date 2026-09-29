@@ -822,6 +822,9 @@ $out['admin_pages']['schedule'] = array(
 	'publish_sel'  => false !== strpos( $aipc_sched_html, 'aipc-sch-publish' ),
 	'delay_field'  => false !== strpos( $aipc_sched_html, 'publish_delay' ),
 	'publish_col'  => false !== strpos( $aipc_sched_html, '⏱' ) || false !== strpos( $aipc_sched_html, '🚀' ),
+	'shows_queue'  => false !== strpos( $aipc_sched_html, 'aipc-tq-suggest-btn' ) && false !== strpos( $aipc_sched_html, 'aipc_add_topics' ),
+	'shows_use_queue' => false !== strpos( $aipc_sched_html, 'name="use_queue"' ),
+	'shows_two_way'   => false !== strpos( $aipc_sched_html, 'name="two_way"' ),
 );
 
 /* ------------------------------------------------------------------ *
@@ -1459,7 +1462,7 @@ $aipc_help_expected = array(
 	'review'      => 1,
 	'connections' => 3,
 	'prompts'     => 2,
-	'schedule'    => 4,
+	'schedule'    => 7,
 	'settings'    => 4,
 	'logs'        => 2,
 	'log_detail'  => 4,
@@ -1484,6 +1487,9 @@ $out['help_tooltips'] += array(
 	'slug_conn_form'  => false !== strpos( $aipc_help_pages['connections'], 'data-aipc-help="conn-form"' ),
 	'slug_chain'      => false !== strpos( $aipc_help_pages['prompts'], 'data-aipc-help="pr-chains"' ),
 	'slug_bale'       => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-bale"' ),
+	'slug_queue'      => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-queue"' ),
+	'slug_use_queue'  => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-use-queue"' ),
+	'slug_two_way'    => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="bale-two-way"' ),
 	'slug_limit'      => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-limit"' ),
 	'slug_settings'   => false !== strpos( $aipc_help_pages['settings'], 'data-aipc-help="settings-site-prompt"' ),
 	'slug_logs'       => false !== strpos( $aipc_help_pages['logs'], 'data-aipc-help="logs-jobs"' ),
@@ -1493,6 +1499,304 @@ $out['help_tooltips'] += array(
 	'text_fa'         => false !== strpos( $aipc_help_pages['settings'], 'مهم‌ترین تنظیم افزونه' ),
 	'not_open'        => false === strpos( $aipc_help_pages['settings'], '<details class="aipc-help" data-aipc-help="settings-site-prompt" open' ),
 );
+
+/* ------------------------------------------------------------------ *
+ * v1.7.0 — topic queue (+ suggestions from the research sources)
+ * ------------------------------------------------------------------ */
+$aipc_tq_added = AIPC_Topic_Queue::add_many( "  موضوع صف یک: پرورش قارچ در خانه  \n\nموضوع صف دو: باغچهٔ آبی کوچک\nموضوع صف یک: پرورش قارچ در خانه\n" );
+$aipc_tq_before = AIPC_Topic_Queue::count_pending();
+
+// An entry with "use_queue" consumes the oldest pending topic…
+$aipc_tq_entry = AIPC_Scheduler::save_entry( array(
+	'time'      => '10:30',
+	'days'      => array( 1 ),
+	'use_queue' => 1,
+	'topic'     => 'موضوع جایگزین ثابت',
+) );
+$aipc_tq_job = AIPC_Scheduler::start_job_for_entry( $aipc_tq_entry['id'] );
+$aipc_tq_first = AIPC_Topic_Queue::all()['items'];
+$aipc_tq_used = null;
+foreach ( $aipc_tq_first as $aipc_tq_item ) {
+	if ( 'used' === $aipc_tq_item['status'] ) {
+		$aipc_tq_used = $aipc_tq_item;
+	}
+}
+if ( ! is_wp_error( $aipc_tq_job ) && 'running' === $aipc_tq_job['status'] ) {
+	AIPC_Agent::instance()->cancel_job( $aipc_tq_job['id'] );
+	AIPC_Scheduler::unschedule_runner( $aipc_tq_job['id'] );
+}
+
+// Snapshot the queue depth right after the first (queue-consuming) run:
+// the first topic was consumed, the second one must still be pending.
+$aipc_tq_pending_left = AIPC_Topic_Queue::count_pending();
+
+// …and the entry falls back to the fixed topic when the queue runs empty.
+AIPC_Topic_Queue::clear_pending();
+$aipc_tq_job2 = AIPC_Scheduler::start_job_for_entry( $aipc_tq_entry['id'] );
+if ( ! is_wp_error( $aipc_tq_job2 ) && 'running' === $aipc_tq_job2['status'] ) {
+	AIPC_Agent::instance()->cancel_job( $aipc_tq_job2['id'] );
+	AIPC_Scheduler::unschedule_runner( $aipc_tq_job2['id'] );
+}
+AIPC_Scheduler::delete_entry( $aipc_tq_entry['id'] );
+
+// REST: suggest topics from the (mocked) research sources, then add them.
+$req = new WP_REST_Request( 'POST', '/aipc/v1/topics/suggest' );
+$aipc_tq_sugg = rest_do_request( $req );
+$aipc_tq_sugg_data = $aipc_tq_sugg->get_data();
+$aipc_tq_first_sugg = isset( $aipc_tq_sugg_data['suggestions'][0]['text'] ) ? $aipc_tq_sugg_data['suggestions'][0]['text'] : '';
+
+$req = new WP_REST_Request( 'POST', '/aipc/v1/topics/add' );
+$req->set_param( 'texts', array( $aipc_tq_first_sugg ) );
+$req->set_param( 'source', 'rss' );
+$aipc_tq_addr = rest_do_request( $req );
+
+// Anonymous callers must be rejected by both endpoints.
+wp_set_current_user( 0 );
+$aipc_tq_anon_req = new WP_REST_Request( 'POST', '/aipc/v1/topics/suggest' );
+$aipc_tq_anon_sugg = rest_do_request( $aipc_tq_anon_req );
+$aipc_tq_anon_req2 = new WP_REST_Request( 'POST', '/aipc/v1/topics/add' );
+$aipc_tq_anon_req2->set_param( 'texts', array( 'موضوع ناشناس' ) );
+$aipc_tq_anon_add = rest_do_request( $aipc_tq_anon_req2 );
+wp_set_current_user( 1 );
+
+$out['topic_queue'] = array(
+	'bulk_added'     => 2 === $aipc_tq_added,               // 3 lines, 1 duplicate
+	'count_after'    => 2 === $aipc_tq_before,
+	'job_topic'      => ! is_wp_error( $aipc_tq_job ) && 'موضوع صف یک: پرورش قارچ در خانه' === $aipc_tq_job['topic'],
+	'consumed'       => ! empty( $aipc_tq_used ) && 'موضوع صف یک: پرورش قارچ در خانه' === $aipc_tq_used['text'] && ! is_wp_error( $aipc_tq_job ) && (string) $aipc_tq_used['job_id'] === (string) $aipc_tq_job['id'],
+	'pending_left'   => 1 === $aipc_tq_pending_left,
+	'fallback_topic' => ! is_wp_error( $aipc_tq_job2 ) && 'موضوع جایگزین ثابت' === $aipc_tq_job2['topic'],
+	'suggest_status' => 200 === $aipc_tq_sugg->get_status(),
+	'suggest_count'  => isset( $aipc_tq_sugg_data['count'] ) ? $aipc_tq_sugg_data['count'] : 0,
+	'suggest_text'   => false !== strpos( $aipc_tq_first_sugg, 'کشاورزی شهری' ) || false !== strpos( $aipc_tq_first_sugg, 'خاک مناسب' ),
+	'has_sources'    => ! empty( $aipc_tq_sugg_data['has_sources'] ),
+	'rest_added'     => 200 === $aipc_tq_addr->get_status() && 1 === $aipc_tq_addr->get_data()['added'],
+	'rest_dup'       => ( function () {
+		$req = new WP_REST_Request( 'POST', '/aipc/v1/topics/add' );
+		$req->set_param( 'texts', array( 'دوباره همان' ) );
+		rest_do_request( $req );
+		$req = new WP_REST_Request( 'POST', '/aipc/v1/topics/add' );
+		$req->set_param( 'texts', array( 'دوباره همان' ) );
+		$resp = rest_do_request( $req );
+		return 0 === $resp->get_data()['added'] && 1 === $resp->get_data()['skipped'];
+	} )(),
+	'anon_suggest'   => in_array( $aipc_tq_anon_sugg->get_status(), array( 401, 403 ), true ),
+	'anon_add'       => in_array( $aipc_tq_anon_add->get_status(), array( 401, 403 ), true ),
+);
+
+AIPC_Topic_Queue::clear_pending();
+
+/* ------------------------------------------------------------------ *
+ * v1.7.0 — two-way Bale commands (staged getUpdates via the mock)
+ * ------------------------------------------------------------------ */
+$aipc_bc_snapshot = AIPC_Bale::all();
+
+// Enable two-way commands and confirm the polling event appears.
+AIPC_Bale::save( wp_parse_args( array(
+	'two_way' => 1,
+	'enabled' => 1,
+	'token'   => 'bale-token-123',
+	'chat_ids' => array( '12345', '67890' ),
+), $aipc_bc_snapshot ) );
+AIPC_Bale_Commands::maybe_schedule();
+
+$aipc_bc_stage = function ( $updates ) {
+	update_option( 'aipc_mock_bale_updates', wp_json_encode( $updates ) );
+};
+$aipc_bc_bale_log = function () {
+	$out = array();
+	$log = WP_CONTENT_DIR . '/mock-api-log.jsonl';
+	if ( file_exists( $log ) ) {
+		foreach ( file( $log, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $line ) {
+			$row = json_decode( $line, true );
+			if ( $row && 'bale' === $row['host'] ) {
+				$out[] = $row;
+			}
+		}
+	}
+	return $out;
+};
+
+// 1) "نوشتن: <topic>" starts a background draft run.
+$aipc_bc_stage( array( array(
+	'update_id' => 100,
+	'message'   => array( 'chat' => array( 'id' => 12345 ), 'text' => 'نوشتن: موضوع تست فرمان بله' ),
+) ) );
+$aipc_bc_log_before = count( $aipc_bc_bale_log() );
+AIPC_Bale_Commands::poll();
+
+$aipc_bc_midnight = strtotime( 'today', current_time( 'timestamp' ) );
+$aipc_bc_job = null;
+foreach ( AIPC_Job_Store::since( $aipc_bc_midnight ) as $aipc_bc_j ) {
+	if ( 'bale' === ( isset( $aipc_bc_j['source'] ) ? $aipc_bc_j['source'] : '' ) ) {
+		$aipc_bc_job = $aipc_bc_j;
+	}
+}
+$aipc_bc_replies = array_slice( $aipc_bc_bale_log(), $aipc_bc_log_before );
+$aipc_bc_reply1 = '';
+foreach ( $aipc_bc_replies as $aipc_bc_r ) {
+	if ( '12345' === (string) $aipc_bc_r['chat_id'] && ! empty( $aipc_bc_r['text'] ) ) {
+		$aipc_bc_reply1 = $aipc_bc_r['text'];
+	}
+}
+
+// Drive the chat-started run to completion (it becomes the newest draft).
+$aipc_bc_state = array();
+if ( $aipc_bc_job ) {
+	$aipc_bc_state = AIPC_Scheduler::run_steps( $aipc_bc_job['id'] );
+	$aipc_bc_job = AIPC_Agent::instance()->get_job( $aipc_bc_job['id'] );
+}
+
+// 2) وضعیت / آخرین / صف replies.
+$aipc_bc_stage( array(
+	array( 'update_id' => 101, 'message' => array( 'chat' => array( 'id' => 12345 ), 'text' => 'وضعیت' ) ),
+	array( 'update_id' => 102, 'message' => array( 'chat' => array( 'id' => 12345 ), 'text' => 'آخرین' ) ),
+	array( 'update_id' => 103, 'message' => array( 'chat' => array( 'id' => 12345 ), 'text' => 'صف' ) ),
+) );
+$aipc_bc_log_before2 = count( $aipc_bc_bale_log() );
+AIPC_Bale_Commands::poll();
+$aipc_bc_replies2 = array_slice( $aipc_bc_bale_log(), $aipc_bc_log_before2 );
+$aipc_bc_texts2 = array();
+foreach ( $aipc_bc_replies2 as $aipc_bc_r ) {
+	if ( ! empty( $aipc_bc_r['text'] ) ) {
+		$aipc_bc_texts2[] = (string) $aipc_bc_r['text'];
+	}
+}
+$aipc_bc_status_reply = '';
+$aipc_bc_latest_reply = '';
+$aipc_bc_queue_reply = '';
+foreach ( $aipc_bc_texts2 as $aipc_bc_txt ) {
+	if ( 0 === strpos( $aipc_bc_txt, '📊' ) ) { $aipc_bc_status_reply = $aipc_bc_txt; }
+	if ( 0 === strpos( $aipc_bc_txt, '📄' ) ) { $aipc_bc_latest_reply = $aipc_bc_txt; }
+	if ( 0 === strpos( $aipc_bc_txt, '📋' ) ) { $aipc_bc_queue_reply = $aipc_bc_txt; }
+}
+
+// 3) «انتشار ۱» (Persian digit) publishes the newest draft.
+$aipc_bc_draft_id = $aipc_bc_job ? (int) $aipc_bc_job['post_id'] : 0;
+$aipc_bc_was_draft = $aipc_bc_draft_id ? get_post_status( $aipc_bc_draft_id ) : '';
+$aipc_bc_stage( array( array(
+	'update_id' => 104,
+	'message'   => array( 'chat' => array( 'id' => 12345 ), 'text' => 'انتشار ۱' ),
+) ) );
+$aipc_bc_log_before3 = count( $aipc_bc_bale_log() );
+AIPC_Bale_Commands::poll();
+$aipc_bc_replies3 = array_slice( $aipc_bc_bale_log(), $aipc_bc_log_before3 );
+$aipc_bc_publish_reply = '';
+foreach ( $aipc_bc_replies3 as $aipc_bc_r ) {
+	if ( '12345' === (string) $aipc_bc_r['chat_id'] && ! empty( $aipc_bc_r['text'] ) && 0 === strpos( (string) $aipc_bc_r['text'], '🚀' ) ) {
+		$aipc_bc_publish_reply = (string) $aipc_bc_r['text'];
+	}
+}
+$aipc_bc_published = $aipc_bc_draft_id ? get_post_status( $aipc_bc_draft_id ) : '';
+$aipc_bc_job_after = $aipc_bc_draft_id ? AIPC_Agent::instance()->get_job( $aipc_bc_job['id'] ) : null;
+$aipc_bc_publish_logged = false;
+if ( $aipc_bc_job_after ) {
+	foreach ( (array) $aipc_bc_job_after['log'] as $aipc_bc_le ) {
+		if ( false !== strpos( (string) $aipc_bc_le['msg'], 'فرمان بله' ) || false !== strpos( (string) $aipc_bc_le['msg'], 'Bale command' ) ) {
+			$aipc_bc_publish_logged = true;
+		}
+	}
+}
+
+// 4) Unauthorized chat: ignored silently (no reply, no job).
+$aipc_bc_bale_jobs_before = ( function () {
+	$n = 0;
+	foreach ( AIPC_Job_Store::since( 0 ) as $aipc_bc_j ) {
+		if ( 'bale' === ( isset( $aipc_bc_j['source'] ) ? $aipc_bc_j['source'] : '' ) ) { $n++; }
+	}
+	return $n;
+} )();
+$aipc_bc_stage( array( array(
+	'update_id' => 105,
+	'message'   => array( 'chat' => array( 'id' => 55555 ), 'text' => 'نوشتن: تلاش نفوذ' ),
+) ) );
+$aipc_bc_log_before4 = count( $aipc_bc_bale_log() );
+AIPC_Bale_Commands::poll();
+$aipc_bc_replies4 = array_slice( $aipc_bc_bale_log(), $aipc_bc_log_before4 );
+$aipc_bc_stranger_reply = 0;
+foreach ( $aipc_bc_replies4 as $aipc_bc_r ) {
+	if ( '55555' === (string) $aipc_bc_r['chat_id'] ) { $aipc_bc_stranger_reply++; }
+}
+$aipc_bc_bale_jobs_after = ( function () {
+	$n = 0;
+	foreach ( AIPC_Job_Store::since( 0 ) as $aipc_bc_j ) {
+		if ( 'bale' === ( isset( $aipc_bc_j['source'] ) ? $aipc_bc_j['source'] : '' ) ) { $n++; }
+	}
+	return $n;
+} )();
+
+// 5) /start help + unknown command + offset persistence.
+$aipc_bc_stage( array(
+	array( 'update_id' => 106, 'message' => array( 'chat' => array( 'id' => 12345 ), 'text' => '/start' ) ),
+	array( 'update_id' => 107, 'message' => array( 'chat' => array( 'id' => 12345 ), 'text' => 'سلام' ) ),
+) );
+$aipc_bc_log_before5 = count( $aipc_bc_bale_log() );
+AIPC_Bale_Commands::poll();
+$aipc_bc_replies5 = array_slice( $aipc_bc_bale_log(), $aipc_bc_log_before5 );
+$aipc_bc_help_reply = '';
+$aipc_bc_unknown_reply = '';
+foreach ( $aipc_bc_replies5 as $aipc_bc_r ) {
+	if ( '12345' !== (string) $aipc_bc_r['chat_id'] || empty( $aipc_bc_r['text'] ) ) { continue; }
+	if ( 0 === strpos( (string) $aipc_bc_r['text'], '🤖' ) ) { $aipc_bc_help_reply = (string) $aipc_bc_r['text']; }
+	elseif ( '' === $aipc_bc_unknown_reply ) { $aipc_bc_unknown_reply = (string) $aipc_bc_r['text']; }
+}
+$aipc_bc_offset = (int) AIPC_Bale::all()['last_update_id'];
+$aipc_bc_event_on = wp_get_scheduled_event( AIPC_Bale_Commands::POLL_HOOK );
+
+// 6) Re-polling the same updates must be a no-op (offset semantics).
+$aipc_bc_jobs_before6 = ( function () {
+	$n = 0;
+	foreach ( AIPC_Job_Store::since( 0 ) as $aipc_bc_j ) {
+		if ( 'bale' === ( isset( $aipc_bc_j['source'] ) ? $aipc_bc_j['source'] : '' ) ) { $n++; }
+	}
+	return $n;
+} )();
+$aipc_bc_log_before6 = count( $aipc_bc_bale_log() );
+AIPC_Bale_Commands::poll();
+$aipc_bc_noop_replies = 0;
+foreach ( array_slice( $aipc_bc_bale_log(), $aipc_bc_log_before6 ) as $aipc_bc_r ) {
+	if ( 'sendMessage' === (string) $aipc_bc_r['method'] ) {
+		$aipc_bc_noop_replies++;
+	}
+}
+$aipc_bc_jobs_after6 = ( function () {
+	$n = 0;
+	foreach ( AIPC_Job_Store::since( 0 ) as $aipc_bc_j ) {
+		if ( 'bale' === ( isset( $aipc_bc_j['source'] ) ? $aipc_bc_j['source'] : '' ) ) { $n++; }
+	}
+	return $n;
+} )();
+
+// 7) Disabling two-way removes the event; cleanup.
+AIPC_Bale::save( wp_parse_args( array( 'two_way' => 0 ), AIPC_Bale::all() ) );
+AIPC_Bale_Commands::maybe_schedule();
+delete_option( 'aipc_mock_bale_updates' );
+
+$out['bale_commands'] = array(
+	'poll_event'     => false !== $aipc_bc_event_on,
+	'interval'       => isset( wp_get_schedules()['aipc_bale_5min'] ) && 300 === (int) wp_get_schedules()['aipc_bale_5min']['interval'],
+	'job_created'    => ! empty( $aipc_bc_job ) && 'موضوع تست فرمان بله' === $aipc_bc_job['topic'],
+	'job_source'     => ! empty( $aipc_bc_job ) && 'bale' === $aipc_bc_job['source'],
+	'job_is_draft'   => ! empty( $aipc_bc_job ) && 'draft' === ( isset( $aipc_bc_job['args']['publish_mode'] ) ? $aipc_bc_job['args']['publish_mode'] : '' ),
+	'reply_new'      => false !== strpos( $aipc_bc_reply1, 'موضوع تست فرمان بله' ),
+	'run_done'       => isset( $aipc_bc_state['status'] ) && 'done' === $aipc_bc_state['status'],
+	'post_created'   => 'draft' === $aipc_bc_was_draft,
+	'status_reply'   => '' !== $aipc_bc_status_reply,
+	'latest_reply'   => false !== strpos( $aipc_bc_latest_reply, 'موضوع تست فرمان بله' ),
+	'queue_reply'    => '' !== $aipc_bc_queue_reply,
+	'published'      => 'publish' === $aipc_bc_published,
+	'publish_reply'  => false !== strpos( $aipc_bc_publish_reply, '🚀' ),
+	'publish_logged' => $aipc_bc_publish_logged,
+	'stranger_ignored' => 0 === $aipc_bc_stranger_reply && $aipc_bc_bale_jobs_after === $aipc_bc_bale_jobs_before,
+	'help_reply'     => false !== strpos( $aipc_bc_help_reply, '🤖' ),
+	'unknown_reply'  => false !== strpos( $aipc_bc_unknown_reply, 'راهنما' ),
+	'offset_saved'   => 107 === $aipc_bc_offset,
+	'repoll_noop'    => 0 === $aipc_bc_noop_replies && $aipc_bc_jobs_after6 === $aipc_bc_jobs_before6,
+	'event_removed'  => false === wp_get_scheduled_event( AIPC_Bale_Commands::POLL_HOOK ),
+);
+
+// Restore the pre-group Bale config (token/recipients/report intact).
+AIPC_Bale::save( $aipc_bc_snapshot );
 
 /* ------------------------------------------------------------------ *
  * v1.5.1/1.5.2 — Git self-updater (LAST: it replaces the plugin files)
@@ -1602,4 +1906,9 @@ $out['git_updater'] += array(
 );
 
 echo "\n===E2E_JSON===\n";
-echo json_encode( $out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
+$aipc_json = json_encode( $out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
+if ( false === $aipc_json ) {
+	echo 'JSON_ERROR: ' . json_last_error_msg() . "\n";
+	exit( 1 );
+}
+echo $aipc_json;

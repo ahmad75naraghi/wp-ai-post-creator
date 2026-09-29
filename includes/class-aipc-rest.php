@@ -163,6 +163,53 @@ final class AIPC_REST {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::NS,
+			'/topics/suggest',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'topics_suggest' ),
+				'permission_callback' => array( __CLASS__, 'can_manage' ),
+				'args'                => array(
+					'limit' => array( 'type' => 'integer', 'sanitize_callback' => 'absint' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/topics/add',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'topics_add' ),
+				'permission_callback' => array( __CLASS__, 'can_manage' ),
+				'args'                => array(
+					'texts'  => array(
+						'type'              => 'array',
+						'sanitize_callback' => array( __CLASS__, 'sanitize_topic_texts' ),
+					),
+					'source' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_key' ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Sanitize a list of topic texts (REST arg).
+	 *
+	 * @param array $texts Raw list.
+	 * @return array
+	 */
+	public static function sanitize_topic_texts( $texts ) {
+		$out = array();
+		foreach ( (array) $texts as $text ) {
+			$text = sanitize_text_field( (string) $text );
+			if ( '' !== $text ) {
+				$out[] = $text;
+			}
+		}
+		return array_slice( $out, 0, 30 );
 	}
 
 	/**
@@ -502,6 +549,38 @@ final class AIPC_REST {
 			return new WP_Error( $result->get_error_code(), $result->get_error_message(), array( 'status' => 502 ) );
 		}
 		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Suggest topics from the configured research sources (RSS).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function topics_suggest( $request ) {
+		$suggestions = AIPC_Topic_Queue::suggest( (int) $request->get_param( 'limit' ) ? (int) $request->get_param( 'limit' ) : 12 );
+		return rest_ensure_response( array(
+			'suggestions' => $suggestions,
+			'count'       => count( $suggestions ),
+			'has_sources' => '' !== trim( (string) AIPC_Settings::get( 'source_sites' ) ),
+		) );
+	}
+
+	/**
+	 * Add topics to the queue (used by the suggestion picker and the form).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function topics_add( $request ) {
+		$texts  = (array) $request->get_param( 'texts' );
+		$source = 'rss' === (string) $request->get_param( 'source' ) ? 'rss' : 'manual';
+		$added  = AIPC_Topic_Queue::add_many( $texts, $source );
+		return rest_ensure_response( array(
+			'added'        => $added,
+			'skipped'      => count( $texts ) - $added,
+			'pending'      => AIPC_Topic_Queue::count_pending(),
+		) );
 	}
 
 	/**

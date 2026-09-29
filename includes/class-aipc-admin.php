@@ -31,6 +31,9 @@ final class AIPC_Admin {
 		add_action( 'admin_post_aipc_delete_schedule', array( __CLASS__, 'handle_delete_schedule' ) );
 		add_action( 'admin_post_aipc_run_now', array( __CLASS__, 'handle_run_now' ) );
 		add_action( 'admin_post_aipc_save_bale', array( __CLASS__, 'handle_save_bale' ) );
+		add_action( 'admin_post_aipc_add_topics', array( __CLASS__, 'handle_add_topics' ) );
+		add_action( 'admin_post_aipc_remove_topic', array( __CLASS__, 'handle_remove_topic' ) );
+		add_action( 'admin_post_aipc_clear_topics', array( __CLASS__, 'handle_clear_topics' ) );
 		add_action( 'admin_post_aipc_save_schedule_settings', array( __CLASS__, 'handle_save_schedule_settings' ) );
 		add_action( 'admin_post_aipc_git_check', array( __CLASS__, 'handle_git_check' ) );
 		add_action( 'admin_post_aipc_git_test', array( __CLASS__, 'handle_git_test' ) );
@@ -461,6 +464,7 @@ final class AIPC_Admin {
 			'time'          => isset( $_POST['time'] ) ? sanitize_text_field( wp_unslash( $_POST['time'] ) ) : '',
 			'days'          => $raw,
 			'enabled'       => ! empty( $_POST['enabled'] ),
+			'use_queue'     => ! empty( $_POST['use_queue'] ),
 			'topic'         => isset( $_POST['topic'] ) ? wp_unslash( $_POST['topic'] ) : '',
 			'publish'       => isset( $_POST['publish'] ) ? sanitize_key( wp_unslash( $_POST['publish'] ) ) : 'draft',
 			'publish_delay' => isset( $_POST['publish_delay'] ) ? absint( wp_unslash( $_POST['publish_delay'] ) ) : 60,
@@ -657,11 +661,67 @@ final class AIPC_Admin {
 		exit;
 	}
 
+	/**
+	 * Add topics to the queue (textarea, one per line).
+	 *
+	 * @return void
+	 */
+	public static function handle_add_topics() {
+		self::guard( 'aipc_add_topics' );
+
+		$topics = isset( $_POST['topics'] ) ? (string) wp_unslash( $_POST['topics'] ) : '';
+		AIPC_Topic_Queue::add_many( $topics, 'manual' );
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'topics_added' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Remove one topic from the queue.
+	 *
+	 * @return void
+	 */
+	public static function handle_remove_topic() {
+		self::guard( 'aipc_remove_topic' );
+
+		$id = isset( $_GET['id'] ) ? sanitize_key( wp_unslash( $_GET['id'] ) ) : '';
+		if ( $id ) {
+			AIPC_Topic_Queue::remove( $id );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'topic_removed' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Remove every pending topic.
+	 *
+	 * @return void
+	 */
+	public static function handle_clear_topics() {
+		self::guard( 'aipc_clear_topics' );
+
+		AIPC_Topic_Queue::clear_pending();
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'queue_cleared' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
 	public static function handle_save_bale() {
 		self::guard( 'aipc_save_bale' );
 
 		$cfg = AIPC_Bale::sanitize( wp_unslash( $_POST ), AIPC_Bale::all() );
 		AIPC_Bale::save( $cfg );
+		AIPC_Bale_Commands::maybe_schedule();
 
 		wp_safe_redirect( add_query_arg(
 			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'bale_saved' ),

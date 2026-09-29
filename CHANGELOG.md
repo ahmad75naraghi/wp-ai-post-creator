@@ -3,6 +3,33 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.7.0] — 2026-09-29
+
+### Added
+- **Topic queue** — a FIFO bank of topics on the Schedule page. Schedule
+  entries can now "take the topic from the queue": each run consumes the
+  oldest pending topic, then falls back to the entry's fixed topic (or the
+  site prompt) when the queue is empty. Topics are added by hand (bulk,
+  one per line) or pulled from the configured research sources with the
+  **Suggest topics** button (REST `POST /aipc/v1/topics/suggest`, cleaned
+  headlines, deduped against the queue and recent posts; `POST
+  /aipc/v1/topics/add`). Used topics are remembered so they are never
+  suggested twice. The queue is also visible from Bale (see below).
+- **Two-way Bale commands** — the bot now *obeys*, not just notifies. With
+  "Accept commands from Bale chats" enabled, a 5-minute WP-Cron event
+  (plus every scheduler tick as a safety net) polls `getUpdates` and
+  answers the **configured chats only**: `نوشتن: <topic>` starts a
+  background draft run (capped at 20 per day), `وضعیت` reports today's
+  runs/drafts/queue, `آخرین` shows the newest draft, `انتشار [n]`
+  publishes the newest (or n-th) draft — Persian digits accepted — and
+  `صف` lists pending topics. Processed updates are tracked by id
+  (`last_update_id`) so commands never run twice; unknown commands get a
+  hint, strangers are ignored silently. Fully translated (fa_IR).
+
+### Changed
+- Version bump to 1.7.0; e2e suite grew to 46 result groups / 441
+  assertions (new `topic_queue` and `bale_commands` groups).
+
 ## [1.6.0] — 2026-09-29
 
 ### Added

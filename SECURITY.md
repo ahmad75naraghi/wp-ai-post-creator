@@ -66,6 +66,14 @@ detected). Strict environments should additionally define `WP_HTTP_BLOCK_EXTERNA
 with `WP_ACCESSIBLE_HOSTS` — WordPress then blocks non-allowlisted outbound
 requests for the whole site, independently of this guard.
 
+### Two-way Bale commands — since v1.7.0
+
+The bot only obeys messages from the chat IDs stored in the plugin settings
+(`AIPC_Bale::recipients()`); everything else is ignored without a reply.
+Processed update ids are persisted (`last_update_id`) so a command can never
+run twice, publishing is capped at the 10 newest AI drafts, and chat-started
+runs are limited to 20 per day.
+
 ### REST rate limiting — since v1.6.0
 
 The agent endpoints (`/start`, `/step`, `/state`) enforce a per-user,

@@ -183,6 +183,13 @@ final class AIPC_Assets {
 				'chatFound'  => __( 'Chat ID detected: %s', 'wp-ai-post-creator' ),
 				'needToken'  => __( 'Enter a bot token first.', 'wp-ai-post-creator' ),
 				'needChat'   => __( 'Enter at least one chat ID.', 'wp-ai-post-creator' ),
+				'suggesting' => __( 'Fetching suggestions from your sources…', 'wp-ai-post-creator' ),
+				'suggestFail'=> __( 'Could not fetch suggestions:', 'wp-ai-post-creator' ),
+				'noneFound'  => __( 'No new topics found in your sources — try again later or add topics manually.', 'wp-ai-post-creator' ),
+				'noSources'  => __( 'No research sources are configured. Add them on the Settings page first.', 'wp-ai-post-creator' ),
+				'adding'     => __( 'Adding…', 'wp-ai-post-creator' ),
+				'added'      => __( 'Added! Reloading…', 'wp-ai-post-creator' ),
+				'addFail'    => __( 'Could not add the topics:', 'wp-ai-post-creator' ),
 			),
 		);
 	}
