@@ -59,7 +59,10 @@ $aipc_preselect = isset( $_GET['post'] ) ? absint( wp_unslash( $_GET['post'] ) )
 
 	<section class="aipc-card" id="aipc-form-card">
 		<form id="aipc-form" autocomplete="off">
-			<label class="aipc-label" for="aipc-rewrite-post"><?php esc_html_e( 'Post to rewrite', 'wp-ai-post-creator' ); ?></label>
+<div class="aipc-heading">
+				<label class="aipc-label" for="aipc-rewrite-post"><?php esc_html_e( 'Post to rewrite', 'wp-ai-post-creator' ); ?></label>
+				<?php aipc_help( 'rw-post', __( 'Pick the post to rewrite. The agent rewrites it in place: status, author, address and category stay untouched — only the content (and optionally the image and SEO metadata) is refreshed.', 'wp-ai-post-creator' ) ); ?>
+			</div>
 			<select id="aipc-rewrite-post" class="aipc-select" required>
 				<option value=""><?php esc_html_e( '— pick a post —', 'wp-ai-post-creator' ); ?></option>
 				<?php foreach ( $aipc_posts as $aipc_post ) : ?>

@@ -62,7 +62,10 @@ $aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 
 	<section class="aipc-card" id="aipc-form-card">
 		<form id="aipc-form" autocomplete="off">
-			<label class="aipc-label" for="aipc-topic"><?php esc_html_e( 'Topic (optional)', 'wp-ai-post-creator' ); ?></label>
+<div class="aipc-heading">
+				<label class="aipc-label" for="aipc-topic"><?php esc_html_e( 'Topic (optional)', 'wp-ai-post-creator' ); ?></label>
+				<?php aipc_help( 'new-topic', __( 'Topic: leave it empty and the agent invents a fresh topic from the site prompt — it also checks your existing posts to avoid duplicates. Write your own idea and the whole article is built around it.', 'wp-ai-post-creator' ) ); ?>
+			</div>
 			<textarea id="aipc-topic" rows="2" maxlength="400"
 				placeholder="<?php esc_attr_e( 'Leave empty and the agent will invent a topic from the site prompt — or write your own idea here…', 'wp-ai-post-creator' ); ?>"></textarea>
 			<p class="aipc-hint">
@@ -96,7 +99,10 @@ $aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 				<?php if ( current_user_can( 'publish_posts' ) ) : ?>
 					<div class="aipc-grid" style="margin-block-start:12px;">
 						<div class="aipc-field">
-							<label for="aipc-publish-mode"><?php esc_html_e( 'After creation', 'wp-ai-post-creator' ); ?></label>
+<div class="aipc-heading">
+								<label for="aipc-publish-mode"><?php esc_html_e( 'After creation', 'wp-ai-post-creator' ); ?></label>
+								<?php aipc_help( 'new-publish', __( 'Posts are always saved as drafts first. Here you choose what happens next: keep it as a draft (the safe default), publish immediately when the run finishes, or schedule publishing 15–10080 minutes later. Publishing needs the publish permission.', 'wp-ai-post-creator' ) ); ?>
+							</div>
 							<select id="aipc-publish-mode" class="aipc-select">
 								<option value="draft"><?php esc_html_e( '📝 Keep as draft', 'wp-ai-post-creator' ); ?></option>
 								<option value="now"><?php esc_html_e( '🚀 Publish immediately', 'wp-ai-post-creator' ); ?></option>
@@ -141,6 +147,7 @@ $aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 			<div class="aipc-console-title">
 				<span class="aipc-pulse" aria-hidden="true"></span>
 				<strong><?php esc_html_e( 'Agent console', 'wp-ai-post-creator' ); ?></strong>
+				<?php aipc_help( 'new-console', __( 'The console is a live viewer: the job runs on the server, so you can close this tab and it keeps going. Steps, logs and progress update automatically while the agent works — and if a step fails after all retries, the Retry button re-runs only that step.', 'wp-ai-post-creator' ) ); ?>
 			</div>
 			<div class="aipc-progress">
 				<div class="aipc-bar-track"><div class="aipc-bar" id="aipc-bar"></div></div>

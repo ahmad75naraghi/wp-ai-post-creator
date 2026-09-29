@@ -36,6 +36,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the 
 - **REST rate limiting** — per-user per-minute limits on `/start` (30),
   `/step` (240) and `/state` (300); HTTP 429 with code `aipc_rate`.
   Adjustable via `aipc_rest_rate_limit`.
+- **Contextual help ("?") on every section** — a small ? icon beside each
+  section and key field across all admin pages expands into a short
+  explanation of what that section does (pure `<details>`, no JS, RTL-safe,
+  fully translated). 26 toggles across 10 screens.
 - **Draft review inbox** — new "Review drafts" page (cap `edit_posts`):
   every AI-generated draft/pending post with status, word count, origin
   (manual/scheduled/rewrite) and modified time, plus quick actions — edit,

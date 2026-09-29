@@ -64,6 +64,10 @@ msgstr ""
 msgid "1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024. The image model itself is set per connection."
 msgstr ""
 
+#: admin/views/connections.php
+msgid "A connection is one AI service: base URL, API key and the models to use. One connection is the default; steps without their own assignment use it. Use Test after saving to verify the setup."
+msgstr ""
+
 #: includes/class-aipc-bale.php
 msgid "A new AI post is published"
 msgstr ""
@@ -209,6 +213,10 @@ msgid "Agent started — the topic will be invented from the site prompt."
 msgstr ""
 
 #: admin/views/logs.php
+msgid "Aggregate statistics across all jobs: totals, success/fail counts, API calls and token usage per connection."
+msgstr ""
+
+#: admin/views/logs.php
 msgid "All logs cleared."
 msgstr ""
 
@@ -274,6 +282,10 @@ msgstr ""
 
 #: includes/class-aipc-bale.php
 msgid "Bale chat ID is not configured."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Bale is an Iranian messenger. The bot token comes from @Bot_Father; each chat ID receives the post’s featured image, summary and link when a run finishes (and a periodic report, if enabled). Delivery results are recorded in the job log."
 msgstr ""
 
 #: includes/class-aipc-bale.php
@@ -368,6 +380,10 @@ msgstr ""
 msgid "Cancelled"
 msgstr ""
 
+#: admin/views/schedule.php
+msgid "Caps how many automatic posts may be created per calendar day (site timezone). 0 = unlimited. Today’s count is shown next to the field."
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Casual"
 msgstr ""
@@ -402,6 +418,10 @@ msgstr ""
 
 #: admin/views/logs.php
 msgid "Clear all logs"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Compares the installed version with the remote branch. A newer remote version means an update is available."
 msgstr ""
 
 #: admin/views/logs.php
@@ -593,6 +613,10 @@ msgid "Default length"
 msgstr ""
 
 #: admin/views/settings.php
+msgid "Default options for new runs: language, tone, length and the TOC/FAQ defaults. You can override them per run on the console page."
+msgstr ""
+
+#: admin/views/settings.php
 msgid "Default tone"
 msgstr ""
 
@@ -660,6 +684,10 @@ msgstr ""
 msgid "Download the latest plugin files straight from the GitHub repository and replace this installation in place."
 msgstr ""
 
+#: admin/views/update.php
+msgid "Downloads the branch snapshot, verifies the plugin header, backs up the current files and swaps the new ones in — rolling back automatically if anything fails."
+msgstr ""
+
 #: admin/views/review.php
 msgid "Draft"
 msgstr ""
@@ -690,6 +718,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Each entry starts one full agent run (a complete draft post) at the chosen time on the chosen days. The topic can be fixed — or left empty so the agent invents one from the site prompt."
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "Each pipeline step can use its own connection, or an ordered fallback chain: if a provider keeps failing, the agent switches to the next one automatically. Empty = the default connection."
 msgstr ""
 
 #: admin/views/new-post.php
@@ -764,8 +796,20 @@ msgstr ""
 msgid "Every 15 minutes (AI Post Creator)"
 msgstr ""
 
+#: admin/views/review.php
+msgid "Every AI-generated draft lands here until you decide: edit, preview, publish with one click, or send it back for another rewrite. Nothing goes live until you say so."
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Every HTTP request the agent made: step, connection, model, duration, tokens and any error — the ground truth when debugging provider problems."
+msgstr ""
+
 #: admin/views/logs.php
 msgid "Every agent run: status, timing, tokens, per-step API calls and the full console log."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Every run with its status, progress, call count and tokens. Open a row for the full diary: every step, every API call and every log line. Jobs are kept for 90 days by default."
 msgstr ""
 
 #: admin/views/connections.php
@@ -778,6 +822,10 @@ msgstr ""
 
 #: admin/views/settings.php
 msgid "Extra system instructions"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Extra system instructions appended to every step (brand rules, banned words…), and the uninstall data policy."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1198,6 +1246,10 @@ msgstr ""
 msgid "Pick a post to rewrite first."
 msgstr ""
 
+#: admin/views/rewrite.php
+msgid "Pick the post to rewrite. The agent rewrites it in place: status, author, address and category stay untouched — only the content (and optionally the image and SEO metadata) is refreshed."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Picks one of the existing categories and builds the topic from the site prompt."
 msgstr ""
@@ -1232,6 +1284,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Posts are always created as drafts first; pick what happens next."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Posts are always saved as drafts first. Here you choose what happens next: keep it as a draft (the safe default), publish immediately when the run finishes, or schedule publishing 15–10080 minutes later. Publishing needs the publish permission."
 msgstr ""
 
 #: admin/views/review.php
@@ -1274,6 +1330,10 @@ msgstr ""
 msgid "Prompts & assignments saved."
 msgstr ""
 
+#: admin/views/prompts.php
+msgid "Prompts are the instructions sent to the AI for each step. A prompt left exactly at its default stays in “default” mode and is improved automatically on plugin updates; editing it freezes your own version."
+msgstr ""
+
 #: admin/views/review.php admin/views/schedule.php
 msgid "Publish"
 msgstr ""
@@ -1288,6 +1348,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Rank Math summary: %s"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Ready-made endpoint patterns for popular providers — copy your provider’s pattern into the connection form above."
 msgstr ""
 
 #: admin/views/update.php
@@ -1660,6 +1724,10 @@ msgstr ""
 msgid "The agent stopped with an error. You can retry the failed step."
 msgstr ""
 
+#: admin/views/connections.php
+msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless allowlisted."
+msgstr ""
+
 #: includes/class-aipc-updater.php
 msgid "The branch “%1$s” holds version %2$s, which is not newer than the installed %3$s. Tick “Reinstall anyway” to force it."
 msgstr ""
@@ -1670,6 +1738,10 @@ msgstr ""
 
 #: admin/views/update.php
 msgid "The button downloads the repository snapshot, verifies the plugin header, backs up the current files to wp-content/aipc-backups and swaps the new files in. If anything fails, the previous version is restored automatically."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "The console is a live viewer: the job runs on the server, so you can close this tab and it keeps going. Steps, logs and progress update automatically while the agent works — and if a step fails after all retries, the Retry button re-runs only that step."
 msgstr ""
 
 #: admin/views/schedule.php
@@ -1696,6 +1768,14 @@ msgstr ""
 msgid "The full assembled draft HTML"
 msgstr ""
 
+#: admin/views/settings.php
+msgid "The global switch and size for AI featured images. The image model is set per connection; if image generation fails on every provider, the post is still saved — just without an image."
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "The human-readable diary of the run, exactly as it was shown live in the console."
+msgstr ""
+
 #: includes/class-aipc-api-client.php
 msgid "The image URL was rejected by the outbound network guard."
 msgstr ""
@@ -1706,6 +1786,10 @@ msgstr ""
 
 #: includes/class-aipc-updater.php
 msgid "The installed plugin folder was not found."
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "The job’s identity card: topic, mode, source (manual or scheduled), result and timing."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -1728,8 +1812,16 @@ msgstr ""
 msgid "The outline was empty or malformed. Please retry."
 msgstr ""
 
+#: admin/views/log-detail.php
+msgid "The pipeline checklist of this run: done, skipped (e.g. the image), failed or pending."
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "The plan did not include a title. Please retry."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "The plugin checks every 15 minutes (via WP-Cron) and fires the earliest due entry: one full agent run per tick. Missed times are caught up on the next tick the same day, and an entry never fires twice on the same day."
 msgstr ""
 
 #: includes/class-aipc-updater.php
@@ -1806,6 +1898,10 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "The site prompt (or a fallback note)"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "The site prompt tells the agent what this site is about: purpose, audience and voice. It drives topic invention, category choice and the writing style of every run — the single most important setting of the plugin."
 msgstr ""
 
 #: admin/views/update.php
@@ -1900,6 +1996,10 @@ msgstr ""
 msgid "Topic brief from the plan step"
 msgstr ""
 
+#: admin/views/new-post.php
+msgid "Topic: leave it empty and the agent invents a fresh topic from the site prompt — it also checks your existing posts to avoid duplicates. Write your own idea and the whole article is built around it."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Total section count"
 msgstr ""
@@ -1989,6 +2089,10 @@ msgid "WP-Cron is disabled on this site. Make sure a real server cron job calls 
 msgstr ""
 
 #: admin/views/schedule.php
+msgid "WP-Cron only runs when the site receives visits. On low-traffic sites, disable it in wp-config.php and call wp-cron.php from a real system cron every minute — this panel shows whether the ticks are actually happening."
+msgstr ""
+
+#: admin/views/schedule.php
 msgid "Weekly"
 msgstr ""
 
@@ -1996,8 +2100,16 @@ msgstr ""
 msgid "Weekly report"
 msgstr ""
 
+#: includes/class-aipc-admin.php
+msgid "What is this section for?"
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "What this section must cover"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Where updates come from: the GitHub repository, the branch to track, and an optional Personal Access Token for private repositories (write-only, stored on your site only)."
 msgstr ""
 
 #: includes/class-aipc-steps.php

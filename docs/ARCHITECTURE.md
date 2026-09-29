@@ -245,8 +245,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 44 result
-groups / 328 assertions green at v1.6.0, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 45 result
+groups / 401 assertions green at v1.6.0, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference

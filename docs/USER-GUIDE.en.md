@@ -7,6 +7,8 @@ Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
 
 ## 1. Introduction
 
+💡 Most sections of the plugin's admin pages carry a small **"?"** icon — click it to expand a short explanation of what that section does. This guide covers all of them in depth.
+
 **AI Post Creator** turns your WordPress admin into a content agent. Set it up
 once, and the agent will:
 

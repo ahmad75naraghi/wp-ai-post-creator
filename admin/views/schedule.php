@@ -45,7 +45,10 @@ $aipc_notices = array(
 	<?php endif; ?>
 
 	<div class="aipc-card">
-		<h2><?php esc_html_e( 'Automatic schedules', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2><?php esc_html_e( 'Automatic schedules', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'sched-entries', __( 'The plugin checks every 15 minutes (via WP-Cron) and fires the earliest due entry: one full agent run per tick. Missed times are caught up on the next tick the same day, and an entry never fires twice on the same day.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<p class="description"><?php esc_html_e( 'Each entry starts one full agent run (a complete draft post) at the chosen time on the chosen days. The topic can be fixed — or left empty so the agent invents one from the site prompt.', 'wp-ai-post-creator' ); ?></p>
 
 		<?php if ( empty( $aipc_entries ) ) : ?>
@@ -123,6 +126,7 @@ $aipc_notices = array(
 			<?php wp_nonce_field( 'aipc_save_schedule_settings' ); ?>
 			<input type="hidden" name="action" value="aipc_save_schedule_settings" />
 			<label for="aipc-daily-limit" style="font-weight:600;"><?php esc_html_e( 'Max scheduled posts per day', 'wp-ai-post-creator' ); ?></label>
+			<?php aipc_help( 'sched-limit', __( 'Caps how many automatic posts may be created per calendar day (site timezone). 0 = unlimited. Today’s count is shown next to the field.', 'wp-ai-post-creator' ) ); ?>
 			<input type="number" id="aipc-daily-limit" class="aipc-input" name="daily_limit" min="0" max="50" step="1"
 				style="width:90px;" value="<?php echo esc_attr( AIPC_Scheduler::daily_limit() ); ?>" />
 			<span class="description"><?php esc_html_e( '0 = unlimited', 'wp-ai-post-creator' ); ?></span>
@@ -246,7 +250,10 @@ $aipc_notices = array(
 	</div>
 
 	<div class="aipc-card">
-		<h2><?php esc_html_e( 'Bale notifications', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2><?php esc_html_e( 'Bale notifications', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'sched-bale', __( 'Bale is an Iranian messenger. The bot token comes from @Bot_Father; each chat ID receives the post’s featured image, summary and link when a run finishes (and a periodic report, if enabled). Delivery results are recorded in the job log.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<p class="description"><?php esc_html_e( 'After every generated post the agent can message a Bale chat with the featured image, the summary and the link to the article. Create a bot with @Bot_Father in Bale, paste its token here, and enter the chat ID of the person (or channel) that should receive the messages.', 'wp-ai-post-creator' ); ?></p>
 
 		<form class="aipc-conn-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -303,7 +310,10 @@ $aipc_notices = array(
 	</div>
 
 	<div class="aipc-card">
-		<h2><?php esc_html_e( 'Cron status', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2><?php esc_html_e( 'Cron status', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'sched-cron', __( 'WP-Cron only runs when the site receives visits. On low-traffic sites, disable it in wp-config.php and call wp-cron.php from a real system cron every minute — this panel shows whether the ticks are actually happening.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<p>
 			<?php if ( $aipc_next_tick ) : ?>
 				<?php

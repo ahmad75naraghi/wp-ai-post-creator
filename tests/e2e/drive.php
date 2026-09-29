@@ -1393,6 +1393,108 @@ $out['chain_cleanup'] += array(
 AIPC_Steps::save_all( $aipc_chain_snapshot ); // Restore.
 
 /* ------------------------------------------------------------------ *
+ * v1.6 — contextual help toggles ("?" icons on every section)
+ * ------------------------------------------------------------------ */
+// The settings screen uses the options API (settings_fields) — admin-only
+// includes that a bare wp-load context does not load.
+require_once ABSPATH . 'wp-admin/includes/plugin.php';
+require_once ABSPATH . 'wp-admin/includes/template.php';
+require_once ABSPATH . 'wp-admin/includes/options.php';
+
+$aipc_help_count = function ( $html ) {
+	return preg_match_all( '/class="aipc-help"/', $html, $aipc_m );
+};
+$aipc_help_panels = function ( $html ) {
+	return preg_match_all( '/aipc-help-panel/', $html, $aipc_m );
+};
+
+$aipc_help_pages = array();
+
+ob_start();
+AIPC_Admin::render_new();
+$aipc_help_pages['agent'] = ob_get_clean();
+
+ob_start();
+AIPC_Admin::render_rewrite();
+$aipc_help_pages['rewrite'] = ob_get_clean();
+
+ob_start();
+AIPC_Admin::render_review();
+$aipc_help_pages['review'] = ob_get_clean();
+
+ob_start();
+AIPC_Admin::render_connections();
+$aipc_help_pages['connections'] = ob_get_clean();
+
+ob_start();
+AIPC_Admin::render_prompts();
+$aipc_help_pages['prompts'] = ob_get_clean();
+
+ob_start();
+AIPC_Admin::render_schedule();
+$aipc_help_pages['schedule'] = ob_get_clean();
+
+ob_start();
+AIPC_Admin::render_settings();
+$aipc_help_pages['settings'] = ob_get_clean();
+
+unset( $_GET['job'] );
+ob_start();
+AIPC_Admin::render_logs();
+$aipc_help_pages['logs'] = ob_get_clean();
+
+$_GET['job'] = $aipc_cron_job ? $aipc_cron_job['id'] : $job_id;
+ob_start();
+AIPC_Admin::render_logs();
+$aipc_help_pages['log_detail'] = ob_get_clean();
+unset( $_GET['job'] );
+
+ob_start();
+AIPC_Admin::render_update();
+$aipc_help_pages['update'] = ob_get_clean();
+
+$aipc_help_expected = array(
+	'agent'       => 3,
+	'rewrite'     => 1,
+	'review'      => 1,
+	'connections' => 3,
+	'prompts'     => 2,
+	'schedule'    => 4,
+	'settings'    => 4,
+	'logs'        => 2,
+	'log_detail'  => 4,
+	'update'      => 3,
+);
+
+$out['help_tooltips'] = array();
+foreach ( $aipc_help_pages as $aipc_page => $aipc_html ) {
+	$aipc_count = $aipc_help_count( $aipc_html );
+	$out['help_tooltips'][ $aipc_page ] = array(
+		'count'  => $aipc_count,
+		'enough' => $aipc_count >= $aipc_help_expected[ $aipc_page ],
+		'panels' => $aipc_help_panels( $aipc_html ) === $aipc_count,
+	);
+}
+
+$out['help_tooltips'] += array(
+	'slug_agent'      => false !== strpos( $aipc_help_pages['agent'], 'data-aipc-help="new-console"' ),
+	'slug_publish'    => false !== strpos( $aipc_help_pages['agent'], 'data-aipc-help="new-publish"' ),
+	'slug_rewrite'    => false !== strpos( $aipc_help_pages['rewrite'], 'data-aipc-help="rw-post"' ),
+	'slug_review'     => false !== strpos( $aipc_help_pages['review'], 'data-aipc-help="review-inbox"' ),
+	'slug_conn_form'  => false !== strpos( $aipc_help_pages['connections'], 'data-aipc-help="conn-form"' ),
+	'slug_chain'      => false !== strpos( $aipc_help_pages['prompts'], 'data-aipc-help="pr-chains"' ),
+	'slug_bale'       => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-bale"' ),
+	'slug_limit'      => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-limit"' ),
+	'slug_settings'   => false !== strpos( $aipc_help_pages['settings'], 'data-aipc-help="settings-site-prompt"' ),
+	'slug_logs'       => false !== strpos( $aipc_help_pages['logs'], 'data-aipc-help="logs-jobs"' ),
+	'slug_detail'     => false !== strpos( $aipc_help_pages['log_detail'], 'data-aipc-help="ld-calls"' ),
+	'slug_update'     => false !== strpos( $aipc_help_pages['update'], 'data-aipc-help="up-run"' ),
+	'aria_label'      => false !== strpos( $aipc_help_pages['settings'], 'این بخش برای چیست؟' ),
+	'text_fa'         => false !== strpos( $aipc_help_pages['settings'], 'مهم‌ترین تنظیم افزونه' ),
+	'not_open'        => false === strpos( $aipc_help_pages['settings'], '<details class="aipc-help" data-aipc-help="settings-site-prompt" open' ),
+);
+
+/* ------------------------------------------------------------------ *
  * v1.5.1/1.5.2 — Git self-updater (LAST: it replaces the plugin files)
  * ------------------------------------------------------------------ */
 require_once ABSPATH . 'wp-admin/includes/plugin.php';

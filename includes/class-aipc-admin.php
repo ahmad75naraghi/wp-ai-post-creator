@@ -670,3 +670,27 @@ final class AIPC_Admin {
 		exit;
 	}
 }
+
+/**
+ * Render a contextual help toggle: a small "?" icon that expands into an
+ * explanation right below it (pure <details>/<summary> — no JS, keyboard-
+ * and screen-reader-friendly, works in RTL).
+ *
+ * The text MUST arrive already translated (views pass __() output) so the
+ * translation pipeline keeps extracting it.
+ *
+ * @param string $slug Stable id (also used by the e2e suite).
+ * @param string $text Help text (a little HTML is allowed).
+ * @return void
+ */
+function aipc_help( $slug, $text ) {
+	if ( ! is_string( $text ) || '' === trim( $text ) ) {
+		return;
+	}
+	?>
+	<details class="aipc-help" data-aipc-help="<?php echo esc_attr( $slug ); ?>">
+		<summary role="button" aria-label="<?php esc_attr_e( 'What is this section for?', 'wp-ai-post-creator' ); ?>"><span aria-hidden="true">?</span></summary>
+		<div class="aipc-help-panel"><?php echo wp_kses_post( $text ); ?></div>
+	</details>
+	<?php
+}

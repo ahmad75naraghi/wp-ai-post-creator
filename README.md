@@ -37,6 +37,7 @@
 - 🗄 **جدول اختصاصی کارها**: کارها از option به جدول `aipc_jobs` منتقل شدند (مهاجرت خودکار، ماندگاری قابل تنظیم ۹۰ روز پیش‌فرض، پرس‌وجوی سبک برای گزارش‌ها).
 - 🛡 **گارد شبکهٔ خروجی (SSRF)**: نشانی‌های خصوصی/رزروشده مسدود می‌شوند؛ لوکال‌هاست برای Ollama و LM Studio باز است و با فیلترها قابل تنظیم است. به‌علاوه **محدودیت نرخ REST** برای هر کاربر در دقیقه.
 - 📥 **صندوق بازبینی پیش‌نویس‌ها**: همهٔ پیش‌نویس‌های هوش مصنوعی در یک صفحه — ویرایش، پیش‌نمایش، انتشار یک‌کلیکی و بازنویسی مجدد.
+- ❓ **راهنمای درون‌صفحه‌ای**: کنار هر بخش از صفحه‌های مدیریت یک آیکون «؟» است که با کلیک، توضیح کوتاه همان بخش را باز می‌کند.
 - ✅ **CI با GitHub Actions**: لینت، بررسی ترجمه‌ها و کل مجموعهٔ تست e2e روی هر push و PR اجرا می‌شود.
 
 ### 🆕 جدید در نسخهٔ ۱.۵.۲ — اتصال گیت قابل تنظیم (مخزن، برنچ، توکن)
@@ -104,6 +105,7 @@ AI Post Creator turns the WordPress admin into an AI content agent. Set a **site
 * **Dedicated jobs table** — jobs moved from an option to a real database table with automatic migration, configurable 90-day retention and light-row queries for the logs screen
 * **Outbound network guard (SSRF) + REST rate limiting** — private/reserved addresses are blocked (loopback stays open for Ollama/LM Studio, tunable via filters) and the agent endpoints enforce per-user per-minute limits
 * **Draft review inbox** — every AI draft in one page with edit / preview / one-click publish / rewrite-again actions
+* **Contextual help** — a "?" icon beside every section expands into a short explanation of what it does (all admin pages, fully translated)
 * **CI with GitHub Actions** — lint, translation completeness and the full php-wasm e2e suite on every push and pull request
 
 **New in 1.5.2 — configurable Git connection (repository, branch, token):**
@@ -307,7 +309,7 @@ SQLite via php-wasm, **two mock providers** — a chat host and a dedicated imag
 host — plus mock Bale/RSS/Git endpoints) that drives the agent through the
 genuine REST stack:
 
-- ✅ **44 result groups / 328 assertions green at v1.6.0, with zero PHP
+- ✅ **45 result groups / 401 assertions green at v1.6.0, with zero PHP
   warnings** — job lifecycle, auto-invented topics, AI-chosen categories,
   Persian content, TOC anchors, copywriting/SEO pass, FAQ + JSON-LD, Rank Math
   summary, featured images, draft-only saving, per-step connection routing

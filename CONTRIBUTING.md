@@ -67,7 +67,7 @@ python3 tests/e2e/make-translations.py
 ```
 
 The e2e suite must stay **green with zero `false` boolean leaves and zero PHP
-warnings** (44 result groups / 328 assertions at v1.6.0). If your change alters
+warnings** (45 result groups / 401 assertions at v1.6.0). If your change alters
 behavior covered by `tests/e2e/drive.php`, update the assertions in the same PR.
 
 ## Coding standards

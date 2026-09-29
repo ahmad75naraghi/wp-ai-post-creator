@@ -55,7 +55,10 @@ foreach ( AIPC_Agent::instance()->get_all_jobs() as $aipc_row ) {
 	<?php endif; ?>
 
 	<section class="aipc-card">
-		<h2>🗒 <?php esc_html_e( 'Drafts waiting for review', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2>🗒 <?php esc_html_e( 'Drafts waiting for review', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'review-inbox', __( 'Every AI-generated draft lands here until you decide: edit, preview, publish with one click, or send it back for another rewrite. Nothing goes live until you say so.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 
 		<?php if ( empty( $aipc_drafts ) ) : ?>
 			<p class="aipc-empty">— <?php esc_html_e( 'Nothing to review. The agent always saves new posts as drafts — they will appear here.', 'wp-ai-post-creator' ); ?> —</p>
