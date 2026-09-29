@@ -94,16 +94,44 @@ jobs:
 
       - name: Assert zero false leaves + zero PHP warnings
         run: |
-          ! grep -Eq 'PHP (Warning|Deprecated|Fatal error|Notice)' /tmp/e2e.log || {
-            echo '::error::PHP warnings in the e2e output'; grep -E 'PHP (Warning|Deprecated|Fatal error|Notice)' /tmp/e2e.log; exit 1; }
+          if grep -Eq 'PHP (Warning|Deprecated|Fatal error|Notice)' /tmp/e2e.log; then
+            echo '::error::PHP warnings in the e2e output'
+            grep -E 'PHP (Warning|Deprecated|Fatal error|Notice)' /tmp/e2e.log | head -5 | while IFS= read -r line; do
+              echo "::error::${line:0:400}"
+            done
+            exit 1
+          fi
           python3 - <<'PY'
           import json, sys
           src = open('/tmp/e2e.log', encoding='utf-8').read()
-          data = json.loads(src[src.index('{\n    "unit_extract_json"):])
+          data = json.loads(src[src.index('{\n    "unit_extract_json"'):])
           def flat(d, p=''):
               for k, v in d.items():
                   yield from (flat(v, p + '.' + k) if isinstance(v, dict) else [(p + '.' + k, v)])
-          bad = [k for k, v in flat(data) if v is False]
-          print('groups:', len(data), '| FALSE leaves:', bad or 'none')
+          leaves = dict(flat(data))
+          bad = [k for k, v in leaves.items() if v is False]
+          print('groups:', len(data), '| total leaves:', len(leaves), '| FALSE leaves:', bad or 'none')
+          if bad:
+              # Surface the failing leaves and their parent groups as
+              # annotations (readable via the API even without log access).
+              for k in bad[:8]:
+                  print('::error::e2e FALSE leaf: ' + k.lstrip('.'))
+              for k in bad[:4]:
+                  parts = k.lstrip('.').split('.')
+                  d = data
+                  try:
+                      for p in parts[:-1]:
+                          d = d[p]
+                      print('::error::context ' + '.'.join(parts[:-1]) + ' = ' + json.dumps(d, ensure_ascii=False, default=str)[:450])
+                  except Exception:
+                      print('::error::context unavailable for ' + k)
           sys.exit(1 if bad else 0)
           PY
+
+      - name: Upload the e2e log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-log
+          path: /tmp/e2e.log
+          retention-days: 7
