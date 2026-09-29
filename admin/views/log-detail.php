@@ -36,7 +36,10 @@ $aipc_dur = max( 0, (int) $job['updated'] - (int) $job['created'] );
 	</p>
 
 	<section class="aipc-card">
-		<h2>📋 <?php esc_html_e( 'Overview', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2>📋 <?php esc_html_e( 'Overview', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'ld-overview', __( 'The job’s identity card: topic, mode, source (manual or scheduled), result and timing.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<table class="aipc-table widefat striped">
 			<tbody>
 				<tr><td class="aipc-kv-k"><?php esc_html_e( 'Topic', 'wp-ai-post-creator' ); ?></td><td><?php echo esc_html( $job['topic'] ); ?></td></tr>
@@ -57,7 +60,10 @@ $aipc_dur = max( 0, (int) $job['updated'] - (int) $job['created'] );
 	</section>
 
 	<section class="aipc-card">
-		<h2>🪜 <?php esc_html_e( 'Steps', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2>🪜 <?php esc_html_e( 'Steps', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'ld-steps', __( 'The pipeline checklist of this run: done, skipped (e.g. the image), failed or pending.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<table class="aipc-table widefat striped">
 			<thead>
 				<tr>
@@ -83,7 +89,10 @@ $aipc_dur = max( 0, (int) $job['updated'] - (int) $job['created'] );
 	</section>
 
 	<section class="aipc-card">
-		<h2>📞 <?php esc_html_e( 'API calls', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2>📞 <?php esc_html_e( 'API calls', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'ld-calls', __( 'Every HTTP request the agent made: step, connection, model, duration, tokens and any error — the ground truth when debugging provider problems.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<?php if ( empty( $job['calls'] ) ) : ?>
 			<p class="aipc-empty">— <?php esc_html_e( 'No calls recorded.', 'wp-ai-post-creator' ); ?> —</p>
 		<?php else : ?>
@@ -123,7 +132,10 @@ $aipc_dur = max( 0, (int) $job['updated'] - (int) $job['created'] );
 	</section>
 
 	<section class="aipc-card">
-		<h2>🖥 <?php esc_html_e( 'Console log', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2>🖥 <?php esc_html_e( 'Console log', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'ld-log', __( 'The human-readable diary of the run, exactly as it was shown live in the console.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<div class="aipc-terminal aipc-terminal-static">
 			<?php foreach ( (array) $job['log'] as $aipc_entry ) : ?>
 				<div class="aipc-line aipc-l-<?php echo esc_attr( $aipc_entry['level'] ); ?>">

@@ -778,3 +778,124 @@
 	background: #ede9fe;
 	color: #5b21b6;
 }
+
+/* Review inbox */
+.aipc-review-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+
+/* Contextual help ("?") toggles */
+.aipc-heading {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 2px 10px;
+}
+.aipc-heading h2,
+.aipc-heading h3,
+.aipc-heading .aipc-label {
+	margin: 0;
+}
+.aipc-help {
+	flex: 0 0 auto;
+	display: inline-block;
+	vertical-align: baseline;
+}
+.aipc-help[open] {
+	flex-basis: 100%;
+	display: block;
+}
+.aipc-help summary {
+	list-style: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border: 1px solid #c3c4c7;
+	border-radius: 50%;
+	color: #787c82;
+	background: #fff;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1;
+	user-select: none;
+}
+.aipc-help summary::-webkit-details-marker {
+	display: none;
+}
+.aipc-help summary:hover,
+.aipc-help[open] summary {
+	color: #2271b1;
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+.aipc-help-panel {
+	margin: 8px 0 4px;
+	padding: 10px 12px;
+	max-width: 640px;
+	font-size: 12.5px;
+	line-height: 1.9;
+	border-inline-start: 3px solid #2271b1;
+	border-radius: 4px;
+	background: #f0f6fc;
+	color: #3c434a;
+}
+.aipc-help-panel p {
+	margin: 0 0 6px;
+}
+.aipc-help-panel p:last-child {
+	margin-bottom: 0;
+}
+
+/* ===== v1.7 — topic queue + two-way Bale ===== */
+
+.aipc-tq-table .aipc-tq-pos {
+	width: 3em;
+	font-weight: 600;
+}
+
+.aipc-tq-suggest {
+	margin-block-start: 10px;
+	padding: 12px;
+	border: 1px dashed #c3c4c7;
+	border-radius: 4px;
+}
+
+.aipc-tq-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-block: 10px;
+	max-height: 260px;
+	overflow: auto;
+}
+
+.aipc-tq-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 8px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.aipc-tq-item .aipc-badge {
+	margin-inline-start: auto;
+	flex-shrink: 0;
+}
+
+.aipc-card-inner {
+	margin-block-start: 14px;
+	padding: 12px;
+}
+
+.aipc-card-inner h3 {
+	margin: 0;
+	font-size: 1em;
+}

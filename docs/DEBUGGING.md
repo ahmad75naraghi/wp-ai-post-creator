@@ -18,16 +18,26 @@ there per job:
 - `usage` — token totals
 - the source (`manual` / `cron`), mode (`new` / `rewrite`) and the final result
 
-Roughly 30 jobs are kept in `aipc_jobs` (autoload off); old ones are pruned by
-the daily cleanup cron.
+Jobs live in the `{$wpdb->prefix}aipc_jobs` table (the JSON `payload` column
+is the source of truth; status/counters are queryable columns). Retention is
+90 days by default (`aipc_job_retention_days`, 0 = keep forever); pruning runs
+on the daily cleanup cron and after each job creation.
 
 ## 2. Reading raw data
 
 ```sql
--- current jobs (option, autoload off)
-SELECT option_value FROM wp_options WHERE option_name = 'aipc_jobs';
+-- light job rows (lists/counters)
+SELECT id, created, status, source, post_id, steps_done, steps_total, topic
+  FROM wp_aipc_jobs ORDER BY created DESC LIMIT 20;
+
+-- one full job (payload JSON)
+SELECT payload FROM wp_aipc_jobs WHERE id = 'job_xxxxxxxx';
 ```
-(or WP-CLI: `wp option get aipc_jobs --format=json | jq '.[0]'`)
+(or WP-CLI: `wp db query "SELECT payload FROM wp_aipc_jobs WHERE id='…'" | jq`)
+
+If the table could not be created (DB user without CREATE rights) the plugin
+falls back to the legacy option:
+`SELECT option_value FROM wp_options WHERE option_name = 'aipc_jobs';`
 
 Post side: meta `_aipc_generated`, `_aipc_job` (job id),
 `_aipc_faq_schema`, `_aipc_meta_title`, `_aipc_meta_description`.
@@ -55,6 +65,9 @@ failures — the log must stay clean.
 | Step fails with "did not include / lost the structure" | Model ignored the format contract (JSON/H2 structure) | The agent retries 3× per connection; if it persists use a stronger model for that step |
 | Featured image missing but post done | Whole image chain failed → step intentionally skipped (log: `Image generation failed on every connection`) | Check image model/size; the post continues by design |
 | Schedule never fires | wp-cron not running on low-traffic sites | Site Health → cron; add a system cron hitting `wp-cron.php` every minute |
+| Job stalls mid-run (console shows the stall warning) | The background runner event was lost or wp-cron is throttled/never fires | The 15-min tick re-arms lost runner events automatically; check Site Health → cron and the Schedule page; with `DISABLE_WP_CRON` make sure a system cron runs often enough |
+| `429 aipc_rate` on /start /step /state | Per-user per-minute REST limit hit | Wait a minute or raise the limit via the `aipc_rest_rate_limit` filter |
+| Connection refused as "blocked by the outbound network guard" | `base_url` points at a private/reserved address | Add the host to the `aipc_outbound_allowlist` filter, or enable `aipc_allow_private_hosts`; loopback (Ollama/LM Studio) is allowed by default |
 | Delayed publish never happened | Same wp-cron issue (the `aipc_publish_post` event waits for cron) | Same; the handler is idempotent — a late wake-up still publishes |
 | Anonymous REST call returns 401 | Expected | Log in / use an app password with proper capabilities |
 | Publish options ignored over REST | Calling user lacks `publish_posts` | By design (`sanitize_args` drops them) |
@@ -77,10 +90,11 @@ failures — the log must stay clean.
 ## 6. Locked / stuck jobs
 
 Each running job holds a transient lock `aipc_lock_<job_id>` (600 s) so two
-browsers can't execute the same step concurrently. If a step died mid-flight
-(never happens with normal REST flow), the lock expires by itself; a job left
-in `running` is picked up by the next scheduler tick (cron source) or can be
-cancelled from the console.
+runners can't execute the same step concurrently. Since v1.6 the job is driven
+by its own background runner (`aipc_run_job` cron event, self-rescheduling
+every 30 s while work remains): a browser closing mid-run changes nothing. If
+a runner event is lost, the 15-min scheduler tick re-arms it for every
+`running` job; a lock left behind by a crashed run expires by itself.
 
 ## 7. Resetting to a clean state (dev only)
 

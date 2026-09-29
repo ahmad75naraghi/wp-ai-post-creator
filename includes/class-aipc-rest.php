@@ -26,7 +26,7 @@ final class AIPC_REST {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'start' ),
-				'permission_callback' => array( __CLASS__, 'can_edit' ),
+				'permission_callback' => array( __CLASS__, 'can_start' ),
 				'args'                => array(
 					'topic'           => array(
 						'type'              => 'string',
@@ -50,7 +50,25 @@ final class AIPC_REST {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'step' ),
-				'permission_callback' => array( __CLASS__, 'can_edit' ),
+				'permission_callback' => array( __CLASS__, 'can_step' ),
+				'args'                => array(
+					'job_id' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'since'  => array( 'type' => 'integer', 'sanitize_callback' => 'absint' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/state',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'state' ),
+				'permission_callback' => array( __CLASS__, 'can_state' ),
 				'args'                => array(
 					'job_id' => array(
 						'required'          => true,
@@ -145,6 +163,53 @@ final class AIPC_REST {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::NS,
+			'/topics/suggest',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'topics_suggest' ),
+				'permission_callback' => array( __CLASS__, 'can_manage' ),
+				'args'                => array(
+					'limit' => array( 'type' => 'integer', 'sanitize_callback' => 'absint' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/topics/add',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'topics_add' ),
+				'permission_callback' => array( __CLASS__, 'can_manage' ),
+				'args'                => array(
+					'texts'  => array(
+						'type'              => 'array',
+						'sanitize_callback' => array( __CLASS__, 'sanitize_topic_texts' ),
+					),
+					'source' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_key' ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Sanitize a list of topic texts (REST arg).
+	 *
+	 * @param array $texts Raw list.
+	 * @return array
+	 */
+	public static function sanitize_topic_texts( $texts ) {
+		$out = array();
+		foreach ( (array) $texts as $text ) {
+			$text = sanitize_text_field( (string) $text );
+			if ( '' !== $text ) {
+				$out[] = $text;
+			}
+		}
+		return array_slice( $out, 0, 30 );
 	}
 
 	/**
@@ -177,6 +242,78 @@ final class AIPC_REST {
 	 */
 	public static function can_manage() {
 		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * Permission: start a job (edit_posts + rate limit).
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function can_start() {
+		if ( ! self::can_edit() ) {
+			return false;
+		}
+		return self::rate_ok( 'start' );
+	}
+
+	/**
+	 * Permission: execute a step (edit_posts + rate limit).
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function can_step() {
+		if ( ! self::can_edit() ) {
+			return false;
+		}
+		return self::rate_ok( 'step' );
+	}
+
+	/**
+	 * Permission: watch job state (edit_posts + rate limit).
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function can_state() {
+		if ( ! self::can_edit() ) {
+			return false;
+		}
+		return self::rate_ok( 'state' );
+	}
+
+	/**
+	 * Per-user rolling rate limit for the agent endpoints. Limits are per
+	 * minute; 0 disables a limit. Filter: aipc_rest_rate_limit.
+	 *
+	 * @param string $route Route key (start|step|state).
+	 * @return true|WP_Error
+	 */
+	private static function rate_ok( $route ) {
+		$defaults = array(
+			'start' => 30,
+			'step'  => 240,
+			'state' => 300,
+		);
+		$limit = (int) apply_filters( 'aipc_rest_rate_limit', isset( $defaults[ $route ] ) ? $defaults[ $route ] : 60, $route );
+		if ( $limit <= 0 ) {
+			return true;
+		}
+		$user = get_current_user_id();
+		if ( $user <= 0 ) {
+			return true; // Anonymous callers are rejected by the capability check.
+		}
+
+		$bucket = (int) ( time() / MINUTE_IN_SECONDS );
+		$key    = 'aipc_rl_' . md5( $user . '|' . $route . '|' . $bucket );
+		$count  = (int) get_transient( $key );
+		if ( $count >= $limit ) {
+			return new WP_Error(
+				'aipc_rate',
+				__( 'Too many requests — please wait a moment and try again.', 'wp-ai-post-creator' ),
+				array( 'status' => 429 )
+			);
+		}
+		set_transient( $key, $count + 1, MINUTE_IN_SECONDS );
+		return true;
 	}
 
 	/**
@@ -273,7 +410,17 @@ final class AIPC_REST {
 		$key  = (string) $request->get_param( 'api_key' );
 
 		if ( '' !== $base ) {
-			$conn['base_url'] = untrailingslashit( esc_url_raw( $base ) );
+			$base = untrailingslashit( esc_url_raw( $base ) );
+			// SSRF guard for unsaved input (saved connections were already
+			// validated or grandfathered when they were stored).
+			if ( ! AIPC_Network::is_safe_url( $base ) ) {
+				return new WP_Error(
+					'aipc_config',
+					__( 'This base URL is blocked by the outbound network guard (private or reserved address).', 'wp-ai-post-creator' ),
+					array( 'status' => 400 )
+				);
+			}
+			$conn['base_url'] = $base;
 		}
 		if ( '' !== $key ) {
 			$conn['api_key'] = $key;
@@ -342,6 +489,21 @@ final class AIPC_REST {
 	}
 
 	/**
+	 * Read a job's current state WITHOUT executing anything — the console
+	 * polls this while the background runner drives the steps.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function state( $request ) {
+		$job = AIPC_Agent::instance()->get_job( (string) $request->get_param( 'job_id' ) );
+		if ( ! $job ) {
+			return new WP_Error( 'aipc_job', __( 'Job not found or expired. Please start again.', 'wp-ai-post-creator' ), array( 'status' => 404 ) );
+		}
+		return rest_ensure_response( AIPC_Agent::instance()->client_state( $job, (int) $request->get_param( 'since' ) ) );
+	}
+
+	/**
 	 * Cancel a job.
 	 *
 	 * @param WP_REST_Request $request Request.
@@ -387,6 +549,38 @@ final class AIPC_REST {
 			return new WP_Error( $result->get_error_code(), $result->get_error_message(), array( 'status' => 502 ) );
 		}
 		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Suggest topics from the configured research sources (RSS).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function topics_suggest( $request ) {
+		$suggestions = AIPC_Topic_Queue::suggest( (int) $request->get_param( 'limit' ) ? (int) $request->get_param( 'limit' ) : 12 );
+		return rest_ensure_response( array(
+			'suggestions' => $suggestions,
+			'count'       => count( $suggestions ),
+			'has_sources' => '' !== trim( (string) AIPC_Settings::get( 'source_sites' ) ),
+		) );
+	}
+
+	/**
+	 * Add topics to the queue (used by the suggestion picker and the form).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function topics_add( $request ) {
+		$texts  = (array) $request->get_param( 'texts' );
+		$source = 'rss' === (string) $request->get_param( 'source' ) ? 'rss' : 'manual';
+		$added  = AIPC_Topic_Queue::add_many( $texts, $source );
+		return rest_ensure_response( array(
+			'added'        => $added,
+			'skipped'      => count( $texts ) - $added,
+			'pending'      => AIPC_Topic_Queue::count_pending(),
+		) );
 	}
 
 	/**

@@ -159,13 +159,26 @@ final class AIPC_Connections {
 
 		self::persist( $kept );
 
-		// Steps pointing at the deleted connection fall back to the default.
+		// Steps pointing at the deleted connection fall back to the default —
+		// clean both the legacy single value and the fallback-chain array.
 		$steps = AIPC_Steps::all_config();
 		$dirty = false;
 		foreach ( $steps as $key => $cfg ) {
 			if ( ! empty( $cfg['connection'] ) && $cfg['connection'] === (string) $id ) {
 				$steps[ $key ]['connection'] = '';
 				$dirty = true;
+			}
+			if ( ! empty( $cfg['connections'] ) && is_array( $cfg['connections'] ) ) {
+				$kept_conn = array();
+				foreach ( $cfg['connections'] as $conn_id ) {
+					if ( (string) $conn_id !== (string) $id ) {
+						$kept_conn[] = $conn_id;
+					}
+				}
+				if ( count( $kept_conn ) !== count( $cfg['connections'] ) ) {
+					$steps[ $key ]['connections'] = $kept_conn;
+					$dirty                        = true;
+				}
 			}
 		}
 		if ( $dirty ) {
@@ -208,6 +221,12 @@ final class AIPC_Connections {
 		$base = isset( $in['base_url'] ) ? esc_url_raw( trim( (string) $in['base_url'] ) ) : '';
 		if ( '' === $base || 0 !== strpos( $base, 'http' ) ) {
 			$base = isset( $old['base_url'] ) ? $old['base_url'] : '';
+		} elseif ( ! AIPC_Network::is_safe_url( $base ) ) {
+			// SSRF guard: a NEW blocked host is refused. An unchanged stored
+			// one is grandfathered (add the aipc_outbound_allowlist filter or
+			// enable aipc_allow_private_hosts to use internal endpoints).
+			$old_base = isset( $old['base_url'] ) ? $old['base_url'] : '';
+			$base     = ( $old_base === $base ) ? $base : $old_base;
 		}
 
 		$key = isset( $in['api_key'] ) ? trim( (string) $in['api_key'] ) : '';

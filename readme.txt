@@ -4,11 +4,11 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.5.2
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Agent-style AI post generator for any OpenAI-compatible API — unlimited AI connections with per-step fallback chains, per-step prompts, post rewriting, internal linking, research sources, scheduled auto-publishing, complete logs and Bale notifications.
+Agent-style AI post generator for any OpenAI-compatible API — jobs run in the background on their own database table, unlimited AI connections with per-step fallback chains, per-step prompts, post rewriting, internal linking, research sources, a topic queue with smart suggestions, scheduled auto-publishing, a draft review inbox, complete logs and two-way Bale commands.
 
 == Description ==
 
@@ -20,6 +20,11 @@ It talks to **any OpenAI-compatible REST API** — OpenAI, OpenRouter, Groq, Dee
 * **Per-step routing** — assign every pipeline step its own connection: e.g. write with OpenAI and generate images with a different provider.
 * **Per-step prompt templates** — every step's prompt is editable, with a documented placeholder table. Untouched prompts stay in "default" mode and are auto-improved on plugin updates.
 * **Complete admin management panel** — connections manager, prompts & steps editor, and a logs panel with summary stats, usage per connection, full job history and per-job drilldown (step timings, every API call with model/tokens/duration/errors, console replay).
+
+**New in 1.7.0 — topic queue + two-way Bale commands:**
+
+* **Topic queue** — a FIFO bank of topics your schedules pull from, one per run, with smart suggestions pulled straight from your research sources' latest headlines (deduplicated against the queue and your recent posts)
+* **Two-way Bale commands** — drive the plugin from inside Bale: «نوشتن: a topic» starts a draft run in the background, «وضعیت» / «آخرین» / «صف» report on today's runs, the newest draft and the queue, and «انتشار» publishes it — only the chat IDs you configured are obeyed
 
 **New in 1.5.0 — rewrite, internal linking, auto-publish, fallback chains, research sources:**
 
@@ -125,6 +130,22 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.7.0 =
+* Topic queue: a FIFO bank of topics on the Schedule page — schedule entries with "Take the topic from the queue" consume the oldest pending topic on every run (falling back to their fixed topic or the site prompt when the queue is empty), so automated runs never repeat themselves
+* Smart topic suggestions: the "Suggest topics from my sources" button pulls fresh headlines from your configured research sources, strips source-name suffixes and drops duplicates against the queue and your recent posts (REST: /aipc/v1/topics/suggest + /topics/add)
+* Two-way Bale commands: with "Accept commands from Bale chats" enabled the bot polls for new messages every ~5 minutes and obeys the configured chats only — نوشتن: a topic starts a background draft run (max 20/day), وضعیت reports today's runs, آخرین shows the newest draft, انتشار [n] publishes it (Persian digits accepted), صف lists the queue and راهنما shows the command list
+* Processed update ids are persisted (last_update_id) so a command never runs twice; messages from unknown chats are ignored silently
+* Fix: trimming multi-byte punctuation could split a UTF-8 sequence in suggested topics
+
+= 1.6.0 =
+* Background job execution: a self-rescheduling cron event (aipc_run_job) drives every job server-side with a 600 s budget and automatic re-arming; the agent console became a read-only viewer polling the new /aipc/v1/state endpoint, so closing the tab never stops a run
+* Jobs live in a dedicated database table ({prefix}aipc_jobs) with automatic migration from the old option, light-row log queries, SQL counters for the scheduler and configurable retention (aipc_job_retention_days, default 90 days; 0 = keep forever) — with a transparent fallback to the option when the table cannot be created
+* SSRF hardening: new outbound network guard (AIPC_Network) validates every outbound URL — connection base URLs, research source sites and provider-returned image URLs; private/reserved IP ranges are blocked, loopback stays allowed for local LLMs (Ollama, LM Studio), and filters (aipc_outbound_allowlist, aipc_allow_private_hosts, aipc_allow_loopback) tune the policy
+* REST rate limiting per user and per minute on /start, /step and /state (30/240/300; HTTP 429); adjustable via the aipc_rest_rate_limit filter
+* New "Review drafts" page (edit_posts): all AI-generated drafts with status, word count, origin and modified time — edit, preview, one-click publish and rewrite-again actions
+* CI with GitHub Actions: PHP/JS syntax lint, translation completeness and the full php-wasm e2e suite (WordPress 6.7.1 on SQLite) on every push and pull request
+* Fix: deleting a connection now also cleans it out of every per-step fallback chain (and legacy single-connection step configs)
 
 = 1.5.2 =
 * Git connection settings: repository, branch and Personal Access Token (write-only, stored in a non-autoloaded option) — configurable right on the Update from Git page

@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.5.2)
+# AI Post Creator — Complete User Guide (v1.6.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -6,6 +6,8 @@ Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
 ---
 
 ## 1. Introduction
+
+💡 Most sections of the plugin's admin pages carry a small **"?"** icon — click it to expand a short explanation of what that section does. This guide covers all of them in depth.
 
 **AI Post Creator** turns your WordPress admin into a content agent. Set it up
 once, and the agent will:
@@ -100,9 +102,32 @@ Path: **AI Post Creator → New AI Post**
 usage. If a step fails after all retries, **Retry step** re-runs just that
 step; **Cancel** stops the agent anytime.
 
+**Background execution (new in 1.6):** the job runs on the server itself —
+you can close the browser tab and it keeps going. The console is just a live
+viewer, and it warns you if progress stalls for a while (for example when
+WP-Cron is not running on your site).
+
 **Internal linking:** while planning, the agent looks at your existing related
 posts and weaves up to 4 internal links naturally into the content — no action
 needed from you.
+
+---
+
+## 5.5. Draft review inbox (new in 1.6)
+
+Path: **AI Post Creator → Review drafts**
+
+Every AI-generated draft — manual or scheduled, new or rewritten — is
+collected on one page: title, status, word count, origin (manual / scheduled /
+rewrite) and the last-modified time. For each draft:
+
+- ✎ **Edit post** — open the WordPress editor
+- 👁 **Preview** — see the rendered result in your browser
+- 🚀 **Publish** — one-click publishing with a confirmation (users who can
+  publish only)
+- ♻️ **Rewrite** — send that very post straight to the Rewrite page
+
+Nothing goes live until you say so — the plugin's standing policy.
 
 ---
 
@@ -144,6 +169,23 @@ empty = auto-invented), run options and — new in 1.5 — **publish settings**
 > ⏱ **How "publish later" works:** the post is created as a draft as usual,
 > then a secure scheduled event publishes it at the chosen time (only if it is
 > still a draft) and sends a 🎉 Bale message to every recipient.
+
+### 📋 Topic queue (new in 1.7)
+
+On the same Schedule page, see the **Topic queue** card:
+
+- Schedule entries with **"Take the topic from the queue"** consume the oldest
+  pending topic when they fire; if the queue is empty they fall back to the
+  entry's fixed topic (or the site prompt).
+- **Add by hand:** type several topics, one per line, and press "Add to queue".
+- **Smart suggestions:** the **"Suggest topics from my sources"** button reads
+  the latest headlines from the research sources configured in Settings,
+  strips source-name suffixes and drops duplicates (against the queue *and*
+  your recent posts) — you tick the ones you like and they join the queue.
+- Used topics are remembered so they are never suggested twice; "Clear queue"
+  only removes the pending ones.
+
+> The queue is also visible from Bale — send the «صف» command (section 9).
 
 ---
 
@@ -189,6 +231,28 @@ variants). Per-recipient delivery results are written to the job log.
 
 **Periodic report:** daily or weekly — an activity summary (jobs, success/fail,
 drafts, tokens, usage per connection) at your chosen time/day.
+
+### 💬 Two-way Bale commands (new in 1.7)
+
+In the same Bale section, enable **"Accept commands from Bale chats"**. The
+bot then checks for new messages roughly every 5 minutes and obeys only the
+chat IDs configured on this page — messages from anywhere else are ignored
+silently.
+
+| Command | What it does |
+|---|---|
+| `نوشتن: a topic` | Starts a background draft run about that topic |
+| `وضعیت` | Today's runs, drafts awaiting review and queue state |
+| `آخرین` | The newest AI draft + its link |
+| `انتشار` or `انتشار ۲` | Publishes the newest (or 2nd) draft — Persian digits work |
+| `صف` | Pending topics in the queue |
+| `راهنما` | The full command list |
+
+- At most **20 posts per day** can be started from Bale (a cost guard).
+- When the draft is ready you get the usual image + summary + link message;
+  `انتشار` also fires the 🎉 published notification.
+- English aliases work too: `/new <topic>`, `status`, `latest`, `publish`,
+  `queue`, `help`.
 
 ---
 

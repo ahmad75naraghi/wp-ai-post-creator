@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.5.x   | ✅ |
+| 1.6.x   | ✅ |
+| 1.5.x   | ✅ (security fixes only) |
 | < 1.5   | ❌ — update first |
 
 ## Reporting a vulnerability
@@ -39,11 +40,48 @@ For reviewers and auditors — how the plugin handles sensitive data today:
 - **Uninstall** removes plugin data (options, post meta, cron events) only when
   the site owner explicitly enabled "Delete all plugin data on uninstall".
 
-### Known hardening roadmap (not yet implemented)
+### Outbound network guard (SSRF) — since v1.6.0
 
-- `base_url` and `source_sites` currently accept any `http(s)` host. In
-  multisite/hosted environments this can be used to make the server issue
-  requests to internal addresses (SSRF). Admin-only today (`manage_options`),
-  but private-IP/localhost blocking and allowlists are planned for 1.6.
-- REST endpoints do not yet rate-limit; combined with `edit_posts` they are
-  only as safe as your editors.
+All plugin-controlled outbound URLs go through `AIPC_Network::is_safe_url()`:
+
+- applied in `AIPC_Connections::sanitize()` (new values only — already-stored
+  URLs are grandfathered until changed), `AIPC_Settings::sanitize()`
+  (`source_sites`), the REST connection test, and `AIPC_API_Client::download()`
+  (provider-returned image URLs);
+- only `http`/`https`, no credentials in the URL;
+- blocked: private/reserved/CGNAT/multicast IPv4 ranges, IPv6 ULA/link-local/
+  multicast/IPv4-mapped ranges, and empty hosts;
+- loopback (`localhost`, `*.localhost`, `127.0.0.0/8`, `::1`) is **allowed by
+  default** so local LLM servers (Ollama, LM Studio) keep working.
+
+Filters:
+
+- `aipc_outbound_allowlist` — array of extra allowed hosts, exact or `*.suffix`
+  wildcard (`array( '10.1.2.3', '*.corp.example' )`);
+- `aipc_allow_private_hosts` — return `true` to allow all private ranges;
+- `aipc_allow_loopback` — return `false` to block loopback too.
+
+Hostnames are **not** DNS-resolved (a hostname resolving to a private IP is not
+detected). Strict environments should additionally define `WP_HTTP_BLOCK_EXTERNAL`
+with `WP_ACCESSIBLE_HOSTS` — WordPress then blocks non-allowlisted outbound
+requests for the whole site, independently of this guard.
+
+### Two-way Bale commands — since v1.7.0
+
+The bot only obeys messages from the chat IDs stored in the plugin settings
+(`AIPC_Bale::recipients()`); everything else is ignored without a reply.
+Processed update ids are persisted (`last_update_id`) so a command can never
+run twice, publishing is capped at the 10 newest AI drafts, and chat-started
+runs are limited to 20 per day.
+
+### REST rate limiting — since v1.6.0
+
+The agent endpoints (`/start`, `/step`, `/state`) enforce a per-user,
+per-minute limit (30/240/300; 0 disables) via rolling transients. Exceeding it
+returns HTTP 429 with code `aipc_rate`. Adjust with:
+
+```php
+add_filter( 'aipc_rest_rate_limit', function ( $limit, $route ) {
+    return 'start' === $route ? 10 : $limit;
+}, 10, 2 );
+```

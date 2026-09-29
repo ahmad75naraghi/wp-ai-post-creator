@@ -386,6 +386,11 @@ final class AIPC_API_Client {
 	 * @return string|WP_Error Raw bytes.
 	 */
 	public function download( $url ) {
+		// SSRF guard: providers can return arbitrary URLs.
+		if ( ! AIPC_Network::is_safe_url( $url ) ) {
+			return new WP_Error( 'aipc_image', __( 'The image URL was rejected by the outbound network guard.', 'wp-ai-post-creator' ) );
+		}
+
 		$response = wp_remote_get(
 			$url,
 			array(

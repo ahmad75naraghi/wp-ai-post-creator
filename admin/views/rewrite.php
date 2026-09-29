@@ -17,6 +17,9 @@ $aipc_posts    = get_posts( array(
 	'order'            => 'DESC',
 	'suppress_filters' => true,
 ) );
+
+// Preselect a post handed over by other screens (?post=ID, e.g. the review inbox).
+$aipc_preselect = isset( $_GET['post'] ) ? absint( wp_unslash( $_GET['post'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 ?>
 <div class="wrap aipc-wrap">
 
@@ -56,11 +59,14 @@ $aipc_posts    = get_posts( array(
 
 	<section class="aipc-card" id="aipc-form-card">
 		<form id="aipc-form" autocomplete="off">
-			<label class="aipc-label" for="aipc-rewrite-post"><?php esc_html_e( 'Post to rewrite', 'wp-ai-post-creator' ); ?></label>
+<div class="aipc-heading">
+				<label class="aipc-label" for="aipc-rewrite-post"><?php esc_html_e( 'Post to rewrite', 'wp-ai-post-creator' ); ?></label>
+				<?php aipc_help( 'rw-post', __( 'Pick the post to rewrite. The agent rewrites it in place: status, author, address and category stay untouched — only the content (and optionally the image and SEO metadata) is refreshed.', 'wp-ai-post-creator' ) ); ?>
+			</div>
 			<select id="aipc-rewrite-post" class="aipc-select" required>
 				<option value=""><?php esc_html_e( '— pick a post —', 'wp-ai-post-creator' ); ?></option>
 				<?php foreach ( $aipc_posts as $aipc_post ) : ?>
-					<option value="<?php echo esc_attr( $aipc_post->ID ); ?>">
+					<option value="<?php echo esc_attr( $aipc_post->ID ); ?>"<?php selected( $aipc_preselect, (int) $aipc_post->ID ); ?>>
 						<?php
 						echo esc_html(
 							wp_html_excerpt( $aipc_post->post_title, 80, '…' )

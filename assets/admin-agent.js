@@ -50,7 +50,9 @@
 		since: 0,
 		running: false,
 		abort: null,
-		t0: 0
+		t0: 0,
+		lastSig: null,
+		stalled: 0
 	};
 
 	function t(key) {
@@ -171,18 +173,39 @@
 	}
 
 	/* ------------------------------------------------------------------ */
-	/* Agent loop                                                         */
+	/* Agent loop (viewer: the background runner drives the steps, we      */
+	/* only poll the read-only /state endpoint)                            */
 	/* ------------------------------------------------------------------ */
+
+	function progressSignature(st) {
+		var done = 0;
+		(st.steps || []).forEach(function (s) {
+			if (s.status === 'done' || s.status === 'skipped') { done++; }
+		});
+		return done + '|' + (st.since || 0);
+	}
 
 	function loop() {
 		if (!state.running) {
 			return;
 		}
-		return api('step', { job_id: state.jobId, since: state.since }).then(function (st) {
+		return api('state', { job_id: state.jobId, since: state.since }).then(function (st) {
 			if (!state.running) {
 				return;
 			}
 			applyState(st);
+
+			var sig = progressSignature(st);
+			if (sig === state.lastSig) {
+				state.stalled = (state.stalled || 0) + 1;
+				if (state.stalled === 120) {
+					// ~90s without any progress while the job still runs.
+					log('warn', t('serverStalled'));
+				}
+			} else {
+				state.stalled = 0;
+			}
+			state.lastSig = sig;
 
 			if (st.status === 'done') {
 				success(st);
@@ -190,10 +213,8 @@
 				fail();
 			} else if (st.status === 'cancelled') {
 				setRunningUI(false);
-			} else if (st.busy) {
-				return sleep(1500).then(loop);
 			} else {
-				return sleep(350).then(loop);
+				return sleep(750).then(loop);
 			}
 		}).catch(function (err) {
 			if (!state.running) {

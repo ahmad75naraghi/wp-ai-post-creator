@@ -60,21 +60,40 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		}
 
 		if ( 'getUpdates' === $bale_method ) {
-			return array(
-				'body'     => json_encode( array(
-					'ok'     => true,
-					'result' => array(
-						array(
-							'update_id' => 1,
-							'message'   => array(
-								'message_id' => 1,
-								'from'       => array( 'id' => 11, 'first_name' => 'Test' ),
-								'chat'       => array( 'id' => 98765, 'first_name' => 'Test Person' ),
-								'text'       => '/start',
-							),
-						),
+			// The e2e suite can stage a scripted update list via the
+			// aipc_mock_bale_updates option (JSON array of updates); the
+			// default keeps the original /start message (chat 98765).
+			$aipc_default_updates = array(
+				array(
+					'update_id' => 1,
+					'message'   => array(
+						'message_id' => 1,
+						'from'       => array( 'id' => 11, 'first_name' => 'Test' ),
+						'chat'       => array( 'id' => 98765, 'first_name' => 'Test Person' ),
+						'text'       => '/start',
 					),
-				) ),
+				),
+			);
+			$aipc_staged = get_option( 'aipc_mock_bale_updates' );
+			$aipc_updates = is_string( $aipc_staged )
+				? json_decode( $aipc_staged, true )
+				: $aipc_staged;
+			if ( ! is_array( $aipc_updates ) ) {
+				$aipc_updates = $aipc_default_updates;
+			}
+
+			// Telegram/Bale offset semantics: return updates with a greater
+			// update_id than the posted offset (0/absent = everything).
+			$aipc_offset = isset( $bale_body['offset'] ) ? (int) $bale_body['offset'] : 0;
+			$aipc_out = array();
+			foreach ( $aipc_updates as $aipc_u ) {
+				if ( is_array( $aipc_u ) && isset( $aipc_u['update_id'] ) && (int) $aipc_u['update_id'] >= $aipc_offset ) {
+					$aipc_out[] = $aipc_u;
+				}
+			}
+
+			return array(
+				'body'     => json_encode( array( 'ok' => true, 'result' => $aipc_out ) ),
 				'response' => array( 'code' => 200, 'message' => 'OK' ),
 			);
 		}

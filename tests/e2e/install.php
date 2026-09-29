@@ -204,6 +204,11 @@ echo json_encode( array(
 		'daily_limit' => AIPC_Scheduler::daily_limit(),
 		'cron'        => (bool) wp_get_scheduled_event( AIPC_Scheduler::CRON_HOOK ),
 	),
+	'jobs_table'     => array(
+		'available'     => AIPC_Job_Store::available(),
+		'schema'        => (string) get_option( 'aipc_schema_version' ),
+		'runner_cron'   => (bool) wp_get_scheduled_event( AIPC_Scheduler::CRON_HOOK ),
+	),
 	'php'            => PHP_VERSION,
 	'gd'             => extension_loaded( 'gd' ),
 	'sqlite'         => extension_loaded( 'pdo_sqlite' ),

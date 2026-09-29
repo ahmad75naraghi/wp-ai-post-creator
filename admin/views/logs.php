@@ -24,6 +24,7 @@ $aipc_slice    = array_slice( $aipc_jobs, ( $aipc_paged - 1 ) * $aipc_per_page, 
  * @param string $status Job status.
  * @return string
  */
+if ( ! function_exists( 'aipc_status_badge' ) ) :
 function aipc_status_badge( $status ) {
 	$labels = array(
 		'running'   => array( __( 'Running', 'wp-ai-post-creator' ), 'run' ),
@@ -34,6 +35,7 @@ function aipc_status_badge( $status ) {
 	$label = isset( $labels[ $status ] ) ? $labels[ $status ] : array( $status, 'warn' );
 	return '<span class="aipc-badge aipc-badge-' . esc_attr( $label[1] ) . '">' . esc_html( $label[0] ) . '</span>';
 }
+endif;
 ?>
 <div class="wrap aipc-wrap">
 
@@ -52,7 +54,10 @@ function aipc_status_badge( $status ) {
 	<?php endif; ?>
 
 	<section class="aipc-card">
-		<h2>📈 <?php esc_html_e( 'Summary', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2>📈 <?php esc_html_e( 'Summary', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'logs-summary', __( 'Aggregate statistics across all jobs: totals, success/fail counts, API calls and token usage per connection.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<div class="aipc-stats-grid">
 			<div class="aipc-stat"><strong><?php echo esc_html( number_format_i18n( $aipc_stats['jobs'] ) ); ?></strong><span><?php esc_html_e( 'total jobs', 'wp-ai-post-creator' ); ?></span></div>
 			<div class="aipc-stat aipc-stat-ok"><strong><?php echo esc_html( number_format_i18n( $aipc_stats['done'] ) ); ?></strong><span><?php esc_html_e( 'successful', 'wp-ai-post-creator' ); ?></span></div>
@@ -88,7 +93,10 @@ function aipc_status_badge( $status ) {
 
 	<section class="aipc-card">
 		<div class="aipc-step-head">
-			<h2>🗒 <?php esc_html_e( 'Jobs', 'wp-ai-post-creator' ); ?> <span class="aipc-hint">(<?php echo esc_html( number_format_i18n( $aipc_total ) ); ?>)</span></h2>
+	<div class="aipc-heading">
+					<h2>🗒 <?php esc_html_e( 'Jobs', 'wp-ai-post-creator' ); ?> <span class="aipc-hint">(<?php echo esc_html( number_format_i18n( $aipc_total ) ); ?>)</span></h2>
+			<?php aipc_help( 'logs-jobs', __( 'Every run with its status, progress, call count and tokens. Open a row for the full diary: every step, every API call and every log line. Jobs are kept for 90 days by default.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 			<?php if ( $aipc_total ) : ?>
 				<a class="button aipc-danger" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_clear_logs' ), 'aipc_clear_logs' ) ); ?>"
 					onclick="return confirm('<?php echo esc_js( __( 'Delete ALL job logs? This cannot be undone.', 'wp-ai-post-creator' ) ); ?>');">🗑 <?php esc_html_e( 'Clear all logs', 'wp-ai-post-creator' ); ?></a>
@@ -112,32 +120,31 @@ function aipc_status_badge( $status ) {
 					</tr>
 				</thead>
 				<tbody>
-				<?php foreach ( $aipc_slice as $aipc_job ) : ?>
-					<?php
-					$aipc_done = 0;
-					foreach ( $aipc_job['steps'] as $aipc_s ) {
-						if ( in_array( $aipc_s['status'], array( 'done', 'skipped' ), true ) ) {
-							$aipc_done++;
-						}
-					}
-					$aipc_dur = max( 0, (int) $aipc_job['updated'] - (int) $aipc_job['created'] );
-					$aipc_post_id = ! empty( $aipc_job['post_id'] ) ? (int) $aipc_job['post_id'] : 0;
-					?>
-					<tr>
-						<td><?php echo esc_html( date_i18n( 'Y/m/d H:i', (int) $aipc_job['created'] ) ); ?></td>
-						<td>
-							<strong><?php echo esc_html( mb_substr( $aipc_job['topic'], 0, 70 ) ); ?></strong>
-							<?php if ( 'cron' === ( isset( $aipc_job['source'] ) ? $aipc_job['source'] : 'manual' ) ) : ?>
-								<span class="aipc-badge aipc-badge-cron">⏱ <?php esc_html_e( 'Scheduled', 'wp-ai-post-creator' ); ?></span>
-							<?php endif; ?>
-							<?php if ( $aipc_post_id ) : ?>
-								<a href="<?php echo esc_url( get_edit_post_link( $aipc_post_id, 'raw' ) ); ?>" target="_blank" rel="noopener">#<?php echo esc_html( $aipc_post_id ); ?></a>
-							<?php endif; ?>
-						</td>
-						<td><?php echo aipc_status_badge( $aipc_job['status'] ); // phpcs:ignore WordPress.Security.EscapeOutput ?></td>
-						<td><?php echo esc_html( $aipc_done . '/' . count( $aipc_job['steps'] ) ); ?></td>
-						<td><?php echo esc_html( number_format_i18n( $aipc_job['usage']['calls'] ) ); ?></td>
-						<td><?php echo esc_html( number_format_i18n( (int) $aipc_job['usage']['prompt'] + (int) $aipc_job['usage']['completion'] ) ); ?></td>
+					<?php foreach ( $aipc_slice as $aipc_job ) : ?>
+						<?php
+						$aipc_dur = max( 0, (int) $aipc_job['updated'] - (int) $aipc_job['created'] );
+						$aipc_post_id = ! empty( $aipc_job['post_id'] ) ? (int) $aipc_job['post_id'] : 0;
+						$aipc_steps_done = isset( $aipc_job['steps_done'] ) ? (int) $aipc_job['steps_done'] : 0;
+						$aipc_steps_total = isset( $aipc_job['steps_total'] ) ? (int) $aipc_job['steps_total'] : 0;
+						$aipc_calls = isset( $aipc_job['calls'] ) ? (int) $aipc_job['calls'] : 0;
+						$aipc_tokens = ( isset( $aipc_job['prompt_tokens'] ) ? (int) $aipc_job['prompt_tokens'] : 0 )
+							+ ( isset( $aipc_job['completion_tokens'] ) ? (int) $aipc_job['completion_tokens'] : 0 );
+						?>
+						<tr>
+							<td><?php echo esc_html( date_i18n( 'Y/m/d H:i', (int) $aipc_job['created'] ) ); ?></td>
+							<td>
+								<strong><?php echo esc_html( mb_substr( (string) $aipc_job['topic'], 0, 70 ) ); ?></strong>
+								<?php if ( 'cron' === ( isset( $aipc_job['source'] ) ? $aipc_job['source'] : 'manual' ) ) : ?>
+									<span class="aipc-badge aipc-badge-cron">⏱ <?php esc_html_e( 'Scheduled', 'wp-ai-post-creator' ); ?></span>
+								<?php endif; ?>
+								<?php if ( $aipc_post_id ) : ?>
+									<a href="<?php echo esc_url( get_edit_post_link( $aipc_post_id, 'raw' ) ); ?>" target="_blank" rel="noopener">#<?php echo esc_html( $aipc_post_id ); ?></a>
+								<?php endif; ?>
+							</td>
+							<td><?php echo aipc_status_badge( $aipc_job['status'] ); // phpcs:ignore WordPress.Security.EscapeOutput ?></td>
+							<td><?php echo esc_html( $aipc_steps_done . '/' . $aipc_steps_total ); ?></td>
+							<td><?php echo esc_html( number_format_i18n( $aipc_calls ) ); ?></td>
+							<td><?php echo esc_html( number_format_i18n( $aipc_tokens ) ); ?></td>
 						<td><?php echo esc_html( $aipc_dur . 's' ); ?></td>
 						<td>
 							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'aipc-logs', 'job' => $aipc_job['id'] ), admin_url( 'admin.php' ) ) ); ?>"><?php esc_html_e( 'Details', 'wp-ai-post-creator' ); ?></a> ·

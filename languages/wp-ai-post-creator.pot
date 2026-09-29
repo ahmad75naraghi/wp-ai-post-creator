@@ -18,6 +18,12 @@ msgstr ""
 msgid "%d API calls"
 msgstr ""
 
+#: admin/views/review.php
+msgid "%d draft waiting"
+msgid_plural "%d drafts waiting"
+msgstr[0] ""
+msgstr[1] ""
+
 #: includes/class-aipc-assets.php
 msgid "%d models loaded — pick one in the list."
 msgstr ""
@@ -58,6 +64,14 @@ msgstr ""
 msgid "1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024. The image model itself is set per connection."
 msgstr ""
 
+#: admin/views/schedule.php
+msgid "A FIFO bank of topics for the schedules above: an entry with “Take the topic from the queue” consumes the oldest pending topic each time it fires, then the queue moves on — so every run writes about something new. Fill it by hand, or pull fresh ideas from your research sources with the suggest button."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "A connection is one AI service: base URL, API key and the models to use. One connection is the default; steps without their own assignment use it. Use Test after saving to verify the setup."
+msgstr ""
+
 #: includes/class-aipc-bale.php
 msgid "A new AI post is published"
 msgstr ""
@@ -86,6 +100,10 @@ msgstr ""
 msgid "AI Post Creator — Settings"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "AI Post Creator — commands:"
+msgstr ""
+
 #: includes/class-aipc-admin.php
 msgid "AI Schedule"
 msgstr ""
@@ -104,6 +122,10 @@ msgstr ""
 
 #: admin/views/log-detail.php
 msgid "AI time (sum of steps)"
+msgstr ""
+
+#: admin/views/review.php
+msgid "AI-generated drafts waiting for your review. Publish, edit or rewrite them — nothing goes live until you say so."
 msgstr ""
 
 #: admin/views/connections.php
@@ -130,7 +152,11 @@ msgstr ""
 msgid "API key or endpoint is not configured. Open Settings and connect a provider first."
 msgstr ""
 
-#: admin/views/connections.php admin/views/logs.php admin/views/schedule.php
+#: admin/views/schedule.php
+msgid "Accept commands from Bale chats"
+msgstr ""
+
+#: admin/views/connections.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Actions"
 msgstr ""
 
@@ -156,6 +182,26 @@ msgstr ""
 
 #: admin/views/new-post.php includes/class-aipc-assets.php
 msgid "Add an OpenAI-compatible connection (URL + API key) to start generating posts."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Add selected to queue"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Add to queue"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Add topics (one per line)"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Added! Reloading…"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Adding…"
 msgstr ""
 
 #: admin/views/settings.php
@@ -196,6 +242,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Agent started — the topic will be invented from the site prompt."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Aggregate statistics across all jobs: totals, success/fail counts, API calls and token usage per connection."
 msgstr ""
 
 #: admin/views/logs.php
@@ -266,6 +316,10 @@ msgstr ""
 msgid "Bale chat ID is not configured."
 msgstr ""
 
+#: admin/views/schedule.php
+msgid "Bale is an Iranian messenger. The bot token comes from @Bot_Father; each chat ID receives the post’s featured image, summary and link when a run finishes (and a periodic report, if enabled). Delivery results are recorded in the job log."
+msgstr ""
+
 #: includes/class-aipc-bale.php
 msgid "Bale notification failed: %s"
 msgstr ""
@@ -292,6 +346,14 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "Base identity sent with every request, before the step prompt."
+msgstr ""
+
+#: includes/class-aipc-network.php
+msgid "Blocked: loopback hosts are disabled on this site (aipc_allow_loopback filter)."
+msgstr ""
+
+#: includes/class-aipc-network.php
+msgid "Blocked: the host is a private or reserved address. Add it to the “aipc_outbound_allowlist” filter (or enable “aipc_allow_private_hosts”) to allow it."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -350,6 +412,10 @@ msgstr ""
 msgid "Cancelled"
 msgstr ""
 
+#: admin/views/schedule.php
+msgid "Caps how many automatic posts may be created per calendar day (site timezone). 0 = unlimited. Today’s count is shown next to the field."
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Casual"
 msgstr ""
@@ -384,6 +450,18 @@ msgstr ""
 
 #: admin/views/logs.php
 msgid "Clear all logs"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Clear queue"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Commands: نوشتن: <topic> · وضعیت · آخرین · انتشار · صف · راهنما"
+msgstr ""
+
+#: admin/views/update.php
+msgid "Compares the installed version with the remote branch. A newer remote version means an update is available."
 msgstr ""
 
 #: admin/views/logs.php
@@ -474,6 +552,10 @@ msgstr ""
 msgid "Copywriting & SEO pass complete (%1$d → %2$d words)"
 msgstr ""
 
+#: includes/class-aipc-assets.php
+msgid "Could not add the topics:"
+msgstr ""
+
 #: includes/class-aipc-updater.php
 msgid "Could not create a temporary folder for the update."
 msgstr ""
@@ -495,11 +577,23 @@ msgid "Could not extract the update package."
 msgstr ""
 
 #: includes/class-aipc-assets.php
+msgid "Could not fetch suggestions:"
+msgstr ""
+
+#: includes/class-aipc-assets.php
 msgid "Could not load the model list:"
 msgstr ""
 
 #: includes/class-aipc-updater.php
 msgid "Could not move the current plugin folder to the backup location."
+msgstr ""
+
+#: admin/views/review.php
+msgid "Could not publish the draft. Please try again from the editor."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Could not publish: %s"
 msgstr ""
 
 #: includes/class-aipc-bale.php
@@ -542,6 +636,10 @@ msgstr ""
 msgid "Daily"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Daily limit reached: at most %d posts per day can be started from Bale. Try again tomorrow."
+msgstr ""
+
 #: includes/class-aipc-bale.php
 msgid "Daily report"
 msgstr ""
@@ -568,6 +666,10 @@ msgstr ""
 
 #: admin/views/settings.php
 msgid "Default length"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Default options for new runs: language, tone, length and the TOC/FAQ defaults. You can override them per run on the console page."
 msgstr ""
 
 #: admin/views/settings.php
@@ -638,6 +740,14 @@ msgstr ""
 msgid "Download the latest plugin files straight from the GitHub repository and replace this installation in place."
 msgstr ""
 
+#: admin/views/update.php
+msgid "Downloads the branch snapshot, verifies the plugin header, backs up the current files and swaps the new ones in — rolling back automatically if anything fails."
+msgstr ""
+
+#: admin/views/review.php
+msgid "Draft"
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "Draft created: #%d"
 msgstr ""
@@ -646,8 +756,20 @@ msgstr ""
 msgid "Draft post #%1$d · %2$d words"
 msgstr ""
 
+#: admin/views/review.php
+msgid "Draft published."
+msgstr ""
+
 #: includes/class-aipc-bale.php
 msgid "Drafts created: %d"
+msgstr ""
+
+#: admin/views/review.php
+msgid "Drafts waiting for review"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Drafts waiting for review: %d"
 msgstr ""
 
 #: admin/views/logs.php
@@ -656,6 +778,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Each entry starts one full agent run (a complete draft post) at the chosen time on the chosen days. The topic can be fixed — or left empty so the agent invents one from the site prompt."
+msgstr ""
+
+#: admin/views/prompts.php
+msgid "Each pipeline step can use its own connection, or an ordered fallback chain: if a provider keeps failing, the agent switches to the next one automatically. Empty = the default connection."
 msgstr ""
 
 #: admin/views/new-post.php
@@ -670,7 +796,7 @@ msgstr ""
 msgid "Edit connection"
 msgstr ""
 
-#: admin/views/log-detail.php admin/views/new-post.php admin/views/rewrite.php
+#: admin/views/log-detail.php admin/views/new-post.php admin/views/review.php admin/views/rewrite.php
 msgid "Edit post"
 msgstr ""
 
@@ -680,6 +806,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Empty = invented from the site prompt"
+msgstr ""
+
+#: includes/class-aipc-network.php
+msgid "Empty URL."
 msgstr ""
 
 #: includes/class-aipc-post-builder.php
@@ -726,8 +856,24 @@ msgstr ""
 msgid "Every 15 minutes (AI Post Creator)"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Every 5 minutes (AI Post Creator — Bale commands)"
+msgstr ""
+
+#: admin/views/review.php
+msgid "Every AI-generated draft lands here until you decide: edit, preview, publish with one click, or send it back for another rewrite. Nothing goes live until you say so."
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "Every HTTP request the agent made: step, connection, model, duration, tokens and any error — the ground truth when debugging provider problems."
+msgstr ""
+
 #: admin/views/logs.php
 msgid "Every agent run: status, timing, tokens, per-step API calls and the full console log."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Every run with its status, progress, call count and tokens. Open a row for the full diary: every step, every API call and every log line. Jobs are kept for 90 days by default."
 msgstr ""
 
 #: admin/views/connections.php
@@ -740,6 +886,10 @@ msgstr ""
 
 #: admin/views/settings.php
 msgid "Extra system instructions"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Extra system instructions appended to every step (brand rules, banned words…), and the uninstall data policy."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -790,6 +940,10 @@ msgstr ""
 msgid "Featured images"
 msgstr ""
 
+#: includes/class-aipc-assets.php
+msgid "Fetching suggestions from your sources…"
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "French"
 msgstr ""
@@ -802,7 +956,11 @@ msgstr ""
 msgid "Friendly"
 msgstr ""
 
-#: admin/views/new-post.php
+#: admin/views/schedule.php
+msgid "From sources"
+msgstr ""
+
+#: admin/views/new-post.php admin/views/review.php
 msgid "Generate post"
 msgstr ""
 
@@ -840,6 +998,10 @@ msgstr ""
 
 #: includes/class-aipc-settings.php
 msgid "Humorous"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "I did not understand that command. Send «راهنما» (or help) for the list of commands."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -906,7 +1068,7 @@ msgstr ""
 msgid "Job not found or already cleaned up."
 msgstr ""
 
-#: includes/class-aipc-agent.php
+#: includes/class-aipc-agent.php includes/class-aipc-rest.php
 msgid "Job not found or expired. Please start again."
 msgstr ""
 
@@ -950,7 +1112,7 @@ msgstr ""
 msgid "Loading models…"
 msgstr ""
 
-#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/new-post.php admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Logs"
 msgstr ""
 
@@ -960,6 +1122,10 @@ msgstr ""
 
 #: includes/class-aipc-connections.php
 msgid "Main connection"
+msgstr ""
+
+#: admin/views/review.php admin/views/schedule.php
+msgid "Manual"
 msgstr ""
 
 #: admin/views/schedule.php
@@ -986,6 +1152,10 @@ msgstr ""
 msgid "Model: %s"
 msgstr ""
 
+#: admin/views/review.php
+msgid "Modified"
+msgstr ""
+
 #: includes/class-aipc-updater.php
 msgid "Moving the new files into place failed — the previous version was restored."
 msgstr ""
@@ -998,7 +1168,7 @@ msgstr ""
 msgid "Neutral"
 msgstr ""
 
-#: admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "New AI Post"
 msgstr ""
 
@@ -1022,6 +1192,10 @@ msgstr ""
 msgid "No AI connection is configured yet. Add one under AI Post Creator → Connections."
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "No AI drafts yet — start one with «نوشتن: <topic>»."
+msgstr ""
+
 #: admin/views/log-detail.php
 msgid "No calls recorded."
 msgstr ""
@@ -1038,6 +1212,10 @@ msgstr ""
 msgid "No connections yet. Add your first one below."
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "No draft found at that position — send «آخرین» to see the newest draft."
+msgstr ""
+
 #: admin/views/logs.php
 msgid "No jobs yet. Generate your first post!"
 msgstr ""
@@ -1046,8 +1224,16 @@ msgstr ""
 msgid "No messages found. Send any message to your bot in Bale first, then try again."
 msgstr ""
 
+#: includes/class-aipc-assets.php
+msgid "No new topics found in your sources — try again later or add topics manually."
+msgstr ""
+
 #: admin/views/rewrite.php
 msgid "No posts found."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "No research sources are configured. Add them on the Settings page first."
 msgstr ""
 
 #: includes/class-aipc-bale.php
@@ -1066,6 +1252,10 @@ msgstr ""
 msgid "No topic given — invent the single best topic yourself. It must fit the site context AND the chosen category."
 msgstr ""
 
+#: admin/views/review.php
+msgid "Nothing to review. The agent always saves new posts as drafts — they will appear here."
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "Off"
 msgstr ""
@@ -1076,6 +1266,14 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "One chat ID per line — a person’s numeric ID or a @channel username. Send any message to your bot, then use the button below to detect it automatically."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Only chats listed in the plugin settings can use commands."
+msgstr ""
+
+#: includes/class-aipc-network.php
+msgid "Only http(s) URLs are allowed."
 msgstr ""
 
 #: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php includes/class-aipc-assets.php
@@ -1098,6 +1296,10 @@ msgstr ""
 msgid "Options"
 msgstr ""
 
+#: admin/views/review.php
+msgid "Origin"
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Other…"
 msgstr ""
@@ -1114,6 +1316,22 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Paused"
+msgstr ""
+
+#: admin/views/review.php
+msgid "Pending"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Pending topics are used one by one (oldest first). Nothing is wasted: used topics are remembered so they are never suggested again."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Pending topics in the queue: %d"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Pending topics: %d"
 msgstr ""
 
 #: admin/views/schedule.php
@@ -1136,6 +1354,10 @@ msgstr ""
 msgid "Pick a post to rewrite first."
 msgstr ""
 
+#: admin/views/rewrite.php
+msgid "Pick the post to rewrite. The agent rewrites it in place: status, author, address and category stay untouched — only the content (and optionally the image and SEO metadata) is refreshed."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Picks one of the existing categories and builds the topic from the site prompt."
 msgstr ""
@@ -1152,7 +1374,11 @@ msgstr ""
 msgid "Portuguese"
 msgstr ""
 
-#: includes/class-aipc-agent.php includes/class-aipc-scheduler.php
+#: includes/class-aipc-bale-commands.php
+msgid "Post published via a Bale command."
+msgstr ""
+
+#: includes/class-aipc-admin.php includes/class-aipc-agent.php includes/class-aipc-scheduler.php
 msgid "Post published."
 msgstr ""
 
@@ -1170,6 +1396,14 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Posts are always created as drafts first; pick what happens next."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Posts are always saved as drafts first. Here you choose what happens next: keep it as a draft (the safe default), publish immediately when the run finishes, or schedule publishing 15–10080 minutes later. Publishing needs the publish permission."
+msgstr ""
+
+#: admin/views/review.php
+msgid "Preview"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1208,8 +1442,24 @@ msgstr ""
 msgid "Prompts & assignments saved."
 msgstr ""
 
-#: admin/views/schedule.php
+#: admin/views/prompts.php
+msgid "Prompts are the instructions sent to the AI for each step. A prompt left exactly at its default stays in “default” mode and is improved automatically on plugin updates; editing it freezes your own version."
+msgstr ""
+
+#: admin/views/review.php admin/views/schedule.php
 msgid "Publish"
+msgstr ""
+
+#: admin/views/review.php
+msgid "Publish “%s” now?"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Queue"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Queue cleared."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1220,12 +1470,24 @@ msgstr ""
 msgid "Rank Math summary: %s"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Ready-made endpoint patterns for popular providers — copy your provider’s pattern into the connection form above."
+msgstr ""
+
 #: admin/views/update.php
 msgid "Reinstall anyway (also when the branch is not newer)"
 msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "Reminder of the internal links that must survive the revision"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Remove"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Remove every pending topic from the queue?"
 msgstr ""
 
 #: admin/views/update.php
@@ -1276,8 +1538,16 @@ msgstr ""
 msgid "Retrying failed step…"
 msgstr ""
 
+#: admin/views/review.php includes/class-aipc-admin.php
+msgid "Review drafts"
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Revises the whole draft for copy quality, SEO and originality."
+msgstr ""
+
+#: admin/views/review.php
+msgid "Rewrite"
 msgstr ""
 
 #: admin/views/rewrite.php
@@ -1294,7 +1564,7 @@ msgid_plural "Rewrite plan ready — %d sections."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/new-post.php admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Rewrite post"
 msgstr ""
 
@@ -1320,6 +1590,10 @@ msgstr ""
 
 #: admin/views/logs.php
 msgid "Running"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Runs: %1$d (⏳ %2$d · ✅ %3$d · ❌ %4$d)"
 msgstr ""
 
 #: includes/class-aipc-settings.php
@@ -1386,7 +1660,7 @@ msgstr ""
 msgid "Schedule settings saved."
 msgstr ""
 
-#: admin/views/logs.php
+#: admin/views/logs.php admin/views/review.php
 msgid "Scheduled"
 msgstr ""
 
@@ -1474,8 +1748,16 @@ msgstr ""
 msgid "Starting the agent…"
 msgstr ""
 
-#: admin/views/log-detail.php admin/views/logs.php admin/views/schedule.php
+#: admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Status"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: draft — send «انتشار» to publish it."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: published"
 msgstr ""
 
 #: admin/views/log-detail.php
@@ -1494,6 +1776,10 @@ msgstr ""
 msgid "Storytelling"
 msgstr ""
 
+#: admin/views/schedule.php
+msgid "Suggest topics from my sources"
+msgstr ""
+
 #: admin/views/logs.php
 msgid "Summary"
 msgstr ""
@@ -1508,6 +1794,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Tags: %s"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Take the topic from the queue"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1550,16 +1840,16 @@ msgstr ""
 msgid "The FAQ step returned no usable questions. Please retry."
 msgstr ""
 
+#: includes/class-aipc-network.php
+msgid "The URL has no host."
+msgstr ""
+
 #: admin/views/new-post.php
 msgid "The agent always picks one of your existing post categories and builds the topic from the site prompt."
 msgstr ""
 
 #: admin/views/rewrite.php
 msgid "The agent analyzes the post, rewrites every paragraph (keeping the facts and the links), refreshes the SEO metadata and can generate a new featured image."
-msgstr ""
-
-#: includes/class-aipc-assets.php
-msgid "The agent is working — keep this tab open."
 msgstr ""
 
 #: admin/views/schedule.php
@@ -1575,7 +1865,19 @@ msgid "The agent rewrites the post live — you can cancel anytime."
 msgstr ""
 
 #: includes/class-aipc-assets.php
+msgid "The agent runs on the server — you can close this tab, it keeps going."
+msgstr ""
+
+#: includes/class-aipc-assets.php
 msgid "The agent stopped with an error. You can retry the failed step."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless allowlisted."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "The bot checks for new messages every ~5 minutes (via WP-Cron) and only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Up to 20 posts per day can be started from Bale."
 msgstr ""
 
 #: includes/class-aipc-updater.php
@@ -1588,6 +1890,10 @@ msgstr ""
 
 #: admin/views/update.php
 msgid "The button downloads the repository snapshot, verifies the plugin header, backs up the current files to wp-content/aipc-backups and swaps the new files in. If anything fails, the previous version is restored automatically."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "The console is a live viewer: the job runs on the server, so you can close this tab and it keeps going. Steps, logs and progress update automatically while the agent works — and if a step fails after all retries, the Retry button re-runs only that step."
 msgstr ""
 
 #: admin/views/schedule.php
@@ -1614,12 +1920,28 @@ msgstr ""
 msgid "The full assembled draft HTML"
 msgstr ""
 
+#: admin/views/settings.php
+msgid "The global switch and size for AI featured images. The image model is set per connection; if image generation fails on every provider, the post is still saved — just without an image."
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "The human-readable diary of the run, exactly as it was shown live in the console."
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "The image URL was rejected by the outbound network guard."
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "The image prompt step failed."
 msgstr ""
 
 #: includes/class-aipc-updater.php
 msgid "The installed plugin folder was not found."
+msgstr ""
+
+#: admin/views/log-detail.php
+msgid "The job’s identity card: topic, mode, source (manual or scheduled), result and timing."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -1642,8 +1964,16 @@ msgstr ""
 msgid "The outline was empty or malformed. Please retry."
 msgstr ""
 
+#: admin/views/log-detail.php
+msgid "The pipeline checklist of this run: done, skipped (e.g. the image), failed or pending."
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "The plan did not include a title. Please retry."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "The plugin checks every 15 minutes (via WP-Cron) and fires the earliest due entry: one full agent run per tick. Missed times are caught up on the next tick the same day, and an entry never fires twice on the same day."
 msgstr ""
 
 #: includes/class-aipc-updater.php
@@ -1668,6 +1998,10 @@ msgstr ""
 
 #: includes/class-aipc-api-client.php
 msgid "The provider returned no image data."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "The queue is empty. Add topics below or suggest them from your research sources."
 msgstr ""
 
 #: admin/views/update.php
@@ -1714,8 +2048,16 @@ msgstr ""
 msgid "The scheduler runs every 15 minutes. Next tick: %1$s (site timezone: %2$s)."
 msgstr ""
 
+#: includes/class-aipc-assets.php
+msgid "The server-side runner seems stalled — progress has not changed for a while. Check that WP-Cron works on your site (see the Schedule page)."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "The site prompt (or a fallback note)"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "The site prompt tells the agent what this site is about: purpose, audience and voice. It drives topic invention, category choice and the writing style of every run — the single most important setting of the plugin."
 msgstr ""
 
 #: admin/views/update.php
@@ -1726,6 +2068,22 @@ msgstr ""
 msgid "The token was rejected (HTTP %d)."
 msgstr ""
 
+#: includes/class-aipc-topic-queue.php
+msgid "The topic is empty."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "The topic is too short — send e.g. «نوشتن: balcony gardening»."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "The topic queue is empty. Add topics on the Schedule page."
+msgstr ""
+
+#: includes/class-aipc-topic-queue.php
+msgid "The topic queue is full."
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "The user suggests this topic: \"%s\" — build the article around it, adapted to the site context."
 msgstr ""
@@ -1734,8 +2092,16 @@ msgstr ""
 msgid "The user’s topic hint, or “invent one” instruction"
 msgstr ""
 
+#: includes/class-aipc-rest.php
+msgid "This base URL is blocked by the outbound network guard (private or reserved address)."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "This section’s heading"
+msgstr ""
+
+#: includes/class-aipc-topic-queue.php
+msgid "This topic is already in the queue: %s"
 msgstr ""
 
 #: admin/views/log-detail.php admin/views/schedule.php
@@ -1754,8 +2120,16 @@ msgstr ""
 msgid "Tip: leaving a prompt exactly as its default keeps it in “default” mode (auto-improved on plugin updates)."
 msgstr ""
 
+#: admin/views/review.php
+msgid "Title"
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Title of the post being rewritten"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Today’s status"
 msgstr ""
 
 #: admin/views/logs.php
@@ -1778,6 +2152,10 @@ msgstr ""
 msgid "Tone / length / language"
 msgstr ""
 
+#: includes/class-aipc-rest.php
+msgid "Too many requests — please wait a moment and try again."
+msgstr ""
+
 #: admin/views/log-detail.php admin/views/schedule.php
 msgid "Topic"
 msgstr ""
@@ -1798,6 +2176,22 @@ msgstr ""
 msgid "Topic brief from the plan step"
 msgstr ""
 
+#: admin/views/schedule.php
+msgid "Topic queue"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Topic removed."
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "Topic: leave it empty and the agent invents a fresh topic from the site prompt — it also checks your existing posts to avoid duplicates. Write your own idea and the whole article is built around it."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Topics added to the queue."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Total section count"
 msgstr ""
@@ -1808,6 +2202,10 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "Turns the topic + Rank Math summary into an image-generation prompt."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Two-way commands"
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -1887,6 +2285,10 @@ msgid "WP-Cron is disabled on this site. Make sure a real server cron job calls 
 msgstr ""
 
 #: admin/views/schedule.php
+msgid "WP-Cron only runs when the site receives visits. On low-traffic sites, disable it in wp-config.php and call wp-cron.php from a real system cron every minute — this panel shows whether the ticks are actually happening."
+msgstr ""
+
+#: admin/views/schedule.php
 msgid "Weekly"
 msgstr ""
 
@@ -1894,12 +2296,28 @@ msgstr ""
 msgid "Weekly report"
 msgstr ""
 
+#: includes/class-aipc-admin.php
+msgid "What is this section for?"
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "What this section must cover"
 msgstr ""
 
+#: admin/views/schedule.php
+msgid "When this entry fires, it takes the oldest pending topic from the topic queue (box above). If the queue is empty it falls back to the fixed topic field — or to the site prompt when that is empty too."
+msgstr ""
+
+#: admin/views/update.php
+msgid "Where updates come from: the GitHub repository, the branch to track, and an optional Personal Access Token for private repositories (write-only, stored on your site only)."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Word target for this section"
+msgstr ""
+
+#: admin/views/review.php
+msgid "Words"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1972,6 +2390,10 @@ msgstr ""
 
 #: admin/views/settings.php
 msgid "e.g. Always address the reader as “you” and include practical examples."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "e.g. Growing mushrooms at home&#10;A small balcony water garden"
 msgstr ""
 
 #: admin/views/connections.php
@@ -2054,12 +2476,48 @@ msgstr ""
 msgid "••••• (saved — leave empty to keep)"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "…and %d more"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "…and %d more in the queue."
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "⏱ +%d min"
 msgstr ""
 
 #: admin/views/new-post.php admin/views/schedule.php
 msgid "⏱ Publish later"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "✍️ Got it — I’m writing a draft about “%s” now. I’ll message you here as soon as it’s ready."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "✍️ نوشتن: <topic> — start a new draft about the topic"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "❓ راهنما — this list"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "📄 آخرین — the newest AI draft"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "📊 وضعیت — today’s runs, drafts and queue"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "📋 Pending topics (%d):"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "📋 صف — pending topics in the queue"
 msgstr ""
 
 #: admin/views/schedule.php
@@ -2076,4 +2534,12 @@ msgstr ""
 
 #: admin/views/new-post.php admin/views/schedule.php
 msgid "🚀 Publish immediately"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "🚀 Published: %s"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "🚀 انتشار [number] — publish the newest (or n-th) draft"
 msgstr ""

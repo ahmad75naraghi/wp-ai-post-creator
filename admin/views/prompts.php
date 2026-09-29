@@ -40,6 +40,8 @@ $aipc_msg      = isset( $_GET['aipc_msg'] ) ? sanitize_key( wp_unslash( $_GET['a
 		<div class="aipc-sticky-actions">
 			<button type="submit" class="button button-primary">💾 <?php esc_html_e( 'Save all', 'wp-ai-post-creator' ); ?></button>
 			<span class="aipc-hint"><?php esc_html_e( 'Tip: leaving a prompt exactly as its default keeps it in “default” mode (auto-improved on plugin updates).', 'wp-ai-post-creator' ); ?></span>
+			<?php aipc_help( 'pr-chains', __( 'Each pipeline step can use its own connection, or an ordered fallback chain: if a provider keeps failing, the agent switches to the next one automatically. Empty = the default connection.', 'wp-ai-post-creator' ) ); ?>
+			<?php aipc_help( 'pr-prompts', __( 'Prompts are the instructions sent to the AI for each step. A prompt left exactly at its default stays in “default” mode and is improved automatically on plugin updates; editing it freezes your own version.', 'wp-ai-post-creator' ) ); ?>
 		</div>
 
 		<?php foreach ( $aipc_registry as $aipc_step => $aipc_meta ) : ?>

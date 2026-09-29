@@ -55,7 +55,9 @@ python3 tests/e2e/make-translations.py
 cd <E2E_WORKSPACE> && node e2e.js
 ```
 
-Run all four before every commit. The e2e phase-2 JSON must contain **no `false`**
+Run all four before every commit — CI (`.github/workflows/ci.yml`) runs the
+same checks on GitHub runners for every push/PR and blocks merges while red.
+The e2e phase-2 JSON must contain **no `false`**
 boolean leaf — a helper to check is:
 
 ```bash
@@ -111,6 +113,15 @@ block with all assertion groups.
   (find the sha via `git ls-remote origin refs/heads/arena/01a0de38-wp-ai-post-creator`).
 - **No PHP CLI**, apt is blocked, GitHub release binaries fail SSL.
   `codeload.github.com`, `api.github.com` and `registry.npmjs.org` work.
+- **wp-sqlite-db (e2e drop-in) SQL quirks** — all verified the hard way:
+  - `SELECT 1 FROM <missing table>` returns **int(1)**, not false — an
+    existence probe must use `SHOW TABLES LIKE` (`AIPC_Job_Store::table_exists`).
+  - `DROP TABLE` inside a php-wasm request is **silently ignored** — never rely
+    on it in tests; wipe `wp-content/database/*` files instead (install.php does).
+  - `dbDelta` on an **existing** table sees SQLite's type mapping (VARCHAR→TEXT)
+    as a diff and issues `ALTER TABLE … CHANGE COLUMN`, which the drop-in fails
+    with a `trim(null)` deprecation — so `ensure_table()` must only dbDelta when
+    the table is missing, never to "upgrade" it.
 - **`gh pr edit` fails** (GraphQL "Projects (classic)" error). Update PR #1 with
   REST instead: `gh api -X PATCH repos/ahmad75naraghi/wp-ai-post-creator/pulls/1
   --input <json with title/body>`.
@@ -122,21 +133,26 @@ block with all assertion groups.
 | Path | Role |
 |---|---|
 | `wp-ai-post-creator.php` | Bootstrap: constants, requires, activation, cron hooks, admin-bar link |
-| `includes/class-aipc-agent.php` | The state machine: jobs, step manifests, chain-retry loop, all `step_*()` implementations, context helpers, stats |
+| `includes/class-aipc-agent.php` | The state machine: job facade over `AIPC_Job_Store`, step manifests, chain-retry loop, all `step_*()` implementations, context helpers, stats |
 | `includes/class-aipc-steps.php` | 13-step registry (prompts + kinds) and per-step `connections[]` config |
 | `includes/class-aipc-post-builder.php` | Assembles/saves posts (`create()` new, `update()` rewrite), TOC/FAQ HTML, SEO meta, featured image |
 | `includes/class-aipc-connections.php` | CRUD + sanitize for AI connections (write-only API keys) |
-| `includes/class-aipc-api-client.php` | OpenAI-compatible HTTP client: chat (JSON extraction + corrective retries), images, models; one internal retry on 429/5xx |
-| `includes/class-aipc-scheduler.php` | Cron tick (every 15 min), schedule entries, daily limit, `aipc_publish_post` handler |
-| `includes/class-aipc-bale.php` | Bale Bot API: notify per post, publish notifications, periodic reports |
+| `includes/class-aipc-api-client.php` | OpenAI-compatible HTTP client: chat (JSON extraction + corrective retries), images, models, downloads (guard-checked); one internal retry on 429/5xx |
+| `includes/class-aipc-job-store.php` | Jobs storage: `{prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
+| `includes/class-aipc-network.php` | Outbound network guard (SSRF): `is_safe_url()`/`validate_url()`, private-range blocking, allowlist + loopback filters |
+| `includes/class-aipc-scheduler.php` | Cron tick (every 15 min, safety net), schedule entries, daily limit, `aipc_publish_post` handler, background runner (`aipc_run_job`) |
+| `includes/class-aipc-bale.php` | Bale Bot API: notify per post, publish notifications, periodic reports, getUpdates |
+| `includes/class-aipc-bale-commands.php` | Two-way Bale commands: 5-min poll, authorized chats only, written-topic runs (source `bale`, daily cap) |
+| `includes/class-aipc-topic-queue.php` | FIFO topic queue (pending/used, dedup memory) + RSS topic suggestions |
 | `includes/class-aipc-settings.php` | Plugin settings incl. `site_prompt`, `source_sites`, defaults for tone/length/language |
-| `includes/class-aipc-rest.php` | REST namespace `aipc/v1` (start/step/cancel/retry, connection, bale) |
+| `includes/class-aipc-rest.php` | REST namespace `aipc/v1` (start/step/state/cancel/retry with per-user rate limits, connection, bale, topics suggest/add) |
 | `includes/class-aipc-admin.php` | Menu, admin-post handlers, view rendering |
 | `includes/class-aipc-assets.php` | Per-screen JS/CSS + `wp_add_inline_script` config for the console |
-| `admin/views/*.php` | One template per screen (new-post, rewrite, connections, prompts, schedule, settings, logs, log-detail) |
-| `assets/admin-agent.js` | The live console driver (poll loop, retry/cancel, publish controls) |
+| `admin/views/*.php` | One template per screen (new-post, rewrite, review, connections, prompts, schedule, settings, logs, log-detail) |
+| `assets/admin-agent.js` | The console viewer: polls the read-only `/state` endpoint while the background runner drives the job; retry/cancel, publish controls |
 | `tests/e2e/` | `e2e.js` (runner), `install.php`, `drive.php` (assertions), `mock-api.php` (AI/Bale/RSS mocks), `lint.js`, `make-translations.py` |
-| `languages/` | `wp-ai-post-creator.pot`, `-fa_IR.po/.mo` (468 msgids, incl. 2 plural entries) |
+| `languages/` | `wp-ai-post-creator.pot`, `-fa_IR.po/.mo` (540 msgids, incl. 3 plural entries) |
+| Root/community MDs | `README.md`, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`, `SUPPORT.md`, `CODE_OF_CONDUCT.md`, `AGENTS.md`, `LICENSE` (GPL-2.0), `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/workflows/ci.yml` |
 
 ## Conventions that matter
 
@@ -184,10 +200,26 @@ breaks naive matching — match exact tab counts or use line-based surgery).
 - **`aipc_post_created` fires once per job** from `execute_step()` when the
   finished state is saved — do not also fire it from `step_*finalize()` or Bale
   will notify twice.
+- **`trim()` with a multi-byte character mask operates on BYTES** and can split
+  a UTF-8 sequence (e.g. trimming `«»،` from a string starting with `خ` deletes
+  its first byte). Use a `/u` regex instead — see `AIPC_Topic_Queue::clean_title`.
+- **Bale command replies must start with a stable emoji** (✍️📊📄🚀📋🤖) — the
+  e2e suite matches replies by emoji because the surrounding text is translated.
+- **`create_job()` whitelists the `source` column** (`cron`, `bale`, else
+  `manual`) — a new source value needs a whitelist entry AND its own
+  `Job_Store::count_since()` assertions (daily caps key off it).
+- **Never run two edit_file calls on the SAME file in one parallel batch** —
+  each is applied to the same base snapshot and the last writer silently drops
+  the others' changes (this corrupted class-aipc-agent.php and class-aipc-rest.php
+  during v1.6). Sequential edits or a Python patch script with `assert`ed
+  anchors only (see "Patching strategy").
 - **drive.php style:** named closures + `foreach`, `use ($log_file)` on closures
   that need outer variables; no nested `array_map(array_filter(closure))` one-liners.
 - **install.php** sets `WP_INSTALLING` before requiring `wp-load.php` and clears
   `wp-content/database/*` + `mock-api-log.jsonl` for a fresh run.
+- **Run e2e on Node 22+** — under Node 20 the php-wasm host-filesystem layer
+  fails the Git-updater group (false `update_ok`/`backup_ok` leaves). CI pins
+  Node 22; the sandbox default (v22) is fine.
 - **The .mo is compiled by hand** (`make-translations.py`) — if you change the
   header or plural handling, verify with a real `load_textdomain()` round-trip
   in the e2e run (the `i18n_fa` group covers this).
@@ -207,9 +239,10 @@ REST PATCH, confirm mergeable.
 Full plan with rationale and the binding decision log:
 [`docs/ROADMAP.md`](docs/ROADMAP.md). Summary:
 
-- **1.6 — infrastructure:** CI (GitHub Actions running this e2e), custom DB table
-  for jobs + schema versioning, Action Scheduler / true background execution,
-  SSRF hardening + REST rate limiting.
+- **1.6 — infrastructure (SHIPPED in v1.6.0):** CI (GitHub Actions running this
+  e2e), custom DB table for jobs + schema versioning, self-rescheduling cron
+  runner for true background execution (no Action Scheduler — decision D4),
+  SSRF hardening + REST rate limiting, plus a draft review inbox.
 - **1.7 — content/SEO:** topic clusters (pillar–cluster), topic queue + content
   calendar, automatic old-post refresh schedules, E-E-A-T signals.
 - **1.8 — distribution:** wp.org submission prep, freemium/Pro licensing, SaaS-y

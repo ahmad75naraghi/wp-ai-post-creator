@@ -16,7 +16,7 @@ AI agents working on the code. For usage, see the user guides
 | Registration | Purpose |
 |---|---|
 | `AIPC_Agent::register_static()` | cron `aipc_daily_cleanup` (job GC) |
-| `AIPC_Scheduler::register()` | `cron_schedules` filter (`aipc_quarter_hour`, 900 s), `aipc_cron_tick`, **`aipc_publish_post`** |
+| `AIPC_Scheduler::register()` | `cron_schedules` filter (`aipc_quarter_hour`, 900 s), `aipc_cron_tick`, **`aipc_publish_post`**, **`aipc_run_job`** (background runner) |
 | `AIPC_Bale::register()` | `aipc_post_created`, `aipc_post_published` |
 | `AIPC_Rest::register()` | REST namespace `aipc/v1` |
 | `AIPC_Admin::register()` | menu + `admin_post_*` handlers + settings |
@@ -30,9 +30,13 @@ the admin bar gets "New AI Post" + "Rewrite post" shortcuts for users with
 
 | Class (file) | ~LOC | Responsibility |
 |---|---|---|
-| `AIPC_Agent` (`class-aipc-agent.php`) | 2119 | The heart: job CRUD, step manifests, the chain-retry execution loop, every `step_*()` implementation, context helpers (recent posts, link candidates, RSS sources), stats |
-| `AIPC_Bale` (`class-aipc-bale.php`) | 609 | Bale Bot API client: per-post notify (sendPhoto/sendMessage), publish notify, periodic reports, chat-ID detection |
-| `AIPC_Scheduler` (`class-aipc-scheduler.php`) | 538 | Cron tick, entries, daily limit, catch-up state, `aipc_publish_post` handler |
+| `AIPC_Agent` (`class-aipc-agent.php`) | ~2100 | The heart: job facade over `AIPC_Job_Store`, step manifests, the chain-retry execution loop, every `step_*()` implementation, context helpers (recent posts, link candidates, RSS sources), stats |
+| `AIPC_Bale` (`class-aipc-bale.php`) | ~680 | Bale Bot API client: per-post notify (sendPhoto/sendMessage), publish notify, periodic reports, chat-ID detection, `getUpdates` with offset |
+| `AIPC_Bale_Commands` (`class-aipc-bale-commands.php`) | ~430 | Two-way Bale: 5-min poll (safety net on the scheduler tick), command parsing (نوشتن/وضعیت/آخرین/انتشار/صف/راهنما), authorized-chats-only, daily cap, `last_update_id` persistence |
+| `AIPC_Topic_Queue` (`class-aipc-topic-queue.php`) | ~330 | FIFO topic bank (option-backed, pending/used with dedup memory), RSS suggestions (cleaned headlines, deduped vs queue + recent posts) |
+| `AIPC_Scheduler` (`class-aipc-scheduler.php`) | ~660 | Cron tick, entries (incl. `use_queue`), daily limit, catch-up state, `aipc_publish_post` handler, **background runner** (`aipc_run_job`) |
+| `AIPC_Job_Store` (`class-aipc-job-store.php`) | ~390 | Jobs storage: `{$wpdb->prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
+| `AIPC_Network` (`class-aipc-network.php`) | ~150 | Outbound network guard (SSRF): `is_safe_url()` / `validate_url()`, private-range blocking, allowlist + loopback filters |
 | `AIPC_API_Client` (`class-aipc-api-client.php`) | 491 | OpenAI-compatible HTTP: chat completions (JSON extraction + corrective retries), image generations, model listing; one internal retry on 429/5xx |
 | `AIPC_Steps` (`class-aipc-steps.php`) | 478 | 13-step registry (label, kind, default prompt, placeholders) + per-step config storage |
 | `AIPC_Admin` (`class-aipc-admin.php`) | 464 | Menu (7 pages), `admin_post_*` form handlers, view rendering |
@@ -50,7 +54,8 @@ the admin bar gets "New AI Post" + "Rewrite post" shortcuts for users with
 | `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `image_enabled`, `image_size`, `add_toc`, `add_faq`, `system_prompt_extra`, `delete_on_uninstall` |
 | `aipc_connections` | array of `{id (c_*), name, base_url, api_key, chat_model, image_model, temperature (0–2, default 0.7), max_tokens (≤16000), request_timeout (≥15), is_default}` — keys never leave the server |
 | `aipc_steps` | `{step_id: {connections: [conn_id,…] (ordered fallback chain), prompt: '' = default}}` — reads also accept legacy `connection` (string) |
-| `aipc_jobs` (autoload off) | last 30 jobs, each: `id (job_*)`, `status` (`running`/`done`/`error`/`cancelled`), `mode` (`new`/`rewrite`), `topic`, `source` (`manual`/`cron`), `post_id`, `steps[]` (`{id,label,status}`), `cursor`, `log[]` (`{t,msg,level}`), `calls[]` (`{step,conn,model,ok,ms,error,tokens}`), `timings`, `usage{prompt,completion,calls}`, `args` (sanitized run options), `data` (plan/outline/content/rewrite/result), `notified` |
+| `aipc_schema_version` | jobs-table schema version (`AIPC_Job_Store::SCHEMA_VERSION`); bump + migration routine on upgrade |
+| **table `{$wpdb->prefix}aipc_jobs`** | one row per job: `id VARCHAR(40)` PK, `created`/`updated` BIGINT, `status`, `mode`, `source`, `post_id`, `steps_total`, `steps_done`, `calls`, `prompt_tokens`, `completion_tokens` INT, `topic`, `payload` LONGTEXT (full job JSON — the source of truth: `steps[]`, `log[]`, `calls[]`, `timings`, `usage`, `args`, `data`, `notified`); KEY `status`/`created`/`source`. Retention pruning via `aipc_job_retention_days` (default 90, 0 = forever). The legacy `aipc_jobs` option (≤30 jobs / 24 h) is migrated automatically and remains as a fallback when the table is unavailable or `aipc_jobs_table_enabled` returns false |
 | `aipc_stats` (autoload off) | aggregate: jobs, done, calls, tokens, drafts, `by_connection{name: {calls, ok, tokens}}` |
 | `aipc_schedule` | `entries[]` (`{id (sch_*), time HH:MM, days[0–6 Sun=0], enabled, topic, publish (draft/now/delay), publish_delay (15–10080), opts{tone,length,language,image,faq,toc}}`), `state{entry_id: Y-m-d fired}`, `settings{daily_limit}` |
 | `aipc_git` (autoload off) | Git self-update configuration: `repo` (`owner/name`, default `ahmad75naraghi/wp-ai-post-creator`), `branch` (default `main`), `token` (write-only PAT — an empty field keeps the stored token) |
@@ -107,9 +112,27 @@ else if still failing: job.status = error (manual retry available)
 
 Each agent attempt may internally double (the API client retries once on
 429/5xx), so an always-failing provider logs **2× attempts** HTTP calls.
-Steps run one per REST `step` call (no long-running PHP); a transient lock
-(`aipc_lock_<job>`, 600 s) prevents concurrent execution. When a job reaches
-`done`, `aipc_post_created` fires **once** (`notified` flag).
+A transient lock (`aipc_lock_<job>`, 600 s) prevents concurrent execution.
+When a job reaches `done`, `aipc_post_created` fires **once** (`notified` flag).
+
+### 5.2.1 Background runner (since v1.6.0)
+
+Every job is driven **server-side** by a self-rescheduling single cron event on
+`aipc_run_job` (`AIPC_Scheduler::schedule_runner/unschedule_runner/run_job`):
+
+- `create_job()` arms the runner (10 s); `retry_job()` re-arms it;
+  `cancel_job()` / terminal states drop the event.
+- `run_job($id)` calls `AIPC_Scheduler::run_steps($id)` — the same
+  execute-next-step loop the scheduler tick uses, with a **600 s budget**;
+  while the job is still `running` it re-arms itself after **30 s** (budget
+  exhausted) or **60 s** (transient `WP_Error`, e.g. lock contention).
+- The 15-min tick (`aipc_cron_tick`) is a **safety net**: it resumes
+  interrupted cron jobs and re-arms lost runner events for any `running` job.
+- The console no longer executes anything: it polls the read-only
+  `/aipc/v1/state` endpoint (see §6). `/step` still exists for
+  backward compatibility and drives one step synchronously.
+- Note: production WP-Cron throttles spawn to ~once/60 s; a system cron
+  (`define('DISABLE_WP_CRON', true)` + crontab) gives smoother runner pacing.
 
 ### 5.3 Context helpers (fed into prompts as `{{placeholders}}`)
 
@@ -137,8 +160,9 @@ rewrite preserves status/author/slug/categories and appends tags). Then:
 
 | Route | Method | Capability | Notes |
 |---|---|---|---|
-| `/start` | POST | `edit_posts` | args: `topic, tone, length, language, language_custom, image, faq, toc, mode, post_id`; `publish_mode`/`publish_delay` only forwarded with `publish_posts`; returns `client_state()` |
-| `/step` | POST | `edit_posts` | executes the next step; `job_id`, `since` (log cursor) |
+| `/start` | POST | `edit_posts` + rate limit | args: `topic, tone, length, language, language_custom, image, faq, toc, mode, post_id`; `publish_mode`/`publish_delay` only forwarded with `publish_posts`; returns `client_state()`; arms the background runner |
+| `/step` | POST | `edit_posts` + rate limit | executes the next step synchronously (compat); `job_id`, `since` (log cursor) |
+| `/state` | POST | `edit_posts` + rate limit | **read-only**: returns `client_state()` without executing anything (`job_id`, `since`) |
 | `/cancel` | POST | `edit_posts` | cancels a running job |
 | `/retry` | POST | `edit_posts` | resets the failed step for a manual retry |
 | `/connection/test` | POST | `manage_options` | by saved `id` or raw `base_url`/`api_key`/`chat_model` |
@@ -148,13 +172,18 @@ rewrite preserves status/author/slug/categories and appends tags). Then:
 
 `client_state()` returns the job's public projection: status, progress, steps,
 logs since cursor, usage, result (`post_id/title/edit/view/words/status`).
+`/start`, `/step` and `/state` enforce a per-user per-minute rate limit
+(30/240/300, filter `aipc_rest_rate_limit`; HTTP 429 `aipc_rate` when exceeded).
+All outbound URLs (connection `base_url`, `source_sites`, provider-returned
+image URLs, raw connection-test input) pass the `AIPC_Network` SSRF guard.
 
 ## 7. Admin surface
 
 | Page (slug) | Capability | View | JS |
 |---|---|---|---|
 | New AI Post (`aipc`) | `edit_posts` | `admin/views/new-post.php` | `admin-agent.js` |
-| Rewrite post (`aipc-rewrite`) | `edit_posts` | `admin/views/rewrite.php` | `admin-agent.js` (+ `mode: rewrite` via `extraArgs`) |
+| Rewrite post (`aipc-rewrite`) | `edit_posts` | `admin/views/rewrite.php` | `admin-agent.js` (+ `mode: rewrite` via `extraArgs`; `?post=ID` preselects) |
+| Review drafts (`aipc-review`) | `edit_posts` | `admin/views/review.php` | — (server-rendered) |
 | Connections (`aipc-connections`) | `manage_options` | `connections.php` | `admin-connections.js` |
 | Prompts & Steps (`aipc-prompts`) | `manage_options` | `prompts.php` | — |
 | Logs (`aipc-logs`) | `manage_options` | `logs.php` / `log-detail.php` | — |
@@ -165,14 +194,18 @@ logs since cursor, usage, result (`post_id/title/edit/view/words/status`).
 `admin_post_*` handlers: `aipc_save_connection`, `aipc_delete_connection`,
 `aipc_save_steps`, `aipc_clear_logs`, `aipc_delete_job`, `aipc_save_schedule`,
 `aipc_delete_schedule`, `aipc_run_now` (redirects to the console with
-`resumeJobId`), `aipc_save_bale`, `aipc_save_schedule_settings` — all
+`resumeJobId`), `aipc_save_bale`, `aipc_save_schedule_settings`,
+`aipc_publish_draft` (review inbox → publish, `publish_posts`) — all
 nonce-checked and capability-checked.
 
 The console (`assets/admin-agent.js`) is driven by an inline `CFG` object
-(REST URL, nonce, i18n strings, defaults, `resumeJobId`, `extraArgs`). The
-loop: `start` → poll `step` with a `since` cursor → render steps/logs/progress
-→ `retry`/`cancel` buttons; `collectArgs()` merges `extraArgs` (rewrite
-`mode`/`post_id`) and the publish controls.
+(REST URL, nonce, i18n strings, defaults, `resumeJobId`, `extraArgs`). Since
+v1.6.0 it is a **viewer**: `start` → poll the read-only `/state` endpoint with
+a `since` cursor → render steps/logs/progress → `retry`/`cancel` buttons
+(the background runner does the actual work, so closing the tab is safe —
+a stall warning appears after ~90 s without progress).
+`collectArgs()` merges `extraArgs` (rewrite `mode`/`post_id`) and the publish
+controls.
 
 ## 8. Scheduler design
 
@@ -183,8 +216,12 @@ loop: `start` → poll `step` with a `since` cursor → render steps/logs/progre
   `state[id] != today`; the fired date is recorded → no double-firing,
   same-day catch-up included).
 - Firing an entry = `create_job(topic, opts + publish_mode/publish_delay,
-  'cron')` driven synchronously within the tick.
-- Daily limit counts cron-source jobs created today (0 = unlimited).
+  'cron')` driven synchronously within the tick (the runner event keeps it
+  going if the tick budget runs out).
+- Daily limit counts cron-source jobs created today (0 = unlimited)
+  (`AIPC_Job_Store::count_since`).
+- The tick also re-arms lost `aipc_run_job` events for every `running` job
+  (runner safety net, see §5.2.1).
 
 ## 9. Bale integration
 
@@ -198,8 +235,8 @@ periodic report per `aipc_bale.report`.
 
 ## 10. Internationalization
 
-468 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
-including 2 `_n()` plural entries. Tooling (in-repo):
+540 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals
 stored as `singular\x00plural`). New strings abort the run with a MISSING list
@@ -210,17 +247,22 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 141/141
-assertion groups green at v1.5.0, zero PHP warnings.
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 46 result
+groups / 441 assertions green at v1.7.0, zero PHP warnings. The same suite
+runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference
 
 **Actions:** `aipc_post_created($post_id, $job_id)` ·
 `aipc_post_published($post_id, $job_id)` · `aipc_cron_tick` ·
-`aipc_publish_post($post_id, $job_id)` · `aipc_daily_cleanup`
+`aipc_publish_post($post_id, $job_id)` · `aipc_daily_cleanup` ·
+`aipc_run_job($job_id)`
 
 **Filters:** `aipc_git_version_ttl($ttl, $repo, $branch)` · `aipc_git_request_args($args, $url)` · `aipc_step_connections($chain, $step)` ·
 `aipc_step_connection($primary_conn, $step)` (legacy) ·
 `aipc_step_attempts($attempts, $job, $step_id)` (default 3) ·
 `aipc_step_prompt($prompt, $step, $job)` · `aipc_messages($messages, $job, $step)` ·
-`aipc_system_prompt($system, $job)` · `aipc_post_args($post_args, $job)`
+`aipc_system_prompt($system, $job)` · `aipc_post_args($post_args, $job)` ·
+`aipc_outbound_allowlist($hosts)` · `aipc_allow_private_hosts($bool)` ·
+`aipc_allow_loopback($bool)` · `aipc_rest_rate_limit($limit, $route)` ·
+`aipc_job_retention_days($days)` · `aipc_jobs_table_enabled($bool)`

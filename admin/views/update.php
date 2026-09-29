@@ -62,7 +62,10 @@ $aipc_ver        = isset( $_GET['ver'] ) ? sanitize_text_field( rawurldecode( wp
 	<?php endif; ?>
 
 	<section class="aipc-card">
-		<h2><?php esc_html_e( 'Update settings', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2><?php esc_html_e( 'Update settings', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'up-settings', __( 'Where updates come from: the GitHub repository, the branch to track, and an optional Personal Access Token for private repositories (write-only, stored on your site only).', 'wp-ai-post-creator' ) ); ?>
+		</div>
 
 		<form class="aipc-conn-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<?php wp_nonce_field( 'aipc_save_update_settings' ); ?>
@@ -103,7 +106,10 @@ $aipc_ver        = isset( $_GET['ver'] ) ? sanitize_text_field( rawurldecode( wp
 	</section>
 
 	<section class="aipc-card">
-		<h2><?php esc_html_e( 'Versions', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2><?php esc_html_e( 'Versions', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'up-versions', __( 'Compares the installed version with the remote branch. A newer remote version means an update is available.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<table class="aipc-table widefat" style="max-width:640px;">
 			<tbody>
 				<tr>
@@ -138,7 +144,10 @@ $aipc_ver        = isset( $_GET['ver'] ) ? sanitize_text_field( rawurldecode( wp
 	</section>
 
 	<section class="aipc-card">
-		<h2><?php esc_html_e( 'Update now', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2><?php esc_html_e( 'Update now', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'up-run', __( 'Downloads the branch snapshot, verifies the plugin header, backs up the current files and swaps the new ones in — rolling back automatically if anything fails.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<p class="description">
 			<?php esc_html_e( 'The button downloads the repository snapshot, verifies the plugin header, backs up the current files to wp-content/aipc-backups and swaps the new files in. If anything fails, the previous version is restored automatically.', 'wp-ai-post-creator' ); ?>
 			<?php esc_html_e( 'Your settings, connections, schedules and posts are files-independent and stay untouched.', 'wp-ai-post-creator' ); ?>

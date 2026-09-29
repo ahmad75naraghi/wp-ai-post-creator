@@ -23,6 +23,7 @@ final class AIPC_Admin {
 
 		add_action( 'admin_post_aipc_save_connection', array( __CLASS__, 'handle_save_connection' ) );
 		add_action( 'admin_post_aipc_delete_connection', array( __CLASS__, 'handle_delete_connection' ) );
+		add_action( 'admin_post_aipc_publish_draft', array( __CLASS__, 'handle_publish_draft' ) );
 		add_action( 'admin_post_aipc_save_steps', array( __CLASS__, 'handle_save_steps' ) );
 		add_action( 'admin_post_aipc_clear_logs', array( __CLASS__, 'handle_clear_logs' ) );
 		add_action( 'admin_post_aipc_delete_job', array( __CLASS__, 'handle_delete_job' ) );
@@ -30,6 +31,9 @@ final class AIPC_Admin {
 		add_action( 'admin_post_aipc_delete_schedule', array( __CLASS__, 'handle_delete_schedule' ) );
 		add_action( 'admin_post_aipc_run_now', array( __CLASS__, 'handle_run_now' ) );
 		add_action( 'admin_post_aipc_save_bale', array( __CLASS__, 'handle_save_bale' ) );
+		add_action( 'admin_post_aipc_add_topics', array( __CLASS__, 'handle_add_topics' ) );
+		add_action( 'admin_post_aipc_remove_topic', array( __CLASS__, 'handle_remove_topic' ) );
+		add_action( 'admin_post_aipc_clear_topics', array( __CLASS__, 'handle_clear_topics' ) );
 		add_action( 'admin_post_aipc_save_schedule_settings', array( __CLASS__, 'handle_save_schedule_settings' ) );
 		add_action( 'admin_post_aipc_git_check', array( __CLASS__, 'handle_git_check' ) );
 		add_action( 'admin_post_aipc_git_test', array( __CLASS__, 'handle_git_test' ) );
@@ -69,6 +73,15 @@ final class AIPC_Admin {
 			'edit_posts',
 			'aipc-rewrite',
 			array( __CLASS__, 'render_rewrite' )
+		);
+
+		add_submenu_page(
+			'aipc',
+			__( 'Review drafts', 'wp-ai-post-creator' ),
+			__( 'Review drafts', 'wp-ai-post-creator' ),
+			'edit_posts',
+			'aipc-review',
+			array( __CLASS__, 'render_review' )
 		);
 
 		add_submenu_page(
@@ -170,6 +183,18 @@ final class AIPC_Admin {
 		require AIPC_PLUGIN_DIR . 'admin/views/rewrite.php';
 	}
 
+	public static function render_review() {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
+		}
+		require AIPC_PLUGIN_DIR . 'admin/views/review.php';
+	}
+
+	/**
+	 * Render the connections screen.
+	 *
+	 * @return void
+	 */
 	public static function render_connections() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
@@ -289,6 +314,73 @@ final class AIPC_Admin {
 	}
 
 	/**
+	 * Publish a reviewed AI draft (from the Review page).
+	 *
+	 * @return void
+	 */
+	public static function handle_publish_draft() {
+		if ( ! current_user_can( 'publish_posts' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'wp-ai-post-creator' ) );
+		}
+		check_admin_referer( 'aipc_publish_draft' );
+
+		$id     = isset( $_GET['id'] ) ? absint( wp_unslash( $_GET['id'] ) ) : 0;
+		$result = self::publish_draft( $id );
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-review', 'aipc_msg' => $result ? 'published' : 'publish_failed' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Publish one AI-generated draft (shared by the review handler).
+	 *
+	 * Fires aipc_post_published so Bale subscribers get the 🎉 notice.
+	 *
+	 * @param int $post_id Post id.
+	 * @return bool
+	 */
+	public static function publish_draft( $post_id ) {
+		$post_id = (int) $post_id;
+		$post    = $post_id ? get_post( $post_id ) : null;
+		if ( ! $post || 'post' !== $post->post_type ) {
+			return false;
+		}
+		if ( ! current_user_can( 'publish_posts' ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			return false;
+		}
+		if ( ! in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) {
+			return false;
+		}
+
+		$res = wp_update_post( array(
+			'ID'          => $post_id,
+			'post_status' => 'publish',
+		), true );
+
+		if ( is_wp_error( $res ) ) {
+			return false;
+		}
+
+		$job_id = (string) get_post_meta( $post_id, '_aipc_job', true );
+		if ( '' !== $job_id ) {
+			AIPC_Agent::instance()->append_log( $job_id, __( 'Post published.', 'wp-ai-post-creator' ), 'success' );
+		}
+
+		/**
+		 * Fires after a reviewed AI draft has been published from the inbox.
+		 *
+		 * @param int    $post_id Post id.
+		 * @param string $job_id  Originating job id (may be empty).
+		 */
+		do_action( 'aipc_post_published', $post_id, $job_id );
+
+		return true;
+	}
+
+	/**
 	 * Save per-step configuration (prompts + connection overrides).
 	 *
 	 * @return void
@@ -372,6 +464,7 @@ final class AIPC_Admin {
 			'time'          => isset( $_POST['time'] ) ? sanitize_text_field( wp_unslash( $_POST['time'] ) ) : '',
 			'days'          => $raw,
 			'enabled'       => ! empty( $_POST['enabled'] ),
+			'use_queue'     => ! empty( $_POST['use_queue'] ),
 			'topic'         => isset( $_POST['topic'] ) ? wp_unslash( $_POST['topic'] ) : '',
 			'publish'       => isset( $_POST['publish'] ) ? sanitize_key( wp_unslash( $_POST['publish'] ) ) : 'draft',
 			'publish_delay' => isset( $_POST['publish_delay'] ) ? absint( wp_unslash( $_POST['publish_delay'] ) ) : 60,
@@ -568,11 +661,67 @@ final class AIPC_Admin {
 		exit;
 	}
 
+	/**
+	 * Add topics to the queue (textarea, one per line).
+	 *
+	 * @return void
+	 */
+	public static function handle_add_topics() {
+		self::guard( 'aipc_add_topics' );
+
+		$topics = isset( $_POST['topics'] ) ? (string) wp_unslash( $_POST['topics'] ) : '';
+		AIPC_Topic_Queue::add_many( $topics, 'manual' );
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'topics_added' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Remove one topic from the queue.
+	 *
+	 * @return void
+	 */
+	public static function handle_remove_topic() {
+		self::guard( 'aipc_remove_topic' );
+
+		$id = isset( $_GET['id'] ) ? sanitize_key( wp_unslash( $_GET['id'] ) ) : '';
+		if ( $id ) {
+			AIPC_Topic_Queue::remove( $id );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'topic_removed' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Remove every pending topic.
+	 *
+	 * @return void
+	 */
+	public static function handle_clear_topics() {
+		self::guard( 'aipc_clear_topics' );
+
+		AIPC_Topic_Queue::clear_pending();
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'queue_cleared' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
 	public static function handle_save_bale() {
 		self::guard( 'aipc_save_bale' );
 
 		$cfg = AIPC_Bale::sanitize( wp_unslash( $_POST ), AIPC_Bale::all() );
 		AIPC_Bale::save( $cfg );
+		AIPC_Bale_Commands::maybe_schedule();
 
 		wp_safe_redirect( add_query_arg(
 			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'bale_saved' ),
@@ -580,4 +729,28 @@ final class AIPC_Admin {
 		) );
 		exit;
 	}
+}
+
+/**
+ * Render a contextual help toggle: a small "?" icon that expands into an
+ * explanation right below it (pure <details>/<summary> — no JS, keyboard-
+ * and screen-reader-friendly, works in RTL).
+ *
+ * The text MUST arrive already translated (views pass __() output) so the
+ * translation pipeline keeps extracting it.
+ *
+ * @param string $slug Stable id (also used by the e2e suite).
+ * @param string $text Help text (a little HTML is allowed).
+ * @return void
+ */
+function aipc_help( $slug, $text ) {
+	if ( ! is_string( $text ) || '' === trim( $text ) ) {
+		return;
+	}
+	?>
+	<details class="aipc-help" data-aipc-help="<?php echo esc_attr( $slug ); ?>">
+		<summary role="button" aria-label="<?php esc_attr_e( 'What is this section for?', 'wp-ai-post-creator' ); ?>"><span aria-hidden="true">?</span></summary>
+		<div class="aipc-help-panel"><?php echo wp_kses_post( $text ); ?></div>
+	</details>
+	<?php
 }

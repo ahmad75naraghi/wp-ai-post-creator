@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.5.2 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later
+**Version:** 1.7.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
 
 ---
 
@@ -18,9 +18,10 @@
 | [Roadmap & Decisions](docs/ROADMAP.md) | Everyone — 1.6/1.7/1.8 plan, backlog, binding product principles |
 | [AGENTS.md](AGENTS.md) | AI agents / developers — working rules, environment, verification |
 | [Contributing](CONTRIBUTING.md) | Human contributors |
+| [Getting Help / Support](SUPPORT.md) | Everyone — where to ask, how to report |
 | [E2E Test Suite](tests/e2e/README.md) | How to run and extend the tests |
 | [Release Checklist](docs/RELEASE-CHECKLIST.md) | Cutting a version |
-| [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Code of Conduct](CODE_OF_CONDUCT.md) | Everyone |
+| [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [License](LICENSE) | Everyone |
 
 ---
 
@@ -29,6 +30,17 @@
 **AI Post Creator** یک افزونهٔ فوق‌حرفه‌ای و «ایجنت‌مانند» برای وردپرس است که با اتصال به هر سرویس API هوش مصنوعیِ سازگار با OpenAI (OpenAI، OpenRouter، Groq، DeepSeek، Ollama، LM Studio و…)، یک پست کامل را **از صفر تا صد** تولید می‌کند:
 
 ابتدا **پرامپت سایت** (سایت چیست، درباره چیست، هدف و مخاطبانش کدامند — در تنظیمات) و **دسته‌بندی‌های موجود نوشته‌ها** را می‌خواند، یکی از دسته‌بندی‌ها را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد (یا از پیشنهاد شما استفاده می‌کند). بعد محتوا را می‌نویسد، یک **پاس کپی‌رایتینگ و سئو** روی کل متن اجرا می‌کند، **خلاصه سئو برای Rank Math** می‌سازد، از روی موضوع و خلاصه **تصویر شاخص** تولید می‌کند و نتیجه را همیشه به‌صورت **پیش‌نویس** ذخیره می‌کند — تمام مراحل به‌صورت زنده در یک **کنسول ایجنت** نمایش داده می‌شوند و در هر مرحله در صورت خطا، به‌طور خودکار تا سه بار دوباره تلاش می‌شود.
+
+### 🆕 جدید در نسخهٔ ۱.۶.۰ — اجرای پس‌زمینه، جدول کارها، امنیت شبکه و صندوق بازبینی
+
+- 🚀 **اجرای پس‌زمینهٔ واقعی**: هر کار روی سرور با یک رویداد کرون خودادامه‌دار اجرا می‌شود — بستن تب مرورگر کار را متوقف نمی‌کند و کنسول فقط تماشا می‌کند (اندپوینت فقط-خواندنی `/state`).
+- 🗄 **جدول اختصاصی کارها**: کارها از option به جدول `aipc_jobs` منتقل شدند (مهاجرت خودکار، ماندگاری قابل تنظیم ۹۰ روز پیش‌فرض، پرس‌وجوی سبک برای گزارش‌ها).
+- 🛡 **گارد شبکهٔ خروجی (SSRF)**: نشانی‌های خصوصی/رزروشده مسدود می‌شوند؛ لوکال‌هاست برای Ollama و LM Studio باز است و با فیلترها قابل تنظیم است. به‌علاوه **محدودیت نرخ REST** برای هر کاربر در دقیقه.
+- 📥 **صندوق بازبینی پیش‌نویس‌ها**: همهٔ پیش‌نویس‌های هوش مصنوعی در یک صفحه — ویرایش، پیش‌نمایش، انتشار یک‌کلیکی و بازنویسی مجدد.
+- ❓ **راهنمای درون‌صفحه‌ای**: کنار هر بخش از صفحه‌های مدیریت یک آیکون «؟» است که با کلیک، توضیح کوتاه همان بخش را باز می‌کند.
+- 📋 **صف موضوع‌ها**: انباری از موضوع‌ها که زمان‌بندی‌ها یکی‌یکی از آن می‌کشند — دستی پرش کنید یا با یک کلیک، پیشنهاد تازه از منابع خبری خودتان بگیرید (بدون تکرار).
+- 💬 **فرمان از داخل بله**: افزونه فقط اطلاع‌رسان نیست؛ از داخل بله بنویسید «نوشتن: موضوع X» تا پیش‌نویس ساخته شود، «وضعیت»، «آخرین»، «انتشار» و «صف» هم کار می‌کنند — فقط برای گفتگوهای مجاز.
+- ✅ **CI با GitHub Actions**: لینت، بررسی ترجمه‌ها و کل مجموعهٔ تست e2e روی هر push و PR اجرا می‌شود.
 
 ### 🆕 جدید در نسخهٔ ۱.۵.۲ — اتصال گیت قابل تنظیم (مخزن، برنچ، توکن)
 
@@ -88,6 +100,19 @@
 ## English — Overview
 
 AI Post Creator turns the WordPress admin into an AI content agent. Set a **site prompt** once (what your site is about), and the agent picks one of your **existing post categories**, invents a topic that fits, writes the article, runs a **copywriting + SEO revision pass**, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** — with every step visible live and auto-retried until it passes.
+
+**New in 1.7.0 — topic queue + two-way Bale commands:**
+
+**New in 1.6.0 — background execution, jobs table, network guard, review inbox:**
+
+* **True background execution** — every job runs server-side on a self-rescheduling cron event; closing the browser tab never stops a run and the console became a read-only viewer (new `/aipc/v1/state` endpoint)
+* **Dedicated jobs table** — jobs moved from an option to a real database table with automatic migration, configurable 90-day retention and light-row queries for the logs screen
+* **Outbound network guard (SSRF) + REST rate limiting** — private/reserved addresses are blocked (loopback stays open for Ollama/LM Studio, tunable via filters) and the agent endpoints enforce per-user per-minute limits
+* **Draft review inbox** — every AI draft in one page with edit / preview / one-click publish / rewrite-again actions
+* **Contextual help** — a "?" icon beside every section expands into a short explanation of what it does (all admin pages, fully translated)
+* **Topic queue** — a FIFO bank of topics schedules pull from; fill it by hand or pull fresh, deduplicated suggestions straight from your research sources
+* **Two-way Bale commands** — drive the plugin from inside Bale: «نوشتن: a topic» starts a draft, «وضعیت» / «آخرین» / «انتشار» / «صف» report and publish — authorized chats only
+* **CI with GitHub Actions** — lint, translation completeness and the full php-wasm e2e suite on every push and pull request
 
 **New in 1.5.2 — configurable Git connection (repository, branch, token):**
 
@@ -185,7 +210,9 @@ Every step runs in its own REST request (`POST /aipc/v1/step`) against **the con
 
 | Page | Capability | Purpose |
 |---|---|---|
-| **AI Post Creator** (top level) | `edit_posts` | Agent console — options, live terminal, step checklist, result card |
+| **AI Post Creator** (top level) | `edit_posts` | Agent console — options, live terminal (viewer for the background runner), step checklist, result card |
+| **Rewrite post** | `edit_posts` | Rewrite an existing post with the agent |
+| **Review drafts** | `edit_posts` | Every AI-generated draft in one inbox — edit, preview, publish, rewrite again |
 | **Connections** | `manage_options` | Add/edit/delete connections, set the default, test + load models |
 | **Prompts & Steps** | `manage_options` | Per-step connection assignment + editable prompt templates with placeholder docs |
 | **Schedule** | `manage_options` | Automatic schedules (time/days/topic/options, run-now) + Bale notification settings + cron status |
@@ -276,13 +303,33 @@ add_action( 'aipc_post_created', function ( $post_id, $job_id ) {
 * All AI output is sanitized: content with `wp_kses_post`, titles/slugs/terms with the matching `sanitize_*` functions.
 * API keys never leave the server (server-to-provider only) and are never returned by any REST response or the connections list.
 * The API key field is write-only in the UI (leave it empty to keep the stored key).
+* **Outbound network guard (SSRF), 1.6+:** every outbound URL (connection base URLs, research source sites, provider-returned image URLs) is validated — private/reserved IP ranges are blocked, loopback stays allowed for local LLMs (Ollama, LM Studio); tunable via the `aipc_outbound_allowlist` / `aipc_allow_private_hosts` / `aipc_allow_loopback` filters.
+* **REST rate limiting (1.6+):** the agent endpoints enforce per-user per-minute limits (HTTP 429); adjustable via the `aipc_rest_rate_limit` filter.
+* **Two-way Bale commands (1.7+):** only the chat IDs configured in the plugin settings are obeyed; messages from any other chat are ignored silently, processed update ids are never re-run, and at most 20 posts per day can be started from Bale.
+* See [SECURITY.md](SECURITY.md) for the full policy and design notes.
 * Uninstall removes options and post meta only when explicitly enabled in settings.
 
 ## Quality — tested end to end
 
-The plugin ships with an end-to-end suite (WordPress 6.7 + SQLite via php-wasm, **two mock providers** — a chat host and a dedicated image host) covering the full pipeline through the real REST stack:
+The plugin ships with a real-WordPress end-to-end suite (WordPress 6.7.1 on
+SQLite via php-wasm, **two mock providers** — a chat host and a dedicated image
+host — plus mock Bale/RSS/Git endpoints) that drives the agent through the
+genuine REST stack:
 
-✅ 85+ checks pass — including everything from 1.2.0 (job lifecycle through the real REST stack, auto-invented topic from the site prompt, AI-chosen category, Persian content, TOC anchors, copywriting/SEO revision pass, FAQ + JSON-LD schema, Rank Math summary, SEO meta, tags, featured image, draft-only saving, 401s for anonymous calls, per-step connection routing verified at the HTTP level, custom FAQ prompt sent to the provider, page rendering, sanitization, fa_IR bundle incl. plural forms, cancel/failure/retry flows) plus the new 1.3.0 coverage: **cron event + 15-minute interval registration**, **a due schedule firing through `AIPC_Scheduler::tick()` and producing a complete draft post (fixed topic, FAQ/TOC per entry options, no image when disabled)**, **no double-firing on the second tick**, paused entries never due, schedule-entry sanitization (time clamp, day cleanup, option defaults), the schedule admin page rendering, **Bale REST endpoints** (bad token rejected, stored settings work, chat-id detection, anonymous 401) and **the full Bale traffic audit**: exactly one `sendPhoto` per imaged post with caption containing title + permalink, `sendMessage` for text-only posts, correct chat id and token on every call — all with zero PHP warnings — plus the 1.4.0 coverage: **two Bale recipients receiving every notification** (per-chat verification at the HTTP level), the **daily report** delivered exactly once to both chats (and not re-sent by the next tick), and the **daily limit** blocking a second due schedule entry while leaving it due for the next day.
+- ✅ **46 result groups / 441 assertions green at v1.7.0, with zero PHP
+  warnings** — job lifecycle, auto-invented topics, AI-chosen categories,
+  Persian content, TOC anchors, copywriting/SEO pass, FAQ + JSON-LD, Rank Math
+  summary, featured images, draft-only saving, per-step connection routing
+  verified at the HTTP level, fallback chains, rewrite runs, schedules +
+  daily limits, Bale traffic audits (per-chat), the fa_IR bundle incl. plural
+  forms, and since 1.6: the network-guard matrix, the jobs table (migration,
+  retention, legacy fallback), the background runner (a whole run server-side
+  with zero `/step` calls), the `/state` endpoint, rate limiting, the review
+  inbox and the Git self-updater end-to-end.
+- The full coverage list lives in [`tests/e2e/README.md`](tests/e2e/README.md).
+- **CI runs the same suite on every push and pull request**
+  (`.github/workflows/ci.yml`): PHP 7.4-target lint, `node --check`, translation
+  completeness and the e2e run — a red CI blocks the merge.
 
 ## Frequently asked questions
 

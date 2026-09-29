@@ -22,6 +22,7 @@ if ( '' !== $aipc_edit_id ) {
  * @param array|null $conn Connection being edited (null = add form).
  * @return void
  */
+if ( ! function_exists( 'aipc_connection_form' ) ) :
 function aipc_connection_form( $conn ) {
 	$editing = is_array( $conn );
 	?>
@@ -30,7 +31,10 @@ function aipc_connection_form( $conn ) {
 		<input type="hidden" name="action" value="aipc_save_connection" />
 		<input type="hidden" name="id" value="<?php echo esc_attr( $editing ? $conn['id'] : '' ); ?>" />
 
-		<h3><?php echo $editing ? esc_html__( 'Edit connection', 'wp-ai-post-creator' ) : esc_html__( 'Add a new connection', 'wp-ai-post-creator' ); ?></h3>
+<div class="aipc-heading">
+					<h3><?php echo $editing ? esc_html__( 'Edit connection', 'wp-ai-post-creator' ) : esc_html__( 'Add a new connection', 'wp-ai-post-creator' ); ?></h3>
+			<?php aipc_help( 'conn-form', __( 'The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless allowlisted.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 
 		<div class="aipc-grid">
 			<div class="aipc-field">
@@ -95,6 +99,7 @@ function aipc_connection_form( $conn ) {
 	</form>
 	<?php
 }
+endif;
 ?>
 <div class="wrap aipc-wrap">
 
@@ -113,7 +118,10 @@ function aipc_connection_form( $conn ) {
 	<?php endif; ?>
 
 	<section class="aipc-card">
-		<h2>🗂 <?php esc_html_e( 'Your connections', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2>🗂 <?php esc_html_e( 'Your connections', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'conn-list', __( 'A connection is one AI service: base URL, API key and the models to use. One connection is the default; steps without their own assignment use it. Use Test after saving to verify the setup.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 
 		<?php if ( empty( $aipc_conns ) ) : ?>
 			<p class="aipc-empty">— <?php esc_html_e( 'No connections yet. Add your first one below.', 'wp-ai-post-creator' ); ?> —</p>
@@ -162,7 +170,10 @@ function aipc_connection_form( $conn ) {
 	</section>
 
 	<section class="aipc-card">
-		<h2>💡 <?php esc_html_e( 'Example endpoints', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+					<h2>💡 <?php esc_html_e( 'Example endpoints', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'conn-examples', __( 'Ready-made endpoint patterns for popular providers — copy your provider’s pattern into the connection form above.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 		<p class="aipc-code aipc-hint">
 			https://api.openai.com/v1 (OpenAI) ·
 			https://openrouter.ai/api/v1 (OpenRouter) ·

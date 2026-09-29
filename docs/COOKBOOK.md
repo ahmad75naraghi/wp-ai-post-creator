@@ -241,6 +241,11 @@ push the arena branch, REST-PATCH PR #1, verify mergeable).
 | REST surface | `AIPC_Rest::register_routes()` + callbacks |
 | Console UI/behavior | `admin/views/new-post.php`/`rewrite.php` + `assets/admin-agent.js` + `AIPC_Assets::data_for_agent()` |
 | Scheduler semantics | `AIPC_Scheduler::tick()/entry_due()/start_job_for_entry()` |
+| Background runner / why a job keeps going | `AIPC_Scheduler::run_job()` + `schedule_runner()` (hook `aipc_run_job`) |
+| Job storage / queries / retention | `AIPC_Job_Store` (table `{$wpdb->prefix}aipc_jobs`, filter `aipc_job_retention_days`) |
+| Which outbound URLs are allowed | `AIPC_Network::validate_url()` + the `aipc_outbound_allowlist` / `aipc_allow_private_hosts` / `aipc_allow_loopback` filters |
+| REST rate limits | `AIPC_REST::rate_ok()` (filter `aipc_rest_rate_limit`) |
+| The draft review inbox | `AIPC_Admin::render_review()` + `admin/views/review.php` |
 | Bale messages | `AIPC_Bale::notify()/notify_published()/build_report()` |
 | Git self-update behavior | `AIPC_Updater::run()/remote_version()` + the `aipc-update` page |
 | Mocked test world | `tests/e2e/mock-api.php` |

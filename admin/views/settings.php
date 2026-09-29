@@ -22,7 +22,10 @@ $aipc = AIPC_Settings::all();
 		<?php settings_fields( 'aipc' ); ?>
 
 		<section class="aipc-card">
-			<h2>🎯 <?php esc_html_e( 'Site prompt', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+						<h2>🎯 <?php esc_html_e( 'Site prompt', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'settings-site-prompt', __( 'The site prompt tells the agent what this site is about: purpose, audience and voice. It drives topic invention, category choice and the writing style of every run — the single most important setting of the plugin.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><label for="aipc-site-prompt"><?php esc_html_e( 'Site prompt', 'wp-ai-post-creator' ); ?></label></th>
@@ -47,7 +50,10 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 		</section>
 
 		<section class="aipc-card">
-			<h2>📝 <?php esc_html_e( 'Content defaults', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+						<h2>📝 <?php esc_html_e( 'Content defaults', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'settings-defaults', __( 'Default options for new runs: language, tone, length and the TOC/FAQ defaults. You can override them per run on the console page.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><label for="aipc-language"><?php esc_html_e( 'Default language', 'wp-ai-post-creator' ); ?></label></th>
@@ -101,7 +107,10 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 		</section>
 
 		<section class="aipc-card">
-			<h2>🖼 <?php esc_html_e( 'Featured images', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+						<h2>🖼 <?php esc_html_e( 'Featured images', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'settings-images', __( 'The global switch and size for AI featured images. The image model is set per connection; if image generation fails on every provider, the post is still saved — just without an image.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Enable image generation', 'wp-ai-post-creator' ); ?></th>
@@ -128,7 +137,10 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 		</section>
 
 		<section class="aipc-card">
-			<h2>⌨ <?php esc_html_e( 'Advanced', 'wp-ai-post-creator' ); ?></h2>
+<div class="aipc-heading">
+						<h2>⌨ <?php esc_html_e( 'Advanced', 'wp-ai-post-creator' ); ?></h2>
+			<?php aipc_help( 'settings-advanced', __( 'Extra system instructions appended to every step (brand rules, banned words…), and the uninstall data policy.', 'wp-ai-post-creator' ) ); ?>
+		</div>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><label for="aipc-extra-prompt"><?php esc_html_e( 'Extra system instructions', 'wp-ai-post-creator' ); ?></label></th>

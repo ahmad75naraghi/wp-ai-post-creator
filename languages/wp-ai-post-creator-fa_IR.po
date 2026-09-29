@@ -114,7 +114,7 @@ msgstr "آدرس سرویس"
 msgid "Default"
 msgstr "پیش‌فرض"
 
-#: admin/views/connections.php admin/views/logs.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Actions"
 msgstr "عملیات"
 
@@ -166,7 +166,7 @@ msgstr "نمای کلی"
 msgid "Topic"
 msgstr "موضوع"
 
-#: admin/views/log-detail.php admin/views/logs.php admin/views/schedule.php
+#: admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Status"
 msgstr "وضعیت"
 
@@ -190,7 +190,7 @@ msgstr "نتیجه"
 msgid "Draft post #%1$d · %2$d words"
 msgstr "پیش‌نویس نوشته #%1$d · %2$d واژه"
 
-#: admin/views/log-detail.php admin/views/new-post.php admin/views/rewrite.php
+#: admin/views/log-detail.php admin/views/new-post.php admin/views/review.php admin/views/rewrite.php
 msgid "Edit post"
 msgstr "ویرایش پست"
 
@@ -338,7 +338,7 @@ msgstr "توکن‌ها"
 msgid "Duration"
 msgstr "مدت"
 
-#: admin/views/logs.php
+#: admin/views/logs.php admin/views/review.php
 msgid "Scheduled"
 msgstr "زمان‌بندی‌شده"
 
@@ -374,7 +374,7 @@ msgstr "اتصال‌ها"
 msgid "Prompts & Steps"
 msgstr "پرامپت‌ها و مراحل"
 
-#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/new-post.php admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Logs"
 msgstr "گزارش‌ها"
 
@@ -474,7 +474,7 @@ msgstr "فهرست مطالب"
 msgid "linked jump menu"
 msgstr "منوی پرشِ لینک‌شده"
 
-#: admin/views/new-post.php
+#: admin/views/new-post.php admin/views/review.php
 msgid "Generate post"
 msgstr "تولید پست"
 
@@ -838,7 +838,7 @@ msgstr "حذف افزونه"
 msgid "Delete all plugin data (settings, connections, jobs, SEO meta) when the plugin is uninstalled"
 msgstr "هنگام حذف افزونه، همه داده‌های آن (تنظیمات، اتصال‌ها، کارها، فراداده سئو) حذف شوند"
 
-#: admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "New AI Post"
 msgstr "پست جدید با هوش مصنوعی"
 
@@ -902,7 +902,7 @@ msgstr "ایجنت توسط کاربر لغو شد."
 msgid "Retrying failed step…"
 msgstr "در حال تلاش دوباره برای مرحله ناموفق…"
 
-#: includes/class-aipc-agent.php
+#: includes/class-aipc-agent.php includes/class-aipc-rest.php
 msgid "Job not found or expired. Please start again."
 msgstr "کار پیدا نشد یا منقضی شده است. لطفاً دوباره شروع کنید."
 
@@ -1117,10 +1117,6 @@ msgstr "از سرگیری ایجنتِ در حال اجرا…"
 #: includes/class-aipc-assets.php
 msgid "Planning…"
 msgstr "در حال برنامه‌ریزی…"
-
-#: includes/class-aipc-assets.php
-msgid "The agent is working — keep this tab open."
-msgstr "ایجنت در حال کار است — این برگه را باز نگه دارید."
 
 #: includes/class-aipc-assets.php
 msgid "Connection error:"
@@ -1714,7 +1710,7 @@ msgstr "اختیاری: هر خط یک نشانی (حداکثر ۸ مورد). ا
 msgid "Pick a post to rewrite first."
 msgstr "اول یک نوشته برای بازنویسی انتخاب کنید."
 
-#: includes/class-aipc-agent.php includes/class-aipc-scheduler.php
+#: includes/class-aipc-admin.php includes/class-aipc-agent.php includes/class-aipc-scheduler.php
 msgid "Post published."
 msgstr "نوشته منتشر شد."
 
@@ -1734,7 +1730,7 @@ msgstr "نوشته به‌روزرسانی شد: #%d"
 msgid "Posts are always created as drafts first; pick what happens next."
 msgstr "نوشته‌ها همیشه ابتدا به‌صورت پیش‌نویس ساخته می‌شوند؛ انتخاب کنید بعدش چه اتفاقی بیفتد."
 
-#: admin/views/schedule.php
+#: admin/views/review.php admin/views/schedule.php
 msgid "Publish"
 msgstr "انتشار"
 
@@ -1758,7 +1754,7 @@ msgstr "بازنویسی نوشتهٔ دیگر"
 msgid "Rewrite complete (%1$d → %2$d words)"
 msgstr "بازنویسی کامل شد (%1$d → %2$d کلمه)"
 
-#: admin/views/new-post.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
+#: admin/views/new-post.php admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Rewrite post"
 msgstr "بازنویسی نوشته"
 
@@ -2077,3 +2073,473 @@ msgstr "برای مخازن خصوصی و سقف درخواست بالاتر. ف
 #: admin/views/update.php
 msgid "owner/name — for example ahmad75naraghi/wp-ai-post-creator"
 msgstr "owner/name — برای نمونه ahmad75naraghi/wp-ai-post-creator"
+
+#: admin/views/review.php
+msgid "%d draft waiting"
+msgid_plural "%d drafts waiting"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/views/review.php
+msgid "AI-generated drafts waiting for your review. Publish, edit or rewrite them — nothing goes live until you say so."
+msgstr "پیش‌نویس‌های تولیدشده با هوش مصنوعی در انتظار بازبینی شما هستند. منتشر کنید، ویرایش کنید یا بازنویسی کنید — تا خودتان نگویید چیزی منتشر نمی‌شود."
+
+#: includes/class-aipc-network.php
+msgid "Blocked: loopback hosts are disabled on this site (aipc_allow_loopback filter)."
+msgstr "مسدود: هاست‌های لوکال‌هاست در این سایت غیرفعال‌اند (فیلتر aipc_allow_loopback)."
+
+#: includes/class-aipc-network.php
+msgid "Blocked: the host is a private or reserved address. Add it to the “aipc_outbound_allowlist” filter (or enable “aipc_allow_private_hosts”) to allow it."
+msgstr "مسدود: این هاست نشانی خصوصی یا رزروشده است. برای مجاز کردن، آن را به فیلتر «aipc_outbound_allowlist» اضافه کنید (یا «aipc_allow_private_hosts» را فعال کنید)."
+
+#: admin/views/review.php
+msgid "Could not publish the draft. Please try again from the editor."
+msgstr "انتشار پیش‌نویس ممکن نشد. لطفاً از ویرایشگر دوباره تلاش کنید."
+
+#: admin/views/review.php
+msgid "Draft"
+msgstr "پیش‌نویس"
+
+#: admin/views/review.php
+msgid "Draft published."
+msgstr "پیش‌نویس منتشر شد."
+
+#: admin/views/review.php
+msgid "Drafts waiting for review"
+msgstr "پیش‌نویس‌های در انتظار بازبینی"
+
+#: includes/class-aipc-network.php
+msgid "Empty URL."
+msgstr "نشانی خالی است."
+
+#: admin/views/review.php admin/views/schedule.php
+msgid "Manual"
+msgstr "دستی"
+
+#: admin/views/review.php
+msgid "Modified"
+msgstr "آخرین تغییر"
+
+#: admin/views/review.php
+msgid "Nothing to review. The agent always saves new posts as drafts — they will appear here."
+msgstr "چیزی برای بازبینی نیست. ایجنت نوشته‌های جدید را همیشه به‌صورت پیش‌نویس ذخیره می‌کند — اینجا نمایش داده می‌شوند."
+
+#: includes/class-aipc-network.php
+msgid "Only http(s) URLs are allowed."
+msgstr "فقط نشانی‌های http(s) مجاز هستند."
+
+#: admin/views/review.php
+msgid "Origin"
+msgstr "مبدأ"
+
+#: admin/views/review.php
+msgid "Pending"
+msgstr "در انتظار بررسی"
+
+#: admin/views/review.php
+msgid "Preview"
+msgstr "پیش‌نمایش"
+
+#: admin/views/review.php
+msgid "Publish “%s” now?"
+msgstr "«%s» همین حالا منتشر شود؟"
+
+#: admin/views/review.php includes/class-aipc-admin.php
+msgid "Review drafts"
+msgstr "بازبینی پیش‌نویس‌ها"
+
+#: admin/views/review.php
+msgid "Rewrite"
+msgstr "بازنویسی"
+
+#: includes/class-aipc-network.php
+msgid "The URL has no host."
+msgstr "نشانی هاست ندارد."
+
+#: includes/class-aipc-assets.php
+msgid "The agent runs on the server — you can close this tab, it keeps going."
+msgstr "ایجنت روی سرور اجرا می‌شود — می‌توانید این برگه را ببندید، کار ادامه پیدا می‌کند."
+
+#: includes/class-aipc-api-client.php
+msgid "The image URL was rejected by the outbound network guard."
+msgstr "نشانی تصویر توسط گارد شبکهٔ خروجی رد شد."
+
+#: includes/class-aipc-assets.php
+msgid "The server-side runner seems stalled — progress has not changed for a while. Check that WP-Cron works on your site (see the Schedule page)."
+msgstr "به نظر می‌رسد اجراکنندهٔ سمت سرور متوقف شده — مدتی است پیشرفتی دیده نمی‌شود. از کارکرد WP-Cron در سایت خود مطمئن شوید (صفحهٔ زمان‌بندی را ببینید)."
+
+#: includes/class-aipc-rest.php
+msgid "This base URL is blocked by the outbound network guard (private or reserved address)."
+msgstr "این نشانی پایه توسط گارد شبکهٔ خروجی مسدود شده است (نشانی خصوصی یا رزروشده)."
+
+#: admin/views/review.php
+msgid "Title"
+msgstr "عنوان"
+
+#: includes/class-aipc-rest.php
+msgid "Too many requests — please wait a moment and try again."
+msgstr "درخواست‌های زیادی ارسال شده — لطفاً کمی صبر کنید و دوباره تلاش کنید."
+
+#: admin/views/review.php
+msgid "Words"
+msgstr "کلمات"
+
+#: admin/views/connections.php
+msgid "A connection is one AI service: base URL, API key and the models to use. One connection is the default; steps without their own assignment use it. Use Test after saving to verify the setup."
+msgstr "هر اتصال یعنی یک سرویس هوش مصنوعی: نشانی پایه، کلید API و مدل‌های مورد استفاده. یکی از اتصال‌ها پیش‌فرض است؛ مراحلِ بدون اتصال اختصاصی از همان استفاده می‌کنند. بعد از ذخیره با «تست» درستی تنظیم را بررسی کنید."
+
+#: admin/views/logs.php
+msgid "Aggregate statistics across all jobs: totals, success/fail counts, API calls and token usage per connection."
+msgstr "آمار تجمعی همهٔ کارها: جمع کل، شمار موفق/ناموفق، فراخوانی‌های API و مصرف توکن به تفکیک اتصال."
+
+#: admin/views/schedule.php
+msgid "Bale is an Iranian messenger. The bot token comes from @Bot_Father; each chat ID receives the post’s featured image, summary and link when a run finishes (and a periodic report, if enabled). Delivery results are recorded in the job log."
+msgstr "بله یک پیام‌رسان ایرانی است. توکن ربات را از @Bot_Father بگیرید؛ هر شناسهٔ گفتگو پس از پایان هر اجرا، تصویر شاخص، خلاصه و لینک نوشته را دریافت می‌کند (و در صورت فعال بودن، گزارش دوره‌ای). نتیجهٔ ارسال در لاگ کار ثبت می‌شود."
+
+#: admin/views/schedule.php
+msgid "Caps how many automatic posts may be created per calendar day (site timezone). 0 = unlimited. Today’s count is shown next to the field."
+msgstr "حداکثر تعداد نوشته‌های خودکاری که در هر روز تقویمی می‌توانند ساخته شوند (به وقت سایت). ۰ = نامحدود. شمار امروز کنار همین فیلد نمایش داده می‌شود."
+
+#: admin/views/update.php
+msgid "Compares the installed version with the remote branch. A newer remote version means an update is available."
+msgstr "نسخهٔ نصب‌شده را با برنچ راه دور مقایسه می‌کند. جدیدتر بودن نسخهٔ راه دور یعنی به‌روزرسانی موجود است."
+
+#: admin/views/settings.php
+msgid "Default options for new runs: language, tone, length and the TOC/FAQ defaults. You can override them per run on the console page."
+msgstr "گزینه‌های پیش‌فرض اجراهای جدید: زبان، لحن، طول و پیش‌فرض‌های فهرست مطالب/سؤالات متداول. در هر اجرا می‌توانید آنها را در صفحهٔ کنسول تغییر دهید."
+
+#: admin/views/update.php
+msgid "Downloads the branch snapshot, verifies the plugin header, backs up the current files and swaps the new ones in — rolling back automatically if anything fails."
+msgstr "تصویر لحظه‌ای برنچ را دانلود می‌کند، سرآیند افزونه را راستی‌آزمایی می‌کند، از فایل‌های فعلی پشتیبان می‌گیرد و فایل‌های جدید را جایگزین می‌کند — اگر چیزی شکست بخورد، خودکار به نسخهٔ قبلی بازمی‌گردد."
+
+#: admin/views/prompts.php
+msgid "Each pipeline step can use its own connection, or an ordered fallback chain: if a provider keeps failing, the agent switches to the next one automatically. Empty = the default connection."
+msgstr "هر مرحلهٔ خط تولید می‌تواند اتصال خودش را داشته باشد یا یک زنجیرهٔ جایگزین مرتب: اگر یک سرویس مدام شکست بخورد، ایجنت خودکار به بعدی سوئیچ می‌کند. خالی = اتصال پیش‌فرض."
+
+#: admin/views/review.php
+msgid "Every AI-generated draft lands here until you decide: edit, preview, publish with one click, or send it back for another rewrite. Nothing goes live until you say so."
+msgstr "هر پیش‌نویسی که هوش مصنوعی می‌سازد اینجا می‌آید تا تصمیم بگیرید: ویرایش، پیش‌نمایش، انتشار با یک کلیک، یا فرستادن برای بازنویسی دوباره. تا خودتان نگویید چیزی منتشر نمی‌شود."
+
+#: admin/views/log-detail.php
+msgid "Every HTTP request the agent made: step, connection, model, duration, tokens and any error — the ground truth when debugging provider problems."
+msgstr "هر درخواست HTTP که ایجنت فرستاده است: مرحله، اتصال، مدل، مدت زمان، توکن‌ها و خطای احتمالی — منبع حقیقت برای عیب‌یابی مشکلات سرویس."
+
+#: admin/views/logs.php
+msgid "Every run with its status, progress, call count and tokens. Open a row for the full diary: every step, every API call and every log line. Jobs are kept for 90 days by default."
+msgstr "هر اجرا با وضعیت، پیشرفت، تعداد فراخوانی و توکن‌هایش. روی هر ردیف بروید تا دفترچهٔ کاملش را ببینید: همهٔ مراحل، همهٔ فراخوانی‌های API و همهٔ خطوط لاگ. کارها به‌طور پیش‌فرض ۹۰ روز نگه داشته می‌شوند."
+
+#: admin/views/settings.php
+msgid "Extra system instructions appended to every step (brand rules, banned words…), and the uninstall data policy."
+msgstr "دستورالعمل‌های سیستمی اضافه که به همهٔ مراحل افزوده می‌شوند (قواعد برند، واژه‌های ممنوع…) و سیاست حذف داده‌ها هنگام حذف افزونه."
+
+#: admin/views/rewrite.php
+msgid "Pick the post to rewrite. The agent rewrites it in place: status, author, address and category stay untouched — only the content (and optionally the image and SEO metadata) is refreshed."
+msgstr "نوشته‌ای را که باید بازنویسی شود انتخاب کنید. ایجنت آن را درجا بازنویسی می‌کند: وضعیت، نویسنده، نشانی و دسته دست نمی‌خورد — فقط محتوا (و در صورت فعال بودن، تصویر و متادیتای سئو) تازه می‌شود."
+
+#: admin/views/new-post.php
+msgid "Posts are always saved as drafts first. Here you choose what happens next: keep it as a draft (the safe default), publish immediately when the run finishes, or schedule publishing 15–10080 minutes later. Publishing needs the publish permission."
+msgstr "نوشته‌ها همیشه ابتدا به‌صورت پیش‌نویس ذخیره می‌شوند. اینجا انتخاب می‌کنید بعدش چه شود: پیش‌نویس بماند (پیش‌فرض امن)، بلافاصله پس از پایان اجرا منتشر شود، یا انتشار ۱۵ تا ۱۰۰۸۰ دقیقه بعدتر زمان‌بندی شود. انتشار نیازمند مجوز انتشار است."
+
+#: admin/views/prompts.php
+msgid "Prompts are the instructions sent to the AI for each step. A prompt left exactly at its default stays in “default” mode and is improved automatically on plugin updates; editing it freezes your own version."
+msgstr "پرامپت‌ها دستوراتی هستند که برای هر مرحله به هوش مصنوعی فرستاده می‌شوند. پرامپتی که دقیقاً روی مقدار پیش‌فرض بماند در حالت «پیش‌فرض» است و با به‌روزرسانی افزونه خودکار بهتر می‌شود؛ با ویرایش آن، نسخهٔ خودتان ثابت می‌شود."
+
+#: admin/views/connections.php
+msgid "Ready-made endpoint patterns for popular providers — copy your provider’s pattern into the connection form above."
+msgstr "الگوهای آمادهٔ نشانی برای سرویس‌های پرکاربرد — الگوی سرویس خودتان را در فرم اتصال بالا کپی کنید."
+
+#: admin/views/connections.php
+msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless allowlisted."
+msgstr "نشانی پایه باید به یک نقطهٔ پایانی سازگار با OpenAI اشاره کند، معمولاً با /v1 در انتها (مثلاً https://api.openai.com/v1). کلید API فقط نوشتنی است: برای نگه‌داشتن کلید ذخیره‌شده فیلد را خالی بگذارید. نشانی‌های خصوصی/داخلی توسط گارد شبکهٔ خروجی مسدود می‌شوند مگر اینکه مجاز اعلام شوند."
+
+#: admin/views/new-post.php
+msgid "The console is a live viewer: the job runs on the server, so you can close this tab and it keeps going. Steps, logs and progress update automatically while the agent works — and if a step fails after all retries, the Retry button re-runs only that step."
+msgstr "کنسول یک نمایشگر زنده است: کار روی سرور اجرا می‌شود، پس می‌توانید این برگه را ببندید و کار ادامه پیدا می‌کند. مراحل، لاگ‌ها و پیشرفت هنگام کار ایجنت خودکار به‌روز می‌شوند — و اگر مرحله‌ای بعد از همهٔ تلاش‌ها شکست بخورد، دکمهٔ «تلاش دوباره» فقط همان مرحله را اجرا می‌کند."
+
+#: admin/views/settings.php
+msgid "The global switch and size for AI featured images. The image model is set per connection; if image generation fails on every provider, the post is still saved — just without an image."
+msgstr "کلید سراسری و اندازهٔ تصاویر شاخص هوش مصنوعی. مدل تصویر برای هر اتصال جداگانه تنظیم می‌شود؛ اگر تولید تصویر در همهٔ سرویس‌ها شکست بخورد، نوشته بدون تصویر ذخیره می‌شود."
+
+#: admin/views/log-detail.php
+msgid "The human-readable diary of the run, exactly as it was shown live in the console."
+msgstr "دفترچهٔ خوانای این اجرا، درست همان‌طور که زنده در کنسول دیده می‌شد."
+
+#: admin/views/log-detail.php
+msgid "The job’s identity card: topic, mode, source (manual or scheduled), result and timing."
+msgstr "شناسنامهٔ کار: موضوع، حالت، مبدأ (دستی یا زمان‌بندی‌شده)، نتیجه و زمان‌بندی."
+
+#: admin/views/log-detail.php
+msgid "The pipeline checklist of this run: done, skipped (e.g. the image), failed or pending."
+msgstr "چک‌لیست مراحل این اجرا: انجام‌شده، ردشده (مثلاً تصویر)، ناموفق یا در انتظار."
+
+#: admin/views/schedule.php
+msgid "The plugin checks every 15 minutes (via WP-Cron) and fires the earliest due entry: one full agent run per tick. Missed times are caught up on the next tick the same day, and an entry never fires twice on the same day."
+msgstr "افزونه هر ۱۵ دقیقه (از طریق WP-Cron) بررسی می‌کند و زودترین موردِ سررسیده را اجرا می‌کند: هر تیک، یک اجرای کامل ایجنت. زمان‌های از دست رفته در همان روز با تیک بعدی جبران می‌شوند و هر ورودی در یک روز فقط یک‌بار اجرا می‌شود."
+
+#: admin/views/settings.php
+msgid "The site prompt tells the agent what this site is about: purpose, audience and voice. It drives topic invention, category choice and the writing style of every run — the single most important setting of the plugin."
+msgstr "پرامپت سایت به ایجنت می‌گوید این سایت دربارهٔ چیست: هدف، مخاطب و لحن. موضوع‌سازی، انتخاب دسته و سبک نوشتن هر اجرا از همین تنظیم می‌آید — مهم‌ترین تنظیم افزونه."
+
+#: admin/views/new-post.php
+msgid "Topic: leave it empty and the agent invents a fresh topic from the site prompt — it also checks your existing posts to avoid duplicates. Write your own idea and the whole article is built around it."
+msgstr "موضوع: خالی بگذارید تا ایجنت خودش موضوعی تازه از پرامپت سایت بسازد — نوشته‌های موجود را هم می‌بیند تا موضوع تکراری نسازد. ایدهٔ خودتان را بنویسید تا کل مقاله حول همان ساخته شود."
+
+#: admin/views/schedule.php
+msgid "WP-Cron only runs when the site receives visits. On low-traffic sites, disable it in wp-config.php and call wp-cron.php from a real system cron every minute — this panel shows whether the ticks are actually happening."
+msgstr "WP-Cron فقط وقتی اجرا می‌شود که سایت بازدید داشته باشد. در سایت‌های کم‌بازدید آن را در wp-config.php غیرفعال کنید و wp-cron.php را با یک کرون واقعی سیستمی هر دقیقه صدا بزنید — همین پنل نشان می‌دهد تیک‌ها واقعاً در حال اجرا هستند یا نه."
+
+#: includes/class-aipc-admin.php
+msgid "What is this section for?"
+msgstr "این بخش برای چیست؟"
+
+#: admin/views/update.php
+msgid "Where updates come from: the GitHub repository, the branch to track, and an optional Personal Access Token for private repositories (write-only, stored on your site only)."
+msgstr "منبع به‌روزرسانی‌ها: مخزن گیت‌هاب، برنچ مورد پیگیری و توکن دسترسی شخصی اختیاری برای مخازن خصوصی (فقط نوشتنی، تنها روی سایت خودتان ذخیره می‌شود)."
+
+#: admin/views/schedule.php
+msgid "A FIFO bank of topics for the schedules above: an entry with “Take the topic from the queue” consumes the oldest pending topic each time it fires, then the queue moves on — so every run writes about something new. Fill it by hand, or pull fresh ideas from your research sources with the suggest button."
+msgstr "انباری از موضوع‌ها برای زمان‌بندی‌های بالا: هر زمان‌بندی که «موضوع را از صف بردارد» هنگام اجرا، قدیمی‌ترین موضوع در انتظار را برمی‌دارد و صف جلو می‌رود — پس هر اجرا دربارهٔ چیزی تازه می‌نویسد. صف را دستی پر کنید یا با دکمهٔ پیشنهاد، ایده‌های تازه را از منابع پژوهشی بکشید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "AI Post Creator — commands:"
+msgstr "دستورهای ساخت نوشته با هوش مصنوعی:"
+
+#: admin/views/schedule.php
+msgid "Accept commands from Bale chats"
+msgstr "پذیرش فرمان از گفتگوهای بله"
+
+#: admin/views/schedule.php
+msgid "Add selected to queue"
+msgstr "افزودن انتخاب‌شده‌ها به صف"
+
+#: admin/views/schedule.php
+msgid "Add to queue"
+msgstr "افزودن به صف"
+
+#: admin/views/schedule.php
+msgid "Add topics (one per line)"
+msgstr "افزودن موضوع (یکی در هر خط)"
+
+#: includes/class-aipc-assets.php
+msgid "Added! Reloading…"
+msgstr "اضافه شد! در حال بازخوانی…"
+
+#: includes/class-aipc-assets.php
+msgid "Adding…"
+msgstr "در حال افزودن…"
+
+#: admin/views/schedule.php
+msgid "Clear queue"
+msgstr "خالی کردن صف"
+
+#: admin/views/schedule.php
+msgid "Commands: نوشتن: <topic> · وضعیت · آخرین · انتشار · صف · راهنما"
+msgstr "فرمان‌ها: نوشتن: <موضوع> · وضعیت · آخرین · انتشار · صف · راهنما"
+
+#: includes/class-aipc-assets.php
+msgid "Could not add the topics:"
+msgstr "افزودن موضوع‌ها ممکن نشد:"
+
+#: includes/class-aipc-assets.php
+msgid "Could not fetch suggestions:"
+msgstr "دریافت پیشنهادها ممکن نشد:"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Could not publish: %s"
+msgstr "انتشار ممکن نشد: %s"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Daily limit reached: at most %d posts per day can be started from Bale. Try again tomorrow."
+msgstr "به سقف روزانه رسیده‌اید: حداکثر %d نوشته در روز را می‌توان از داخل بله شروع کرد. فردا دوباره تلاش کنید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Drafts waiting for review: %d"
+msgstr "پیش‌نویس‌های در انتظار بازبینی: %d"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Every 5 minutes (AI Post Creator — Bale commands)"
+msgstr "هر ۵ دقیقه (ساخت نوشته با هوش مصنوعی — فرمان‌های بله)"
+
+#: includes/class-aipc-assets.php
+msgid "Fetching suggestions from your sources…"
+msgstr "در حال دریافت پیشنهاد از منابع شما…"
+
+#: admin/views/schedule.php
+msgid "From sources"
+msgstr "از منابع"
+
+#: includes/class-aipc-bale-commands.php
+msgid "I did not understand that command. Send «راهنما» (or help) for the list of commands."
+msgstr "دستور را متوجه نشدم. برای فهرست فرمان‌ها «راهنما» یا help را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "No AI drafts yet — start one with «نوشتن: <topic>»."
+msgstr "هنوز پیش‌نویسی از هوش مصنوعی نیست — با «نوشتن: <موضوع>» یکی شروع کنید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "No draft found at that position — send «آخرین» to see the newest draft."
+msgstr "در آن موقعیت پیش‌نویسی پیدا نشد — «آخرین» را بفرستید تا جدیدترین پیش‌نویس را ببینید."
+
+#: includes/class-aipc-assets.php
+msgid "No new topics found in your sources — try again later or add topics manually."
+msgstr "موضوع تازه‌ای در منابع شما پیدا نشد — بعداً دوباره تلاش کنید یا موضوع‌ها را دستی اضافه کنید."
+
+#: includes/class-aipc-assets.php
+msgid "No research sources are configured. Add them on the Settings page first."
+msgstr "هیچ منبع پژوهشی‌ای تنظیم نشده است. اول آنها را در صفحهٔ تنظیمات اضافه کنید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Only chats listed in the plugin settings can use commands."
+msgstr "فقط گفتگوهایی که در تنظیمات افزونه ثبت شده‌اند می‌توانند فرمان بدهند."
+
+#: admin/views/schedule.php
+msgid "Pending topics are used one by one (oldest first). Nothing is wasted: used topics are remembered so they are never suggested again."
+msgstr "موضوع‌های در انتظار یکی‌یکی (از قدیمی‌ترین) استفاده می‌شوند. چیزی هدر نمی‌رود: موضوع‌های استفاده‌شده به خاطر سپرده می‌شوند تا دوباره پیشنهاد نشوند."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Pending topics in the queue: %d"
+msgstr "موضوع‌های در انتظار در صف: %d"
+
+#: admin/views/schedule.php
+msgid "Pending topics: %d"
+msgstr "موضوع‌های در انتظار: %d"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Post published via a Bale command."
+msgstr "پست با فرمان بله منتشر شد."
+
+#: admin/views/schedule.php
+msgid "Queue"
+msgstr "صف"
+
+#: admin/views/schedule.php
+msgid "Queue cleared."
+msgstr "صف خالی شد."
+
+#: admin/views/schedule.php
+msgid "Remove"
+msgstr "حذف"
+
+#: admin/views/schedule.php
+msgid "Remove every pending topic from the queue?"
+msgstr "همهٔ موضوع‌های در انتظار از صف حذف شوند؟"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Runs: %1$d (⏳ %2$d · ✅ %3$d · ❌ %4$d)"
+msgstr "اجراها: %1$d (⏳ %2$d · ✅ %3$d · ❌ %4$d)"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: draft — send «انتشار» to publish it."
+msgstr "وضعیت: پیش‌نویس — برای انتشارش «انتشار» را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: published"
+msgstr "وضعیت: منتشرشده"
+
+#: admin/views/schedule.php
+msgid "Suggest topics from my sources"
+msgstr "پیشنهاد موضوع از منابع من"
+
+#: admin/views/schedule.php
+msgid "Take the topic from the queue"
+msgstr "موضوع را از صف بردار"
+
+#: admin/views/schedule.php
+msgid "The bot checks for new messages every ~5 minutes (via WP-Cron) and only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Up to 20 posts per day can be started from Bale."
+msgstr "ربات تقریباً هر ۵ دقیقه (از طریق WP-Cron) پیام‌های تازه را بررسی می‌کند و فقط به شناسه‌های گفتگوی بالا گوش می‌دهد. هر کس در آن گفتگوها می‌تواند: با «نوشتن: یک موضوع» یک پیش‌نویس شروع کند، «وضعیت» برای اجراهای امروز، «آخرین» برای جدیدترین پیش‌نویس، «انتشار» برای انتشار آن، «صف» برای صف موضوع‌ها و «راهنما» برای فهرست کامل. حداکثر ۲۰ نوشته در روز را می‌توان از داخل بله شروع کرد."
+
+#: admin/views/schedule.php
+msgid "The queue is empty. Add topics below or suggest them from your research sources."
+msgstr "صف خالی است. موضوع‌ها را در پایین اضافه کنید یا از منابع پژوهشی پیشنهاد بگیرید."
+
+#: includes/class-aipc-topic-queue.php
+msgid "The topic is empty."
+msgstr "موضوع خالی است."
+
+#: includes/class-aipc-bale-commands.php
+msgid "The topic is too short — send e.g. «نوشتن: balcony gardening»."
+msgstr "موضوع خیلی کوتاه است — مثلاً «نوشتن: باغبانی بالکن» را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "The topic queue is empty. Add topics on the Schedule page."
+msgstr "صف موضوع‌ها خالی است. در صفحهٔ زمان‌بندی موضوع اضافه کنید."
+
+#: includes/class-aipc-topic-queue.php
+msgid "The topic queue is full."
+msgstr "صف موضوع‌ها پر است."
+
+#: includes/class-aipc-topic-queue.php
+msgid "This topic is already in the queue: %s"
+msgstr "این موضوع از قبل در صف است: %s"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Today’s status"
+msgstr "وضعیت امروز"
+
+#: admin/views/schedule.php
+msgid "Topic queue"
+msgstr "صف موضوع‌ها"
+
+#: admin/views/schedule.php
+msgid "Topic removed."
+msgstr "موضوع حذف شد."
+
+#: admin/views/schedule.php
+msgid "Topics added to the queue."
+msgstr "موضوع‌ها به صف اضافه شدند."
+
+#: admin/views/schedule.php
+msgid "Two-way commands"
+msgstr "فرمان‌های دوسویه"
+
+#: admin/views/schedule.php
+msgid "When this entry fires, it takes the oldest pending topic from the topic queue (box above). If the queue is empty it falls back to the fixed topic field — or to the site prompt when that is empty too."
+msgstr "هنگام اجرای این زمان‌بندی، قدیمی‌ترین موضوع در انتظار از صف موضوع‌ها (کادر بالا) برداشته می‌شود. اگر صف خالی باشد به فیلد موضوع ثابت برمی‌گردد — و اگر آن هم خالی باشد، از توضیح سایت موضوع ساخته می‌شود."
+
+#: admin/views/schedule.php
+msgid "e.g. Growing mushrooms at home&#10;A small balcony water garden"
+msgstr "مثلاً پرورش قارچ در خانه&#10;باغچهٔ آبی کوچک در بالکن"
+
+#: includes/class-aipc-bale-commands.php
+msgid "…and %d more"
+msgstr "…و %d مورد دیگر"
+
+#: admin/views/schedule.php
+msgid "…and %d more in the queue."
+msgstr "…و %d مورد دیگر در صف."
+
+#: includes/class-aipc-bale-commands.php
+msgid "✍️ Got it — I’m writing a draft about “%s” now. I’ll message you here as soon as it’s ready."
+msgstr "✍️ دریافت شد — همین حالا پیش‌نویسی دربارهٔ «%s» می‌نویسم. به محض آماده‌شدن، همین‌جا خبر می‌دهم."
+
+#: includes/class-aipc-bale-commands.php
+msgid "✍️ نوشتن: <topic> — start a new draft about the topic"
+msgstr "✍️ نوشتن: <موضوع> — شروع پیش‌نویس تازه دربارهٔ موضوع"
+
+#: includes/class-aipc-bale-commands.php
+msgid "❓ راهنما — this list"
+msgstr "❓ راهنما — همین فهرست"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📄 آخرین — the newest AI draft"
+msgstr "📄 آخرین — جدیدترین پیش‌نویس هوش مصنوعی"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📊 وضعیت — today’s runs, drafts and queue"
+msgstr "📊 وضعیت — اجراهای امروز، پیش‌نویس‌ها و صف"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📋 Pending topics (%d):"
+msgstr "📋 موضوع‌های در انتظار (%d):"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📋 صف — pending topics in the queue"
+msgstr "📋 صف — موضوع‌های در انتظار در صف"
+
+#: includes/class-aipc-bale-commands.php
+msgid "🚀 Published: %s"
+msgstr "🚀 منتشر شد: %s"
+
+#: includes/class-aipc-bale-commands.php
+msgid "🚀 انتشار [number] — publish the newest (or n-th) draft"
+msgstr "🚀 انتشار [شماره] — انتشار جدیدترین (یا نهایی) پیش‌نویس"
