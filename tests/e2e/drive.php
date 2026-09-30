@@ -851,6 +851,48 @@ $out['base_url_normalize'] = array(
 );
 
 /* ------------------------------------------------------------------ *
+ * Purpose-based connection routing (v1.8.0): chat vs image pools,
+ * priority order, agent auto-chains when a step has no explicit chain.
+ * ------------------------------------------------------------------ */
+$aipc_cr_ok  = AIPC_Connections::sanitize( array( 'name' => 'Img srv', 'base_url' => 'https://mock.invalid/v1', 'purpose' => 'image', 'priority' => '2' ), array() );
+$aipc_cr_bad = AIPC_Connections::sanitize( array( 'name' => 'Weird', 'base_url' => 'https://mock.invalid/v1', 'purpose' => 'sound', 'priority' => '5000' ), array() );
+
+$aipc_cr_conn_backup  = get_option( 'aipc_connections' );
+$aipc_cr_steps_backup = get_option( 'aipc_steps' );
+update_option( 'aipc_connections', array(
+	array( 'id' => 'img2',   'name' => 'Image slow', 'base_url' => 'https://img2.invalid/v1', 'purpose' => 'image', 'priority' => 20 ),
+	array( 'id' => 'chat1',  'name' => 'Chat main',  'base_url' => 'https://chat.invalid/v1', 'purpose' => 'chat',  'priority' => 1 ),
+	array( 'id' => 'img1',   'name' => 'Image fast', 'base_url' => 'https://img1.invalid/v1', 'purpose' => 'image', 'priority' => 5 ),
+	array( 'id' => 'any',    'name' => 'Universal',  'base_url' => 'https://both.invalid/v1', 'purpose' => 'both',  'priority' => 7, 'is_default' => 1 ),
+	array( 'id' => 'legacy', 'name' => 'Old-style',  'base_url' => 'https://old.invalid/v1' ), // pre-1.8.0: no purpose/priority.
+), false );
+update_option( 'aipc_steps', array(), false ); // No explicit chains on any step.
+
+$aipc_ids = function ( $pool ) {
+	return implode( ',', array_map( function ( $c ) { return $c['id']; }, $pool ) );
+};
+$aipc_pool_img  = AIPC_Connections::for_purpose( 'image' );
+$aipc_pool_chat = AIPC_Connections::for_purpose( 'chat' );
+
+$aipc_rc = new ReflectionMethod( 'AIPC_Agent', 'resolve_connections' );
+$aipc_rc->setAccessible( true );
+$aipc_chain_img  = $aipc_rc->invoke( AIPC_Agent::instance(), 'image' );
+$aipc_chain_plan = $aipc_rc->invoke( AIPC_Agent::instance(), 'plan' );
+
+$out['conn_routing'] = array(
+	'sanitize_purpose'   => 'image' === $aipc_cr_ok['purpose'] && 2 === $aipc_cr_ok['priority'],
+	'sanitize_fallbacks' => 'both' === $aipc_cr_bad['purpose'] && 999 === $aipc_cr_bad['priority'],
+	'image_pool_order'   => 'img1,any,legacy,img2' === $aipc_ids( $aipc_pool_img ),
+	'chat_pool_order'    => 'chat1,any,legacy' === $aipc_ids( $aipc_pool_chat ),
+	'agent_image_chain'  => 'img1,any,legacy,img2' === $aipc_ids( $aipc_chain_img ),
+	'agent_chat_chain'   => 'chat1,any,legacy' === $aipc_ids( $aipc_chain_plan ),
+	'legacy_defaults'    => 'both' === $aipc_pool_img[2]['purpose'] && 10 === $aipc_pool_img[2]['priority'],
+);
+
+update_option( 'aipc_connections', $aipc_cr_conn_backup, false );
+update_option( 'aipc_steps', $aipc_cr_steps_backup, false );
+
+/* ------------------------------------------------------------------ *
  * Assets: locale-proof screen detection (v1.7.3)
  * The submenu hook prefix is sanitize_title() of the TRANSLATED menu
  * title (percent-encoded Persian on fa_IR), so matching must key off the

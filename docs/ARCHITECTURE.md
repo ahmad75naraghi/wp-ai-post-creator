@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.7.5**. Audience: contributors and
+Technical reference for AI Post Creator **v1.8.0**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -47,7 +47,7 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 | `AIPC_Admin` (`class-aipc-admin.php`) | ~760 | Menu (9 pages), `admin_post_*` form handlers, view rendering |
 | `AIPC_Rest` (`class-aipc-rest.php`) | ~600 | REST endpoints, permissions & rate limits |
 | `AIPC_Post_Builder` (`class-aipc-post-builder.php`) | ~370 | Assembles the final post: `create()` (new) and `update()` (rewrite), TOC/FAQ HTML, SEO meta, tags, featured image upload |
-| `AIPC_Connections` (`class-aipc-connections.php`) | ~320 | Connection CRUD + sanitizing, default connection, write-only keys |
+| `AIPC_Connections` (`class-aipc-connections.php`) | ~420 | Connection CRUD + sanitizing, default connection, write-only keys, purpose (chat/image/both) + priority, `for_purpose()` priority-ordered pools |
 | `AIPC_Updater` (`class-aipc-updater.php`) | ~600 | Git self-update: repo/branch/token config, version check, connection test, zipball download (codeload or authenticated api.github.com), verification, backup + atomic swap with rollback |
 | `AIPC_Settings` (`class-aipc-settings.php`) | ~250 | Settings (site prompt, source sites, defaults) + option lists (tones, lengths, languages, image sizes) |
 | `AIPC_Assets` (`class-aipc-assets.php`) | ~260 | Locale-proof screen detection (`screen_for_hook()` parses the page slug after `_page_` — the hook prefix is the *translated* menu title), enqueue, inline config for the console JS |
@@ -260,7 +260,7 @@ a stable emoji (✍️📊📄🚀📋🤖) so tests can match it across transla
 
 ## 10. Internationalization
 
-639 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+646 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals

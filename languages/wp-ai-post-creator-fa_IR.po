@@ -2579,3 +2579,31 @@ msgstr "هیچ مدلی با فیلتر شما مطابقت ندارد."
 #: admin/views/connections.php
 msgid "Type to filter the models…"
 msgstr "برای فیلتر کردن مدل‌ها تایپ کنید…"
+
+#: admin/views/connections.php
+msgid "Chat & images"
+msgstr "گفتگو و تصویر"
+
+#: admin/views/connections.php
+msgid "Chat only"
+msgstr "فقط گفتگو"
+
+#: admin/views/connections.php
+msgid "Images only"
+msgstr "فقط تصویر"
+
+#: admin/views/connections.php
+msgid "Lower number = tried first (1 is the highest priority). When a connection fails 3 attempts in a row, the run automatically switches to the next connection of the same purpose in priority order."
+msgstr "عدد کوچک‌تر = زودتر امتحان می‌شود (۱ بالاترین اولویت است). وقتی یک اتصال ۳ بار پشت‌سرهم خطا بدهد، اجرا به‌طور خودکار سراغ اتصال بعدیِ همان کاربرد به‌ترتیب اولویت می‌رود."
+
+#: admin/views/connections.php
+msgid "Priority"
+msgstr "اولویت"
+
+#: admin/views/connections.php
+msgid "Purpose"
+msgstr "کاربرد"
+
+#: admin/views/connections.php
+msgid "What this connection is used for. Steps without an explicit connection chain (Prompts page) automatically use every matching connection in priority order: text steps take the chat-capable connections, the featured-image step takes the image-capable ones. This is how you send images to a different server than the text."
+msgstr "این اتصال برای چه کاری استفاده شود. گام‌هایی که زنجیرهٔ اتصال مشخصی ندارند (صفحهٔ پرامپت‌ها) به‌طور خودکار همهٔ اتصال‌های هم‌خوان را به‌ترتیب اولویت به کار می‌گیرند: گام‌های متنی از اتصال‌های دارای قابلیت گفتگو و گام تصویر شاخص از اتصال‌های دارای قابلیت تصویر. به همین شکل می‌توانید ساخت تصویر را به سروری جدا از متن بسپارید."

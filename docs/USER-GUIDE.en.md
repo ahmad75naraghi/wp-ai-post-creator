@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.7.5)
+# AI Post Creator — Complete User Guide (v1.8.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -58,11 +58,20 @@ Together, Ollama, LM Studio…
 | API key | Write-only — leave empty to keep the stored key |
 | Chat model | e.g. `gpt-4o-mini` — use "Load models" to list what the service offers |
 | Image model | e.g. `dall-e-3` or `gpt-image-1` |
+| Purpose *(new in 1.8)* | What the connection is used for: **chat & images** (default), **chat only** or **images only** |
+| Priority *(new in 1.8)* | 1–999, lower = tried first — after 3 failed attempts in a row the run switches to the next matching connection |
 | Temperature / max tokens / timeout | Fine-tuning (defaults are sensible) |
 
 - The **default** connection is used for every step unless you assign a chain.
 - Use **Test connection** before saving.
 - **Create more than one connection** so you can build fallback chains (section 8).
+
+**Separate image server (new in 1.8):** add a connection with purpose
+*images only* (e.g. an OmniRoute/gateway that hosts your image model) and
+set your text provider to *chat only*. Text steps then use the chat pool
+and the featured-image step the image pool — each ordered by priority,
+with automatic failover after 3 errors per connection. Explicit per-step
+chains (section 8) always take precedence over these automatic pools.
 
 ---
 

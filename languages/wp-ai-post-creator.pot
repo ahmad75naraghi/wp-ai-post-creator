@@ -428,6 +428,10 @@ msgstr ""
 msgid "Category & topic selection"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Chat & images"
+msgstr ""
+
 #: includes/class-aipc-assets.php
 msgid "Chat ID detected: %s"
 msgstr ""
@@ -438,6 +442,10 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "Chat model"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Chat only"
 msgstr ""
 
 #: admin/views/update.php
@@ -1028,6 +1036,10 @@ msgstr ""
 msgid "Image size"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Images only"
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Improved title from the analysis step"
 msgstr ""
@@ -1130,6 +1142,10 @@ msgstr ""
 
 #: includes/class-aipc-settings.php
 msgid "Long — ~2,200 words"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Lower number = tried first (1 is the highest priority). When a connection fails 3 attempts in a row, the run automatically switches to the next connection of the same purpose in priority order."
 msgstr ""
 
 #: includes/class-aipc-connections.php
@@ -1434,6 +1450,10 @@ msgstr ""
 msgid "Primary keyword: %s"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Priority"
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Professional"
 msgstr ""
@@ -1468,6 +1488,10 @@ msgstr ""
 
 #: admin/views/review.php
 msgid "Publish “%s” now?"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Purpose"
 msgstr ""
 
 #: admin/views/schedule.php
@@ -2326,6 +2350,10 @@ msgstr ""
 
 #: includes/class-aipc-admin.php
 msgid "What is this section for?"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "What this connection is used for. Steps without an explicit connection chain (Prompts page) automatically use every matching connection in priority order: text steps take the chat-capable connections, the featured-image step takes the image-capable ones. This is how you send images to a different server than the text."
 msgstr ""
 
 #: includes/class-aipc-steps.php

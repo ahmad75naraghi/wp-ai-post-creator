@@ -28,8 +28,8 @@ current Arena session branch (`arena/<id>-wp-ai-post-creator`) with a PR against
 ## Golden rules
 
 1. **Never claim something works without running the verification suite** (below).
-2. **Never break the e2e suite** — it is the project's contract (49 result
-   groups / 336 boolean assertions green at v1.7.5, zero PHP warnings).
+2. **Never break the e2e suite** — it is the project's contract (50 result
+   groups / 343 boolean assertions green at v1.8.0, zero PHP warnings).
 3. **PHP 7.4 compatible** syntax only (the linter parses with `version: 704`).
    No enums, no readonly, no match expressions, no named args.
 4. **No build step, no runtime dependencies.** Plain PHP + jQuery-free vanilla JS.

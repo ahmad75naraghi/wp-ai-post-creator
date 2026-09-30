@@ -71,6 +71,24 @@ function aipc_connection_form( $conn ) {
 					value="<?php echo esc_attr( $editing ? $conn['image_model'] : 'dall-e-3' ); ?>" />
 			</div>
 			<div class="aipc-field">
+				<label><?php esc_html_e( 'Purpose', 'wp-ai-post-creator' ); ?>
+					<?php aipc_help( 'conn-routing', __( 'What this connection is used for. Steps without an explicit connection chain (Prompts page) automatically use every matching connection in priority order: text steps take the chat-capable connections, the featured-image step takes the image-capable ones. This is how you send images to a different server than the text.', 'wp-ai-post-creator' ) ); ?>
+				</label>
+				<?php $aipc_purpose = $editing && isset( $conn['purpose'] ) ? $conn['purpose'] : 'both'; ?>
+				<select class="aipc-input" name="purpose">
+					<option value="both" <?php selected( $aipc_purpose, 'both' ); ?>><?php esc_html_e( 'Chat & images', 'wp-ai-post-creator' ); ?></option>
+					<option value="chat" <?php selected( $aipc_purpose, 'chat' ); ?>><?php esc_html_e( 'Chat only', 'wp-ai-post-creator' ); ?></option>
+					<option value="image" <?php selected( $aipc_purpose, 'image' ); ?>><?php esc_html_e( 'Images only', 'wp-ai-post-creator' ); ?></option>
+				</select>
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Priority', 'wp-ai-post-creator' ); ?>
+					<?php aipc_help( 'conn-priority', __( 'Lower number = tried first (1 is the highest priority). When a connection fails 3 attempts in a row, the run automatically switches to the next connection of the same purpose in priority order.', 'wp-ai-post-creator' ) ); ?>
+				</label>
+				<input type="number" class="aipc-input" name="priority" min="1" max="999" step="1"
+					value="<?php echo esc_attr( $editing && isset( $conn['priority'] ) ? (int) $conn['priority'] : 10 ); ?>" />
+			</div>
+			<div class="aipc-field">
 				<label><?php esc_html_e( 'Temperature', 'wp-ai-post-creator' ); ?></label>
 				<input type="number" class="aipc-input" name="temperature" min="0" max="2" step="0.1"
 					value="<?php echo esc_attr( $editing ? $conn['temperature'] : 0.7 ); ?>" />
@@ -137,6 +155,8 @@ endif;
 						<th><?php esc_html_e( 'Endpoint', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Chat model', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Image model', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Purpose', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Priority', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Default', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Actions', 'wp-ai-post-creator' ); ?></th>
 					</tr>
@@ -148,6 +168,18 @@ endif;
 						<td class="aipc-code"><?php echo esc_html( $aipc_conn['base_url'] ); ?></td>
 						<td class="aipc-code"><?php echo esc_html( $aipc_conn['chat_model'] ); ?></td>
 						<td class="aipc-code"><?php echo esc_html( $aipc_conn['image_model'] ); ?></td>
+						<td>
+							<?php
+							$aipc_purpose_labels = array(
+								'both'  => __( 'Chat & images', 'wp-ai-post-creator' ),
+								'chat'  => __( 'Chat only', 'wp-ai-post-creator' ),
+								'image' => __( 'Images only', 'wp-ai-post-creator' ),
+							);
+							$aipc_row_purpose    = isset( $aipc_conn['purpose'] ) && isset( $aipc_purpose_labels[ $aipc_conn['purpose'] ] ) ? $aipc_conn['purpose'] : 'both';
+							echo esc_html( $aipc_purpose_labels[ $aipc_row_purpose ] );
+							?>
+						</td>
+						<td><?php echo esc_html( isset( $aipc_conn['priority'] ) ? (int) $aipc_conn['priority'] : 10 ); ?></td>
 						<td><?php echo ! empty( $aipc_conn['is_default'] ) ? '⭐ ' . esc_html__( 'Yes', 'wp-ai-post-creator' ) : '—'; ?></td>
 						<td>
 							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'aipc-connections', 'edit' => $aipc_conn['id'] ), admin_url( 'admin.php' ) ) ); ?>"><?php esc_html_e( 'Edit', 'wp-ai-post-creator' ); ?></a> ·

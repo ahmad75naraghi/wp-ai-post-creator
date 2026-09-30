@@ -3,6 +3,35 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.8.0] — 2026-09-30
+
+### Added
+- **Connection purposes: separate chat and image servers.** Every
+  connection now carries a `purpose` — *chat & images* (default), *chat
+  only* or *images only* — plus a numeric `priority` (1–999, lower =
+  tried first). The featured-image step automatically uses the
+  image-capable connections and every text step the chat-capable ones,
+  so images no longer have to come from the same server as the text.
+- **Priority failover.** Steps without an explicit connection chain
+  (Prompts page) get an automatic chain: all matching connections in
+  priority order. Each entry keeps its own retry budget (3 attempts,
+  `aipc_step_attempts` filter) — after 3 consecutive failures the run
+  switches to the next connection. New `AIPC_Connections::for_purpose()`
+  + `aipc_connections_for_purpose` filter.
+- Connections page: Purpose select + Priority field (with help
+  tooltips), new Purpose/Priority columns in the list. 7 new strings
+  translated to Persian (646 msgids).
+
+### Compatibility
+- Stored pre-1.8.0 connections are normalized on read (purpose
+  `both`, priority `10`) — nothing to migrate, explicit per-step chains
+  still take precedence over the automatic pools.
+
+### Tests
+- New `conn_routing` e2e group (7 assertions): sanitizing, pool
+  filtering + ordering, agent auto-chains for image vs plan steps,
+  legacy defaults (50 groups / 343 assertions total).
+
 ## [1.7.5] — 2026-09-30
 
 ### Improved

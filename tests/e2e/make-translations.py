@@ -43,6 +43,13 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Chat & images': 'گفتگو و تصویر',
+    'Chat only': 'فقط گفتگو',
+    'Images only': 'فقط تصویر',
+    'Priority': 'اولویت',
+    'Purpose': 'کاربرد',
+    'Lower number = tried first (1 is the highest priority). When a connection fails 3 attempts in a row, the run automatically switches to the next connection of the same purpose in priority order.': 'عدد کوچک\u200cتر = زودتر امتحان می\u200cشود (۱ بالاترین اولویت است). وقتی یک اتصال ۳ بار پشت\u200cسرهم خطا بدهد، اجرا به\u200cطور خودکار سراغ اتصال بعدیِ همان کاربرد به\u200cترتیب اولویت می\u200cرود.',
+    'What this connection is used for. Steps without an explicit connection chain (Prompts page) automatically use every matching connection in priority order: text steps take the chat-capable connections, the featured-image step takes the image-capable ones. This is how you send images to a different server than the text.': 'این اتصال برای چه کاری استفاده شود. گام\u200cهایی که زنجیرهٔ اتصال مشخصی ندارند (صفحهٔ پرامپت\u200cها) به\u200cطور خودکار همهٔ اتصال\u200cهای هم\u200cخوان را به\u200cترتیب اولویت به کار می\u200cگیرند: گام\u200cهای متنی از اتصال\u200cهای دارای قابلیت گفتگو و گام تصویر شاخص از اتصال\u200cهای دارای قابلیت تصویر. به همین شکل می\u200cتوانید ساخت تصویر را به سروری جدا از متن بسپارید.',
     'Type to filter the models\u2026': '\u0628\u0631\u0627\u06cc \u0641\u06cc\u0644\u062a\u0631 \u06a9\u0631\u062f\u0646 \u0645\u062f\u0644\u200c\u0647\u0627 \u062a\u0627\u06cc\u067e \u06a9\u0646\u06cc\u062f\u2026',
     'No models match your filter.': '\u0647\u06cc\u0686 \u0645\u062f\u0644\u06cc \u0628\u0627 \u0641\u06cc\u0644\u062a\u0631 \u0634\u0645\u0627 \u0645\u0637\u0627\u0628\u0642\u062a \u0646\u062f\u0627\u0631\u062f.',
     'Allow private/LAN addresses (e.g. a self-hosted gateway like OmniRoute or Ollama on another machine in your network)': 'اجازه به نشانی\u200cهای خصوصی/شبکهٔ محلی (مثلاً گیت\u200cوی سلف\u200cهاست مانند OmniRoute یا Ollama روی دستگاه دیگری در شبکهٔ شما)',

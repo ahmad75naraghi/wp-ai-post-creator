@@ -87,6 +87,15 @@ final class AIPC_Agent {
 				$chain[] = $conn;
 			}
 		}
+
+		// No explicit chain on the step: build one automatically from the
+		// connections whose purpose matches (image steps use image-capable
+		// connections, everything else chat-capable ones), ordered by
+		// priority. Each entry keeps its own retry budget below.
+		if ( empty( $chain ) ) {
+			$purpose = ( 'image' === $step ) ? 'image' : 'chat';
+			$chain   = AIPC_Connections::for_purpose( $purpose );
+		}
 		if ( empty( $chain ) ) {
 			$default = AIPC_Connections::get_default();
 			if ( $default ) {

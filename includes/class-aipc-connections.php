@@ -25,7 +25,64 @@ final class AIPC_Connections {
 	 */
 	public static function all() {
 		$conns = get_option( self::OPTION, array() );
-		return is_array( $conns ) ? $conns : array();
+		if ( ! is_array( $conns ) ) {
+			return array();
+		}
+		// Connections stored before 1.8.0 have no purpose/priority.
+		foreach ( $conns as $i => $conn ) {
+			if ( ! isset( $conn['purpose'] ) || ! in_array( $conn['purpose'], array( 'both', 'chat', 'image' ), true ) ) {
+				$conns[ $i ]['purpose'] = 'both';
+			}
+			if ( ! isset( $conn['priority'] ) || (int) $conn['priority'] < 1 ) {
+				$conns[ $i ]['priority'] = 10;
+			}
+		}
+		return $conns;
+	}
+
+	/**
+	 * Connections usable for a purpose ('chat' or 'image'), ordered by
+	 * priority (lower number = tried first), then default flag, then name.
+	 *
+	 * A connection participates when its own purpose matches or is 'both'.
+	 * The agent gives each entry its own retry budget (3 attempts by
+	 * default) and falls back to the next one on repeated failure.
+	 *
+	 * @param string $purpose 'chat' or 'image'.
+	 * @return array[] Ordered connection data (may be empty).
+	 */
+	public static function for_purpose( $purpose ) {
+		$purpose = ( 'image' === $purpose ) ? 'image' : 'chat';
+		$pool    = array();
+		foreach ( self::all() as $conn ) {
+			if ( empty( $conn['base_url'] ) ) {
+				continue;
+			}
+			if ( 'both' === $conn['purpose'] || $purpose === $conn['purpose'] ) {
+				$pool[] = $conn;
+			}
+		}
+		usort( $pool, function ( $a, $b ) {
+			$pa = (int) $a['priority'];
+			$pb = (int) $b['priority'];
+			if ( $pa !== $pb ) {
+				return $pa - $pb;
+			}
+			$da = empty( $a['is_default'] ) ? 1 : 0;
+			$db = empty( $b['is_default'] ) ? 1 : 0;
+			if ( $da !== $db ) {
+				return $da - $db;
+			}
+			return strcasecmp( (string) $a['name'], (string) $b['name'] );
+		} );
+
+		/**
+		 * Filter the priority-ordered connection pool for a purpose.
+		 *
+		 * @param array[] $pool    Ordered connection data.
+		 * @param string  $purpose 'chat' or 'image'.
+		 */
+		return apply_filters( 'aipc_connections_for_purpose', $pool, $purpose );
 	}
 
 	/**
@@ -253,6 +310,18 @@ final class AIPC_Connections {
 			$timeout = 600;
 		}
 
+		$purpose = isset( $in['purpose'] ) ? sanitize_key( (string) $in['purpose'] ) : ( isset( $old['purpose'] ) ? $old['purpose'] : 'both' );
+		if ( ! in_array( $purpose, array( 'both', 'chat', 'image' ), true ) ) {
+			$purpose = 'both';
+		}
+
+		$priority = isset( $in['priority'] ) ? absint( $in['priority'] ) : ( isset( $old['priority'] ) ? absint( $old['priority'] ) : 10 );
+		if ( $priority < 1 ) {
+			$priority = 10;
+		} elseif ( $priority > 999 ) {
+			$priority = 999;
+		}
+
 		$conn = array(
 			'id'              => isset( $old['id'] ) ? $old['id'] : '',
 			'name'            => $name,
@@ -263,6 +332,8 @@ final class AIPC_Connections {
 			'temperature'     => $temp,
 			'max_tokens'      => $max_tokens,
 			'request_timeout' => $timeout,
+			'purpose'         => $purpose,
+			'priority'        => $priority,
 			'is_default'      => empty( $in['is_default'] ) ? ( isset( $old['is_default'] ) ? $old['is_default'] : 0 ) : 1,
 			'created'         => isset( $old['created'] ) ? $old['created'] : 0,
 			'updated'         => time(),
