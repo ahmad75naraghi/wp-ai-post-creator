@@ -43,6 +43,12 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Image route': 'مسیر تولید تصویر',
+    'Automatic (images endpoint, then chat)': 'خودکار (اول اندپوینت تصویر، بعد گفتگو)',
+    'Images endpoint (/images/generations)': 'اندپوینت تصویر (\u200e/images/generations)',
+    'Chat completions (Gemini/OpenRouter-style)': 'گفتگو — Chat completions (سبک Gemini/OpenRouter)',
+    'The chat route returned no image — the model may not support image output.': 'مسیر گفتگو تصویری برنگرداند — احتمالاً این مدل از خروجی تصویر پشتیبانی نمی\u200cکند.',
+    'Which API route generates images. OpenAI-style services use the images endpoint (/images/generations); Gemini-style gateways (OpenRouter, Antigravity …) return the picture as base64 inside a chat completion instead — pick "Chat completions" for those, with an image-capable model (e.g. gemini-2.5-flash-image) in the Image model field. "Automatic" tries the images endpoint first and falls back to the chat route by itself.': 'تصویر از کدام مسیر API ساخته شود. سرویس\u200cهای سبک OpenAI از اندپوینت تصویر (\u200e/images/generations) استفاده می\u200cکنند؛ اما گیت\u200cوی\u200cهای سبک Gemini (مانند OpenRouter و Antigravity و…) تصویر را به\u200cصورت Base64 داخل پاسخ گفتگو برمی\u200cگردانند — برای آن\u200cها «گفتگو» را انتخاب کنید و در فیلد «مدل تصویر» یک مدل تصویرساز (مثلاً gemini-2.5-flash-image) بگذارید. حالت «خودکار» اول اندپوینت تصویر را امتحان می\u200cکند و در صورت شکست، خودش سراغ مسیر گفتگو می\u200cرود.',
     'Could not download the generated image: %s': 'دانلود تصویر تولیدشده ممکن نشد: %s',
     'Automatic (base64 or link)': 'خودکار (Base64 یا لینک)',
     'Force base64 (decode locally — most reliable)': 'اجباری Base64 (تبدیل محلی — مطمئن\u200cترین)',

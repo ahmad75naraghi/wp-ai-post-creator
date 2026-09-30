@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.8.2
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.9.0 =
+* New: second image-generation route — "Chat completions (Gemini/OpenRouter-style)". Gemini-style gateways don't serve /images/generations (errors like "No credentials for image provider: openai"); they return the picture as base64 inside a chat completion. The new per-connection "Image route" option supports that, and "Automatic" (default) tries the images endpoint first and falls back to the chat route by itself
+* The chat route parses OpenRouter message.images, multimodal content parts, Gemini inline_data and data: URI content — always decoded locally (base64), which pairs perfectly with the "Force base64" delivery mode
 
 = 1.8.2 =
 * Hardening pass: a failed download of a link-returned image now retries and fails over to the next image connection instead of silently skipping the featured image

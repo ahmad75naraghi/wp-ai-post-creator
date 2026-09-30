@@ -39,6 +39,9 @@ final class AIPC_Connections {
 			if ( ! isset( $conn['image_format'] ) || ! in_array( $conn['image_format'], array( 'auto', 'b64' ), true ) ) {
 				$conns[ $i ]['image_format'] = 'auto';
 			}
+			if ( ! isset( $conn['image_api'] ) || ! in_array( $conn['image_api'], array( 'auto', 'images', 'chat' ), true ) ) {
+				$conns[ $i ]['image_api'] = 'auto';
+			}
 		}
 		return $conns;
 	}
@@ -330,6 +333,11 @@ final class AIPC_Connections {
 			$image_format = 'auto';
 		}
 
+		$image_api = isset( $in['image_api'] ) ? sanitize_key( (string) $in['image_api'] ) : ( isset( $old['image_api'] ) ? $old['image_api'] : 'auto' );
+		if ( ! in_array( $image_api, array( 'auto', 'images', 'chat' ), true ) ) {
+			$image_api = 'auto';
+		}
+
 		$conn = array(
 			'id'              => isset( $old['id'] ) ? $old['id'] : '',
 			'name'            => $name,
@@ -343,6 +351,7 @@ final class AIPC_Connections {
 			'purpose'         => $purpose,
 			'priority'        => $priority,
 			'image_format'    => $image_format,
+			'image_api'       => $image_api,
 			'is_default'      => empty( $in['is_default'] ) ? ( isset( $old['is_default'] ) ? $old['is_default'] : 0 ) : 1,
 			'created'         => isset( $old['created'] ) ? $old['created'] : 0,
 			'updated'         => time(),

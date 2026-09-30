@@ -327,6 +327,23 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		);
 	}
 
+	// Chat-completions image route (Gemini/OpenRouter style): an image
+	// request arriving at /chat/completions returns a base64 data: URI
+	// inside message.images[].
+	if ( false !== strpos( $url, '/chat/completions' ) && ( isset( $body['modalities'] ) || false !== strpos( $prompt, 'CHATIMG' ) ) ) {
+		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' );
+		return array(
+			'body'     => json_encode( array(
+				'choices' => array( array( 'message' => array(
+					'role'    => 'assistant',
+					'content' => '',
+					'images'  => array( array( 'type' => 'image_url', 'image_url' => array( 'url' => 'data:image/png;base64,' . base64_encode( $png ) ) ) ),
+				) ) ),
+			) ),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+		);
+	}
+
 	// POST /images/generations
 	if ( false !== strpos( $url, '/images/generations' ) ) {
 		// A provider that can only return links (image_format=b64 must refuse it).

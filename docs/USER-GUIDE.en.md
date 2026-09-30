@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.8.2)
+# AI Post Creator — Complete User Guide (v1.9.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -59,6 +59,7 @@ Together, Ollama, LM Studio…
 | Chat model | e.g. `gpt-4o-mini` — use "Load models" to list what the service offers |
 | Image model | e.g. `dall-e-3` or `gpt-image-1` |
 | Purpose *(new in 1.8)* | What the connection is used for: **chat & images** (default), **chat only** or **images only** |
+| Image route *(new in 1.9)* | **Automatic** (images endpoint, then chat), **Images endpoint** (OpenAI-style) or **Chat completions** (Gemini/OpenRouter-style gateways — set an image-capable model such as `gemini-2.5-flash-image` as the Image model) |
 | Image delivery *(new in 1.8.1)* | **Automatic** (base64 or link) or **Force base64** — the image bytes arrive inside the API response and are decoded locally; a link-only response fails over to the next image connection |
 | Priority *(new in 1.8)* | 1–999, lower = tried first — after 3 failed attempts in a row the run switches to the next matching connection |
 | Temperature / max tokens / timeout | Fine-tuning (defaults are sensible) |

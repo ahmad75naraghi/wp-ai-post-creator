@@ -3,6 +3,33 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.9.0] — 2026-09-30
+
+### Added
+- **Second image-generation route: chat completions (Gemini/OpenRouter
+  style).** Gemini-style gateways don't implement `/images/generations`
+  (typical errors: "No credentials for image provider: openai",
+  "returned no image data") — they generate pictures through a chat
+  completion and return them as base64 `data:` URIs. New per-connection
+  **Image route** option:
+  - *Automatic* (default): images endpoint first, then the chat route
+    by itself — existing setups keep working and gain the fallback;
+  - *Images endpoint*: classic OpenAI behaviour only;
+  - *Chat completions*: for Gemini-style gateways, with an
+    image-capable model (e.g. `gemini-2.5-flash-image`) as Image model.
+  The chat route (`AIPC_API_Client::image_via_chat()`) sends
+  `modalities: ["image","text"]` (with a compatibility retry without
+  it) and parses OpenRouter `message.images[]`, multimodal content
+  parts, Gemini `inline_data` and `data:` URI content strings — all
+  decoded locally, so it pairs naturally with *Force base64*.
+  6 new strings translated (657 msgids).
+
+### Tests
+- `image_delivery` grew to 12 assertions: chat route returns bytes,
+  the auto cascade (link-only endpoint → refused by Force base64 →
+  chat route → bytes) and `image_api` sanitizing
+  (51 groups / 355 assertions total).
+
 ## [1.8.2] — 2026-09-30
 
 Robustness audit of the 1.8.x line — every failure path of the new

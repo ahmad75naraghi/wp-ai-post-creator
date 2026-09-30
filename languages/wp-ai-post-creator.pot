@@ -292,6 +292,10 @@ msgstr ""
 msgid "Automatic (base64 or link)"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Automatic (images endpoint, then chat)"
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "Automatic (site prompt)"
 msgstr ""
@@ -446,6 +450,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Chat IDs (one per line)"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Chat completions (Gemini/OpenRouter-style)"
 msgstr ""
 
 #: admin/views/connections.php
@@ -1052,8 +1060,16 @@ msgstr ""
 msgid "Image prompt"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Image route"
+msgstr ""
+
 #: admin/views/settings.php
 msgid "Image size"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Images endpoint (/images/generations)"
 msgstr ""
 
 #: admin/views/connections.php
@@ -1960,6 +1976,10 @@ msgstr ""
 msgid "The button downloads the repository snapshot, verifies the plugin header, backs up the current files to wp-content/aipc-backups and swaps the new files in. If anything fails, the previous version is restored automatically."
 msgstr ""
 
+#: includes/class-aipc-api-client.php
+msgid "The chat route returned no image — the model may not support image output."
+msgstr ""
+
 #: admin/views/new-post.php
 msgid "The console is a live viewer: the job runs on the server, so you can close this tab and it keeps going. Steps, logs and progress update automatically while the agent works — and if a step fails after all retries, the Retry button re-runs only that step."
 msgstr ""
@@ -2386,6 +2406,10 @@ msgstr ""
 
 #: admin/views/update.php
 msgid "Where updates come from: the GitHub repository, the branch to track, and an optional Personal Access Token for private repositories (write-only, stored on your site only)."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Which API route generates images. OpenAI-style services use the images endpoint (/images/generations); Gemini-style gateways (OpenRouter, Antigravity …) return the picture as base64 inside a chat completion instead — pick \"Chat completions\" for those, with an image-capable model (e.g. gemini-2.5-flash-image) in the Image model field. \"Automatic\" tries the images endpoint first and falls back to the chat route by itself."
 msgstr ""
 
 #: includes/class-aipc-steps.php

@@ -2627,3 +2627,27 @@ msgstr "دریافت تصویر"
 #: includes/class-aipc-agent.php
 msgid "Could not download the generated image: %s"
 msgstr "دانلود تصویر تولیدشده ممکن نشد: %s"
+
+#: admin/views/connections.php
+msgid "Automatic (images endpoint, then chat)"
+msgstr "خودکار (اول اندپوینت تصویر، بعد گفتگو)"
+
+#: admin/views/connections.php
+msgid "Chat completions (Gemini/OpenRouter-style)"
+msgstr "گفتگو — Chat completions (سبک Gemini/OpenRouter)"
+
+#: admin/views/connections.php
+msgid "Image route"
+msgstr "مسیر تولید تصویر"
+
+#: admin/views/connections.php
+msgid "Images endpoint (/images/generations)"
+msgstr "اندپوینت تصویر (‎/images/generations)"
+
+#: includes/class-aipc-api-client.php
+msgid "The chat route returned no image — the model may not support image output."
+msgstr "مسیر گفتگو تصویری برنگرداند — احتمالاً این مدل از خروجی تصویر پشتیبانی نمی‌کند."
+
+#: admin/views/connections.php
+msgid "Which API route generates images. OpenAI-style services use the images endpoint (/images/generations); Gemini-style gateways (OpenRouter, Antigravity …) return the picture as base64 inside a chat completion instead — pick \"Chat completions\" for those, with an image-capable model (e.g. gemini-2.5-flash-image) in the Image model field. \"Automatic\" tries the images endpoint first and falls back to the chat route by itself."
+msgstr "تصویر از کدام مسیر API ساخته شود. سرویس‌های سبک OpenAI از اندپوینت تصویر (‎/images/generations) استفاده می‌کنند؛ اما گیت‌وی‌های سبک Gemini (مانند OpenRouter و Antigravity و…) تصویر را به‌صورت Base64 داخل پاسخ گفتگو برمی‌گردانند — برای آن‌ها «گفتگو» را انتخاب کنید و در فیلد «مدل تصویر» یک مدل تصویرساز (مثلاً gemini-2.5-flash-image) بگذارید. حالت «خودکار» اول اندپوینت تصویر را امتحان می‌کند و در صورت شکست، خودش سراغ مسیر گفتگو می‌رود."

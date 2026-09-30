@@ -71,6 +71,17 @@ function aipc_connection_form( $conn ) {
 					value="<?php echo esc_attr( $editing ? $conn['image_model'] : 'dall-e-3' ); ?>" />
 			</div>
 			<div class="aipc-field">
+				<label><?php esc_html_e( 'Image route', 'wp-ai-post-creator' ); ?>
+					<?php aipc_help( 'conn-image-api', __( 'Which API route generates images. OpenAI-style services use the images endpoint (/images/generations); Gemini-style gateways (OpenRouter, Antigravity …) return the picture as base64 inside a chat completion instead — pick "Chat completions" for those, with an image-capable model (e.g. gemini-2.5-flash-image) in the Image model field. "Automatic" tries the images endpoint first and falls back to the chat route by itself.', 'wp-ai-post-creator' ) ); ?>
+				</label>
+				<?php $aipc_img_api = $editing && isset( $conn['image_api'] ) ? $conn['image_api'] : 'auto'; ?>
+				<select class="aipc-input" name="image_api">
+					<option value="auto" <?php selected( $aipc_img_api, 'auto' ); ?>><?php esc_html_e( 'Automatic (images endpoint, then chat)', 'wp-ai-post-creator' ); ?></option>
+					<option value="images" <?php selected( $aipc_img_api, 'images' ); ?>><?php esc_html_e( 'Images endpoint (/images/generations)', 'wp-ai-post-creator' ); ?></option>
+					<option value="chat" <?php selected( $aipc_img_api, 'chat' ); ?>><?php esc_html_e( 'Chat completions (Gemini/OpenRouter-style)', 'wp-ai-post-creator' ); ?></option>
+				</select>
+			</div>
+			<div class="aipc-field">
 				<label><?php esc_html_e( 'Image delivery', 'wp-ai-post-creator' ); ?>
 					<?php aipc_help( 'conn-image-format', __( 'How generated images are received. "Force base64" demands the image bytes inside the API response itself and decodes them locally — nothing depends on downloading temporary links, which makes image creation deterministic. If the provider only returns a link in this mode, the attempt fails and the run retries / falls over to the next image connection.', 'wp-ai-post-creator' ) ); ?>
 				</label>

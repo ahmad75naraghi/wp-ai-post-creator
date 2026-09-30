@@ -372,8 +372,44 @@ final class AIPC_API_Client {
 		}
 
 		$model     = ! empty( $opts['model'] ) ? $opts['model'] : $this->conn['image_model'];
-		$size      = ! empty( $opts['size'] ) ? $opts['size'] : AIPC_Settings::get( 'image_size' );
 		$force_b64 = isset( $this->conn['image_format'] ) && 'b64' === $this->conn['image_format'];
+		$route     = isset( $this->conn['image_api'] ) ? $this->conn['image_api'] : 'auto';
+		if ( ! in_array( $route, array( 'auto', 'images', 'chat' ), true ) ) {
+			$route = 'auto';
+		}
+
+		// Gemini-style gateways (OpenRouter, Antigravity …) generate images
+		// through chat completions, not /images/generations.
+		if ( 'chat' === $route ) {
+			return $this->image_via_chat( $prompt, $model, $force_b64 );
+		}
+
+		$result = $this->image_via_endpoint( $prompt, $model, $force_b64, $opts );
+
+		// Automatic fallback: when the images endpoint cannot deliver
+		// (missing route, "no credentials for provider", refused link …),
+		// try the chat-completions image route before giving up.
+		if ( 'auto' === $route && is_wp_error( $result ) ) {
+			$via_chat = $this->image_via_chat( $prompt, $model, $force_b64 );
+			if ( ! is_wp_error( $via_chat ) ) {
+				return $via_chat;
+			}
+			return $result; // The endpoint error is usually the more informative one.
+		}
+		return $result;
+	}
+
+	/**
+	 * Generate an image via the classic /images/generations endpoint.
+	 *
+	 * @param string $prompt    Image prompt.
+	 * @param string $model     Image model.
+	 * @param bool   $force_b64 Refuse link-only responses.
+	 * @param array  $opts      {size} overrides.
+	 * @return array|WP_Error {bits} or {url}
+	 */
+	private function image_via_endpoint( $prompt, $model, $force_b64, $opts = array() ) {
+		$size = ! empty( $opts['size'] ) ? $opts['size'] : AIPC_Settings::get( 'image_size' );
 
 		$body = array(
 			'model'  => $model,
@@ -431,6 +467,89 @@ final class AIPC_API_Client {
 		}
 
 		return new WP_Error( 'aipc_image', __( 'The provider returned no image data.', 'wp-ai-post-creator' ) );
+	}
+
+	/**
+	 * Generate an image through chat completions (Gemini/OpenRouter style).
+	 *
+	 * Image-capable chat models (gemini-2.5-flash-image, …) return the
+	 * picture as a base64 data: URI inside the assistant message — either
+	 * in message.images[].image_url.url, in multimodal content parts, or
+	 * directly in the content string. That payload is decoded locally, so
+	 * this route is deterministic by design.
+	 *
+	 * @param string $prompt    Image prompt.
+	 * @param string $model     Image model.
+	 * @param bool   $force_b64 Refuse link-only responses.
+	 * @return array|WP_Error {bits} or {url}
+	 */
+	private function image_via_chat( $prompt, $model, $force_b64 ) {
+		$body = array(
+			'model'      => $model,
+			'messages'   => array( array( 'role' => 'user', 'content' => $prompt ) ),
+			'modalities' => array( 'image', 'text' ),
+		);
+
+		$json = $this->request( '/chat/completions', $body );
+		if ( is_wp_error( $json ) ) {
+			// Some providers reject the modalities parameter — retry without.
+			if ( false !== stripos( $json->get_error_message(), 'modalities' ) ) {
+				unset( $body['modalities'] );
+				$json = $this->request( '/chat/completions', $body );
+			}
+			if ( is_wp_error( $json ) ) {
+				return $json;
+			}
+		}
+
+		$message = isset( $json['choices'][0]['message'] ) && is_array( $json['choices'][0]['message'] ) ? $json['choices'][0]['message'] : array();
+
+		$candidates = array();
+		if ( ! empty( $message['images'] ) && is_array( $message['images'] ) ) {
+			foreach ( $message['images'] as $img ) {
+				if ( isset( $img['image_url']['url'] ) ) {
+					$candidates[] = (string) $img['image_url']['url'];
+				} elseif ( isset( $img['url'] ) ) {
+					$candidates[] = (string) $img['url'];
+				} elseif ( is_string( $img ) ) {
+					$candidates[] = $img;
+				}
+			}
+		}
+		if ( isset( $message['content'] ) && is_array( $message['content'] ) ) {
+			foreach ( $message['content'] as $part ) {
+				if ( isset( $part['image_url']['url'] ) ) {
+					$candidates[] = (string) $part['image_url']['url'];
+				} elseif ( isset( $part['inline_data']['data'] ) ) {
+					$candidates[] = (string) $part['inline_data']['data']; // Gemini inlineData.
+				}
+			}
+		} elseif ( isset( $message['content'] ) && is_string( $message['content'] ) && 0 === strpos( trim( $message['content'] ), 'data:image' ) ) {
+			$candidates[] = trim( $message['content'] );
+		}
+
+		$link = '';
+		foreach ( $candidates as $candidate ) {
+			if ( 0 === strpos( $candidate, 'http' ) ) {
+				if ( '' === $link ) {
+					$link = $candidate;
+				}
+				continue;
+			}
+			$bits = self::decode_b64_image( $candidate );
+			if ( false !== $bits ) {
+				return array( 'bits' => $bits );
+			}
+		}
+
+		if ( '' !== $link ) {
+			if ( $force_b64 ) {
+				return new WP_Error( 'aipc_image', __( 'Base64 mode: the provider returned a link instead of base64 image data — failing over to the next image connection.', 'wp-ai-post-creator' ) );
+			}
+			return array( 'url' => $link );
+		}
+
+		return new WP_Error( 'aipc_image', __( 'The chat route returned no image — the model may not support image output.', 'wp-ai-post-creator' ) );
 	}
 
 	/**

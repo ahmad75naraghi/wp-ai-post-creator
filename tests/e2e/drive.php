@@ -901,12 +901,21 @@ $aipc_if_bad  = AIPC_Connections::sanitize( array( 'name' => 'Odd', 'base_url' =
 $aipc_png_b64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 $aipc_png     = base64_decode( $aipc_png_b64 );
 
-$aipc_b64_conn  = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-image', 'image_format' => 'b64' );
-$aipc_auto_conn = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-image' );
+$aipc_b64_conn  = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-image', 'image_format' => 'b64', 'image_api' => 'images' );
+$aipc_auto_conn = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-image', 'image_api' => 'images' );
 
 $aipc_img_b64      = ( new AIPC_API_Client( $aipc_b64_conn ) )->image( 'A tiny test image' );
 $aipc_img_refused  = ( new AIPC_API_Client( $aipc_b64_conn ) )->image( 'URLONLY please' );
 $aipc_img_auto_url = ( new AIPC_API_Client( $aipc_auto_conn ) )->image( 'URLONLY please' );
+
+/* Chat-completions image route (v1.9.0) — Gemini/OpenRouter style. */
+$aipc_chat_conn    = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-gemini-image', 'image_api' => 'chat' );
+$aipc_cascade_conn = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-image', 'image_format' => 'b64' ); // image_api auto.
+
+$aipc_img_chat    = ( new AIPC_API_Client( $aipc_chat_conn ) )->image( 'A tiny test image' );
+$aipc_img_cascade = ( new AIPC_API_Client( $aipc_cascade_conn ) )->image( 'URLONLY please' );
+$aipc_if_api_ok   = AIPC_Connections::sanitize( array( 'name' => 'ChatImg', 'base_url' => 'https://mock.invalid/v1', 'image_api' => 'chat' ), array() );
+$aipc_if_api_bad  = AIPC_Connections::sanitize( array( 'name' => 'OddApi', 'base_url' => 'https://mock.invalid/v1', 'image_api' => 'fax' ), array() );
 
 $out['image_delivery'] = array(
 	'sanitize_kept'    => 'b64' === $aipc_if_ok['image_format'],
@@ -918,6 +927,9 @@ $out['image_delivery'] = array(
 	'b64_gets_bits'    => is_array( $aipc_img_b64 ) && ! empty( $aipc_img_b64['bits'] ) && $aipc_img_b64['bits'] === $aipc_png,
 	'b64_refuses_url'  => is_wp_error( $aipc_img_refused ) && false !== strpos( $aipc_img_refused->get_error_message(), 'Base64' ),
 	'auto_accepts_url' => is_array( $aipc_img_auto_url ) && ! empty( $aipc_img_auto_url['url'] ),
+	'chat_route_bits'  => is_array( $aipc_img_chat ) && ! empty( $aipc_img_chat['bits'] ) && $aipc_img_chat['bits'] === $aipc_png,
+	'cascade_to_chat'  => is_array( $aipc_img_cascade ) && ! empty( $aipc_img_cascade['bits'] ) && $aipc_img_cascade['bits'] === $aipc_png,
+	'api_sanitized'    => 'chat' === $aipc_if_api_ok['image_api'] && 'auto' === $aipc_if_api_bad['image_api'],
 );
 
 /* ------------------------------------------------------------------ *

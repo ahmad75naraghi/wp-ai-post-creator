@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.8.2 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
+**Version:** 1.9.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
 
 ---
 
@@ -30,6 +30,9 @@
 **AI Post Creator** یک افزونهٔ فوق‌حرفه‌ای و «ایجنت‌مانند» برای وردپرس است که با اتصال به هر سرویس API هوش مصنوعیِ سازگار با OpenAI (OpenAI، OpenRouter، Groq، DeepSeek، Ollama، LM Studio و…)، یک پست کامل را **از صفر تا صد** تولید می‌کند:
 
 ابتدا **پرامپت سایت** (سایت چیست، درباره چیست، هدف و مخاطبانش کدامند — در تنظیمات) و **دسته‌بندی‌های موجود نوشته‌ها** را می‌خواند، یکی از دسته‌بندی‌ها را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد (یا از پیشنهاد شما استفاده می‌کند). بعد محتوا را می‌نویسد، یک **پاس کپی‌رایتینگ و سئو** روی کل متن اجرا می‌کند، **خلاصه سئو برای Rank Math** می‌سازد، از روی موضوع و خلاصه **تصویر شاخص** تولید می‌کند و نتیجه را همیشه به‌صورت **پیش‌نویس** ذخیره می‌کند — تمام مراحل به‌صورت زنده در یک **کنسول ایجنت** نمایش داده می‌شوند و در هر مرحله در صورت خطا، به‌طور خودکار تا سه بار دوباره تلاش می‌شود.
+
+### 🆕 جدید در نسخهٔ ۱.۹.۰ — ساخت تصویر به سبک Gemini
+- گزینهٔ **«مسیر تولید تصویر»** برای هر اتصال: مسیر دوم «گفتگو (Chat completions)» برای گیت‌وی‌هایی که تصویر را به‌صورت Base64 داخل پاسخ گفتگو برمی‌گردانند (OpenRouter، Antigravity و…). حالت «خودکار» اول اندپوینت تصویر را امتحان می‌کند و در صورت شکست خودش سراغ مسیر گفتگو می‌رود.
 
 ### 🆕 جدید در نسخهٔ ۱.۸.۱ — تصویر قطعی با Base64
 - گزینهٔ **«دریافت تصویر»** برای هر اتصال: حالت «اجباری Base64» بایت‌های تصویر را داخل خودِ پاسخ API می‌گیرد و به‌صورت محلی تبدیل می‌کند — بدون وابستگی به لینک‌های موقتی؛ اگر سرویس‌دهنده فقط لینک بدهد، خودکار سراغ اتصال تصویر بعدی می‌رود.
@@ -117,6 +120,8 @@
 ## English — Overview
 
 AI Post Creator turns the WordPress admin into an AI content agent. Set a **site prompt** once (what your site is about), and the agent picks one of your **existing post categories**, invents a topic that fits, writes the article, runs a **copywriting + SEO revision pass**, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** — with every step visible live and auto-retried until it passes.
+
+**New in 1.9.0 — Gemini-style image generation:** a per-connection **Image route** option adds a second generation path — *Chat completions* — for gateways that return pictures as base64 inside a chat response (OpenRouter, Antigravity …). *Automatic* tries the images endpoint first and falls back by itself.
 
 **New in 1.8.1 — deterministic base64 images:** each connection has an **Image delivery** option; *Force base64* receives the image bytes inside the API response and decodes them locally — no temporary links involved, and link-only responses fail over to the next image connection.
 
