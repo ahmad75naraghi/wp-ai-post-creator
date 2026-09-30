@@ -3,6 +3,26 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.7.3] — 2026-09-30
+
+### Fixed
+- **Localized admins (fa_IR & co.) lost all plugin CSS/JS on every subpage.**
+  WordPress builds submenu hooks from `sanitize_title()` of the *translated*
+  top-level menu title, so the hardcoded English hook names in
+  `AIPC_Assets::enqueue()` never matched on a Persian site — Connections,
+  Settings, Rewrite, Review, Prompts, Logs and Schedule rendered without
+  styles and their scripts (including the "Test connection" button) never
+  loaded. Screen detection now parses the stable page slug after `_page_`
+  (`AIPC_Assets::screen_for_hook()`), which is locale-proof.
+- The **Update page** (`aipc-update`) was missing from the enqueue map
+  entirely and never received the admin stylesheet, in any language.
+
+### Tests
+- New `assets_enqueue` e2e group (7 assertions): Persian-localized hook
+  enqueues `aipc-admin` CSS + `aipc-connections` JS, English and toplevel
+  hooks still work, the update page gets CSS, and foreign hooks enqueue
+  nothing (48 groups / 327 assertions total).
+
 ## [1.7.2] — 2026-09-30
 
 ### Fixed

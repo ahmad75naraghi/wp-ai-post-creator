@@ -828,6 +828,56 @@ $out['admin_pages']['schedule'] = array(
 );
 
 /* ------------------------------------------------------------------ *
+ * Assets: locale-proof screen detection (v1.7.3)
+ * The submenu hook prefix is sanitize_title() of the TRANSLATED menu
+ * title (percent-encoded Persian on fa_IR), so matching must key off the
+ * stable page slug after "_page_".
+ * ------------------------------------------------------------------ */
+$aipc_fa_prefix = '%d8%b3%d8%a7%d8%b2%d9%86%d8%af%d9%87-%d9%be%d8%b3%d8%aa'; // sanitize_title of a Persian menu title.
+
+$aipc_assets_reset = function () {
+	wp_dequeue_style( 'aipc-admin' );
+	foreach ( array( 'aipc-agent', 'aipc-connections', 'aipc-schedule' ) as $aipc_handle ) {
+		wp_dequeue_script( $aipc_handle );
+	}
+};
+
+$aipc_assets_reset();
+AIPC_Assets::enqueue( $aipc_fa_prefix . '_page_aipc-connections' );
+$aipc_assets_fa_conn_css = wp_style_is( 'aipc-admin', 'enqueued' );
+$aipc_assets_fa_conn_js  = wp_script_is( 'aipc-connections', 'enqueued' );
+
+$aipc_assets_reset();
+AIPC_Assets::enqueue( 'ai-post-creator_page_aipc-schedule' );
+$aipc_assets_en_sched_js = wp_script_is( 'aipc-schedule', 'enqueued' );
+
+$aipc_assets_reset();
+AIPC_Assets::enqueue( 'toplevel_page_aipc' );
+$aipc_assets_top_js = wp_script_is( 'aipc-agent', 'enqueued' );
+
+$aipc_assets_reset();
+AIPC_Assets::enqueue( $aipc_fa_prefix . '_page_aipc-update' );
+$aipc_assets_update_css = wp_style_is( 'aipc-admin', 'enqueued' );
+
+$aipc_assets_reset();
+AIPC_Assets::enqueue( 'edit.php' );
+AIPC_Assets::enqueue( $aipc_fa_prefix . '_page_some-other-plugin' );
+$aipc_assets_foreign_off = ! wp_style_is( 'aipc-admin', 'enqueued' );
+$aipc_assets_reset();
+
+$out['assets_enqueue'] = array(
+	'fa_connections_css' => $aipc_assets_fa_conn_css,
+	'fa_connections_js'  => $aipc_assets_fa_conn_js,
+	'en_schedule_js'     => $aipc_assets_en_sched_js,
+	'toplevel_agent_js'  => $aipc_assets_top_js,
+	'fa_update_css'      => $aipc_assets_update_css,
+	'foreign_hooks_off'  => $aipc_assets_foreign_off,
+	'screen_map'         => 'connections' === AIPC_Assets::screen_for_hook( $aipc_fa_prefix . '_page_aipc-connections' )
+		&& 'settings' === AIPC_Assets::screen_for_hook( 'anything_page_aipc-settings' )
+		&& '' === AIPC_Assets::screen_for_hook( 'toplevel_page_other' ),
+);
+
+/* ------------------------------------------------------------------ *
  * Bale REST endpoints
  * ------------------------------------------------------------------ */
 $req = new WP_REST_Request( 'POST', '/aipc/v1/bale/test' );

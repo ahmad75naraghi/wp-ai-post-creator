@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.7.2
+Stable tag: 1.7.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.7.3 =
+* Fixed: on non-English admins (e.g. Persian) none of the plugin's subpages loaded their styles or scripts — the Connections, Settings, Rewrite, Review, Prompts, Logs and Schedule pages appeared unstyled and buttons such as "Test connection" did nothing. Screen detection now keys off the stable page slug instead of the translated menu title
+* Fixed: the Update page never loaded the plugin stylesheet, in any language
 
 = 1.7.2 =
 * Easier connections to gateways and routers (OmniRoute, OpenRouter & co.): a base URL without a path gets /v1 appended automatically, the connection test probes the /v1 variant when the first attempt fails and corrects the field for you, and error messages now say clearly when an address returned a web page (HTML) instead of an API response

@@ -28,21 +28,10 @@ final class AIPC_Assets {
 	 * @return void
 	 */
 	public static function enqueue( $hook ) {
-		$plugin_pages = array(
-			'toplevel_page_aipc'                    => 'agent',
-			'ai-post-creator_page_aipc-rewrite'     => 'rewrite',
-			'ai-post-creator_page_aipc-review'      => 'review',
-			'ai-post-creator_page_aipc-connections' => 'connections',
-			'ai-post-creator_page_aipc-prompts'     => 'prompts',
-			'ai-post-creator_page_aipc-logs'        => 'logs',
-			'ai-post-creator_page_aipc-schedule'    => 'schedule',
-			'ai-post-creator_page_aipc-settings'    => 'settings',
-		);
-
-		if ( ! isset( $plugin_pages[ $hook ] ) ) {
+		$screen = self::screen_for_hook( $hook );
+		if ( '' === $screen ) {
 			return;
 		}
-		$screen = $plugin_pages[ $hook ];
 
 		wp_enqueue_style(
 			'aipc-admin',
@@ -80,6 +69,43 @@ final class AIPC_Assets {
 			);
 			self::inline_data( 'aipc-schedule', self::data_for_schedule() );
 		}
+	}
+
+	/**
+	 * Resolve the plugin screen from an admin page hook — locale-proof.
+	 *
+	 * The part of a submenu hook before "_page_" is sanitize_title() of the
+	 * *translated* top-level menu title (e.g. percent-encoded Persian on a
+	 * fa_IR site), so hardcoded English hook names silently stop matching on
+	 * localized admins — which used to leave every subpage without CSS/JS.
+	 * Match the stable page slug after "_page_" instead.
+	 *
+	 * @param string $hook Admin page hook suffix.
+	 * @return string Screen key, or '' when this is not a plugin page.
+	 */
+	public static function screen_for_hook( $hook ) {
+		$screens = array(
+			'aipc'             => 'agent',
+			'aipc-rewrite'     => 'rewrite',
+			'aipc-review'      => 'review',
+			'aipc-connections' => 'connections',
+			'aipc-prompts'     => 'prompts',
+			'aipc-logs'        => 'logs',
+			'aipc-schedule'    => 'schedule',
+			'aipc-settings'    => 'settings',
+			'aipc-update'      => 'update',
+		);
+
+		$hook = (string) $hook;
+		if ( 'toplevel_page_aipc' === $hook ) {
+			return $screens['aipc'];
+		}
+		$pos = strpos( $hook, '_page_' );
+		if ( false === $pos ) {
+			return '';
+		}
+		$slug = substr( $hook, $pos + strlen( '_page_' ) );
+		return isset( $screens[ $slug ] ) ? $screens[ $slug ] : '';
 	}
 
 	/**
