@@ -495,7 +495,7 @@ final class AIPC_Agent {
 		}
 
 		$default_conn = AIPC_Connections::get_default();
-		$job['model'] = $default_conn['chat_model'];
+		$job['model'] = ( $default_conn && ! empty( $default_conn['chat_model'] ) ) ? $default_conn['chat_model'] : '';
 
 		if ( 'rewrite' === $job['mode'] ) {
 			$this->log( $job, sprintf(
@@ -1715,9 +1715,14 @@ final class AIPC_Agent {
 		if ( '' === $bits && ! empty( $image['url'] ) ) {
 			$bits = $client->download( $image['url'] );
 			if ( is_wp_error( $bits ) ) {
-				$this->log( $job, __( 'Could not download the generated image — continuing without one.', 'wp-ai-post-creator' ), 'warn' );
-				$this->advance( $job, 'skipped' );
-				return;
+				// Throw so the retry/failover logic can try again or move to
+				// the next image connection; when the whole chain fails the
+				// step is skipped gracefully (post continues without image).
+				throw new Exception( sprintf(
+					/* translators: %s: error message. */
+					__( 'Could not download the generated image: %s', 'wp-ai-post-creator' ),
+					$bits->get_error_message()
+				) );
 			}
 		}
 

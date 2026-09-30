@@ -43,6 +43,7 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Could not download the generated image: %s': 'دانلود تصویر تولیدشده ممکن نشد: %s',
     'Automatic (base64 or link)': 'خودکار (Base64 یا لینک)',
     'Force base64 (decode locally — most reliable)': 'اجباری Base64 (تبدیل محلی — مطمئن\u200cترین)',
     'Image delivery': 'دریافت تصویر',

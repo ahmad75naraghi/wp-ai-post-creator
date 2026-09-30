@@ -588,12 +588,12 @@ msgstr ""
 msgid "Could not create the backup folder."
 msgstr ""
 
-#: includes/class-aipc-agent.php
-msgid "Could not download the generated image — continuing without one."
-msgstr ""
-
 #: includes/class-aipc-api-client.php
 msgid "Could not download the generated image."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Could not download the generated image: %s"
 msgstr ""
 
 #: includes/class-aipc-updater.php

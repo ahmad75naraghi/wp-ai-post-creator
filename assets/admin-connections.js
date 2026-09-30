@@ -138,9 +138,14 @@
 			}
 		}
 
+		// Re-loading models must rebind the filter to the fresh list, so the
+		// single listener always delegates to the latest draw().
+		picker.aipcDraw = draw;
 		if (filter && !picker.aipcBound) {
 			picker.aipcBound = true;
-			filter.addEventListener('input', draw);
+			filter.addEventListener('input', function () {
+				if (picker.aipcDraw) { picker.aipcDraw(); }
+			});
 		}
 		draw();
 		picker.hidden = false;

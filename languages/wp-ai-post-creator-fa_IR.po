@@ -1051,10 +1051,6 @@ msgid "Generating featured image — prompt: %s"
 msgstr "در حال تولید تصویر شاخص — پرامپت: %s"
 
 #: includes/class-aipc-agent.php
-msgid "Could not download the generated image — continuing without one."
-msgstr "دانلود تصویر تولیدشده ممکن نشد — بدون تصویر ادامه می‌دهیم."
-
-#: includes/class-aipc-agent.php
 msgid "Could not save the image to the media library (%s) — continuing without one."
 msgstr "ذخیره تصویر در کتابخانه رسانه ممکن نشد (%s) — بدون تصویر ادامه می‌دهیم."
 
@@ -2627,3 +2623,7 @@ msgstr "تصویرهای تولیدشده چگونه دریافت شوند. «ا
 #: admin/views/connections.php
 msgid "Image delivery"
 msgstr "دریافت تصویر"
+
+#: includes/class-aipc-agent.php
+msgid "Could not download the generated image: %s"
+msgstr "دانلود تصویر تولیدشده ممکن نشد: %s"

@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.8.2 =
+* Hardening pass: a failed download of a link-returned image now retries and fails over to the next image connection instead of silently skipping the featured image
+* Fixed: re-clicking "Load models" now rebinds the search filter to the fresh model list
+* Fixed: a missing default connection can no longer cause a PHP error when composing a job
 
 = 1.8.1 =
 * New: "Image delivery" option per connection — "Force base64" demands the image bytes inside the API response and decodes them locally, so image creation never depends on downloading temporary links; if the provider only returns a link the attempt fails over to the next image connection

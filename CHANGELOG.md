@@ -3,6 +3,33 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.8.2] — 2026-09-30
+
+Robustness audit of the 1.8.x line — every failure path of the new
+routing/delivery features was traced end-to-end (form → sanitize →
+storage → agent chain → API client → media library).
+
+### Fixed
+- **URL-image download failures now fail over.** In *Automatic* delivery
+  mode a failed download of a link-returned image silently skipped the
+  featured image; it now throws into the step's retry/failover loop, so
+  the next attempt or the next image connection gets its chance first.
+  (When the whole chain fails, the step still skips gracefully — a run
+  never dies because of the image.)
+- **Model picker: re-loading models rebinds the search filter.** The
+  filter listener kept closing over the first loaded list; a second
+  "Load models" (e.g. after changing the base URL) now filters the
+  fresh list.
+- **Null-safe job composition**: a missing default connection can no
+  longer trigger a PHP error when reading its chat model.
+
+### Verified (no changes needed)
+- Connection save handler forwards all new fields; `image_prompt` is
+  correctly routed to the chat pool; explicit per-step chains still win;
+  pre-1.8 connections normalize on read; e2e suite is deterministic
+  across back-to-back runs (2× 51 groups / 352 assertions, zero PHP
+  warnings); no wrong textdomains.
+
 ## [1.8.1] — 2026-09-30
 
 ### Added
