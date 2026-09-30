@@ -3,6 +3,24 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.7.4] — 2026-09-30
+
+### Fixed
+- **Pasting a full endpoint URL as the base URL no longer breaks the
+  connection.** Entering `…/v1/chat/completions` made every request hit
+  `…/v1/chat/completions/models` (→ "Unknown API route" 404s).
+  `AIPC_API_Client::base_url()` now strips well-known OpenAI endpoint paths
+  (`/chat/completions`, `/completions`, `/responses`, `/models`,
+  `/embeddings`, `/images/generations`) off the end, and a successful
+  connection test returns `fixed_base_url` whenever normalization changed
+  the typed URL — the Connections form auto-corrects the field.
+
+### Tests
+- New `base_url_normalize` e2e group (8 assertions): endpoint-path
+  stripping incl. repeated suffixes, bare-host `/v1` append, legit custom
+  paths kept, `fixed_base_url` reported on fix and absent on clean input
+  (49 groups / 335 assertions total).
+
 ## [1.7.3] — 2026-09-30
 
 ### Fixed

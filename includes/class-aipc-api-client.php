@@ -79,6 +79,24 @@ final class AIPC_API_Client {
 	 */
 	public function base_url() {
 		$base = rtrim( trim( (string) $this->conn['base_url'] ), '/' );
+
+		// Users often paste the full endpoint URL instead of the base
+		// (…/v1/chat/completions → the request would become
+		// …/v1/chat/completions/models). Strip well-known OpenAI endpoint
+		// paths off the end until none is left.
+		$endpoints = array( '/chat/completions', '/completions', '/responses', '/models', '/embeddings', '/images/generations' );
+		do {
+			$stripped = false;
+			foreach ( $endpoints as $endpoint ) {
+				$len = strlen( $endpoint );
+				if ( strlen( $base ) > $len && substr( $base, -$len ) === $endpoint ) {
+					$base     = rtrim( substr( $base, 0, -$len ), '/' );
+					$stripped = true;
+					break;
+				}
+			}
+		} while ( $stripped );
+
 		$host = (string) wp_parse_url( $base, PHP_URL_HOST );
 		$path = (string) wp_parse_url( $base, PHP_URL_PATH );
 		if ( '' !== $host && ( '' === $path || '/' === $path ) ) {
@@ -453,9 +471,26 @@ final class AIPC_API_Client {
 				}
 				return $models; // The /models error is more informative.
 			}
-			return array( 'ok' => true, 'models' => null, 'chat' => true );
+			return $this->with_fixed_base( array( 'ok' => true, 'models' => null, 'chat' => true ) );
 		}
-		return array( 'ok' => true, 'models' => $models );
+		return $this->with_fixed_base( array( 'ok' => true, 'models' => $models ) );
+	}
+
+	/**
+	 * Add 'fixed_base_url' to a successful test result when normalization
+	 * changed what the user typed (pasted endpoint path, missing /v1 …),
+	 * so the settings screen can correct the field.
+	 *
+	 * @param array $out Successful test result.
+	 * @return array
+	 */
+	private function with_fixed_base( $out ) {
+		$raw        = rtrim( trim( (string) $this->conn['base_url'] ), '/' );
+		$normalized = $this->base_url();
+		if ( '' !== $raw && $raw !== $normalized ) {
+			$out['fixed_base_url'] = $normalized;
+		}
+		return $out;
 	}
 
 	/**

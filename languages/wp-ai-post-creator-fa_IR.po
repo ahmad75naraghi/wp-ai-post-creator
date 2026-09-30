@@ -2560,10 +2560,6 @@ msgstr "گیت‌وی‌های سلف‌هاست (OmniRoute، Ollama، LM Studio
 msgid "The address returned a web page (HTML) instead of an API response — it looks like a website URL, not an API base URL. OpenAI-compatible endpoints almost always end in /v1."
 msgstr "این نشانی به‌جای پاسخ API یک صفحهٔ وب (HTML) برگرداند — به نظر می‌رسد نشانی وب‌سایت است، نه نشانی پایهٔ API. اندپوینت‌های سازگار با OpenAI تقریباً همیشه به /v1 ختم می‌شوند."
 
-#: admin/views/connections.php
-msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). A provider’s website address is not an API endpoint — if the test finds the API under /v1, the field is corrected automatically. The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless you enable “Allow private/LAN addresses” in Settings → Advanced."
-msgstr "نشانی پایه باید به یک اندپوینت سازگار با OpenAI اشاره کند و معمولاً به /v1 ختم می‌شود (مثلاً https://api.openai.com/v1). نشانی وب‌سایتِ سرویس‌دهنده اندپوینت API نیست — اگر تست، API را زیر /v1 پیدا کند، فیلد به‌طور خودکار اصلاح می‌شود. کلید API فقط‌نوشتنی است: برای نگه داشتن کلید ذخیره‌شده، فیلد را خالی بگذارید. نشانی‌های خصوصی یا داخلی توسط گارد شبکهٔ خروجی مسدود می‌شوند مگر «اجازه به نشانی‌های خصوصی/شبکهٔ محلی» را در تنظیمات ← پیشرفته فعال کنید."
-
 #: admin/views/settings.php
 msgid "localhost is always allowed. Only enable this when the AI gateway really runs inside your own network — it relaxes the outbound request guard (SSRF protection) for private addresses."
 msgstr "localhost همیشه مجاز است. این گزینه را فقط وقتی فعال کنید که گیت‌وی هوش مصنوعی واقعاً داخل شبکهٔ خودتان اجرا می‌شود — چون گارد درخواست‌های خروجی (محافظت SSRF) را برای نشانی‌های خصوصی سست می‌کند."
@@ -2571,3 +2567,7 @@ msgstr "localhost همیشه مجاز است. این گزینه را فقط وق
 #: includes/class-aipc-api-client.php
 msgid "the address returned a web page (HTML), not an API response — check that the base URL is the API endpoint (it usually ends in /v1)"
 msgstr "این نشانی یک صفحهٔ وب (HTML) برگرداند، نه پاسخ API — بررسی کنید که نشانی پایه همان اندپوینت API باشد (معمولاً به /v1 ختم می‌شود)"
+
+#: admin/views/connections.php
+msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). A provider’s website address is not an API endpoint. Small mistakes are corrected automatically: a pasted full endpoint URL (e.g. …/v1/chat/completions) has its endpoint path stripped, and if the test finds the API under /v1 the field is fixed for you. The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless you enable “Allow private/LAN addresses” in Settings → Advanced."
+msgstr "نشانی پایه باید به یک اندپوینت سازگار با OpenAI اشاره کند و معمولاً به /v1 ختم می‌شود (مثلاً https://api.openai.com/v1). نشانی وب‌سایتِ سرویس‌دهنده اندپوینت API نیست. اشتباه‌های کوچک به‌طور خودکار اصلاح می‌شوند: اگر نشانی کامل اندپوینت را جای‌گذاری کنید (مثلاً …/v1/chat/completions)، مسیر اندپوینت حذف می‌شود و اگر تست، API را زیر /v1 پیدا کند، فیلد برایتان اصلاح می‌شود. کلید API فقط‌نوشتنی است: برای نگه داشتن کلید ذخیره‌شده، فیلد را خالی بگذارید. نشانی‌های خصوصی یا داخلی توسط گارد شبکهٔ خروجی مسدود می‌شوند مگر «اجازه به نشانی‌های خصوصی/شبکهٔ محلی» را در تنظیمات ← پیشرفته فعال کنید."

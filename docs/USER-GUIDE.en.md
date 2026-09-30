@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.7.3)
+# AI Post Creator — Complete User Guide (v1.7.4)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)

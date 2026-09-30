@@ -828,6 +828,28 @@ $out['admin_pages']['schedule'] = array(
 );
 
 /* ------------------------------------------------------------------ *
+ * Base URL normalization (v1.7.4): pasted endpoint paths are stripped
+ * and a successful test reports the corrected URL for the UI.
+ * ------------------------------------------------------------------ */
+$aipc_burl = function ( $u ) {
+	$c = new AIPC_API_Client( array( 'base_url' => $u ) );
+	return $c->base_url();
+};
+$aipc_fix_test = ( new AIPC_API_Client( array( 'base_url' => 'https://mock.invalid/v1/chat/completions', 'api_key' => 'sk-chat-key' ) ) )->test();
+$aipc_ok_test  = ( new AIPC_API_Client( array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-chat-key' ) ) )->test();
+
+$out['base_url_normalize'] = array(
+	'strip_chat_completions' => 'https://x.invalid/v1' === $aipc_burl( 'https://x.invalid/v1/chat/completions' ),
+	'strip_trailing_slash'   => 'https://x.invalid/v1' === $aipc_burl( 'https://x.invalid/v1/chat/completions/' ),
+	'strip_models'           => 'https://x.invalid/v1' === $aipc_burl( 'https://x.invalid/v1/models' ),
+	'strip_repeated'         => 'https://x.invalid/v1' === $aipc_burl( 'https://x.invalid/v1/chat/completions/models' ),
+	'bare_host_gets_v1'      => 'http://localhost:20128/v1' === $aipc_burl( 'http://localhost:20128' ),
+	'custom_path_kept'       => 'https://api.groq.com/openai/v1' === $aipc_burl( 'https://api.groq.com/openai/v1' ),
+	'test_reports_fix'       => is_array( $aipc_fix_test ) && ! empty( $aipc_fix_test['ok'] ) && 'https://mock.invalid/v1' === ( $aipc_fix_test['fixed_base_url'] ?? '' ),
+	'test_clean_no_fix'      => is_array( $aipc_ok_test ) && ! empty( $aipc_ok_test['ok'] ) && ! isset( $aipc_ok_test['fixed_base_url'] ),
+);
+
+/* ------------------------------------------------------------------ *
  * Assets: locale-proof screen detection (v1.7.3)
  * The submenu hook prefix is sanitize_title() of the TRANSLATED menu
  * title (percent-encoded Persian on fa_IR), so matching must key off the

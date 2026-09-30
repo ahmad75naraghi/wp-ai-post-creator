@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.7.3
+Stable tag: 1.7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,9 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.7.4 =
+* Fixed: pasting a full endpoint URL as the base URL (e.g. .../v1/chat/completions) no longer breaks every request with errors like "Unknown API route: /v1/chat/completions/models" — well-known endpoint paths are stripped automatically and a successful connection test writes the corrected base URL back into the field
 
 = 1.7.3 =
 * Fixed: on non-English admins (e.g. Persian) none of the plugin's subpages loaded their styles or scripts — the Connections, Settings, Rewrite, Review, Prompts, Logs and Schedule pages appeared unstyled and buttons such as "Test connection" did nothing. Screen detection now keys off the stable page slug instead of the translated menu title
