@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.9.2)
+# AI Post Creator — Complete User Guide (v1.9.3)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -62,6 +62,7 @@ Together, Ollama, LM Studio…
 | Image route *(new in 1.9)* | **Automatic** (images endpoint, then chat), **Images endpoint** (OpenAI-style) or **Chat completions** (Gemini/OpenRouter-style gateways — set an image-capable model such as `gemini-2.5-flash-image` as the Image model) |
 | Image delivery *(new in 1.8.1)* | **Automatic** (base64 or link) or **Force base64** — the image bytes arrive inside the API response and are decoded locally; a link-only response fails over to the next image connection |
 | Priority *(new in 1.8)* | 1–999, lower = tried first — after 3 failed attempts in a row the run switches to the next matching connection |
+| Enabled *(new in 1.9.3)* | untick (or use the Disable link in the list) to keep the connection saved but exclude it from every run — pools, fallback chains and the default choice all skip it |
 | Temperature / max tokens / timeout | Fine-tuning (defaults are sensible) |
 
 - The **default** connection is used for every step unless you assign a chain.

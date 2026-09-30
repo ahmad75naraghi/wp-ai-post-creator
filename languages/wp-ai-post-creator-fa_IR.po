@@ -166,7 +166,7 @@ msgstr "نمای کلی"
 msgid "Topic"
 msgstr "موضوع"
 
-#: admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Status"
 msgstr "وضعیت"
 
@@ -606,7 +606,7 @@ msgstr "روزها"
 msgid "Automatic (site prompt)"
 msgstr "خودکار (پرامپت سایت)"
 
-#: admin/views/schedule.php
+#: admin/views/connections.php admin/views/schedule.php
 msgid "Active"
 msgstr "فعال"
 
@@ -2643,3 +2643,35 @@ msgstr "ادامه مطلب در لینک زیر"
 #: admin/views/schedule.php
 msgid "Sent above the message when a post has no featured image. Paste an image address from your media library; leave empty to send text-only in that case."
 msgstr "وقتی نوشته تصویر شاخص ندارد، این تصویر بالای پیام فرستاده می‌شود. نشانی یک تصویر از کتابخانهٔ رسانه را بگذارید؛ اگر خالی باشد در آن حالت فقط متن ارسال می‌شود."
+
+#: admin/views/prompts.php
+msgid "(disabled)"
+msgstr "(غیرفعال)"
+
+#: admin/views/connections.php
+msgid "Connection disabled."
+msgstr "اتصال غیرفعال شد."
+
+#: admin/views/connections.php
+msgid "Connection enabled."
+msgstr "اتصال فعال شد."
+
+#: admin/views/connections.php
+msgid "Disable"
+msgstr "غیرفعال کردن"
+
+#: admin/views/connections.php
+msgid "Disabled"
+msgstr "غیرفعال"
+
+#: admin/views/connections.php
+msgid "Enable"
+msgstr "فعال کردن"
+
+#: admin/views/connections.php
+msgid "Enabled (participates in runs)"
+msgstr "فعال (در اجراها شرکت می‌کند)"
+
+#: admin/views/connections.php
+msgid "Turn off to keep this connection saved but exclude it from every run: automatic pools, fallback chains and the default choice all skip disabled connections."
+msgstr "خاموش کنید تا این اتصال ذخیره بماند ولی از همهٔ اجراها کنار گذاشته شود: استخرهای خودکار، زنجیره‌های جایگزین و انتخاب پیش‌فرض همگی از اتصال‌های غیرفعال رد می‌شوند."

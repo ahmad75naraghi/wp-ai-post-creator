@@ -43,6 +43,14 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    '(disabled)': '(غیرفعال)',
+    'Connection disabled.': 'اتصال غیرفعال شد.',
+    'Connection enabled.': 'اتصال فعال شد.',
+    'Disable': 'غیرفعال کردن',
+    'Disabled': 'غیرفعال',
+    'Enable': 'فعال کردن',
+    'Enabled (participates in runs)': 'فعال (در اجراها شرکت می\u200cکند)',
+    'Turn off to keep this connection saved but exclude it from every run: automatic pools, fallback chains and the default choice all skip disabled connections.': 'خاموش کنید تا این اتصال ذخیره بماند ولی از همهٔ اجراها کنار گذاشته شود: استخرهای خودکار، زنجیره\u200cهای جایگزین و انتخاب پیش\u200cفرض همگی از اتصال\u200cهای غیرفعال رد می\u200cشوند.',
     'Read the full article at the link below': 'ادامه مطلب در لینک زیر',
     'Default notification image (URL)': 'تصویر پیش\u200cفرض اعلان (نشانی)',
     'Sent above the message when a post has no featured image. Paste an image address from your media library; leave empty to send text-only in that case.': 'وقتی نوشته تصویر شاخص ندارد، این تصویر بالای پیام فرستاده می\u200cشود. نشانی یک تصویر از کتابخانهٔ رسانه را بگذارید؛ اگر خالی باشد در آن حالت فقط متن ارسال می\u200cشود.',

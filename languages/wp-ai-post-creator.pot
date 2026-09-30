@@ -44,6 +44,10 @@ msgstr ""
 msgid "(No site prompt configured — write for a general audience.)"
 msgstr ""
 
+#: admin/views/prompts.php
+msgid "(disabled)"
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "0 = unlimited"
 msgstr ""
@@ -148,7 +152,7 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
-#: admin/views/schedule.php
+#: admin/views/connections.php admin/views/schedule.php
 msgid "Active"
 msgstr ""
 
@@ -504,6 +508,14 @@ msgstr ""
 msgid "Connection deleted."
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Connection disabled."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Connection enabled."
+msgstr ""
+
 #: includes/class-aipc-assets.php
 msgid "Connection error:"
 msgstr ""
@@ -748,6 +760,14 @@ msgstr ""
 msgid "Detecting chat ID…"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Disable"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Disabled"
+msgstr ""
+
 #: admin/views/logs.php
 msgid "Done"
 msgstr ""
@@ -836,8 +856,16 @@ msgstr ""
 msgid "Empty image data."
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Enable"
+msgstr ""
+
 #: admin/views/settings.php
 msgid "Enable image generation"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Enabled (participates in runs)"
 msgstr ""
 
 #: admin/views/connections.php
@@ -1820,7 +1848,7 @@ msgstr ""
 msgid "Starting the agent…"
 msgstr ""
 
-#: admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Status"
 msgstr ""
 
@@ -2278,6 +2306,10 @@ msgstr ""
 
 #: includes/class-aipc-settings.php
 msgid "Turkish"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Turn off to keep this connection saved but exclude it from every run: automatic pools, fallback chains and the default choice all skip disabled connections."
 msgstr ""
 
 #: includes/class-aipc-steps.php

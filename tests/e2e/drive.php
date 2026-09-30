@@ -913,6 +913,50 @@ update_option( 'aipc_connections', $aipc_cr_conn_backup, false );
 update_option( 'aipc_steps', $aipc_cr_steps_backup, false );
 
 /* ------------------------------------------------------------------ *
+ * Disabling connections (v1.9.3): disabled entries are skipped by the
+ * purpose pools, the default choice and explicit step chains; the
+ * flag survives partial saves and legacy rows default to enabled.
+ * ------------------------------------------------------------------ */
+$aipc_cd_conn_backup  = get_option( 'aipc_connections' );
+$aipc_cd_steps_backup = get_option( 'aipc_steps' );
+update_option( 'aipc_connections', array(
+	array( 'id' => 'on1',  'name' => 'A on',   'base_url' => 'https://a.invalid/v1', 'purpose' => 'both', 'priority' => 1, 'enabled' => 1 ),
+	array( 'id' => 'off1', 'name' => 'B off',  'base_url' => 'https://b.invalid/v1', 'purpose' => 'both', 'priority' => 2, 'enabled' => 0, 'is_default' => 1 ),
+	array( 'id' => 'leg',  'name' => 'Legacy', 'base_url' => 'https://c.invalid/v1', 'purpose' => 'chat', 'priority' => 3 ), // pre-1.9.3: no enabled flag.
+), false );
+update_option( 'aipc_steps', array( 'plan' => array( 'connections' => array( 'off1', 'on1' ) ) ), false );
+
+$aipc_cd_all   = AIPC_Connections::all();
+$aipc_cd_pool  = AIPC_Connections::for_purpose( 'chat' );
+$aipc_cd_chain = $aipc_rc->invoke( AIPC_Agent::instance(), 'plan' );
+
+$aipc_cd_keep = AIPC_Connections::sanitize( array( 'name' => 'B off' ), array( 'enabled' => 0, 'base_url' => 'https://b.invalid/v1' ) );
+$aipc_cd_on   = AIPC_Connections::sanitize( array( 'enabled' => '1' ), array( 'enabled' => 0, 'name' => 'X', 'base_url' => 'https://b.invalid/v1' ) );
+$aipc_cd_off  = AIPC_Connections::sanitize( array( 'enabled' => '0' ), array( 'enabled' => 1, 'name' => 'X', 'base_url' => 'https://b.invalid/v1' ) );
+
+$aipc_cd_default = AIPC_Connections::get_default();
+$aipc_cd_ui      = AIPC_Connections::all_for_ui();
+
+update_option( 'aipc_connections', array(
+	array( 'id' => 'off1', 'name' => 'B off', 'base_url' => 'https://b.invalid/v1', 'enabled' => 0, 'is_default' => 1 ),
+), false );
+$aipc_cd_none = AIPC_Connections::get_default();
+
+$out['conn_disable'] = array(
+	'legacy_enabled'    => 1 === $aipc_cd_all[2]['enabled'],
+	'pool_skips_off'    => 'on1,leg' === $aipc_ids( $aipc_cd_pool ),
+	'chain_skips_off'   => 'on1' === $aipc_ids( $aipc_cd_chain ),
+	'default_skips_off' => is_array( $aipc_cd_default ) && 'on1' === $aipc_cd_default['id'],
+	'default_none_left' => null === $aipc_cd_none,
+	'sanitize_keeps'    => 0 === $aipc_cd_keep['enabled'],
+	'sanitize_toggles'  => 1 === $aipc_cd_on['enabled'] && 0 === $aipc_cd_off['enabled'],
+	'ui_exposes_flag'   => isset( $aipc_cd_ui[0]['enabled'], $aipc_cd_ui[1]['enabled'] ) && 1 === $aipc_cd_ui[0]['enabled'] && 0 === $aipc_cd_ui[1]['enabled'],
+);
+
+update_option( 'aipc_connections', $aipc_cd_conn_backup, false );
+update_option( 'aipc_steps', $aipc_cd_steps_backup, false );
+
+/* ------------------------------------------------------------------ *
  * Image delivery (v1.8.1): force-b64 mode + defensive base64 decoding.
  * ------------------------------------------------------------------ */
 $aipc_if_ok   = AIPC_Connections::sanitize( array( 'name' => 'B64', 'base_url' => 'https://mock.invalid/v1', 'image_format' => 'b64' ), array() );

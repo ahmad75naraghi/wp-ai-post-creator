@@ -83,7 +83,8 @@ final class AIPC_Agent {
 
 		foreach ( $cfg['connections'] as $conn_id ) {
 			$conn = AIPC_Connections::get( $conn_id );
-			if ( $conn && ! empty( $conn['base_url'] ) ) {
+			// Disabled connections are skipped everywhere (v1.9.3).
+			if ( $conn && ! empty( $conn['base_url'] ) && ! empty( $conn['enabled'] ) ) {
 				$chain[] = $conn;
 			}
 		}

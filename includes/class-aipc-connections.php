@@ -42,6 +42,10 @@ final class AIPC_Connections {
 			if ( ! isset( $conn['image_api'] ) || ! in_array( $conn['image_api'], array( 'auto', 'images', 'chat' ), true ) ) {
 				$conns[ $i ]['image_api'] = 'auto';
 			}
+			// Connections stored before 1.9.3 have no enabled flag.
+			if ( ! isset( $conn['enabled'] ) ) {
+				$conns[ $i ]['enabled'] = 1;
+			}
 		}
 		return $conns;
 	}
@@ -61,7 +65,7 @@ final class AIPC_Connections {
 		$purpose = ( 'image' === $purpose ) ? 'image' : 'chat';
 		$pool    = array();
 		foreach ( self::all() as $conn ) {
-			if ( empty( $conn['base_url'] ) ) {
+			if ( empty( $conn['base_url'] ) || empty( $conn['enabled'] ) ) {
 				continue;
 			}
 			if ( 'both' === $conn['purpose'] || $purpose === $conn['purpose'] ) {
@@ -122,7 +126,9 @@ final class AIPC_Connections {
 	 * @return array|null
 	 */
 	public static function get_default() {
-		$conns = self::all();
+		$conns = array_values( array_filter( self::all(), function ( $conn ) {
+			return ! empty( $conn['enabled'] );
+		} ) );
 		if ( empty( $conns ) ) {
 			return null;
 		}
@@ -338,6 +344,14 @@ final class AIPC_Connections {
 			$image_api = 'auto';
 		}
 
+		if ( isset( $in['enabled'] ) ) {
+			$enabled = absint( $in['enabled'] ) ? 1 : 0;
+		} elseif ( isset( $old['enabled'] ) ) {
+			$enabled = empty( $old['enabled'] ) ? 0 : 1;
+		} else {
+			$enabled = 1;
+		}
+
 		$conn = array(
 			'id'              => isset( $old['id'] ) ? $old['id'] : '',
 			'name'            => $name,
@@ -352,6 +366,7 @@ final class AIPC_Connections {
 			'priority'        => $priority,
 			'image_format'    => $image_format,
 			'image_api'       => $image_api,
+			'enabled'         => $enabled,
 			'is_default'      => empty( $in['is_default'] ) ? ( isset( $old['is_default'] ) ? $old['is_default'] : 0 ) : 1,
 			'created'         => isset( $old['created'] ) ? $old['created'] : 0,
 			'updated'         => time(),
@@ -400,9 +415,10 @@ final class AIPC_Connections {
 				'name'        => $conn['name'],
 				'base_url'    => $conn['base_url'],
 				'host'        => (string) wp_parse_url( $conn['base_url'], PHP_URL_HOST ),
-				'chat_model'  => $conn['chat_model'],
-				'image_model' => $conn['image_model'],
+				'chat_model'  => isset( $conn['chat_model'] ) ? $conn['chat_model'] : '',
+				'image_model' => isset( $conn['image_model'] ) ? $conn['image_model'] : '',
 				'is_default'  => empty( $conn['is_default'] ) ? 0 : 1,
+				'enabled'     => empty( $conn['enabled'] ) ? 0 : 1,
 				'has_key'     => ! empty( $conn['api_key'] ),
 			);
 		}

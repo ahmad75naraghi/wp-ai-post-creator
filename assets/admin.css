@@ -1116,3 +1116,7 @@
 	color: #64748b;
 	font-size: 12px;
 }
+
+/* v1.9.3 — disabled connections */
+.aipc-table tr.aipc-conn-off td { opacity: .55; }
+.aipc-table tr.aipc-conn-off td:last-child { opacity: 1; }

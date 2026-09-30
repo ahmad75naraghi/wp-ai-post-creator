@@ -3,6 +3,28 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.9.3] — 2026-09-30
+
+### Added
+- **Disable a connection without deleting it.** New "Enabled
+  (participates in runs)" checkbox in the connection form, a Status
+  column and a one-click **Enable/Disable** action in the connections
+  list (disabled rows are dimmed). Disabled connections are skipped
+  everywhere: the automatic purpose pools, explicit step fallback
+  chains and the default-connection choice. Existing connections are
+  treated as enabled after the update; the Prompts page marks disabled
+  entries in the chain selector. 8 new strings translated (663 msgids).
+
+### Fixed
+- `all_for_ui()` no longer assumes every stored connection row has
+  model fields (defensive `isset`).
+
+### Tests
+- New `conn_disable` e2e group (8 assertions): legacy backfill, pool /
+  chain / default skipping, disable-all → no default, sanitize
+  keep-vs-toggle semantics, UI flag exposure
+  (54 groups / 375 assertions total).
+
 ## [1.9.2] — 2026-09-30
 
 ### Changed

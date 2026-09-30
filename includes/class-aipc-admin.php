@@ -23,6 +23,7 @@ final class AIPC_Admin {
 
 		add_action( 'admin_post_aipc_save_connection', array( __CLASS__, 'handle_save_connection' ) );
 		add_action( 'admin_post_aipc_delete_connection', array( __CLASS__, 'handle_delete_connection' ) );
+		add_action( 'admin_post_aipc_toggle_connection', array( __CLASS__, 'handle_toggle_connection' ) );
 		add_action( 'admin_post_aipc_publish_draft', array( __CLASS__, 'handle_publish_draft' ) );
 		add_action( 'admin_post_aipc_save_steps', array( __CLASS__, 'handle_save_steps' ) );
 		add_action( 'admin_post_aipc_clear_logs', array( __CLASS__, 'handle_clear_logs' ) );
@@ -308,6 +309,30 @@ final class AIPC_Admin {
 
 		wp_safe_redirect( add_query_arg(
 			array( 'page' => 'aipc-connections', 'aipc_msg' => 'deleted' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Enable/disable a connection without opening the edit form (v1.9.3).
+	 *
+	 * @return void
+	 */
+	public static function handle_toggle_connection() {
+		self::guard( 'aipc_toggle_connection' );
+
+		$id   = isset( $_GET['id'] ) ? sanitize_key( wp_unslash( $_GET['id'] ) ) : '';
+		$conn = $id ? AIPC_Connections::get( $id ) : null;
+		$msg  = 'saved';
+		if ( $conn ) {
+			$conn['enabled'] = empty( $conn['enabled'] ) ? 1 : 0;
+			AIPC_Connections::save( $conn );
+			$msg = $conn['enabled'] ? 'enabled' : 'disabled';
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-connections', 'aipc_msg' => $msg ),
 			admin_url( 'admin.php' )
 		) );
 		exit;

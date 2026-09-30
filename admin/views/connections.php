@@ -133,6 +133,15 @@ function aipc_connection_form( $conn ) {
 			</label>
 		</p>
 
+		<p>
+			<input type="hidden" name="enabled" value="0" />
+			<label class="aipc-check">
+				<input type="checkbox" name="enabled" value="1" <?php checked( ! $editing || ! empty( $conn['enabled'] ) ); ?> />
+				<?php esc_html_e( 'Enabled (participates in runs)', 'wp-ai-post-creator' ); ?>
+				<?php aipc_help( 'conn-enabled', __( 'Turn off to keep this connection saved but exclude it from every run: automatic pools, fallback chains and the default choice all skip disabled connections.', 'wp-ai-post-creator' ) ); ?>
+			</label>
+		</p>
+
 		<div class="aipc-actions">
 			<button type="submit" class="button button-primary"><?php esc_html_e( 'Save connection', 'wp-ai-post-creator' ); ?></button>
 			<button type="button" class="button aipc-btn-test" data-target="<?php echo esc_attr( ( $editing ? $conn['id'] : 'new' ) ); ?>"><?php esc_html_e( 'Test connection', 'wp-ai-post-creator' ); ?></button>
@@ -158,6 +167,10 @@ endif;
 		<div class="aipc-card aipc-alert aipc-alert-ok"><p>✅ <?php esc_html_e( 'Connection saved.', 'wp-ai-post-creator' ); ?></p></div>
 	<?php elseif ( 'deleted' === $aipc_msg ) : ?>
 		<div class="aipc-card aipc-alert"><p>🗑 <?php esc_html_e( 'Connection deleted.', 'wp-ai-post-creator' ); ?></p></div>
+	<?php elseif ( 'enabled' === $aipc_msg ) : ?>
+		<div class="aipc-card aipc-alert aipc-alert-ok"><p>▶️ <?php esc_html_e( 'Connection enabled.', 'wp-ai-post-creator' ); ?></p></div>
+	<?php elseif ( 'disabled' === $aipc_msg ) : ?>
+		<div class="aipc-card aipc-alert"><p>⏸ <?php esc_html_e( 'Connection disabled.', 'wp-ai-post-creator' ); ?></p></div>
 	<?php endif; ?>
 
 	<section class="aipc-card">
@@ -178,13 +191,14 @@ endif;
 						<th><?php esc_html_e( 'Image model', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Purpose', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Priority', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Default', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Actions', 'wp-ai-post-creator' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
 				<?php foreach ( $aipc_conns as $aipc_conn ) : ?>
-					<tr>
+					<tr class="<?php echo empty( $aipc_conn['enabled'] ) ? 'aipc-conn-off' : ''; ?>">
 						<td><strong><?php echo esc_html( $aipc_conn['name'] ); ?></strong></td>
 						<td class="aipc-code"><?php echo esc_html( $aipc_conn['base_url'] ); ?></td>
 						<td class="aipc-code"><?php echo esc_html( $aipc_conn['chat_model'] ); ?></td>
@@ -201,8 +215,10 @@ endif;
 							?>
 						</td>
 						<td><?php echo esc_html( isset( $aipc_conn['priority'] ) ? (int) $aipc_conn['priority'] : 10 ); ?></td>
+						<td><?php echo ! empty( $aipc_conn['enabled'] ) ? '🟢 ' . esc_html__( 'Active', 'wp-ai-post-creator' ) : '⏸ ' . esc_html__( 'Disabled', 'wp-ai-post-creator' ); ?></td>
 						<td><?php echo ! empty( $aipc_conn['is_default'] ) ? '⭐ ' . esc_html__( 'Yes', 'wp-ai-post-creator' ) : '—'; ?></td>
 						<td>
+							<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_toggle_connection&id=' . $aipc_conn['id'] ), 'aipc_toggle_connection' ) ); ?>"><?php echo ! empty( $aipc_conn['enabled'] ) ? esc_html__( 'Disable', 'wp-ai-post-creator' ) : esc_html__( 'Enable', 'wp-ai-post-creator' ); ?></a> ·
 							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'aipc-connections', 'edit' => $aipc_conn['id'] ), admin_url( 'admin.php' ) ) ); ?>"><?php esc_html_e( 'Edit', 'wp-ai-post-creator' ); ?></a> ·
 							<a class="aipc-danger" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_delete_connection&id=' . $aipc_conn['id'] ), 'aipc_delete_connection' ) ); ?>"
 								onclick="return confirm('<?php echo esc_js( __( 'Delete this connection? Steps using it will fall back to the default connection.', 'wp-ai-post-creator' ) ); ?>');"><?php esc_html_e( 'Delete', 'wp-ai-post-creator' ); ?></a>

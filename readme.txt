@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.9.2
+Stable tag: 1.9.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.9.3 =
+* New: connections can be disabled without deleting them — an "Enabled" checkbox in the connection form plus a one-click Enable/Disable action and a Status column in the connections list
+* Disabled connections are skipped everywhere: automatic purpose pools, explicit step fallback chains and the default-connection choice
+* Existing connections stay enabled after the update; the Prompts page marks disabled entries in the chain selector
 
 = 1.9.2 =
 * Changed: Bale post notifications use a clean channel-ready format — 🔻title, 🌱🌱summary🌱🌱, a "read the full article" line with 👇👇👇 and the link; the featured image is sent above as before
