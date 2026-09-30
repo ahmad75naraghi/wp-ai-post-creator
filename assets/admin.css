@@ -1065,3 +1065,54 @@
 	margin: 0;
 	font-size: 1em;
 }
+
+/* ------------------------------------------------------------------ *
+ * Model picker (Connections → “Load models from the provider”)
+ * ------------------------------------------------------------------ */
+.aipc-model-picker {
+	margin-top: 8px;
+	border: 1px solid var(--aipc-line);
+	border-radius: var(--aipc-radius-sm);
+	background: #fff;
+	overflow: hidden;
+}
+.aipc-model-picker .aipc-model-filter {
+	width: 100%;
+	border: 0;
+	border-bottom: 1px solid var(--aipc-line);
+	border-radius: 0;
+	box-shadow: none;
+}
+.aipc-model-picker .aipc-model-filter:focus {
+	box-shadow: none;
+	border-bottom-color: var(--aipc-primary);
+}
+.aipc-model-list {
+	max-height: 240px;
+	overflow-y: auto;
+}
+.aipc-model-item {
+	padding: 6px 12px;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+	direction: ltr;
+	text-align: left;
+	cursor: pointer;
+	border-bottom: 1px solid var(--aipc-bg-soft);
+}
+.aipc-model-item:last-child {
+	border-bottom: 0;
+}
+.aipc-model-item:hover {
+	background: var(--aipc-bg-soft);
+}
+.aipc-model-item.is-selected {
+	background: rgba(79, 70, 229, 0.08);
+	color: var(--aipc-primary);
+	font-weight: 600;
+}
+.aipc-model-empty {
+	padding: 10px 12px;
+	color: #64748b;
+	font-size: 12px;
+}

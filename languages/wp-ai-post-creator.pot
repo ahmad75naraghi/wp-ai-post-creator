@@ -1237,6 +1237,10 @@ msgid "No messages found. Send any message to your bot in Bale first, then try a
 msgstr ""
 
 #: includes/class-aipc-assets.php
+msgid "No models match your filter."
+msgstr ""
+
+#: includes/class-aipc-assets.php
 msgid "No new topics found in your sources — try again later or add topics manually."
 msgstr ""
 
@@ -2226,6 +2230,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Two-way commands"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Type to filter the models…"
 msgstr ""
 
 #: includes/class-aipc-agent.php

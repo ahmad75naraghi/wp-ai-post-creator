@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.7.4
+Stable tag: 1.7.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,9 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.7.5 =
+* Improved: "Load models from the provider" now opens a visible, searchable model list under the Chat model field — type to filter, click to pick. Previously the models only fed the browser's invisible autocomplete, which looked like nothing happened
 
 = 1.7.4 =
 * Fixed: pasting a full endpoint URL as the base URL (e.g. .../v1/chat/completions) no longer breaks every request with errors like "Unknown API route: /v1/chat/completions/models" — well-known endpoint paths are stripped automatically and a successful connection test writes the corrected base URL back into the field

@@ -60,6 +60,10 @@ function aipc_connection_form( $conn ) {
 				<input type="text" class="aipc-input code" name="chat_model" list="<?php echo esc_attr( 'aipc-models-' . ( $editing ? $conn['id'] : 'new' ) ); ?>"
 					value="<?php echo esc_attr( $editing ? $conn['chat_model'] : 'gpt-4o-mini' ); ?>" />
 				<datalist id="<?php echo esc_attr( 'aipc-models-' . ( $editing ? $conn['id'] : 'new' ) ); ?>"></datalist>
+				<div class="aipc-model-picker" hidden>
+					<input type="text" class="aipc-input aipc-model-filter" placeholder="<?php esc_attr_e( 'Type to filter the models…', 'wp-ai-post-creator' ); ?>" />
+					<div class="aipc-model-list" role="listbox"></div>
+				</div>
 			</div>
 			<div class="aipc-field">
 				<label><?php esc_html_e( 'Image model', 'wp-ai-post-creator' ); ?></label>

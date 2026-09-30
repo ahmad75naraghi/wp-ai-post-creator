@@ -239,6 +239,7 @@ final class AIPC_Assets {
 				'loadingModels' => __( 'Loading models…', 'wp-ai-post-creator' ),
 				'modelsOk'      => __( '%d models loaded — pick one in the list.', 'wp-ai-post-creator' ),
 				'modelsFail'    => __( 'Could not load the model list:', 'wp-ai-post-creator' ),
+				'noMatch'       => __( 'No models match your filter.', 'wp-ai-post-creator' ),
 			),
 		);
 	}

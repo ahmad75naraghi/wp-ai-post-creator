@@ -294,6 +294,7 @@ $html = ob_get_clean();
 $out['admin_pages']['connections'] = array(
 	'rendered'      => false !== strpos( $html, 'aipc-conn-form' ),
 	'shows_conns'   => false !== strpos( $html, 'Chat Mock' ) && false !== strpos( $html, 'Image Mock' ),
+	'model_picker'  => false !== strpos( $html, 'aipc-model-picker' ) && false !== strpos( $html, 'aipc-model-list' ),
 );
 
 ob_start();

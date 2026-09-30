@@ -43,6 +43,8 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Type to filter the models\u2026': '\u0628\u0631\u0627\u06cc \u0641\u06cc\u0644\u062a\u0631 \u06a9\u0631\u062f\u0646 \u0645\u062f\u0644\u200c\u0647\u0627 \u062a\u0627\u06cc\u067e \u06a9\u0646\u06cc\u062f\u2026',
+    'No models match your filter.': '\u0647\u06cc\u0686 \u0645\u062f\u0644\u06cc \u0628\u0627 \u0641\u06cc\u0644\u062a\u0631 \u0634\u0645\u0627 \u0645\u0637\u0627\u0628\u0642\u062a \u0646\u062f\u0627\u0631\u062f.',
     'Allow private/LAN addresses (e.g. a self-hosted gateway like OmniRoute or Ollama on another machine in your network)': 'اجازه به نشانی\u200cهای خصوصی/شبکهٔ محلی (مثلاً گیت\u200cوی سلف\u200cهاست مانند OmniRoute یا Ollama روی دستگاه دیگری در شبکهٔ شما)',
     'Blocked: the host is a private or reserved address. Enable “Allow private/LAN addresses” under Settings → Advanced (or use the “aipc_outbound_allowlist” filter) to allow it.': 'مسدود شد: میزبان یک نشانی خصوصی یا رزروشده است. برای مجاز کردن آن، «اجازه به نشانی\u200cهای خصوصی/شبکهٔ محلی» را در تنظیمات ← پیشرفته فعال کنید (یا از فیلتر «aipc_outbound_allowlist» استفاده کنید).',
     'Connected via %s — the base URL was missing /v1, so the field was corrected. Save the connection to keep it.': 'اتصال از طریق %s برقرار شد — نشانی پایه /v1 نداشت و فیلد اصلاح شد. برای ماندگاری، اتصال را ذخیره کنید.',

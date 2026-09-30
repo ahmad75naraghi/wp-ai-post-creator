@@ -2571,3 +2571,11 @@ msgstr "این نشانی یک صفحهٔ وب (HTML) برگرداند، نه پ
 #: admin/views/connections.php
 msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). A provider’s website address is not an API endpoint. Small mistakes are corrected automatically: a pasted full endpoint URL (e.g. …/v1/chat/completions) has its endpoint path stripped, and if the test finds the API under /v1 the field is fixed for you. The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless you enable “Allow private/LAN addresses” in Settings → Advanced."
 msgstr "نشانی پایه باید به یک اندپوینت سازگار با OpenAI اشاره کند و معمولاً به /v1 ختم می‌شود (مثلاً https://api.openai.com/v1). نشانی وب‌سایتِ سرویس‌دهنده اندپوینت API نیست. اشتباه‌های کوچک به‌طور خودکار اصلاح می‌شوند: اگر نشانی کامل اندپوینت را جای‌گذاری کنید (مثلاً …/v1/chat/completions)، مسیر اندپوینت حذف می‌شود و اگر تست، API را زیر /v1 پیدا کند، فیلد برایتان اصلاح می‌شود. کلید API فقط‌نوشتنی است: برای نگه داشتن کلید ذخیره‌شده، فیلد را خالی بگذارید. نشانی‌های خصوصی یا داخلی توسط گارد شبکهٔ خروجی مسدود می‌شوند مگر «اجازه به نشانی‌های خصوصی/شبکهٔ محلی» را در تنظیمات ← پیشرفته فعال کنید."
+
+#: includes/class-aipc-assets.php
+msgid "No models match your filter."
+msgstr "هیچ مدلی با فیلتر شما مطابقت ندارد."
+
+#: admin/views/connections.php
+msgid "Type to filter the models…"
+msgstr "برای فیلتر کردن مدل‌ها تایپ کنید…"

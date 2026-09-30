@@ -3,6 +3,20 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.7.5] — 2026-09-30
+
+### Improved
+- **"Load models from the provider" now shows a visible model picker.**
+  The models used to be poured only into an invisible `<datalist>` — with
+  a success message saying "pick one in the list", users saw no list at
+  all. A searchable, scrollable picker now opens under the Chat model
+  field: type to filter, click to select (the datalist autocomplete is
+  kept as a bonus). New strings translated to Persian (639 msgids).
+
+### Tests
+- `admin_pages.connections` gained a `model_picker` markup assertion
+  (49 groups / 336 assertions total).
+
 ## [1.7.4] — 2026-09-30
 
 ### Fixed
