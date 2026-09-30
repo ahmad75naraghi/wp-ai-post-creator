@@ -43,6 +43,11 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Automatic (base64 or link)': 'خودکار (Base64 یا لینک)',
+    'Force base64 (decode locally — most reliable)': 'اجباری Base64 (تبدیل محلی — مطمئن\u200cترین)',
+    'Image delivery': 'دریافت تصویر',
+    'Base64 mode: the provider returned a link instead of base64 image data — failing over to the next image connection.': 'حالت Base64: سرویس\u200cدهنده به\u200cجای دادهٔ Base64 تصویر، لینک برگرداند — رفتن به اتصال تصویر بعدی.',
+    'How generated images are received. "Force base64" demands the image bytes inside the API response itself and decodes them locally — nothing depends on downloading temporary links, which makes image creation deterministic. If the provider only returns a link in this mode, the attempt fails and the run retries / falls over to the next image connection.': 'تصویرهای تولیدشده چگونه دریافت شوند. «اجباری Base64» بایت\u200cهای تصویر را داخل خودِ پاسخ API می\u200cخواهد و همان\u200cجا به\u200cصورت محلی تبدیل می\u200cکند — هیچ\u200cچیز به دانلود لینک\u200cهای موقتی وابسته نیست و ساخت تصویر قطعی می\u200cشود. اگر سرویس\u200cدهنده در این حالت فقط لینک بدهد، تلاش ناموفق می\u200cشود و اجرا دوباره تلاش می\u200cکند / سراغ اتصال تصویر بعدی می\u200cرود.',
     'Chat & images': 'گفتگو و تصویر',
     'Chat only': 'فقط گفتگو',
     'Images only': 'فقط تصویر',

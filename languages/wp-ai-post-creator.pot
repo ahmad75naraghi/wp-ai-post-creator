@@ -288,6 +288,10 @@ msgstr ""
 msgid "Audience: %s"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Automatic (base64 or link)"
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "Automatic (site prompt)"
 msgstr ""
@@ -350,6 +354,10 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "Base identity sent with every request, before the step prompt."
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "Base64 mode: the provider returned a link instead of base64 image data — failing over to the next image connection."
 msgstr ""
 
 #: includes/class-aipc-network.php
@@ -960,6 +968,10 @@ msgstr ""
 msgid "Fetching suggestions from your sources…"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Force base64 (decode locally — most reliable)"
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "French"
 msgstr ""
@@ -1012,12 +1024,20 @@ msgstr ""
 msgid "Hold Ctrl / Cmd to pick several. Each selected connection gets its own retry budget; when one keeps failing the agent automatically switches to the next. Empty = default connection."
 msgstr ""
 
+#: admin/views/connections.php
+msgid "How generated images are received. \"Force base64\" demands the image bytes inside the API response itself and decodes them locally — nothing depends on downloading temporary links, which makes image creation deterministic. If the provider only returns a link in this mode, the attempt fails and the run retries / falls over to the next image connection."
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Humorous"
 msgstr ""
 
 #: includes/class-aipc-bale-commands.php
 msgid "I did not understand that command. Send «راهنما» (or help) for the list of commands."
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Image delivery"
 msgstr ""
 
 #: includes/class-aipc-agent.php

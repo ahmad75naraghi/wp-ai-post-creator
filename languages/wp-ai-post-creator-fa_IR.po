@@ -2607,3 +2607,23 @@ msgstr "کاربرد"
 #: admin/views/connections.php
 msgid "What this connection is used for. Steps without an explicit connection chain (Prompts page) automatically use every matching connection in priority order: text steps take the chat-capable connections, the featured-image step takes the image-capable ones. This is how you send images to a different server than the text."
 msgstr "این اتصال برای چه کاری استفاده شود. گام‌هایی که زنجیرهٔ اتصال مشخصی ندارند (صفحهٔ پرامپت‌ها) به‌طور خودکار همهٔ اتصال‌های هم‌خوان را به‌ترتیب اولویت به کار می‌گیرند: گام‌های متنی از اتصال‌های دارای قابلیت گفتگو و گام تصویر شاخص از اتصال‌های دارای قابلیت تصویر. به همین شکل می‌توانید ساخت تصویر را به سروری جدا از متن بسپارید."
+
+#: admin/views/connections.php
+msgid "Automatic (base64 or link)"
+msgstr "خودکار (Base64 یا لینک)"
+
+#: includes/class-aipc-api-client.php
+msgid "Base64 mode: the provider returned a link instead of base64 image data — failing over to the next image connection."
+msgstr "حالت Base64: سرویس‌دهنده به‌جای دادهٔ Base64 تصویر، لینک برگرداند — رفتن به اتصال تصویر بعدی."
+
+#: admin/views/connections.php
+msgid "Force base64 (decode locally — most reliable)"
+msgstr "اجباری Base64 (تبدیل محلی — مطمئن‌ترین)"
+
+#: admin/views/connections.php
+msgid "How generated images are received. \"Force base64\" demands the image bytes inside the API response itself and decodes them locally — nothing depends on downloading temporary links, which makes image creation deterministic. If the provider only returns a link in this mode, the attempt fails and the run retries / falls over to the next image connection."
+msgstr "تصویرهای تولیدشده چگونه دریافت شوند. «اجباری Base64» بایت‌های تصویر را داخل خودِ پاسخ API می‌خواهد و همان‌جا به‌صورت محلی تبدیل می‌کند — هیچ‌چیز به دانلود لینک‌های موقتی وابسته نیست و ساخت تصویر قطعی می‌شود. اگر سرویس‌دهنده در این حالت فقط لینک بدهد، تلاش ناموفق می‌شود و اجرا دوباره تلاش می‌کند / سراغ اتصال تصویر بعدی می‌رود."
+
+#: admin/views/connections.php
+msgid "Image delivery"
+msgstr "دریافت تصویر"

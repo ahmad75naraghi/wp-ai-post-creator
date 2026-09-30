@@ -71,6 +71,16 @@ function aipc_connection_form( $conn ) {
 					value="<?php echo esc_attr( $editing ? $conn['image_model'] : 'dall-e-3' ); ?>" />
 			</div>
 			<div class="aipc-field">
+				<label><?php esc_html_e( 'Image delivery', 'wp-ai-post-creator' ); ?>
+					<?php aipc_help( 'conn-image-format', __( 'How generated images are received. "Force base64" demands the image bytes inside the API response itself and decodes them locally — nothing depends on downloading temporary links, which makes image creation deterministic. If the provider only returns a link in this mode, the attempt fails and the run retries / falls over to the next image connection.', 'wp-ai-post-creator' ) ); ?>
+				</label>
+				<?php $aipc_img_format = $editing && isset( $conn['image_format'] ) ? $conn['image_format'] : 'auto'; ?>
+				<select class="aipc-input" name="image_format">
+					<option value="auto" <?php selected( $aipc_img_format, 'auto' ); ?>><?php esc_html_e( 'Automatic (base64 or link)', 'wp-ai-post-creator' ); ?></option>
+					<option value="b64" <?php selected( $aipc_img_format, 'b64' ); ?>><?php esc_html_e( 'Force base64 (decode locally — most reliable)', 'wp-ai-post-creator' ); ?></option>
+				</select>
+			</div>
+			<div class="aipc-field">
 				<label><?php esc_html_e( 'Purpose', 'wp-ai-post-creator' ); ?>
 					<?php aipc_help( 'conn-routing', __( 'What this connection is used for. Steps without an explicit connection chain (Prompts page) automatically use every matching connection in priority order: text steps take the chat-capable connections, the featured-image step takes the image-capable ones. This is how you send images to a different server than the text.', 'wp-ai-post-creator' ) ); ?>
 				</label>

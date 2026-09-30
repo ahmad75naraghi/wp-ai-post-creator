@@ -3,6 +3,28 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.8.1] — 2026-09-30
+
+### Added
+- **"Image delivery" per connection: Force base64 mode.** Providers can
+  return generated images as base64 (`b64_json`) or as temporary links.
+  The new *Force base64* option demands the bytes inside the API
+  response and decodes them locally (`AIPC_API_Client::decode_b64_image()`)
+  — nothing depends on downloading expiring URLs, making image creation
+  deterministic. A link-only response in this mode fails the attempt so
+  the 3-strike priority failover (1.8.0) moves to the next image
+  connection. Default stays *Automatic* (base64 or link, unchanged).
+
+### Improved
+- Base64 payloads are decoded defensively in every mode: `data:` URIs
+  (also when returned in the `url` field), embedded whitespace/newlines,
+  strict-then-lenient decoding. 5 new strings translated (651 msgids).
+
+### Tests
+- New `image_delivery` e2e group (9 assertions): sanitizing, decoder
+  edge cases, force-b64 gets bytes from the mock, refuses a URL-only
+  provider, auto mode still accepts URLs (51 groups / 352 assertions).
+
 ## [1.8.0] — 2026-09-30
 
 ### Added

@@ -36,6 +36,9 @@ final class AIPC_Connections {
 			if ( ! isset( $conn['priority'] ) || (int) $conn['priority'] < 1 ) {
 				$conns[ $i ]['priority'] = 10;
 			}
+			if ( ! isset( $conn['image_format'] ) || ! in_array( $conn['image_format'], array( 'auto', 'b64' ), true ) ) {
+				$conns[ $i ]['image_format'] = 'auto';
+			}
 		}
 		return $conns;
 	}
@@ -322,6 +325,11 @@ final class AIPC_Connections {
 			$priority = 999;
 		}
 
+		$image_format = isset( $in['image_format'] ) ? sanitize_key( (string) $in['image_format'] ) : ( isset( $old['image_format'] ) ? $old['image_format'] : 'auto' );
+		if ( ! in_array( $image_format, array( 'auto', 'b64' ), true ) ) {
+			$image_format = 'auto';
+		}
+
 		$conn = array(
 			'id'              => isset( $old['id'] ) ? $old['id'] : '',
 			'name'            => $name,
@@ -334,6 +342,7 @@ final class AIPC_Connections {
 			'request_timeout' => $timeout,
 			'purpose'         => $purpose,
 			'priority'        => $priority,
+			'image_format'    => $image_format,
 			'is_default'      => empty( $in['is_default'] ) ? ( isset( $old['is_default'] ) ? $old['is_default'] : 0 ) : 1,
 			'created'         => isset( $old['created'] ) ? $old['created'] : 0,
 			'updated'         => time(),

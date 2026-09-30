@@ -282,6 +282,8 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 				$prompt = (string) $message['content'];
 			}
 		}
+	} elseif ( is_array( $body ) && isset( $body['prompt'] ) ) {
+		$prompt = (string) $body['prompt']; // Image generations.
 	}
 
 	aipc_mock_log( array(
@@ -327,6 +329,16 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 
 	// POST /images/generations
 	if ( false !== strpos( $url, '/images/generations' ) ) {
+		// A provider that can only return links (image_format=b64 must refuse it).
+		if ( false !== strpos( $prompt, 'URLONLY' ) ) {
+			return array(
+				'body'     => json_encode( array(
+					'created' => time(),
+					'data'    => array( array( 'url' => 'https://mock.invalid/generated.png' ) ),
+				) ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}
 		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' );
 		return array(
 			'body'     => json_encode( array(

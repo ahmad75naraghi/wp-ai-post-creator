@@ -893,6 +893,34 @@ update_option( 'aipc_connections', $aipc_cr_conn_backup, false );
 update_option( 'aipc_steps', $aipc_cr_steps_backup, false );
 
 /* ------------------------------------------------------------------ *
+ * Image delivery (v1.8.1): force-b64 mode + defensive base64 decoding.
+ * ------------------------------------------------------------------ */
+$aipc_if_ok   = AIPC_Connections::sanitize( array( 'name' => 'B64', 'base_url' => 'https://mock.invalid/v1', 'image_format' => 'b64' ), array() );
+$aipc_if_bad  = AIPC_Connections::sanitize( array( 'name' => 'Odd', 'base_url' => 'https://mock.invalid/v1', 'image_format' => 'jpeg' ), array() );
+
+$aipc_png_b64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+$aipc_png     = base64_decode( $aipc_png_b64 );
+
+$aipc_b64_conn  = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-image', 'image_format' => 'b64' );
+$aipc_auto_conn = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-image' );
+
+$aipc_img_b64      = ( new AIPC_API_Client( $aipc_b64_conn ) )->image( 'A tiny test image' );
+$aipc_img_refused  = ( new AIPC_API_Client( $aipc_b64_conn ) )->image( 'URLONLY please' );
+$aipc_img_auto_url = ( new AIPC_API_Client( $aipc_auto_conn ) )->image( 'URLONLY please' );
+
+$out['image_delivery'] = array(
+	'sanitize_kept'    => 'b64' === $aipc_if_ok['image_format'],
+	'sanitize_default' => 'auto' === $aipc_if_bad['image_format'],
+	'decode_plain'     => AIPC_API_Client::decode_b64_image( $aipc_png_b64 ) === $aipc_png,
+	'decode_data_uri'  => AIPC_API_Client::decode_b64_image( 'data:image/png;base64,' . $aipc_png_b64 ) === $aipc_png,
+	'decode_wrapped'   => AIPC_API_Client::decode_b64_image( substr( $aipc_png_b64, 0, 20 ) . "\n  " . substr( $aipc_png_b64, 20 ) ) === $aipc_png,
+	'decode_invalid'   => false === AIPC_API_Client::decode_b64_image( '' ) && false === AIPC_API_Client::decode_b64_image( 'data:image/png;base64' ),
+	'b64_gets_bits'    => is_array( $aipc_img_b64 ) && ! empty( $aipc_img_b64['bits'] ) && $aipc_img_b64['bits'] === $aipc_png,
+	'b64_refuses_url'  => is_wp_error( $aipc_img_refused ) && false !== strpos( $aipc_img_refused->get_error_message(), 'Base64' ),
+	'auto_accepts_url' => is_array( $aipc_img_auto_url ) && ! empty( $aipc_img_auto_url['url'] ),
+);
+
+/* ------------------------------------------------------------------ *
  * Assets: locale-proof screen detection (v1.7.3)
  * The submenu hook prefix is sanitize_title() of the TRANSLATED menu
  * title (percent-encoded Persian on fa_IR), so matching must key off the

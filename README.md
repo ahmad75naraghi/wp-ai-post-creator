@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.8.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
+**Version:** 1.8.1 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
 
 ---
 
@@ -30,6 +30,9 @@
 **AI Post Creator** یک افزونهٔ فوق‌حرفه‌ای و «ایجنت‌مانند» برای وردپرس است که با اتصال به هر سرویس API هوش مصنوعیِ سازگار با OpenAI (OpenAI، OpenRouter، Groq، DeepSeek، Ollama، LM Studio و…)، یک پست کامل را **از صفر تا صد** تولید می‌کند:
 
 ابتدا **پرامپت سایت** (سایت چیست، درباره چیست، هدف و مخاطبانش کدامند — در تنظیمات) و **دسته‌بندی‌های موجود نوشته‌ها** را می‌خواند، یکی از دسته‌بندی‌ها را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد (یا از پیشنهاد شما استفاده می‌کند). بعد محتوا را می‌نویسد، یک **پاس کپی‌رایتینگ و سئو** روی کل متن اجرا می‌کند، **خلاصه سئو برای Rank Math** می‌سازد، از روی موضوع و خلاصه **تصویر شاخص** تولید می‌کند و نتیجه را همیشه به‌صورت **پیش‌نویس** ذخیره می‌کند — تمام مراحل به‌صورت زنده در یک **کنسول ایجنت** نمایش داده می‌شوند و در هر مرحله در صورت خطا، به‌طور خودکار تا سه بار دوباره تلاش می‌شود.
+
+### 🆕 جدید در نسخهٔ ۱.۸.۱ — تصویر قطعی با Base64
+- گزینهٔ **«دریافت تصویر»** برای هر اتصال: حالت «اجباری Base64» بایت‌های تصویر را داخل خودِ پاسخ API می‌گیرد و به‌صورت محلی تبدیل می‌کند — بدون وابستگی به لینک‌های موقتی؛ اگر سرویس‌دهنده فقط لینک بدهد، خودکار سراغ اتصال تصویر بعدی می‌رود.
 
 ### 🆕 جدید در نسخهٔ ۱.۸.۰ — سرور جدا برای تصویر + جایگزینی اولویت‌دار
 - **کاربرد اتصال:** هر اتصال حالا «گفتگو و تصویر»، «فقط گفتگو» یا «فقط تصویر» است — تصویر شاخص می‌تواند از سروری کاملاً جدا از متن ساخته شود.
@@ -114,6 +117,8 @@
 ## English — Overview
 
 AI Post Creator turns the WordPress admin into an AI content agent. Set a **site prompt** once (what your site is about), and the agent picks one of your **existing post categories**, invents a topic that fits, writes the article, runs a **copywriting + SEO revision pass**, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** — with every step visible live and auto-retried until it passes.
+
+**New in 1.8.1 — deterministic base64 images:** each connection has an **Image delivery** option; *Force base64* receives the image bytes inside the API response and decodes them locally — no temporary links involved, and link-only responses fail over to the next image connection.
 
 **New in 1.8.0 — separate image servers + priority failover:**
 - Every connection has a **Purpose** — *chat & images*, *chat only* or *images only* — so featured images can come from a completely different server than the text.

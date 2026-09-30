@@ -371,8 +371,9 @@ final class AIPC_API_Client {
 			return new WP_Error( 'aipc_config', __( 'API key or endpoint is not configured.', 'wp-ai-post-creator' ) );
 		}
 
-		$model = ! empty( $opts['model'] ) ? $opts['model'] : $this->conn['image_model'];
-		$size  = ! empty( $opts['size'] ) ? $opts['size'] : AIPC_Settings::get( 'image_size' );
+		$model     = ! empty( $opts['model'] ) ? $opts['model'] : $this->conn['image_model'];
+		$size      = ! empty( $opts['size'] ) ? $opts['size'] : AIPC_Settings::get( 'image_size' );
+		$force_b64 = isset( $this->conn['image_format'] ) && 'b64' === $this->conn['image_format'];
 
 		$body = array(
 			'model'  => $model,
@@ -407,17 +408,59 @@ final class AIPC_API_Client {
 		$item = isset( $json['data'][0] ) && is_array( $json['data'][0] ) ? $json['data'][0] : array();
 
 		if ( ! empty( $item['b64_json'] ) ) {
-			$bits = base64_decode( (string) $item['b64_json'] );
-			if ( $bits ) {
+			$bits = self::decode_b64_image( $item['b64_json'] );
+			if ( false !== $bits ) {
+				return array( 'bits' => $bits );
+			}
+		}
+
+		// Some gateways put a data: URI into the url field — that is still
+		// base64 payload we can decode locally.
+		if ( ! empty( $item['url'] ) && 0 === strpos( (string) $item['url'], 'data:' ) ) {
+			$bits = self::decode_b64_image( $item['url'] );
+			if ( false !== $bits ) {
 				return array( 'bits' => $bits );
 			}
 		}
 
 		if ( ! empty( $item['url'] ) ) {
+			if ( $force_b64 ) {
+				return new WP_Error( 'aipc_image', __( 'Base64 mode: the provider returned a link instead of base64 image data — failing over to the next image connection.', 'wp-ai-post-creator' ) );
+			}
 			return array( 'url' => (string) $item['url'] );
 		}
 
 		return new WP_Error( 'aipc_image', __( 'The provider returned no image data.', 'wp-ai-post-creator' ) );
+	}
+
+	/**
+	 * Decode a base64 image payload defensively.
+	 *
+	 * Accepts plain base64, data: URIs ("data:image/png;base64,…") and
+	 * payloads with embedded whitespace/newlines. Strict decoding first,
+	 * lenient as a fallback.
+	 *
+	 * @param string $data Raw payload.
+	 * @return string|false Binary image bytes, or false when not decodable.
+	 */
+	public static function decode_b64_image( $data ) {
+		$data = trim( (string) $data );
+		if ( '' === $data ) {
+			return false;
+		}
+		if ( 0 === strpos( $data, 'data:' ) ) {
+			$comma = strpos( $data, ',' );
+			if ( false === $comma ) {
+				return false;
+			}
+			$data = substr( $data, $comma + 1 );
+		}
+		$clean = preg_replace( '/\s+/', '', $data );
+		$bits  = base64_decode( $clean, true );
+		if ( false === $bits || '' === $bits ) {
+			$bits = base64_decode( $clean );
+		}
+		return ( is_string( $bits ) && '' !== $bits ) ? $bits : false;
 	}
 
 	/**
