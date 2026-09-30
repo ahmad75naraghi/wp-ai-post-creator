@@ -47,6 +47,7 @@ final class AIPC_Bale {
 			'last_report'    => '', // Y-m-d when the last report was sent.
 			'two_way'        => 0, // Accept commands from chats (1.7.0).
 			'last_update_id' => 0, // Last processed getUpdates id.
+			'default_image'  => '', // Fallback picture for posts without a featured image (1.9.2).
 		) );
 	}
 
@@ -134,6 +135,11 @@ final class AIPC_Bale {
 			$report_day = 6;
 		}
 
+		$default_image = isset( $in['default_image'] ) ? esc_url_raw( trim( (string) $in['default_image'] ) ) : ( isset( $old['default_image'] ) ? $old['default_image'] : '' );
+		if ( '' !== $default_image && 0 !== strpos( $default_image, 'http' ) ) {
+			$default_image = '';
+		}
+
 		return array(
 			'enabled'        => empty( $in['enabled'] ) ? 0 : 1,
 			'token'          => sanitize_text_field( $token ),
@@ -145,6 +151,7 @@ final class AIPC_Bale {
 			'last_report'    => isset( $old['last_report'] ) ? $old['last_report'] : '',
 			'two_way'        => empty( $in['two_way'] ) ? 0 : 1,
 			'last_update_id' => isset( $old['last_update_id'] ) ? absint( $old['last_update_id'] ) : 0,
+			'default_image'  => $default_image,
 		);
 	}
 
@@ -331,56 +338,8 @@ final class AIPC_Bale {
 			return;
 		}
 
-		$title = get_the_title( $post );
-
-		$summary = (string) get_post_meta( $post_id, 'rank_math_description', true );
-		if ( '' === $summary ) {
-			$summary = (string) get_post_meta( $post_id, '_aipc_meta_description', true );
-		}
-		if ( '' === $summary ) {
-			$summary = (string) $post->post_excerpt;
-		}
-		$summary = wp_strip_all_tags( $summary );
-		if ( mb_strlen( $summary ) > 400 ) {
-			$summary = mb_substr( $summary, 0, 400 ) . '…';
-		}
-
-		$words  = AIPC_Agent::count_words( $post->post_content );
-		$status = get_post_status( $post_id );
-
-		// Pick the intro line for the run mode and final status.
-		$job = AIPC_Agent::instance()->get_job( $job_id );
-		if ( $job && 'rewrite' === ( isset( $job['mode'] ) ? $job['mode'] : 'new' ) ) {
-			$intro = '♻️ ' . __( 'An existing post was rewritten by the AI', 'wp-ai-post-creator' );
-		} elseif ( 'publish' === $status ) {
-			$intro = '🎉 ' . __( 'A new AI post is published', 'wp-ai-post-creator' );
-		} else {
-			$intro = '✍️ ' . __( 'New AI post is ready', 'wp-ai-post-creator' );
-		}
-
-		$footer = ( 'publish' === $status )
-			? sprintf(
-				/* translators: %d: word count. */
-				__( '%d words · published', 'wp-ai-post-creator' ),
-				$words
-			)
-			: sprintf(
-				/* translators: %d: word count. */
-				__( '%d words · saved as a draft', 'wp-ai-post-creator' ),
-				$words
-			);
-
-		$text = $intro . "\n\n"
-			. $title . "\n\n"
-			. $summary . "\n\n"
-			. '🔗 ' . get_permalink( $post_id ) . "\n\n"
-			. '📊 ' . $footer;
-
-		$photo = '';
-		$thumb = get_post_thumbnail_id( $post_id );
-		if ( $thumb ) {
-			$photo = (string) wp_get_attachment_url( $thumb );
-		}
+		$text  = self::post_message( $post_id );
+		$photo = self::photo_for( $post_id, $cfg );
 
 		$sent        = 0;
 		$first_error = null;
@@ -456,13 +415,72 @@ final class AIPC_Bale {
 			return;
 		}
 
-		$text = '🎉 ' . __( 'A new AI post is published', 'wp-ai-post-creator' ) . "\n\n"
-			. get_the_title( $post ) . "\n\n"
-			. '🔗 ' . get_permalink( $post_id );
+		$text  = self::post_message( $post_id );
+		$photo = self::photo_for( $post_id, $cfg );
 
 		foreach ( $recipients as $chat_id ) {
-			self::send_message( $cfg['token'], $chat_id, $text );
+			$done = false;
+			if ( '' !== $photo ) {
+				$res  = self::send_photo( $cfg['token'], $chat_id, $photo, $text );
+				$done = ! is_wp_error( $res );
+			}
+			if ( ! $done ) {
+				self::send_message( $cfg['token'], $chat_id, $text );
+			}
 		}
+	}
+
+	/**
+	 * The chat message for a post notification:
+	 *
+	 *   🔻Title
+	 *
+	 *   🌱🌱Summary🌱🌱
+	 *   Read the full article at the link below 👇👇👇
+	 *   https://…
+	 *
+	 * @param int $post_id Post id.
+	 * @return string
+	 */
+	private static function post_message( $post_id ) {
+		$post  = get_post( $post_id );
+		$title = get_the_title( $post );
+
+		$summary = (string) get_post_meta( $post_id, 'rank_math_description', true );
+		if ( '' === $summary ) {
+			$summary = (string) get_post_meta( $post_id, '_aipc_meta_description', true );
+		}
+		if ( '' === $summary && $post ) {
+			$summary = (string) $post->post_excerpt;
+		}
+		$summary = wp_strip_all_tags( $summary );
+		if ( mb_strlen( $summary ) > 400 ) {
+			$summary = mb_substr( $summary, 0, 400 ) . '…';
+		}
+
+		return '🔻' . $title . "\n\n"
+			. '🌱🌱' . $summary . '🌱🌱' . "\n"
+			. __( 'Read the full article at the link below', 'wp-ai-post-creator' ) . '👇👇👇' . "\n"
+			. get_permalink( $post_id );
+	}
+
+	/**
+	 * The picture sent above a post notification: the featured image, or
+	 * the default notification image configured in the Bale settings.
+	 *
+	 * @param int   $post_id Post id.
+	 * @param array $cfg     Bale settings.
+	 * @return string Image URL, or '' when neither exists.
+	 */
+	private static function photo_for( $post_id, $cfg ) {
+		$thumb = get_post_thumbnail_id( $post_id );
+		if ( $thumb ) {
+			$url = (string) wp_get_attachment_url( $thumb );
+			if ( '' !== $url ) {
+				return $url;
+			}
+		}
+		return isset( $cfg['default_image'] ) ? (string) $cfg['default_image'] : '';
 	}
 
 	/* ---------------------------------------------------------------------

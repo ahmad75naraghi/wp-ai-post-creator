@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.9.1)
+# AI Post Creator — Complete User Guide (v1.9.2)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -236,9 +236,13 @@ Path: **AI Post Creator → Schedule → "Bale notifications" section**
 4. Send any message to your bot, then press **Auto-detect chat ID**
 5. **Send test message** checks every recipient at once
 
-After every generated post (manual or scheduled): **featured image + summary +
-link** goes to every recipient (with special ♻️ rewritten and 🎉 published
-variants). Per-recipient delivery results are written to the job log.
+After every generated post (manual or scheduled) every recipient gets a
+channel-ready message — `🔻title`, `🌱🌱summary🌱🌱`, a "read the full
+article" line with 👇👇👇 and the link — with the **featured image sent
+above it**. If the post has no featured image, the **default notification
+image** (new in 1.9.2, set its URL in the same section) is used instead;
+leave it empty to send text-only. Per-recipient delivery results are
+written to the job log.
 
 **Periodic report:** daily or weekly — an activity summary (jobs, success/fail,
 drafts, tokens, usage per connection) at your chosen time/day.

@@ -43,6 +43,9 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Read the full article at the link below': 'ادامه مطلب در لینک زیر',
+    'Default notification image (URL)': 'تصویر پیش\u200cفرض اعلان (نشانی)',
+    'Sent above the message when a post has no featured image. Paste an image address from your media library; leave empty to send text-only in that case.': 'وقتی نوشته تصویر شاخص ندارد، این تصویر بالای پیام فرستاده می\u200cشود. نشانی یک تصویر از کتابخانهٔ رسانه را بگذارید؛ اگر خالی باشد در آن حالت فقط متن ارسال می\u200cشود.',
     'Image route': 'مسیر تولید تصویر',
     'Automatic (images endpoint, then chat)': 'خودکار (اول اندپوینت تصویر، بعد گفتگو)',
     'Images endpoint (/images/generations)': 'اندپوینت تصویر (\u200e/images/generations)',

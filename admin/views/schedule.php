@@ -343,6 +343,13 @@ $aipc_notices = array(
 					<p class="description"><?php esc_html_e( 'One chat ID per line — a person’s numeric ID or a @channel username. Send any message to your bot, then use the button below to detect it automatically.', 'wp-ai-post-creator' ); ?></p>
 				</div>
 				<div class="aipc-field">
+					<label><?php esc_html_e( 'Default notification image (URL)', 'wp-ai-post-creator' ); ?></label>
+					<input type="url" class="aipc-input code" name="default_image" dir="ltr"
+						placeholder="https://example.com/wp-content/uploads/cover.jpg"
+						value="<?php echo esc_attr( isset( $aipc_bale['default_image'] ) ? $aipc_bale['default_image'] : '' ); ?>" />
+					<p class="description"><?php esc_html_e( 'Sent above the message when a post has no featured image. Paste an image address from your media library; leave empty to send text-only in that case.', 'wp-ai-post-creator' ); ?></p>
+				</div>
+				<div class="aipc-field">
 					<label><?php esc_html_e( 'Periodic report', 'wp-ai-post-creator' ); ?></label>
 					<select class="aipc-input" name="report">
 						<option value="" <?php selected( $aipc_bale['report'], '' ); ?>><?php esc_html_e( 'Off', 'wp-ai-post-creator' ); ?></option>

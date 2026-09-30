@@ -1235,14 +1235,6 @@ msgid "Test message from AI Post Creator — your Bale connection works!"
 msgstr "پیام آزمایشی از AI Post Creator — اتصال بله شما کار می‌کند!"
 
 #: includes/class-aipc-bale.php
-msgid "New AI post is ready"
-msgstr "نوشتهٔ جدید هوش مصنوعی آماده است"
-
-#: includes/class-aipc-bale.php
-msgid "%d words · saved as a draft"
-msgstr "%d واژه · به‌صورت پیش‌نویس ذخیره شد"
-
-#: includes/class-aipc-bale.php
 msgid "Bale notification sent (image, summary and link)."
 msgstr "اطلاع‌رسانی بله ارسال شد (تصویر، خلاصه و لینک)."
 
@@ -1586,10 +1578,6 @@ msgstr "تصویر شاخص (API تصویر)"
 msgid "Calls the image API of the assigned connection and saves the result to the media library. No prompt — the image model and size come from the connection and settings."
 msgstr "API تصویرِ اتصال تخصیص‌یافته را فراخوانی می‌کند و نتیجه را در کتابخانه رسانه ذخیره می‌کند. پرامپتی ندارد — مدل و اندازه تصویر از اتصال و تنظیمات می‌آیند."
 
-#: includes/class-aipc-bale.php
-msgid "%d words · published"
-msgstr "%d کلمه · منتشر شد"
-
 #: admin/views/prompts.php
 msgid "%d-step fallback chain"
 msgstr "زنجیرهٔ جایگزین %d مرحله‌ای"
@@ -1602,10 +1590,6 @@ msgstr "(هنوز هیچ نوشتهٔ منتشرشده‌ای وجود ندار�
 msgid "15–10080 minutes (up to a week). Only used with “Publish later”."
 msgstr "۱۵ تا ۱۰۰۸۰ دقیقه (حداکثر یک هفته). فقط با گزینهٔ «انتشار بعداً» استفاده می‌شود."
 
-#: includes/class-aipc-bale.php
-msgid "A new AI post is published"
-msgstr "یک نوشتهٔ جدید هوش مصنوعی منتشر شد"
-
 #: admin/views/prompts.php
 msgid "AI connections chain (fallback order)"
 msgstr "زنجیرهٔ اتصال‌های هوش مصنوعی (ترتیب جایگزینی)"
@@ -1617,10 +1601,6 @@ msgstr "پس از ساخت"
 #: admin/views/rewrite.php
 msgid "Agent mode: give an existing post a full copywriting + SEO refresh — fresher copy, better structure, full originality."
 msgstr "حالت ایجنت: یک نوشتهٔ موجود را کاملاً بازنویسی و از نظر سئو و اصالت متن بهینه می‌کند — متن تازه‌تر، ساختار بهتر."
-
-#: includes/class-aipc-bale.php
-msgid "An existing post was rewritten by the AI"
-msgstr "یک نوشتهٔ موجود توسط هوش مصنوعی بازنویسی شد"
 
 #: includes/class-aipc-steps.php
 msgid "Analyzes the existing post (rewrite mode) and builds the improved outline."
@@ -2651,3 +2631,15 @@ msgstr "مسیر گفتگو تصویری برنگرداند — احتمالاً
 #: admin/views/connections.php
 msgid "Which API route generates images. OpenAI-style services use the images endpoint (/images/generations); Gemini-style gateways (OpenRouter, Antigravity …) return the picture as base64 inside a chat completion instead — pick \"Chat completions\" for those, with an image-capable model (e.g. gemini-2.5-flash-image) in the Image model field. \"Automatic\" tries the images endpoint first and falls back to the chat route by itself."
 msgstr "تصویر از کدام مسیر API ساخته شود. سرویس‌های سبک OpenAI از اندپوینت تصویر (‎/images/generations) استفاده می‌کنند؛ اما گیت‌وی‌های سبک Gemini (مانند OpenRouter و Antigravity و…) تصویر را به‌صورت Base64 داخل پاسخ گفتگو برمی‌گردانند — برای آن‌ها «گفتگو» را انتخاب کنید و در فیلد «مدل تصویر» یک مدل تصویرساز (مثلاً gemini-2.5-flash-image) بگذارید. حالت «خودکار» اول اندپوینت تصویر را امتحان می‌کند و در صورت شکست، خودش سراغ مسیر گفتگو می‌رود."
+
+#: admin/views/schedule.php
+msgid "Default notification image (URL)"
+msgstr "تصویر پیش‌فرض اعلان (نشانی)"
+
+#: includes/class-aipc-bale.php
+msgid "Read the full article at the link below"
+msgstr "ادامه مطلب در لینک زیر"
+
+#: admin/views/schedule.php
+msgid "Sent above the message when a post has no featured image. Paste an image address from your media library; leave empty to send text-only in that case."
+msgstr "وقتی نوشته تصویر شاخص ندارد، این تصویر بالای پیام فرستاده می‌شود. نشانی یک تصویر از کتابخانهٔ رسانه را بگذارید؛ اگر خالی باشد در آن حالت فقط متن ارسال می‌شود."

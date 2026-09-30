@@ -28,14 +28,6 @@ msgstr[1] ""
 msgid "%d models loaded — pick one in the list."
 msgstr ""
 
-#: includes/class-aipc-bale.php
-msgid "%d words · published"
-msgstr ""
-
-#: includes/class-aipc-bale.php
-msgid "%d words · saved as a draft"
-msgstr ""
-
 #: admin/views/prompts.php
 msgid "%d-step fallback chain"
 msgstr ""
@@ -70,10 +62,6 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "A connection is one AI service: base URL, API key and the models to use. One connection is the default; steps without their own assignment use it. Use Test after saving to verify the setup."
-msgstr ""
-
-#: includes/class-aipc-bale.php
-msgid "A new AI post is published"
 msgstr ""
 
 #: admin/views/prompts.php
@@ -254,10 +242,6 @@ msgstr ""
 
 #: admin/views/settings.php
 msgid "Allow private/LAN addresses (e.g. a self-hosted gateway like OmniRoute or Ollama on another machine in your network)"
-msgstr ""
-
-#: includes/class-aipc-bale.php
-msgid "An existing post was rewritten by the AI"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -698,6 +682,10 @@ msgstr ""
 
 #: admin/views/settings.php
 msgid "Default length"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Default notification image (URL)"
 msgstr ""
 
 #: admin/views/settings.php
@@ -1236,10 +1224,6 @@ msgstr ""
 msgid "New AI Post"
 msgstr ""
 
-#: includes/class-aipc-bale.php
-msgid "New AI post is ready"
-msgstr ""
-
 #: admin/views/rewrite.php
 msgid "New featured image"
 msgstr ""
@@ -1546,6 +1530,10 @@ msgstr ""
 msgid "Rank Math summary: %s"
 msgstr ""
 
+#: includes/class-aipc-bale.php
+msgid "Read the full article at the link below"
+msgstr ""
+
 #: admin/views/connections.php
 msgid "Ready-made endpoint patterns for popular providers — copy your provider’s pattern into the connection form above."
 msgstr ""
@@ -1790,6 +1778,10 @@ msgstr ""
 
 #: includes/class-aipc-assets.php
 msgid "Sending test message…"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Sent above the message when a post has no featured image. Paste an image address from your media library; leave empty to send text-only in that case."
 msgstr ""
 
 #: admin/views/new-post.php includes/class-aipc-admin.php wp-ai-post-creator.php

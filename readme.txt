@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.9.1
+Stable tag: 1.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.9.2 =
+* Changed: Bale post notifications use a clean channel-ready format — 🔻title, 🌱🌱summary🌱🌱, a "read the full article" line with 👇👇👇 and the link; the featured image is sent above as before
+* New: "Default notification image (URL)" in the Bale settings — sent above the message when a post has no featured image (leave empty for text-only)
+* The delayed-publish notification now uses the same format and can carry the image too
 
 = 1.9.1 =
 * Improved: every API request now sends the attribution headers recommended by OpenRouter (HTTP-Referer = site URL, X-Title = site name) — friendlier to WAFs that distrust anonymous datacenter traffic

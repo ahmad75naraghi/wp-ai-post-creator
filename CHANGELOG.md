@@ -3,6 +3,28 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.9.2] — 2026-09-30
+
+### Changed
+- **Bale post notifications: channel-ready format.** Messages now read
+  `🔻title` / blank line / `🌱🌱summary🌱🌱` / "Read the full article at
+  the link below👇👇👇" / permalink — replacing the status intro/word
+  count footer. The featured image is still sent above as the photo;
+  the delayed-publish notification uses the same format (and can carry
+  the image) too.
+
+### Added
+- **Default notification image** (Bale settings): a URL sent above the
+  message when a post has no featured image — so notifications are
+  never image-less unless you want them to be. Sanitized to http(s)
+  only. 3 new strings translated (655 msgids).
+
+### Tests
+- New `bale_format` e2e group (8 assertions): format shape, read-more
+  line, default-image fallback with caption, URL sanitizing; the
+  `bale_traffic` expectations migrated to the new format
+  (53 groups / 367 assertions total).
+
 ## [1.9.1] — 2026-09-30
 
 ### Improved

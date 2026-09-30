@@ -1154,10 +1154,12 @@ $out['bale_traffic'] = array(
 		return 'getUpdates' !== $r['method'] && ! in_array( (string) $r['chat_id'], array( '12345', '67890' ), true );
 	} ),
 	// v1.5.0: publish "now" → 🎉 message to every chat
-	'publish_now_chats'  => array( '12345', '67890' ) === $aipc_msgs_with_all( array( 'تست انتشار فوری', '🎉' ) ),
-	// v1.5.0: publish "delay" → draft notification (✍️) + published notification (🎉)
-	'delay_draft_chats'  => array( '12345', '67890' ) === $aipc_msgs_with_all( array( 'تست انتشار با تأخیر', '✍️' ) ),
-	'delay_pub_chats'    => array( '12345', '67890' ) === $aipc_msgs_with_all( array( 'تست انتشار با تأخیر', '🎉' ) ),
+	'publish_now_chats'  => array( '12345', '67890' ) === $aipc_msgs_with_all( array( 'تست انتشار فوری', '🔻' ) ),
+	// v1.5.0/1.9.2: publish "delay" → draft + published notification (same 🔻 format, 2 per chat)
+	'delay_draft_chats'  => array( '12345', '67890' ) === array_values( array_unique( $aipc_msgs_with_all( array( 'تست انتشار با تأخیر', '🔻' ) ) ) ),
+	'delay_pub_chats'    => 4 === count( array_filter( $aipc_msg_calls, function ( $r ) {
+		return false !== strpos( (string) $r['text'], 'تست انتشار با تأخیر' ) && false !== strpos( (string) $r['text'], '🔻' );
+	} ) ),
 	// v1.5.0: rewrite → ♻️ photo notification to every chat
 	'rewrite_photo_chats'=> ( function () use ( $aipc_photos_with ) {
 		$chats = $aipc_photos_with( 'بازنویسی' );
@@ -1172,6 +1174,52 @@ $out['bale_traffic'] = array(
 		return true;
 	} )(),
 );
+
+/* ------------------------------------------------------------------ *
+ * Bale notification format (v1.9.2): 🔻title / 🌱🌱summary🌱🌱 / read-more
+ * line / link — and the default notification image for posts without
+ * a featured image.
+ * ------------------------------------------------------------------ */
+$aipc_fmt_msg = '';
+foreach ( $aipc_msg_calls as $aipc_r ) {
+	if ( false !== strpos( (string) $aipc_r['text'], 'شروع کاشت قارچ در خانه' ) ) {
+		$aipc_fmt_msg = (string) $aipc_r['text'];
+		break;
+	}
+}
+
+$aipc_bale_cfg_bak = AIPC_Bale::all();
+AIPC_Bale::save( array_merge( $aipc_bale_cfg_bak, array( 'default_image' => 'https://mock.invalid/default.png' ) ) );
+$aipc_noimg_post = wp_insert_post( array( 'post_title' => 'پست بدون تصویر برای بله', 'post_content' => '<p>متن آزمایشی.</p>', 'post_status' => 'publish' ) );
+update_post_meta( $aipc_noimg_post, '_aipc_meta_description', 'خلاصهٔ آزمایشی برای پیام بله' );
+AIPC_Bale::notify( $aipc_noimg_post, 'job_none' );
+AIPC_Bale::save( $aipc_bale_cfg_bak );
+
+$aipc_default_photo = null;
+if ( file_exists( $log_file ) ) {
+	foreach ( file( $log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $line ) {
+		$aipc_row = json_decode( $line, true );
+		if ( $aipc_row && 'bale' === $aipc_row['host'] && 'sendPhoto' === $aipc_row['method']
+			&& false !== strpos( (string) $aipc_row['caption'], 'پست بدون تصویر برای بله' ) ) {
+			$aipc_default_photo = $aipc_row;
+		}
+	}
+}
+
+$aipc_fmt_sane_ok  = AIPC_Bale::sanitize( array( 'default_image' => 'https://example.com/img.png' ), $aipc_bale_cfg_bak );
+$aipc_fmt_sane_bad = AIPC_Bale::sanitize( array( 'default_image' => 'javascript:alert(1)' ), $aipc_bale_cfg_bak );
+
+$out['bale_format'] = array(
+	'starts_with_marker' => 0 === strpos( $aipc_fmt_msg, '🔻' ),
+	'summary_wrapped'    => 2 === substr_count( $aipc_fmt_msg, '🌱🌱' ),
+	'read_more_line'     => false !== strpos( $aipc_fmt_msg, 'ادامه مطلب در لینک زیر' ) && false !== strpos( $aipc_fmt_msg, '👇👇👇' ),
+	'has_link'           => false !== strpos( $aipc_fmt_msg, 'http://localhost' ),
+	'default_img_used'   => is_array( $aipc_default_photo ) && 'https://mock.invalid/default.png' === $aipc_default_photo['photo'],
+	'default_img_format' => is_array( $aipc_default_photo ) && false !== strpos( (string) $aipc_default_photo['caption'], '🌱🌱خلاصهٔ آزمایشی برای پیام بله🌱🌱' ),
+	'sanitize_url'       => 'https://example.com/img.png' === $aipc_fmt_sane_ok['default_image'],
+	'sanitize_blocks_js' => '' === $aipc_fmt_sane_bad['default_image'],
+);
+wp_delete_post( $aipc_noimg_post, true );
 
 /* ------------------------------------------------------------------ *
  * v1.6 — outbound network guard (SSRF protection)
