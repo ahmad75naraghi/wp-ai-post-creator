@@ -151,7 +151,25 @@ final class AIPC_API_Client {
 			$args['body'] = wp_json_encode( $body );
 		}
 
+		$t0       = microtime( true );
 		$response = wp_remote_request( $url, $args );
+
+		// Full API trace (v1.11.0) — everything that went out and came
+		// back, once per attempt, with secrets redacted by AIPC_Trace.
+		if ( AIPC_Trace::enabled() ) {
+			$trace_raw  = is_wp_error( $response ) ? '' : (string) wp_remote_retrieve_body( $response );
+			$trace_json = '' !== $trace_raw ? json_decode( $trace_raw, true ) : null;
+			AIPC_Trace::log( 'api_call', array(
+				'connection' => isset( $this->conn['name'] ) ? (string) $this->conn['name'] : '',
+				'method'     => $args['method'],
+				'url'        => $url,
+				'attempt'    => $attempt + 1,
+				'ms'         => (int) round( ( microtime( true ) - $t0 ) * 1000 ),
+				'request'    => null === $body ? null : $body,
+				'status'     => is_wp_error( $response ) ? 'transport-error' : (int) wp_remote_retrieve_response_code( $response ),
+				'response'   => is_wp_error( $response ) ? $response->get_error_message() : ( is_array( $trace_json ) ? $trace_json : mb_substr( $trace_raw, 0, 4000 ) ),
+			) );
+		}
 
 		if ( is_wp_error( $response ) ) {
 			$message = $response->get_error_message();
@@ -605,6 +623,12 @@ final class AIPC_API_Client {
 	 * @return string|WP_Error Raw bytes.
 	 */
 	public function download( $url ) {
+		if ( AIPC_Trace::enabled() ) {
+			AIPC_Trace::log( 'download', array(
+				'connection' => isset( $this->conn['name'] ) ? (string) $this->conn['name'] : '',
+				'url'        => (string) $url,
+			) );
+		}
 		// SSRF guard: providers can return arbitrary URLs.
 		if ( ! AIPC_Network::is_safe_url( $url ) ) {
 			return new WP_Error( 'aipc_image', __( 'The image URL was rejected by the outbound network guard.', 'wp-ai-post-creator' ) );

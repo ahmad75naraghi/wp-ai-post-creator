@@ -171,6 +171,26 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 					</td>
 				</tr>
 				<tr>
+					<th scope="row"><?php esc_html_e( 'API trace log', 'wp-ai-post-creator' ); ?></th>
+					<td>
+						<label class="aipc-check">
+							<input type="checkbox" name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[debug_log]" value="1" <?php checked( $aipc['debug_log'] ); ?> />
+							<?php esc_html_e( 'Record every AI request and response (full debug trace)', 'wp-ai-post-creator' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Writes every prompt, model reply, error body, HTTP status and timing — with the job, step, connection and attempt — to a protected log file, so you can see exactly why a step or the image generation fails. API keys are removed and base64 image data is collapsed. Turn it off again after debugging to keep the file small.', 'wp-ai-post-creator' ); ?></p>
+						<?php $aipc_trace_size = AIPC_Trace::size(); ?>
+						<p>
+							<?php if ( $aipc_trace_size > 0 ) : ?>
+								<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_download_trace' ), 'aipc_download_trace' ) ); ?>">⬇ <?php esc_html_e( 'Download trace log', 'wp-ai-post-creator' ); ?></a>
+								<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_clear_trace' ), 'aipc_clear_trace' ) ); ?>">🗑 <?php esc_html_e( 'Clear trace log', 'wp-ai-post-creator' ); ?></a>
+								<span class="description"><?php echo esc_html( sprintf( /* translators: %s: file size. */ __( 'Current size: %s', 'wp-ai-post-creator' ), size_format( $aipc_trace_size ) ) ); ?></span>
+							<?php else : ?>
+								<span class="description">— <?php esc_html_e( 'The trace log is empty — enable it and run a job first.', 'wp-ai-post-creator' ); ?></span>
+							<?php endif; ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
 					<th scope="row"><?php esc_html_e( 'Uninstall', 'wp-ai-post-creator' ); ?></th>
 					<td>
 						<label class="aipc-check">

@@ -25,6 +25,8 @@ final class AIPC_Admin {
 		add_action( 'admin_post_aipc_delete_connection', array( __CLASS__, 'handle_delete_connection' ) );
 		add_action( 'admin_post_aipc_toggle_connection', array( __CLASS__, 'handle_toggle_connection' ) );
 		add_action( 'admin_post_aipc_regen_thumb', array( __CLASS__, 'handle_regen_thumb' ) );
+		add_action( 'admin_post_aipc_download_trace', array( __CLASS__, 'handle_download_trace' ) );
+		add_action( 'admin_post_aipc_clear_trace', array( __CLASS__, 'handle_clear_trace' ) );
 		add_filter( 'post_row_actions', array( __CLASS__, 'thumb_row_action' ), 10, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'thumb_notices' ) );
 		add_action( 'admin_post_aipc_publish_draft', array( __CLASS__, 'handle_publish_draft' ) );
@@ -318,6 +320,52 @@ final class AIPC_Admin {
 	}
 
 	/**
+	 * Stream the API trace log as a download (v1.11.0).
+	 *
+	 * @return void
+	 */
+	public static function handle_download_trace() {
+		self::guard( 'aipc_download_trace' );
+
+		$path = AIPC_Trace::path();
+		if ( ! file_exists( $path ) && ! file_exists( $path . '.1' ) ) {
+			wp_safe_redirect( add_query_arg(
+				array( 'page' => 'aipc-settings', 'aipc_msg' => 'trace_empty' ),
+				admin_url( 'admin.php' )
+			) );
+			exit;
+		}
+
+		nocache_headers();
+		header( 'Content-Type: text/plain; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="aipc-trace-' . gmdate( 'Ymd-His' ) . '.log"' );
+
+		// Rotated generation first, then the live file → chronological order.
+		if ( file_exists( $path . '.1' ) ) {
+			readfile( $path . '.1' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+		}
+		if ( file_exists( $path ) ) {
+			readfile( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+		}
+		exit;
+	}
+
+	/**
+	 * Clear the API trace log (v1.11.0).
+	 *
+	 * @return void
+	 */
+	public static function handle_clear_trace() {
+		self::guard( 'aipc_clear_trace' );
+		AIPC_Trace::clear();
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-settings', 'aipc_msg' => 'trace_cleared' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
 	 * "Regenerate AI image" link in the posts-list row actions (v1.10.0).
 	 *
 	 * @param array   $actions Row actions.
@@ -375,6 +423,10 @@ final class AIPC_Admin {
 		} elseif ( 'thumb_err' === $msg ) {
 			$err = isset( $_GET['aipc_err'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['aipc_err'] ) ) ) : '';
 			echo '<div class="notice notice-error is-dismissible"><p>⚠️ ' . esc_html__( 'Could not generate a new featured image.', 'wp-ai-post-creator' ) . ( $err ? ' — ' . esc_html( $err ) : '' ) . '</p></div>';
+		} elseif ( 'trace_cleared' === $msg ) {
+			echo '<div class="notice notice-success is-dismissible"><p>🗑 ' . esc_html__( 'Trace log cleared.', 'wp-ai-post-creator' ) . '</p></div>';
+		} elseif ( 'trace_empty' === $msg ) {
+			echo '<div class="notice notice-warning is-dismissible"><p>ℹ️ ' . esc_html__( 'The trace log is empty — enable it and run a job first.', 'wp-ai-post-creator' ) . '</p></div>';
 		}
 	}
 

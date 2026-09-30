@@ -2711,3 +2711,35 @@ msgstr "اجازهٔ انجام این کار را ندارید."
 #: admin/views/settings.php
 msgid "e.g. flat vector illustration, soft green palette, no text, 16:9"
 msgstr "مثلاً: تصویرسازی وکتور تخت، پالت سبز ملایم، بدون متن، 16:9"
+
+#: admin/views/settings.php
+msgid "API trace log"
+msgstr "لاگ کامل API"
+
+#: admin/views/settings.php
+msgid "Clear trace log"
+msgstr "پاک کردن لاگ"
+
+#: admin/views/settings.php
+msgid "Current size: %s"
+msgstr "حجم فعلی: %s"
+
+#: admin/views/settings.php
+msgid "Download trace log"
+msgstr "دانلود فایل لاگ"
+
+#: admin/views/settings.php
+msgid "Record every AI request and response (full debug trace)"
+msgstr "ثبت تمام درخواست‌ها و پاسخ‌های هوش مصنوعی (ردیابی کامل اشکال‌زدایی)"
+
+#: admin/views/settings.php includes/class-aipc-admin.php
+msgid "The trace log is empty — enable it and run a job first."
+msgstr "فایل لاگ خالی است — اول آن را فعال کنید و یک کار اجرا کنید."
+
+#: includes/class-aipc-admin.php
+msgid "Trace log cleared."
+msgstr "فایل لاگ پاک شد."
+
+#: admin/views/settings.php
+msgid "Writes every prompt, model reply, error body, HTTP status and timing — with the job, step, connection and attempt — to a protected log file, so you can see exactly why a step or the image generation fails. API keys are removed and base64 image data is collapsed. Turn it off again after debugging to keep the file small."
+msgstr "هر پرامت، پاسخ مدل، متن کامل خطا، کد HTTP و زمان اجرا — همراه شناسهٔ کار، مرحله، اتصال و شمارهٔ تلاش — در یک فایل لاگ محافظت‌شده نوشته می‌شود تا دقیقاً ببینید چرا یک مرحله یا ساخت تصویر شکست می‌خورد. کلیدهای API حذف و دادهٔ base64 تصاویر فشرده می‌شود. بعد از اشکال‌زدایی دوباره خاموشش کنید تا فایل کوچک بماند."

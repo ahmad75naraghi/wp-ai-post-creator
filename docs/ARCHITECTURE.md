@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.10.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.11.0**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -42,6 +42,7 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 | `AIPC_Scheduler` (`class-aipc-scheduler.php`) | ~620 | Cron tick, entries (incl. `use_queue`), daily limit, catch-up state, `aipc_publish_post` handler, **background runner** (`aipc_run_job`) |
 | `AIPC_Job_Store` (`class-aipc-job-store.php`) | ~550 | Jobs storage: `{$wpdb->prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
 | `AIPC_Text` (`class-aipc-text.php`) | ~90 | Persian half-space (ZWNJ) repair rules + `&zwnj;` entity armoring for post content (v1.10.0) |
+| `AIPC_Trace` (`class-aipc-trace.php`) | ~220 | Full API trace log (v1.11.0): JSONL request/response capture with job/step context, key redaction, base64 collapsing, 8 MB rotation, protected dir |
 | `AIPC_Network` (`class-aipc-network.php`) | ~260 | Outbound network guard (SSRF): `is_safe_url()` / `validate_url()`, private-range blocking, allowlist + loopback filters |
 | `AIPC_API_Client` (`class-aipc-api-client.php`) | ~500 | OpenAI-compatible HTTP: chat completions (JSON extraction + corrective retries), image generations, model listing; one internal retry on 429/5xx |
 | `AIPC_Steps` (`class-aipc-steps.php`) | ~480 | 13-step registry (label, kind, default prompt, placeholders) + per-step config storage |
@@ -261,7 +262,7 @@ a stable emoji (✍️📊📄🚀📋🤖) so tests can match it across transla
 
 ## 10. Internationalization
 
-672 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+680 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals

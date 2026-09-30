@@ -43,6 +43,14 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'API trace log': 'لاگ کامل API',
+    'Clear trace log': 'پاک کردن لاگ',
+    'Current size: %s': 'حجم فعلی: %s',
+    'Download trace log': 'دانلود فایل لاگ',
+    'Record every AI request and response (full debug trace)': 'ثبت تمام درخواست\u200cها و پاسخ\u200cهای هوش مصنوعی (ردیابی کامل اشکال\u200cزدایی)',
+    'The trace log is empty — enable it and run a job first.': 'فایل لاگ خالی است — اول آن را فعال کنید و یک کار اجرا کنید.',
+    'Trace log cleared.': 'فایل لاگ پاک شد.',
+    'Writes every prompt, model reply, error body, HTTP status and timing — with the job, step, connection and attempt — to a protected log file, so you can see exactly why a step or the image generation fails. API keys are removed and base64 image data is collapsed. Turn it off again after debugging to keep the file small.': 'هر پرامت، پاسخ مدل، متن کامل خطا، کد HTTP و زمان اجرا — همراه شناسهٔ کار، مرحله، اتصال و شمارهٔ تلاش — در یک فایل لاگ محافظت\u200cشده نوشته می\u200cشود تا دقیقاً ببینید چرا یک مرحله یا ساخت تصویر شکست می\u200cخورد. کلیدهای API حذف و دادهٔ base64 تصاویر فشرده می\u200cشود. بعد از اشکال\u200cزدایی دوباره خاموشش کنید تا فایل کوچک بماند.',
     'A new AI featured image was generated and set for the post.': 'تصویر شاخص جدید با هوش مصنوعی ساخته و برای نوشته تنظیم شد.',
     'Appended to every generated image prompt — use it for a consistent style (art direction, palette, mood) across all featured images. Leave empty to use the generated prompt as-is.': 'به انتهای هر پرامت تصویرِ تولیدشده افزوده می\u200cشود — برای یکدست شدن سبک همهٔ تصاویر شاخص (سبک هنری، پالت رنگ، حال\u200cوهوا) از آن استفاده کنید. اگر خالی باشد همان پرامت تولیدشده به\u200cتنهایی به\u200cکار می\u200cرود.',
     'Could not generate a new featured image.': 'ساخت تصویر شاخص جدید ممکن نشد.',

@@ -1337,6 +1337,54 @@ update_option( 'aipc_settings', $aipc_rt_set_bak, false );
 update_option( 'aipc_connections', $aipc_rt_conn_bak, false );
 
 /* ------------------------------------------------------------------ *
+ * Full API trace log (v1.11.0): request/response capture, context,
+ * redaction, rotation plumbing, enable/disable + clear semantics.
+ * ------------------------------------------------------------------ */
+$aipc_tl_set_bak = get_option( 'aipc_settings' );
+$aipc_tl_base    = is_array( $aipc_tl_set_bak ) ? $aipc_tl_set_bak : array();
+
+update_option( 'aipc_settings', array_merge( $aipc_tl_base, array( 'debug_log' => 1 ) ), false );
+AIPC_Trace::clear();
+
+$aipc_tl_conn   = array( 'name' => 'TraceConn', 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-chat-key', 'chat_model' => 'mock-chat', 'image_model' => 'mock-image', 'image_api' => 'images', 'request_timeout' => 30, 'temperature' => 0.7, 'max_tokens' => 1000 );
+AIPC_Trace::set_context( array( 'job' => 'job_trace', 'step' => 'unit', 'conn' => 'TraceConn', 'try' => 1 ) );
+$aipc_tl_client = new AIPC_API_Client( $aipc_tl_conn );
+$aipc_tl_client->chat( array( array( 'role' => 'user', 'content' => 'سلام تست ترِیس' ) ) );
+$aipc_tl_client->image( 'A tiny trace test image' );
+AIPC_Trace::clear_context();
+
+$aipc_tl_raw  = file_exists( AIPC_Trace::path() ) ? file_get_contents( AIPC_Trace::path() ) : '';
+$aipc_tl_rows = array();
+foreach ( array_filter( explode( "\n", $aipc_tl_raw ) ) as $aipc_tl_line ) {
+	$aipc_tl_row = json_decode( $aipc_tl_line, true );
+	if ( is_array( $aipc_tl_row ) ) {
+		$aipc_tl_rows[] = $aipc_tl_row;
+	}
+}
+
+$aipc_tl_size_on = AIPC_Trace::size();
+update_option( 'aipc_settings', array_merge( $aipc_tl_base, array( 'debug_log' => 0 ) ), false );
+$aipc_tl_client->chat( array( array( 'role' => 'user', 'content' => 'should not be logged' ) ) );
+$aipc_tl_size_off = AIPC_Trace::size();
+
+$aipc_tl_redacted = AIPC_Trace::redact( array( 'api_key' => 'sk-secret', 'blob' => str_repeat( 'A', 500 ), 'msg' => 'Bearer sk-abcdefgh12345 rest' ) );
+
+$out['api_trace'] = array(
+	'file_created'   => '' !== $aipc_tl_raw && count( $aipc_tl_rows ) >= 2,
+	'request_logged' => false !== strpos( $aipc_tl_raw, 'سلام تست ترِیس' ),
+	'reply_logged'   => false !== strpos( $aipc_tl_raw, '"choices"' ) || false !== strpos( $aipc_tl_raw, '"data"' ),
+	'context_kept'   => isset( $aipc_tl_rows[0]['job'], $aipc_tl_rows[0]['step'], $aipc_tl_rows[0]['try'] ) && 'job_trace' === $aipc_tl_rows[0]['job'],
+	'status_and_ms'  => isset( $aipc_tl_rows[0]['status'], $aipc_tl_rows[0]['ms'] ) && 200 === $aipc_tl_rows[0]['status'],
+	'no_key_leak'    => false === strpos( $aipc_tl_raw, 'sk-chat-key' ),
+	'b64_collapsed'  => '***' === $aipc_tl_redacted['api_key'] && false !== strpos( $aipc_tl_redacted['blob'], '[base64 omitted: 500 chars]' ) && false !== strpos( $aipc_tl_redacted['msg'], 'Bearer ***' ),
+	'off_means_off'  => $aipc_tl_size_off === $aipc_tl_size_on && $aipc_tl_size_on > 0,
+	'dir_protected'  => file_exists( AIPC_Trace::dir() . '/.htaccess' ),
+	'clear_works'    => ( AIPC_Trace::clear() === null ) && 0 === AIPC_Trace::size(),
+);
+
+update_option( 'aipc_settings', $aipc_tl_set_bak, false );
+
+/* ------------------------------------------------------------------ *
  * v1.6 — outbound network guard (SSRF protection)
  * ------------------------------------------------------------------ */
 $aipc_is_safe = function ( $url ) {

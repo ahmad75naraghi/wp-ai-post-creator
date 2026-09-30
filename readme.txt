@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.10.0
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.11.0 =
+* New: full API trace log (Settings → Advanced) — records every AI request and response (prompts, model output, complete error bodies, HTTP status, timing) with the job, step, connection and attempt number, into a protected downloadable log file
+* API keys are redacted and base64 image data is collapsed automatically; the file rotates at 8 MB and can be downloaded or cleared with one click
+* Perfect for diagnosing why image generation fails on some providers — the exact error body of every failed attempt is captured
 
 = 1.10.0 =
 * New: Persian half-spaces (نیم‌فاصله) are preserved and repaired — the common patterns (می/نمی + verb, ها/های/هایی/تر/ترین suffixes) are fixed rule-based in titles, content, excerpts and SEO meta, and the character is stored as the &zwnj; entity in post content so no editor can strip it

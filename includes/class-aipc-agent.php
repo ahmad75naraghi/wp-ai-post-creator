@@ -638,6 +638,12 @@ final class AIPC_Agent {
 			$attempt = 0;
 			while ( ! $passed && $attempt < $max_attempts ) {
 				$attempt++;
+				AIPC_Trace::set_context( array(
+					'job'  => $job['id'],
+					'step' => $step['id'],
+					'conn' => $conn['name'],
+					'try'  => $attempt,
+				) );
 				try {
 					$this->run_step( $job, $step['id'], $conn );
 					$passed = true;
@@ -670,6 +676,8 @@ final class AIPC_Agent {
 				$this->save_job( $job );
 			}
 		}
+
+		AIPC_Trace::clear_context();
 
 		// Step timing (all attempts).
 		$job['timings'][ $step['id'] ] = (int) round( ( microtime( true ) - $t0 ) * 1000 );
@@ -1788,6 +1796,7 @@ final class AIPC_Agent {
 		if ( ! $post ) {
 			return new WP_Error( 'aipc_post', __( 'Post not found.', 'wp-ai-post-creator' ) );
 		}
+		AIPC_Trace::set_context( array( 'step' => 'regen_thumbnail', 'post' => (int) $post_id ) );
 
 		$title   = $post->post_title;
 		$summary = (string) get_post_meta( $post_id, 'rank_math_description', true );

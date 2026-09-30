@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.10.0)
+# AI Post Creator — Complete User Guide (v1.11.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -90,6 +90,12 @@ Path: **AI Post Creator → Settings**
 | Default tone / length | Tone (professional, friendly, …) and length (short ~600 / medium ~1,200 / long ~2,200 words) |
 | Image / TOC / FAQ | Per-run defaults |
 | Default image prompt *(new in 1.10)* | Appended to every generated image prompt — use it for a consistent style (palette, art direction) across all featured images |
+
+> 🔍 **Debugging failed steps or images (new in 1.11):** Settings → Advanced →
+> "API trace log" records every AI request and response (prompts, replies,
+> full error bodies, status, timing, with job/step/connection/attempt) into a
+> protected file you can download and inspect — keys redacted, base64 omitted.
+> Turn it off again after debugging.
 
 > ✍️ Persian half-spaces (نیم‌فاصله) are preserved automatically since 1.10:
 > the common patterns are repaired in AI output and the character is stored

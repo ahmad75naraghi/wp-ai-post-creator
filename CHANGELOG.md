@@ -3,6 +3,28 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.11.0] — 2026-09-30
+
+### Added
+- **Full API trace log.** New `AIPC_Trace` class + "API trace log"
+  switch under Settings → Advanced: every request/response exchanged
+  with the AI providers is appended as a JSON line — prompt messages,
+  model reply, complete error body, HTTP status, duration, and the
+  job / step / connection / attempt context set by the agent's retry
+  loop (image downloads are logged too). Secrets never leak: API keys
+  and Bearer tokens are redacted, long base64 runs are collapsed to
+  `[base64 omitted: N chars]`, single fields cap at 20 k chars. The
+  file lives under `wp-content/uploads/aipc-logs/` with a random name
+  and `.htaccess` protection, rotates at 8 MB (one older generation
+  kept) and can be **downloaded** (both generations streamed
+  chronologically) or **cleared** from the settings page. 8 new
+  strings translated (680 msgids).
+
+### Tests
+- New `api_trace` e2e group (10 assertions): capture, context,
+  redaction, no-key-leak, off-means-off, protected dir, clear
+  (57 groups / 404 assertions total).
+
 ## [1.10.0] — 2026-09-30
 
 ### Added
