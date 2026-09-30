@@ -3,6 +3,26 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.9.1] — 2026-09-30
+
+### Improved
+- **Attribution headers on every API request.** `HTTP-Referer` (site
+  URL) and `X-Title` (site name) are now sent as recommended by
+  OpenRouter — WAFs that distrust anonymous datacenter traffic get a
+  proper identity. Note: a 403 "Access denied by security policy" from
+  a provider's edge (Cloudflare) is an IP/geo policy decision on their
+  side; if headers don't help, the WordPress server needs an allowed
+  egress IP (host/proxy) or an accessible relay gateway.
+
+### Added
+- **`aipc_api_headers` filter** — add custom headers (organization ids,
+  proxy auth, WAF tokens …) to every AI request. Receives the headers,
+  the full URL and the connection data with the API key stripped.
+
+### Tests
+- New `api_headers` e2e group (4 assertions): Referer/X-Title/Bearer
+  present, key never leaked to the filter (52 groups / 359 assertions).
+
 ## [1.9.0] — 2026-09-30
 
 ### Added

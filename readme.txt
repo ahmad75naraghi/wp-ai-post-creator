@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.9.1 =
+* Improved: every API request now sends the attribution headers recommended by OpenRouter (HTTP-Referer = site URL, X-Title = site name) — friendlier to WAFs that distrust anonymous datacenter traffic
+* New: aipc_api_headers filter to add custom headers (organization ids, proxy auth, WAF tokens) to all AI requests; the API key is never exposed to the filter
 
 = 1.9.0 =
 * New: second image-generation route — "Chat completions (Gemini/OpenRouter-style)". Gemini-style gateways don't serve /images/generations (errors like "No credentials for image provider: openai"); they return the picture as base64 inside a chat completion. The new per-connection "Image route" option supports that, and "Automatic" (default) tries the images endpoint first and falls back to the chat route by itself

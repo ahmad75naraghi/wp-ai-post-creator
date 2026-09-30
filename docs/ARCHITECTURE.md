@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.9.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.9.1**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 

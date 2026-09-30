@@ -119,11 +119,27 @@ final class AIPC_API_Client {
 		$headers = array(
 			'Content-Type' => 'application/json',
 			'Accept'       => 'application/json',
+			// Attribution headers recommended by OpenRouter and friendly to
+			// WAFs that distrust anonymous datacenter traffic.
+			'HTTP-Referer' => home_url( '/' ),
+			'X-Title'      => get_bloginfo( 'name' ),
 		);
 		// Local providers (Ollama, LM Studio) work without a key.
 		if ( '' !== (string) $this->conn['api_key'] ) {
 			$headers['Authorization'] = 'Bearer ' . $this->conn['api_key'];
 		}
+
+		/**
+		 * Filter the headers sent with every AI API request.
+		 *
+		 * Useful for gateways that require extra headers (organization ids,
+		 * proxy auth, custom WAF tokens …).
+		 *
+		 * @param array  $headers Request headers.
+		 * @param string $url     Full request URL.
+		 * @param array  $conn    Connection data (never the raw key).
+		 */
+		$headers = apply_filters( 'aipc_api_headers', $headers, $url, array_diff_key( $this->conn, array( 'api_key' => 1 ) ) );
 
 		$args = array(
 			'method'  => null === $body ? 'GET' : 'POST',

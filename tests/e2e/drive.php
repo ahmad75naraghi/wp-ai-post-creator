@@ -851,6 +851,26 @@ $out['base_url_normalize'] = array(
 );
 
 /* ------------------------------------------------------------------ *
+ * API request headers (v1.9.1): attribution headers + filter.
+ * ------------------------------------------------------------------ */
+$aipc_seen_headers = null;
+$aipc_hdr_filter   = function ( $headers, $url, $conn_no_key ) use ( &$aipc_seen_headers ) {
+	$aipc_seen_headers = array( 'headers' => $headers, 'has_key' => isset( $conn_no_key['api_key'] ) );
+	$headers['X-AIPC-Test'] = 'on';
+	return $headers;
+};
+add_filter( 'aipc_api_headers', $aipc_hdr_filter, 10, 3 );
+( new AIPC_API_Client( array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-chat-key' ) ) )->models();
+remove_filter( 'aipc_api_headers', $aipc_hdr_filter, 10 );
+
+$out['api_headers'] = array(
+	'referer_sent'   => is_array( $aipc_seen_headers ) && ! empty( $aipc_seen_headers['headers']['HTTP-Referer'] ),
+	'title_sent'     => is_array( $aipc_seen_headers ) && isset( $aipc_seen_headers['headers']['X-Title'] ),
+	'auth_sent'      => is_array( $aipc_seen_headers ) && 0 === strpos( (string) $aipc_seen_headers['headers']['Authorization'], 'Bearer ' ),
+	'key_not_leaked' => is_array( $aipc_seen_headers ) && false === $aipc_seen_headers['has_key'],
+);
+
+/* ------------------------------------------------------------------ *
  * Purpose-based connection routing (v1.8.0): chat vs image pools,
  * priority order, agent auto-chains when a step has no explicit chain.
  * ------------------------------------------------------------------ */
