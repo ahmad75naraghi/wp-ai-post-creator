@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.6.0)
+# AI Post Creator — Complete User Guide (v1.7.1)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -315,9 +315,10 @@ Only in your own site's database; it never appears in the browser, REST
 responses or logs.
 
 **What if I close the tab mid-run?**
-The console drives steps from the browser; scheduled runs are self-contained
-and interrupted cron runs resume automatically. (Full background execution is
-on the 1.6 roadmap.)
+Nothing happens — since v1.6 every job runs entirely on the server and the
+console is only a viewer. Come back any time and you'll see the current
+progress (or the finished result); interrupted cron runs also resume
+automatically.
 
 **Does it plagiarize?**
 The copywriting pass targets originality, and research sources are for

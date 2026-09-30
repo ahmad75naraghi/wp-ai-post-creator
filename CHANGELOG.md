@@ -3,6 +3,31 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.7.1] — 2026-09-30
+
+### Documentation
+- **Architecture reference** brought up to the current code: real bootstrap
+  flow (`aipc_boot()` registrations, Plugins-screen quick links instead of the
+  non-existent admin-bar shortcuts), 9 admin pages, refreshed class sizes,
+  `aipc_topic_queue` option + new `aipc_bale` fields (`two_way`, `report_day`,
+  `last_update_id`) in the data model, `/topics/*` REST routes, the complete
+  `admin_post_*` handler list (topics + Git updater), the topic-queue
+  consumption and Bale-poll safety net in the scheduler design, a two-way
+  commands section and the `aipc_bale_poll` action in the hooks reference.
+- **REST API reference**: documented `POST /aipc/v1/topics/suggest` and
+  `POST /aipc/v1/topics/add` (params, responses, capability).
+- **Roadmap**: status moved to v1.7.0, topic queue and two-way Bale commands
+  marked shipped, 1.7.0 history row added.
+- **README (Persian)**: the topic queue and Bale-commands bullets moved from
+  the 1.6.0 section into their own 1.7.0 section.
+- **User guides (fa/en)**: version headers updated; the stale FAQ answer
+  claiming background execution was still "on the 1.6 roadmap" corrected.
+- **AGENTS.md**: project summary updated to v1.7.x, current branch/PR state
+  corrected (PR #1 and #2 merged), e2e contract numbers refreshed
+  (46 groups / 441 assertions).
+
+No functional changes.
+
 ## [1.7.0] — 2026-09-29
 
 ### Added

@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.5.2**. Audience: contributors and
+Technical reference for AI Post Creator **v1.7.1**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -11,41 +11,46 @@ AI agents working on the code. For usage, see the user guides
 ## 1. Bootstrap
 
 `wp-ai-post-creator.php` defines `AIPC_VERSION` / `AIPC_PLUGIN_DIR` /
-`AIPC_PLUGIN_URL`, requires all classes from `includes/`, then registers:
+`AIPC_PLUGIN_URL`, requires all classes from `includes/`, then boots on
+`plugins_loaded` (`aipc_boot()`):
 
 | Registration | Purpose |
 |---|---|
-| `AIPC_Agent::register_static()` | cron `aipc_daily_cleanup` (job GC) |
-| `AIPC_Scheduler::register()` | `cron_schedules` filter (`aipc_quarter_hour`, 900 s), `aipc_cron_tick`, **`aipc_publish_post`**, **`aipc_run_job`** (background runner) |
-| `AIPC_Bale::register()` | `aipc_post_created`, `aipc_post_published` |
-| `AIPC_Rest::register()` | REST namespace `aipc/v1` |
-| `AIPC_Admin::register()` | menu + `admin_post_*` handlers + settings |
+| `AIPC_Connections::maybe_migrate()` / `AIPC_Job_Store::maybe_upgrade()` | one-time migrations (legacy connection format; jobs option → `aipc_jobs` table + schema versioning) |
+| `AIPC_Admin::register()` | menu (9 pages) + `admin_post_*` handlers |
 | `AIPC_Assets::register()` | per-screen JS/CSS |
+| `AIPC_Post_Builder::register()` | `the_content` FAQ-schema append + front CSS for generated posts |
+| `AIPC_Scheduler::register()` + `maybe_schedule()` | `cron_schedules` filter (`aipc_quarter_hour`, 900 s), `aipc_cron_tick`, **`aipc_publish_post`**, **`aipc_run_job`** (background runner) |
+| `AIPC_Bale::register()` | `aipc_post_created`, `aipc_post_published` notifications |
+| `AIPC_Bale_Commands::register()` + `maybe_schedule()` | `aipc_bale_5min` interval + `aipc_bale_poll` (two-way commands); also polls on every scheduler tick as a safety net |
+| `add_action( 'rest_api_init', … 'AIPC_REST::register' )` | REST namespace `aipc/v1` |
+| `aipc_daily_cleanup` → `AIPC_Agent::cleanup_static` | daily job GC (retention pruning) |
 
-Activation schedules `aipc_cron_tick` (15 min) and `aipc_daily_cleanup` (daily);
-the admin bar gets "New AI Post" + "Rewrite post" shortcuts for users with
-`edit_posts`.
+Activation seeds `aipc_settings`, creates/upgrades the jobs table and
+schedules `aipc_cron_tick` (15 min) + `aipc_daily_cleanup` (daily); the
+Plugins-screen row gets quick action links (New AI Post, Rewrite post,
+Connections, Prompts & Steps, Logs, Schedule, Settings).
 
 ## 2. Class inventory
 
 | Class (file) | ~LOC | Responsibility |
 |---|---|---|
 | `AIPC_Agent` (`class-aipc-agent.php`) | ~2100 | The heart: job facade over `AIPC_Job_Store`, step manifests, the chain-retry execution loop, every `step_*()` implementation, context helpers (recent posts, link candidates, RSS sources), stats |
-| `AIPC_Bale` (`class-aipc-bale.php`) | ~680 | Bale Bot API client: per-post notify (sendPhoto/sendMessage), publish notify, periodic reports, chat-ID detection, `getUpdates` with offset |
-| `AIPC_Bale_Commands` (`class-aipc-bale-commands.php`) | ~430 | Two-way Bale: 5-min poll (safety net on the scheduler tick), command parsing (نوشتن/وضعیت/آخرین/انتشار/صف/راهنما), authorized-chats-only, daily cap, `last_update_id` persistence |
-| `AIPC_Topic_Queue` (`class-aipc-topic-queue.php`) | ~330 | FIFO topic bank (option-backed, pending/used with dedup memory), RSS suggestions (cleaned headlines, deduped vs queue + recent posts) |
-| `AIPC_Scheduler` (`class-aipc-scheduler.php`) | ~660 | Cron tick, entries (incl. `use_queue`), daily limit, catch-up state, `aipc_publish_post` handler, **background runner** (`aipc_run_job`) |
-| `AIPC_Job_Store` (`class-aipc-job-store.php`) | ~390 | Jobs storage: `{$wpdb->prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
-| `AIPC_Network` (`class-aipc-network.php`) | ~150 | Outbound network guard (SSRF): `is_safe_url()` / `validate_url()`, private-range blocking, allowlist + loopback filters |
-| `AIPC_API_Client` (`class-aipc-api-client.php`) | 491 | OpenAI-compatible HTTP: chat completions (JSON extraction + corrective retries), image generations, model listing; one internal retry on 429/5xx |
-| `AIPC_Steps` (`class-aipc-steps.php`) | 478 | 13-step registry (label, kind, default prompt, placeholders) + per-step config storage |
-| `AIPC_Admin` (`class-aipc-admin.php`) | 464 | Menu (7 pages), `admin_post_*` form handlers, view rendering |
-| `AIPC_Rest` (`class-aipc-rest.php`) | 411 | REST endpoints & permissions |
-| `AIPC_Post_Builder` (`class-aipc-post-builder.php`) | 367 | Assembles the final post: `create()` (new) and `update()` (rewrite), TOC/FAQ HTML, SEO meta, tags, featured image upload |
-| `AIPC_Connections` (`class-aipc-connections.php`) | 303 | Connection CRUD + sanitizing, default connection, write-only keys |
-| `AIPC_Updater` (`class-aipc-updater.php`) | ~430 | Git self-update: repo/branch/token config, version check, connection test, zipball download (codeload or authenticated api.github.com), verification, backup + atomic swap with rollback |
-| `AIPC_Settings` (`class-aipc-settings.php`) | 245+ | Settings (site prompt, source sites, defaults) + option lists (tones, lengths, languages, image sizes) |
-| `AIPC_Assets` (`class-aipc-assets.php`) | 209 | Screen detection, enqueue, inline config for the console JS |
+| `AIPC_Bale` (`class-aipc-bale.php`) | ~630 | Bale Bot API client: per-post notify (sendPhoto/sendMessage), publish notify, periodic reports, chat-ID detection, `getUpdates` with offset |
+| `AIPC_Bale_Commands` (`class-aipc-bale-commands.php`) | ~470 | Two-way Bale: 5-min poll (safety net on the scheduler tick), command parsing (نوشتن/وضعیت/آخرین/انتشار/صف/راهنما), authorized-chats-only, daily cap, `last_update_id` persistence |
+| `AIPC_Topic_Queue` (`class-aipc-topic-queue.php`) | ~370 | FIFO topic bank (option-backed, pending/used with dedup memory), RSS suggestions (cleaned headlines, deduped vs queue + recent posts) |
+| `AIPC_Scheduler` (`class-aipc-scheduler.php`) | ~620 | Cron tick, entries (incl. `use_queue`), daily limit, catch-up state, `aipc_publish_post` handler, **background runner** (`aipc_run_job`) |
+| `AIPC_Job_Store` (`class-aipc-job-store.php`) | ~550 | Jobs storage: `{$wpdb->prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
+| `AIPC_Network` (`class-aipc-network.php`) | ~260 | Outbound network guard (SSRF): `is_safe_url()` / `validate_url()`, private-range blocking, allowlist + loopback filters |
+| `AIPC_API_Client` (`class-aipc-api-client.php`) | ~500 | OpenAI-compatible HTTP: chat completions (JSON extraction + corrective retries), image generations, model listing; one internal retry on 429/5xx |
+| `AIPC_Steps` (`class-aipc-steps.php`) | ~480 | 13-step registry (label, kind, default prompt, placeholders) + per-step config storage |
+| `AIPC_Admin` (`class-aipc-admin.php`) | ~760 | Menu (9 pages), `admin_post_*` form handlers, view rendering |
+| `AIPC_Rest` (`class-aipc-rest.php`) | ~600 | REST endpoints, permissions & rate limits |
+| `AIPC_Post_Builder` (`class-aipc-post-builder.php`) | ~370 | Assembles the final post: `create()` (new) and `update()` (rewrite), TOC/FAQ HTML, SEO meta, tags, featured image upload |
+| `AIPC_Connections` (`class-aipc-connections.php`) | ~320 | Connection CRUD + sanitizing, default connection, write-only keys |
+| `AIPC_Updater` (`class-aipc-updater.php`) | ~600 | Git self-update: repo/branch/token config, version check, connection test, zipball download (codeload or authenticated api.github.com), verification, backup + atomic swap with rollback |
+| `AIPC_Settings` (`class-aipc-settings.php`) | ~250 | Settings (site prompt, source sites, defaults) + option lists (tones, lengths, languages, image sizes) |
+| `AIPC_Assets` (`class-aipc-assets.php`) | ~220 | Screen detection, enqueue, inline config for the console JS |
 
 ## 3. Data model (wp_options)
 
@@ -59,7 +64,8 @@ the admin bar gets "New AI Post" + "Rewrite post" shortcuts for users with
 | `aipc_stats` (autoload off) | aggregate: jobs, done, calls, tokens, drafts, `by_connection{name: {calls, ok, tokens}}` |
 | `aipc_schedule` | `entries[]` (`{id (sch_*), time HH:MM, days[0–6 Sun=0], enabled, topic, publish (draft/now/delay), publish_delay (15–10080), opts{tone,length,language,image,faq,toc}}`), `state{entry_id: Y-m-d fired}`, `settings{daily_limit}` |
 | `aipc_git` (autoload off) | Git self-update configuration: `repo` (`owner/name`, default `ahmad75naraghi/wp-ai-post-creator`), `branch` (default `main`), `token` (write-only PAT — an empty field keeps the stored token) |
-| `aipc_bale` | `enabled`, `token` (write-only), `chat_ids[]`, `report` (''/daily/weekly), `report_time`, `last_report` (Y-m-d) |
+| `aipc_bale` | `enabled`, `token` (write-only), `chat_ids[]`, `report` (''/daily/weekly), `report_time`, `report_day` (weekday for weekly, default 6), `last_report` (Y-m-d), `two_way` (accept commands, 1.7.0), `last_update_id` (getUpdates offset) |
+| `aipc_topic_queue` | `items[]` (`{id (tq_*), text (≤400), norm (dedup key), source (manual/rss), added, status (pending/used), job_id, used_at}`) — FIFO bank consumed by schedule entries with `use_queue`; used items are kept as dedup memory and pruned by `AIPC_Topic_Queue::prune()` |
 
 Post meta written by the builder: `_aipc_generated`, `_aipc_job`,
 `_aipc_faq_schema` (FAQPage JSON-LD), `_aipc_meta_title`,
@@ -169,6 +175,8 @@ rewrite preserves status/author/slug/categories and appends tags). Then:
 | `/connection/models` | POST | `manage_options` | lists chat + image models |
 | `/bale/test` | POST | `manage_options` | `token`/`chat_ids` (or stored config) → tests every recipient |
 | `/bale/chat-id` | POST | `manage_options` | `getUpdates` → latest chat id |
+| `/topics/suggest` | POST | `manage_options` | RSS headline suggestions from `source_sites` (`limit`, default 12; cleaned + deduped vs queue and recent posts) |
+| `/topics/add` | POST | `manage_options` | adds `texts[]` to the topic queue (`source` manual/rss); returns added/skipped/pending counts |
 
 `client_state()` returns the job's public projection: status, progress, steps,
 logs since cursor, usage, result (`post_id/title/edit/view/words/status`).
@@ -195,8 +203,11 @@ image URLs, raw connection-test input) pass the `AIPC_Network` SSRF guard.
 `aipc_save_steps`, `aipc_clear_logs`, `aipc_delete_job`, `aipc_save_schedule`,
 `aipc_delete_schedule`, `aipc_run_now` (redirects to the console with
 `resumeJobId`), `aipc_save_bale`, `aipc_save_schedule_settings`,
-`aipc_publish_draft` (review inbox → publish, `publish_posts`) — all
-nonce-checked and capability-checked.
+`aipc_publish_draft` (review inbox → publish, `publish_posts`),
+`aipc_add_topics` / `aipc_remove_topic` / `aipc_clear_topics` (topic queue),
+`aipc_git_check` / `aipc_git_test` / `aipc_git_update` /
+`aipc_save_update_settings` (Git self-updater) — all nonce-checked and
+capability-checked.
 
 The console (`assets/admin-agent.js`) is driven by an inline `CFG` object
 (REST URL, nonce, i18n strings, defaults, `resumeJobId`, `extraArgs`). Since
@@ -218,10 +229,16 @@ controls.
 - Firing an entry = `create_job(topic, opts + publish_mode/publish_delay,
   'cron')` driven synchronously within the tick (the runner event keeps it
   going if the tick budget runs out).
+- Entries with `use_queue` take the oldest **pending** topic from
+  `AIPC_Topic_Queue::peek()` (marked used with the job id afterwards) and
+  fall back to the entry's fixed topic — or the site prompt — when the
+  queue is empty.
 - Daily limit counts cron-source jobs created today (0 = unlimited)
   (`AIPC_Job_Store::count_since`).
 - The tick also re-arms lost `aipc_run_job` events for every `running` job
-  (runner safety net, see §5.2.1).
+  (runner safety net, see §5.2.1) and runs the Bale command poll
+  (`AIPC_Bale_Commands::poll`, priority 20) as a safety net for lost
+  `aipc_bale_poll` events.
 
 ## 9. Bale integration
 
@@ -233,9 +250,17 @@ job log; `aipc_post_created` → notify (image + summary + link, with
 rewritten/published variants), `aipc_post_published` → 🎉 publish notify,
 periodic report per `aipc_bale.report`.
 
+Since v1.7.0 the bot is also **two-way** (`AIPC_Bale_Commands`): when
+`two_way` is enabled, a 5-minute cron (`aipc_bale_poll`, safety-netted by the
+scheduler tick) reads `getUpdates` past `last_update_id` and answers the
+**configured chats only** — `نوشتن: <topic>` starts a background draft run
+(source `bale`, capped at 20/day), plus `وضعیت` / `آخرین` / `انتشار [n]` /
+`صف` / `راهنما`. Unknown chats are ignored silently; every reply starts with
+a stable emoji (✍️📊📄🚀📋🤖) so tests can match it across translations.
+
 ## 10. Internationalization
 
-540 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+630 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals
@@ -256,7 +281,7 @@ runs on GitHub Actions (`.github/workflows/ci.yml`).
 **Actions:** `aipc_post_created($post_id, $job_id)` ·
 `aipc_post_published($post_id, $job_id)` · `aipc_cron_tick` ·
 `aipc_publish_post($post_id, $job_id)` · `aipc_daily_cleanup` ·
-`aipc_run_job($job_id)`
+`aipc_run_job($job_id)` · `aipc_bale_poll` (5-min two-way command poll)
 
 **Filters:** `aipc_git_version_ttl($ttl, $repo, $branch)` · `aipc_git_request_args($args, $url)` · `aipc_step_connections($chain, $step)` ·
 `aipc_step_connection($primary_conn, $step)` (legacy) ·

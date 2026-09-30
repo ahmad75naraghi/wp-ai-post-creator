@@ -6,9 +6,9 @@ standard WordPress cookie + nonce (the bundled admin JS sends the `wp_rest`
 nonce created for logged-in users).
 
 **Capabilities:** `start/step/state/cancel/retry` require **`edit_posts`**;
-`connection/*` and `bale/*` require **`manage_options`**. Anonymous requests
-get HTTP 401. Auto-publish params are only honored for users with
-`publish_posts`.
+`connection/*`, `bale/*` and `topics/*` require **`manage_options`**.
+Anonymous requests get HTTP 401. Auto-publish params are only honored for
+users with `publish_posts`.
 
 **Rate limits (v1.6+):** `/start`, `/step` and `/state` enforce a per-user,
 per-minute cap (30/240/300; 0 disables) — exceeding it returns HTTP 429 with
@@ -146,6 +146,36 @@ Sends a test message to **every** recipient and reports per-chat results:
 
 Calls `getUpdates` on the stored bot and returns the newest detected chat id:
 `{ "ok": true, "chat_id": "98765" }`. Send a message to your bot first.
+
+---
+
+## Topic queue endpoints (`manage_options`, v1.7+)
+
+### POST `/aipc/v1/topics/suggest`
+
+Pulls fresh headline suggestions from the configured research sources
+(`source_sites` setting → RSS), cleans them (source-name suffixes stripped)
+and drops duplicates against the queue (pending **and** used) and recent
+post titles.
+
+| Param | Type | Notes |
+|---|---|---|
+| `limit` | int | max suggestions to return (default 12) |
+
+**Response:** `{ "suggestions": [ "…", … ], "count": 3, "has_sources": true }`
+— `has_sources` is `false` when no research sources are configured.
+
+### POST `/aipc/v1/topics/add`
+
+Adds topics to the FIFO queue (used by the suggestion picker and the bulk
+form). Duplicates — by normalized text, any status — are skipped.
+
+| Param | Type | Notes |
+|---|---|---|
+| `texts` | array of strings | topics to add (each ≤400 chars) |
+| `source` | string | `manual` (default) or `rss` |
+
+**Response:** `{ "added": 2, "skipped": 1, "pending": 7 }`.
 
 ---
 

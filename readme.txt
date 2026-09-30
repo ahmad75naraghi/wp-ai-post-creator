@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.7.1 =
+* Documentation refresh: architecture reference brought up to the current code (bootstrap flow, 9 admin pages, topic-queue and Bale-command data/hooks, full admin-post handler list), REST reference now documents the /topics/suggest and /topics/add endpoints, roadmap and agent notes reflect the shipped v1.7.0 state, README and user guides corrected (background execution and 1.7 features filed under the right versions)
+* No functional changes
 
 = 1.7.0 =
 * Topic queue: a FIFO bank of topics on the Schedule page — schedule entries with "Take the topic from the queue" consume the oldest pending topic on every run (falling back to their fixed topic or the site prompt when the queue is empty), so automated runs never repeat themselves

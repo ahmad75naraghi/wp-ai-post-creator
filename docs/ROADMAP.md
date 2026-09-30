@@ -1,7 +1,8 @@
 # Roadmap & Product Decisions
 
 Where AI Post Creator goes next — agreed with the product owner. Status at
-**v1.6.0** (all shipped work lives in PR #1).
+**v1.7.0** (all shipped work is merged to `main` — PR #1 through v1.5.2,
+PR #2 through v1.7.0).
 
 ## Version plan
 
@@ -17,12 +18,13 @@ All four items landed (plus a draft review inbox and a fallback-chain cleanup fi
 | 4 | **SSRF hardening + REST rate limiting** | ✅ `AIPC_Network` guard (http(s)-only, private/reserved/IPv4-mapped ranges blocked, loopback allowed for local LLMs; filters `aipc_outbound_allowlist`, `aipc_allow_private_hosts`, `aipc_allow_loopback`) wired into `AIPC_Connections::sanitize`, `AIPC_Settings::sanitize` (source_sites), the REST connection test and `AIPC_API_Client::download()`. Per-user per-minute REST rate limits on `/start` `/step` `/state` (filter `aipc_rest_rate_limit`, HTTP 429). |
 | 5 | **Draft review inbox** *(added during implementation)* | ✅ "Review drafts" submenu (cap `edit_posts`): every `_aipc_generated` draft/pending post with status/word count/origin (manual/scheduled/rewrite)/modified time and quick actions (edit, preview, publish with nonce, rewrite-again deep link). |
 
-### 1.7 — Content & SEO
+### 1.7 — Content & SEO *(in progress — first slice shipped in v1.7.0)*
 
 | # | Item | Notes |
 |---|---|---|
 | 5 | **Topic clusters (pillar–cluster)** | Plan topics around a pillar article; internal linking becomes intentional (pillar ↔ cluster) instead of only "recent posts". Needs a link-graph helper and new plan-prompt contract. |
-| 6 | **Topic queue + content calendar** | A queue of topics (one per line / CSV) that schedule entries consume in order; show planned vs published on a calendar view. |
+| 6 | **Topic queue + content calendar** | ✅ *Queue shipped in v1.7.0*: FIFO topic bank (`AIPC_Topic_Queue`), schedule entries with `use_queue`, RSS suggestions (`/topics/suggest`), dedup memory. The **calendar view** (planned vs published) is still open. |
+| 6b | **Two-way Bale commands** *(added during 1.7)* | ✅ *Shipped in v1.7.0*: 5-min `getUpdates` poll, authorized chats only — نوشتن / وضعیت / آخرین / انتشار / صف / راهنما, daily cap 20, `last_update_id` idempotency. |
 | 7 | **Automatic old-post refresh** | Combine v1.5 rewrite with the scheduler: "find the N oldest/most-outdated posts and rewrite one per week" — needs an outdatedness heuristic (age, traffic, manual flag). |
 | 8 | **E-E-A-T signals** | Author profile box, visible "reviewed/updated" dates, sources box for research-sourced articles. |
 
@@ -68,3 +70,4 @@ All four items landed (plus a draft review inbox and a fallback-chain cleanup fi
 | 1.5.0 | Rewrite mode, internal linking, auto-publish, fallback chains, research sources | `a327601` |
 | 1.5.2 | Git self-updater | — |
 | 1.6.0 | Jobs DB table, background runner, SSRF guard + rate limiting, review inbox, CI | — |
+| 1.7.0 | Topic queue + RSS suggestions, two-way Bale commands | — |
