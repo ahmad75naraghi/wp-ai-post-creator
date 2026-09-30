@@ -152,6 +152,16 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 					</td>
 				</tr>
 				<tr>
+					<th scope="row"><?php esc_html_e( 'Local & LAN providers', 'wp-ai-post-creator' ); ?></th>
+					<td>
+						<label class="aipc-check">
+							<input type="checkbox" name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[allow_private_hosts]" value="1" <?php checked( $aipc['allow_private_hosts'] ); ?> />
+							<?php esc_html_e( 'Allow private/LAN addresses (e.g. a self-hosted gateway like OmniRoute or Ollama on another machine in your network)', 'wp-ai-post-creator' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'localhost is always allowed. Only enable this when the AI gateway really runs inside your own network — it relaxes the outbound request guard (SSRF protection) for private addresses.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
+				<tr>
 					<th scope="row"><?php esc_html_e( 'Uninstall', 'wp-ai-post-creator' ); ?></th>
 					<td>
 						<label class="aipc-check">

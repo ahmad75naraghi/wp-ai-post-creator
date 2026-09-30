@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.7.1**. Audience: contributors and
+Technical reference for AI Post Creator **v1.7.2**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -56,7 +56,7 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 
 | Option | Structure |
 |---|---|
-| `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `image_enabled`, `image_size`, `add_toc`, `add_faq`, `system_prompt_extra`, `delete_on_uninstall` |
+| `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `image_enabled`, `image_size`, `add_toc`, `add_faq`, `system_prompt_extra`, `allow_private_hosts` (SSRF-guard opt-in for LAN gateways, default 0), `delete_on_uninstall` |
 | `aipc_connections` | array of `{id (c_*), name, base_url, api_key, chat_model, image_model, temperature (0–2, default 0.7), max_tokens (≤16000), request_timeout (≥15), is_default}` — keys never leave the server |
 | `aipc_steps` | `{step_id: {connections: [conn_id,…] (ordered fallback chain), prompt: '' = default}}` — reads also accept legacy `connection` (string) |
 | `aipc_schema_version` | jobs-table schema version (`AIPC_Job_Store::SCHEMA_VERSION`); bump + migration routine on upgrade |
@@ -171,7 +171,7 @@ rewrite preserves status/author/slug/categories and appends tags). Then:
 | `/state` | POST | `edit_posts` + rate limit | **read-only**: returns `client_state()` without executing anything (`job_id`, `since`) |
 | `/cancel` | POST | `edit_posts` | cancels a running job |
 | `/retry` | POST | `edit_posts` | resets the failed step for a manual retry |
-| `/connection/test` | POST | `manage_options` | by saved `id` or raw `base_url`/`api_key`/`chat_model` |
+| `/connection/test` | POST | `manage_options` | by saved `id` or raw `base_url`/`api_key`/`chat_model`; probes the `/v1` variant on failure and returns `fixed_base_url` when it works |
 | `/connection/models` | POST | `manage_options` | lists chat + image models |
 | `/bale/test` | POST | `manage_options` | `token`/`chat_ids` (or stored config) → tests every recipient |
 | `/bale/chat-id` | POST | `manage_options` | `getUpdates` → latest chat id |
@@ -260,7 +260,7 @@ a stable emoji (✍️📊📄🚀📋🤖) so tests can match it across transla
 
 ## 10. Internationalization
 
-630 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+637 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals

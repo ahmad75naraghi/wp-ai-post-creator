@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,10 @@ They were migrated automatically into a default connection under "AI Post Creato
 
 == Changelog ==
 
+= 1.7.2 =
+* Easier connections to gateways and routers (OmniRoute, OpenRouter & co.): a base URL without a path gets /v1 appended automatically, the connection test probes the /v1 variant when the first attempt fails and corrects the field for you, and error messages now say clearly when an address returned a web page (HTML) instead of an API response
+* New setting "Allow private/LAN addresses" (Settings → Advanced) so a self-hosted gateway on another machine in your network works without code — localhost was always allowed, the SSRF guard stays on for everything else
+* Admin UI polish: consistent page headers (the Schedule page finally has one), unified field alignment inside and outside the Options boxes, restyled tables with proper header rows, day-of-week pills on the Schedule form, topic-queue and contextual-help elements aligned with the plugin design language, all inline styles removed, focus states for every input
 = 1.7.1 =
 * Documentation refresh: architecture reference brought up to the current code (bootstrap flow, 9 admin pages, topic-queue and Bale-command data/hooks, full admin-post handler list), REST reference now documents the /topics/suggest and /topics/add endpoints, roadmap and agent notes reflect the shipped v1.7.0 state, README and user guides corrected (background execution and 1.7 features filed under the right versions)
 * No functional changes

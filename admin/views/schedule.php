@@ -30,15 +30,18 @@ $aipc_notices = array(
 ?>
 
 <div class="wrap aipc-wrap">
-	<h1><?php esc_html_e( 'AI Schedule & Notifications', 'wp-ai-post-creator' ); ?></h1>
+
+	<div class="aipc-header">
+		<div class="aipc-logo" aria-hidden="true">📅</div>
+		<div class="aipc-header-text">
+			<h1><?php esc_html_e( 'AI Schedule & Notifications', 'wp-ai-post-creator' ); ?></h1>
+			<p class="aipc-sub"><?php esc_html_e( 'Let the agent write posts automatically at fixed times — and get a Bale message (image + summary + link) after every post is created.', 'wp-ai-post-creator' ); ?></p>
+		</div>
+	</div>
 
 	<?php if ( isset( $aipc_notices[ $aipc_msg ] ) ) : ?>
 		<div class="notice notice-success is-dismissible"><p><?php echo esc_html( $aipc_notices[ $aipc_msg ] ); ?></p></div>
 	<?php endif; ?>
-
-	<p class="aipc-lead">
-		<?php esc_html_e( 'Let the agent write posts automatically at fixed times — and get a Bale message (image + summary + link) after every post is created.', 'wp-ai-post-creator' ); ?>
-	</p>
 
 	<?php if ( ! AIPC_Connections::get_default() ) : ?>
 		<div class="notice notice-error"><p>
@@ -129,14 +132,13 @@ $aipc_notices = array(
 			</table>
 		<?php endif; ?>
 
-		<form class="aipc-limit-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
-			style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-block-start:14px;">
+		<form class="aipc-limit-form aipc-inline-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<?php wp_nonce_field( 'aipc_save_schedule_settings' ); ?>
 			<input type="hidden" name="action" value="aipc_save_schedule_settings" />
-			<label for="aipc-daily-limit" style="font-weight:600;"><?php esc_html_e( 'Max scheduled posts per day', 'wp-ai-post-creator' ); ?></label>
+			<label for="aipc-daily-limit" class="aipc-inline-label"><?php esc_html_e( 'Max scheduled posts per day', 'wp-ai-post-creator' ); ?></label>
 			<?php aipc_help( 'sched-limit', __( 'Caps how many automatic posts may be created per calendar day (site timezone). 0 = unlimited. Today’s count is shown next to the field.', 'wp-ai-post-creator' ) ); ?>
 			<input type="number" id="aipc-daily-limit" class="aipc-input" name="daily_limit" min="0" max="50" step="1"
-				style="width:90px;" value="<?php echo esc_attr( AIPC_Scheduler::daily_limit() ); ?>" />
+				class="aipc-input-xs" value="<?php echo esc_attr( AIPC_Scheduler::daily_limit() ); ?>" />
 			<span class="description"><?php esc_html_e( '0 = unlimited', 'wp-ai-post-creator' ); ?></span>
 			<button type="submit" class="button"><?php esc_html_e( 'Save', 'wp-ai-post-creator' ); ?></button>
 			<span class="description">
@@ -294,7 +296,7 @@ $aipc_notices = array(
 			<?php endif; ?>
 		<?php endif; ?>
 
-		<form class="aipc-conn-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-block-start:14px;">
+		<form class="aipc-conn-form aipc-form-gap" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<?php wp_nonce_field( 'aipc_add_topics' ); ?>
 			<input type="hidden" name="action" value="aipc_add_topics" />
 			<div class="aipc-field">

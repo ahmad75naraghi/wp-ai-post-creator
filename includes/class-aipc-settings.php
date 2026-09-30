@@ -33,6 +33,7 @@ final class AIPC_Settings {
 			'add_toc'             => 1,
 			'add_faq'             => 1,
 			'system_prompt_extra' => '',
+			'allow_private_hosts' => 0,
 			'delete_on_uninstall' => 0,
 		);
 	}
@@ -237,7 +238,7 @@ final class AIPC_Settings {
 			$out['image_size'] = $old['image_size'];
 		}
 
-				$bools = array( 'image_enabled', 'add_toc', 'add_faq', 'delete_on_uninstall' );
+				$bools = array( 'image_enabled', 'add_toc', 'add_faq', 'allow_private_hosts', 'delete_on_uninstall' );
 		foreach ( $bools as $bool ) {
 			$out[ $bool ] = empty( $in[ $bool ] ) ? 0 : 1;
 		}

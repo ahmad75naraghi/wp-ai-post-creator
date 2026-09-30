@@ -97,7 +97,7 @@ $aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 				</div>
 
 				<?php if ( current_user_can( 'publish_posts' ) ) : ?>
-					<div class="aipc-grid" style="margin-block-start:12px;">
+					<div class="aipc-grid aipc-grid-gap">
 						<div class="aipc-field">
 <div class="aipc-heading">
 								<label for="aipc-publish-mode"><?php esc_html_e( 'After creation', 'wp-ai-post-creator' ); ?></label>

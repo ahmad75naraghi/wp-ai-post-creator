@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.7.1 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
+**Version:** 1.7.2 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
 
 ---
 
@@ -30,6 +30,12 @@
 **AI Post Creator** یک افزونهٔ فوق‌حرفه‌ای و «ایجنت‌مانند» برای وردپرس است که با اتصال به هر سرویس API هوش مصنوعیِ سازگار با OpenAI (OpenAI، OpenRouter، Groq، DeepSeek، Ollama، LM Studio و…)، یک پست کامل را **از صفر تا صد** تولید می‌کند:
 
 ابتدا **پرامپت سایت** (سایت چیست، درباره چیست، هدف و مخاطبانش کدامند — در تنظیمات) و **دسته‌بندی‌های موجود نوشته‌ها** را می‌خواند، یکی از دسته‌بندی‌ها را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد (یا از پیشنهاد شما استفاده می‌کند). بعد محتوا را می‌نویسد، یک **پاس کپی‌رایتینگ و سئو** روی کل متن اجرا می‌کند، **خلاصه سئو برای Rank Math** می‌سازد، از روی موضوع و خلاصه **تصویر شاخص** تولید می‌کند و نتیجه را همیشه به‌صورت **پیش‌نویس** ذخیره می‌کند — تمام مراحل به‌صورت زنده در یک **کنسول ایجنت** نمایش داده می‌شوند و در هر مرحله در صورت خطا، به‌طور خودکار تا سه بار دوباره تلاش می‌شود.
+
+### 🆕 جدید در نسخهٔ ۱.۷.۲ — اتصال آسان‌تر و پنل مرتب‌تر
+
+- 🔌 **اتصال آسان به گیت‌وی‌ها و روترها (OmniRoute و…)**: اگر نشانی پایه /v1 نداشته باشد خودکار اضافه می‌شود، دکمهٔ «تست اتصال» در صورت شکست حالت /v1 را امتحان و فیلد را اصلاح می‌کند، و اگر نشانی به‌جای API یک صفحهٔ وب برگرداند، پیام خطا دقیقاً همین را می‌گوید.
+- 🖧 **گزینهٔ «اجازه به نشانی‌های خصوصی/شبکهٔ محلی»** در تنظیمات ← پیشرفته: گیت‌وی سلف‌هاست روی دستگاه دیگری در شبکه، بدون نوشتن کد کار می‌کند (localhost همیشه مجاز بود).
+- 🎨 **مرتب‌سازی ظاهر پنل**: سرصفحهٔ یکسان برای همهٔ صفحه‌ها (زمان‌بندی هم صاحب سرصفحه شد)، هم‌ترازی یکنواخت فیلدها، جدول‌های یکدست، انتخاب روزهای هفته به‌صورت دکمه‌های قرصی، و حذف همهٔ استایل‌های داخل‌خطی.
 
 ### 🆕 جدید در نسخهٔ ۱.۷.۰ — صف موضوع‌ها و فرمان دوطرفه از بله
 
@@ -103,6 +109,12 @@
 ## English — Overview
 
 AI Post Creator turns the WordPress admin into an AI content agent. Set a **site prompt** once (what your site is about), and the agent picks one of your **existing post categories**, invents a topic that fits, writes the article, runs a **copywriting + SEO revision pass**, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** — with every step visible live and auto-retried until it passes.
+
+**New in 1.7.2 — easier connections + admin UI polish:**
+
+* **Gateway-friendly connections** — a base URL without `/v1` gets it appended automatically, the connection test probes the `/v1` variant and corrects the field for you (OmniRoute, OpenRouter & co.), and "that address returned a web page, not an API" errors are finally said in plain words
+* **Allow private/LAN addresses** — new toggle under Settings → Advanced for self-hosted gateways on another machine in your network (the SSRF guard stays on for everything else)
+* **Cleaner admin panel** — consistent page headers, unified field alignment, restyled tables, day-of-week pills, no more inline styles
 
 **New in 1.7.0 — topic queue + two-way Bale commands:**
 

@@ -252,6 +252,10 @@ msgstr ""
 msgid "All logs cleared."
 msgstr ""
 
+#: admin/views/settings.php
+msgid "Allow private/LAN addresses (e.g. a self-hosted gateway like OmniRoute or Ollama on another machine in your network)"
+msgstr ""
+
 #: includes/class-aipc-bale.php
 msgid "An existing post was rewritten by the AI"
 msgstr ""
@@ -353,7 +357,7 @@ msgid "Blocked: loopback hosts are disabled on this site (aipc_allow_loopback fi
 msgstr ""
 
 #: includes/class-aipc-network.php
-msgid "Blocked: the host is a private or reserved address. Add it to the “aipc_outbound_allowlist” filter (or enable “aipc_allow_private_hosts”) to allow it."
+msgid "Blocked: the host is a private or reserved address. Enable “Allow private/LAN addresses” under Settings → Advanced (or use the “aipc_outbound_allowlist” filter) to allow it."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -478,6 +482,10 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "Configure any number of OpenAI-compatible providers — then assign each pipeline step its own connection under Prompts & Steps."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Connected via %s — the base URL was missing /v1, so the field was corrected. Save the connection to keep it."
 msgstr ""
 
 #: admin/views/log-detail.php admin/views/logs.php includes/class-aipc-connections.php
@@ -1112,6 +1120,10 @@ msgstr ""
 msgid "Loading models…"
 msgstr ""
 
+#: admin/views/settings.php
+msgid "Local & LAN providers"
+msgstr ""
+
 #: admin/views/new-post.php admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Logs"
 msgstr ""
@@ -1700,6 +1712,10 @@ msgstr ""
 msgid "Selected tone label"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Self-hosted gateways (OmniRoute, Ollama, LM Studio) run on your own machine — the WordPress server must be able to reach that address. If the gateway runs on another machine in your network, enter its LAN address and enable “Allow private/LAN addresses” under Settings → Advanced."
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "Send a Bale message after every generated post"
 msgstr ""
@@ -1844,6 +1860,10 @@ msgstr ""
 msgid "The URL has no host."
 msgstr ""
 
+#: includes/class-aipc-api-client.php
+msgid "The address returned a web page (HTML) instead of an API response — it looks like a website URL, not an API base URL. OpenAI-compatible endpoints almost always end in /v1."
+msgstr ""
+
 #: admin/views/new-post.php
 msgid "The agent always picks one of your existing post categories and builds the topic from the site prompt."
 msgstr ""
@@ -1873,7 +1893,7 @@ msgid "The agent stopped with an error. You can retry the failed step."
 msgstr ""
 
 #: admin/views/connections.php
-msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless allowlisted."
+msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). A provider’s website address is not an API endpoint — if the test finds the API under /v1, the field is corrected automatically. The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless you enable “Allow private/LAN addresses” in Settings → Advanced."
 msgstr ""
 
 #: admin/views/schedule.php
@@ -2412,6 +2432,10 @@ msgstr ""
 msgid "linked jump menu"
 msgstr ""
 
+#: admin/views/settings.php
+msgid "localhost is always allowed. Only enable this when the AI gateway really runs inside your own network — it relaxes the outbound request guard (SSRF protection) for private addresses."
+msgstr ""
+
 #: admin/views/update.php
 msgid "main for stable releases, or a development branch."
 msgstr ""
@@ -2438,6 +2462,10 @@ msgstr ""
 
 #: admin/views/logs.php
 msgid "successful"
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "the address returned a web page (HTML), not an API response — check that the base URL is the API endpoint (it usually ends in /v1)"
 msgstr ""
 
 #: includes/class-aipc-assets.php

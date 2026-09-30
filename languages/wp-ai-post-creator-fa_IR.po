@@ -2088,10 +2088,6 @@ msgstr "پیش‌نویس‌های تولیدشده با هوش مصنوعی د�
 msgid "Blocked: loopback hosts are disabled on this site (aipc_allow_loopback filter)."
 msgstr "مسدود: هاست‌های لوکال‌هاست در این سایت غیرفعال‌اند (فیلتر aipc_allow_loopback)."
 
-#: includes/class-aipc-network.php
-msgid "Blocked: the host is a private or reserved address. Add it to the “aipc_outbound_allowlist” filter (or enable “aipc_allow_private_hosts”) to allow it."
-msgstr "مسدود: این هاست نشانی خصوصی یا رزروشده است. برای مجاز کردن، آن را به فیلتر «aipc_outbound_allowlist» اضافه کنید (یا «aipc_allow_private_hosts» را فعال کنید)."
-
 #: admin/views/review.php
 msgid "Could not publish the draft. Please try again from the editor."
 msgstr "انتشار پیش‌نویس ممکن نشد. لطفاً از ویرایشگر دوباره تلاش کنید."
@@ -2247,10 +2243,6 @@ msgstr "پرامپت‌ها دستوراتی هستند که برای هر مر�
 #: admin/views/connections.php
 msgid "Ready-made endpoint patterns for popular providers — copy your provider’s pattern into the connection form above."
 msgstr "الگوهای آمادهٔ نشانی برای سرویس‌های پرکاربرد — الگوی سرویس خودتان را در فرم اتصال بالا کپی کنید."
-
-#: admin/views/connections.php
-msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless allowlisted."
-msgstr "نشانی پایه باید به یک نقطهٔ پایانی سازگار با OpenAI اشاره کند، معمولاً با /v1 در انتها (مثلاً https://api.openai.com/v1). کلید API فقط نوشتنی است: برای نگه‌داشتن کلید ذخیره‌شده فیلد را خالی بگذارید. نشانی‌های خصوصی/داخلی توسط گارد شبکهٔ خروجی مسدود می‌شوند مگر اینکه مجاز اعلام شوند."
 
 #: admin/views/new-post.php
 msgid "The console is a live viewer: the job runs on the server, so you can close this tab and it keeps going. Steps, logs and progress update automatically while the agent works — and if a step fails after all retries, the Retry button re-runs only that step."
@@ -2543,3 +2535,39 @@ msgstr "🚀 منتشر شد: %s"
 #: includes/class-aipc-bale-commands.php
 msgid "🚀 انتشار [number] — publish the newest (or n-th) draft"
 msgstr "🚀 انتشار [شماره] — انتشار جدیدترین (یا نهایی) پیش‌نویس"
+
+#: admin/views/settings.php
+msgid "Allow private/LAN addresses (e.g. a self-hosted gateway like OmniRoute or Ollama on another machine in your network)"
+msgstr "اجازه به نشانی‌های خصوصی/شبکهٔ محلی (مثلاً گیت‌وی سلف‌هاست مانند OmniRoute یا Ollama روی دستگاه دیگری در شبکهٔ شما)"
+
+#: includes/class-aipc-network.php
+msgid "Blocked: the host is a private or reserved address. Enable “Allow private/LAN addresses” under Settings → Advanced (or use the “aipc_outbound_allowlist” filter) to allow it."
+msgstr "مسدود شد: میزبان یک نشانی خصوصی یا رزروشده است. برای مجاز کردن آن، «اجازه به نشانی‌های خصوصی/شبکهٔ محلی» را در تنظیمات ← پیشرفته فعال کنید (یا از فیلتر «aipc_outbound_allowlist» استفاده کنید)."
+
+#: includes/class-aipc-assets.php
+msgid "Connected via %s — the base URL was missing /v1, so the field was corrected. Save the connection to keep it."
+msgstr "اتصال از طریق %s برقرار شد — نشانی پایه /v1 نداشت و فیلد اصلاح شد. برای ماندگاری، اتصال را ذخیره کنید."
+
+#: admin/views/settings.php
+msgid "Local & LAN providers"
+msgstr "سرویس‌دهنده‌های محلی و شبکهٔ داخلی"
+
+#: admin/views/connections.php
+msgid "Self-hosted gateways (OmniRoute, Ollama, LM Studio) run on your own machine — the WordPress server must be able to reach that address. If the gateway runs on another machine in your network, enter its LAN address and enable “Allow private/LAN addresses” under Settings → Advanced."
+msgstr "گیت‌وی‌های سلف‌هاست (OmniRoute، Ollama، LM Studio) روی دستگاه خود شما اجرا می‌شوند — سرور وردپرس باید بتواند به آن نشانی دسترسی داشته باشد. اگر گیت‌وی روی دستگاه دیگری در شبکهٔ شماست، نشانی داخلی آن را وارد کنید و «اجازه به نشانی‌های خصوصی/شبکهٔ محلی» را در تنظیمات ← پیشرفته فعال کنید."
+
+#: includes/class-aipc-api-client.php
+msgid "The address returned a web page (HTML) instead of an API response — it looks like a website URL, not an API base URL. OpenAI-compatible endpoints almost always end in /v1."
+msgstr "این نشانی به‌جای پاسخ API یک صفحهٔ وب (HTML) برگرداند — به نظر می‌رسد نشانی وب‌سایت است، نه نشانی پایهٔ API. اندپوینت‌های سازگار با OpenAI تقریباً همیشه به /v1 ختم می‌شوند."
+
+#: admin/views/connections.php
+msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). A provider’s website address is not an API endpoint — if the test finds the API under /v1, the field is corrected automatically. The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless you enable “Allow private/LAN addresses” in Settings → Advanced."
+msgstr "نشانی پایه باید به یک اندپوینت سازگار با OpenAI اشاره کند و معمولاً به /v1 ختم می‌شود (مثلاً https://api.openai.com/v1). نشانی وب‌سایتِ سرویس‌دهنده اندپوینت API نیست — اگر تست، API را زیر /v1 پیدا کند، فیلد به‌طور خودکار اصلاح می‌شود. کلید API فقط‌نوشتنی است: برای نگه داشتن کلید ذخیره‌شده، فیلد را خالی بگذارید. نشانی‌های خصوصی یا داخلی توسط گارد شبکهٔ خروجی مسدود می‌شوند مگر «اجازه به نشانی‌های خصوصی/شبکهٔ محلی» را در تنظیمات ← پیشرفته فعال کنید."
+
+#: admin/views/settings.php
+msgid "localhost is always allowed. Only enable this when the AI gateway really runs inside your own network — it relaxes the outbound request guard (SSRF protection) for private addresses."
+msgstr "localhost همیشه مجاز است. این گزینه را فقط وقتی فعال کنید که گیت‌وی هوش مصنوعی واقعاً داخل شبکهٔ خودتان اجرا می‌شود — چون گارد درخواست‌های خروجی (محافظت SSRF) را برای نشانی‌های خصوصی سست می‌کند."
+
+#: includes/class-aipc-api-client.php
+msgid "the address returned a web page (HTML), not an API response — check that the base URL is the API endpoint (it usually ends in /v1)"
+msgstr "این نشانی یک صفحهٔ وب (HTML) برگرداند، نه پاسخ API — بررسی کنید که نشانی پایه همان اندپوینت API باشد (معمولاً به /v1 ختم می‌شود)"

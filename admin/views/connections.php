@@ -33,7 +33,7 @@ function aipc_connection_form( $conn ) {
 
 <div class="aipc-heading">
 					<h3><?php echo $editing ? esc_html__( 'Edit connection', 'wp-ai-post-creator' ) : esc_html__( 'Add a new connection', 'wp-ai-post-creator' ); ?></h3>
-			<?php aipc_help( 'conn-form', __( 'The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless allowlisted.', 'wp-ai-post-creator' ) ); ?>
+			<?php aipc_help( 'conn-form', __( 'The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). A provider’s website address is not an API endpoint — if the test finds the API under /v1, the field is corrected automatically. The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless you enable “Allow private/LAN addresses” in Settings → Advanced.', 'wp-ai-post-creator' ) ); ?>
 		</div>
 
 		<div class="aipc-grid">
@@ -180,7 +180,11 @@ endif;
 			https://api.groq.com/openai/v1 (Groq) ·
 			https://api.deepseek.com/v1 (DeepSeek) ·
 			http://localhost:11434/v1 (Ollama) ·
-			http://localhost:1234/v1 (LM Studio)
+			http://localhost:1234/v1 (LM Studio) ·
+			http://localhost:20128/v1 (OmniRoute)
+		</p>
+		<p class="aipc-hint">
+			<?php esc_html_e( 'Self-hosted gateways (OmniRoute, Ollama, LM Studio) run on your own machine — the WordPress server must be able to reach that address. If the gateway runs on another machine in your network, enter its LAN address and enable “Allow private/LAN addresses” under Settings → Advanced.', 'wp-ai-post-creator' ); ?>
 		</p>
 	</section>
 

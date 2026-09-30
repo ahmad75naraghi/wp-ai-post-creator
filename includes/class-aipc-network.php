@@ -79,14 +79,26 @@ final class AIPC_Network {
 			);
 		}
 
-		if ( $is_private && ! apply_filters( 'aipc_allow_private_hosts', false ) ) {
+		if ( $is_private && ! apply_filters( 'aipc_allow_private_hosts', self::private_hosts_allowed() ) ) {
 			return new WP_Error(
 				'aipc_url',
-				__( 'Blocked: the host is a private or reserved address. Add it to the “aipc_outbound_allowlist” filter (or enable “aipc_allow_private_hosts”) to allow it.', 'wp-ai-post-creator' )
+				__( 'Blocked: the host is a private or reserved address. Enable “Allow private/LAN addresses” under Settings → Advanced (or use the “aipc_outbound_allowlist” filter) to allow it.', 'wp-ai-post-creator' )
 			);
 		}
 
 		return esc_url_raw( $url );
+	}
+
+	/**
+	 * Default for the aipc_allow_private_hosts filter — the Settings toggle
+	 * (Settings → Advanced → “Allow private/LAN addresses”), so users with a
+	 * self-hosted gateway (OmniRoute, Ollama on another machine …) don't
+	 * need code. The filter still has the final word.
+	 *
+	 * @return bool
+	 */
+	private static function private_hosts_allowed() {
+		return class_exists( 'AIPC_Settings' ) && (bool) AIPC_Settings::get( 'allow_private_hosts' );
 	}
 
 	/**

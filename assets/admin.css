@@ -5,6 +5,8 @@
 :root {
 	--aipc-primary: #4f46e5;
 	--aipc-primary-dark: #4338ca;
+	--aipc-primary-soft: #eef2ff;
+	--aipc-primary-line: #c7d2fe;
 	--aipc-success: #10b981;
 	--aipc-error: #ef4444;
 	--aipc-warn: #f59e0b;
@@ -12,13 +14,49 @@
 	--aipc-ink: #1e293b;
 	--aipc-ink-soft: #64748b;
 	--aipc-line: #e2e8f0;
+	--aipc-bg-soft: #f8fafc;
 	--aipc-radius: 12px;
+	--aipc-radius-sm: 8px;
+	--aipc-ring: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 .aipc-wrap {
-	max-width: 960px;
-	margin-inline-start: 20px;
+	max-width: 1024px;
 	color: var(--aipc-ink);
+}
+
+/* Unified controls: every input/select/textarea on plugin pages. */
+.aipc-wrap input[type="text"],
+.aipc-wrap input[type="url"],
+.aipc-wrap input[type="password"],
+.aipc-wrap input[type="number"],
+.aipc-wrap input[type="time"],
+.aipc-wrap select,
+.aipc-wrap textarea {
+	border: 1px solid #cbd5e1;
+	border-radius: var(--aipc-radius-sm);
+	box-shadow: none;
+	color: var(--aipc-ink);
+}
+
+.aipc-wrap input[type="text"]:focus,
+.aipc-wrap input[type="url"]:focus,
+.aipc-wrap input[type="password"]:focus,
+.aipc-wrap input[type="number"]:focus,
+.aipc-wrap input[type="time"]:focus,
+.aipc-wrap select:focus,
+.aipc-wrap textarea:focus {
+	border-color: var(--aipc-primary);
+	box-shadow: var(--aipc-ring);
+	outline: none;
+}
+
+.aipc-wrap .button {
+	border-radius: var(--aipc-radius-sm);
+}
+
+.aipc-wrap .button:focus {
+	box-shadow: var(--aipc-ring);
 }
 
 /* ---------- header ---------- */
@@ -91,16 +129,25 @@
 	background: #fff;
 	border: 1px solid var(--aipc-line);
 	border-radius: var(--aipc-radius);
-	padding: 20px 24px;
-	margin-bottom: 16px;
-	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	padding: 22px 24px;
+	margin-bottom: 18px;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
 .aipc-card h2 {
-	margin: 0 0 4px;
+	margin: 0 0 10px;
 	font-size: 16px;
 	padding: 0;
 	border: 0;
+}
+
+.aipc-card > .aipc-heading {
+	margin-bottom: 12px;
+}
+
+.aipc-card > .aipc-table,
+.aipc-card > .wp-list-table {
+	margin-block-start: 4px;
 }
 
 .aipc-alert {
@@ -131,7 +178,7 @@
 
 #aipc-topic:focus {
 	border-color: var(--aipc-primary);
-	box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+	box-shadow: var(--aipc-ring);
 	outline: none;
 }
 
@@ -169,7 +216,26 @@
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 	gap: 14px 18px;
-	padding: 0 14px;
+}
+
+.aipc-grid-gap {
+	margin-block-start: 12px;
+}
+
+/* Inside the boxed <details> the content needs its own gutter. */
+.aipc-options > .aipc-grid,
+.aipc-options .aipc-conn-form > .aipc-grid {
+	padding-inline: 14px;
+}
+
+.aipc-options > .aipc-conn-form > .aipc-heading,
+.aipc-options > .aipc-conn-form > p,
+.aipc-options > .aipc-conn-form > .aipc-actions {
+	padding-inline: 14px;
+}
+
+.aipc-options > .aipc-conn-form {
+	padding-block-end: 14px;
 }
 
 .aipc-field label {
@@ -190,7 +256,11 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 10px 22px;
-	padding: 16px 14px 4px;
+	padding: 14px 0 2px;
+}
+
+.aipc-options > .aipc-toggles {
+	padding: 16px 14px 14px;
 }
 
 .aipc-toggle {
@@ -529,6 +599,31 @@
 	margin-inline-start: 6px;
 }
 
+/* Small inline forms (daily limit, Git check row). */
+.aipc-inline-form {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-block-start: 14px;
+}
+
+.aipc-inline-label {
+	font-weight: 600;
+}
+
+.aipc-input-xs {
+	width: 90px;
+}
+
+.aipc-form-gap {
+	margin-block-start: 14px;
+}
+
+.aipc-notice-narrow {
+	max-width: 760px;
+}
+
 .aipc-inline-status {
 	margin-inline-start: 10px;
 	font-weight: 600;
@@ -549,22 +644,70 @@
 		text-align: center;
 	}
 
+	.aipc-header .aipc-meta {
+		justify-content: center;
+	}
+
+	.aipc-card {
+		padding: 16px;
+	}
+
 	.aipc-card .form-table th {
 		width: auto;
 		padding-bottom: 0;
 	}
+
+	.aipc-options > .aipc-grid,
+	.aipc-options .aipc-conn-form > .aipc-grid,
+	.aipc-options > .aipc-conn-form > .aipc-heading,
+	.aipc-options > .aipc-conn-form > p,
+	.aipc-options > .aipc-conn-form > .aipc-actions {
+		padding-inline: 10px;
+	}
 }
 
-/* ---------- connections page ---------- */
+/* ---------- tables (all pages) ---------- */
 
-.aipc-table {
+.aipc-wrap .aipc-table,
+.aipc-wrap .wp-list-table {
+	border: 1px solid var(--aipc-line);
 	border-radius: 10px;
 	overflow: hidden;
+	box-shadow: none;
 }
 
 .aipc-table th,
 .aipc-table td {
 	vertical-align: middle;
+}
+
+.aipc-wrap .aipc-table thead th,
+.aipc-wrap .wp-list-table thead th {
+	background: var(--aipc-bg-soft);
+	border-bottom: 1px solid var(--aipc-line);
+	color: var(--aipc-ink-soft);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.aipc-wrap .aipc-table td,
+.aipc-wrap .aipc-table th {
+	padding: 10px 12px;
+}
+
+.aipc-wrap .aipc-table tbody tr:hover,
+.aipc-wrap .wp-list-table tbody tr:hover {
+	background: #fafbfe;
+}
+
+/* Key/value tables (Git update status, job overview). */
+.aipc-kv-table {
+	max-width: 640px;
+}
+
+.aipc-kv-table th {
+	background: var(--aipc-bg-soft);
+	font-weight: 600;
 }
 
 .aipc-code,
@@ -611,12 +754,13 @@
 	align-items: center;
 	gap: 14px;
 	flex-wrap: wrap;
-	background: rgba(255, 255, 255, 0.92);
-	backdrop-filter: blur(4px);
+	background: rgba(255, 255, 255, 0.95);
+	backdrop-filter: blur(6px);
 	border: 1px solid var(--aipc-line);
 	border-radius: 10px;
 	padding: 10px 14px;
-	margin-bottom: 14px;
+	margin-bottom: 16px;
+	box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
 .aipc-step-head {
@@ -669,7 +813,7 @@
 	border-radius: 10px;
 	padding: 14px;
 	text-align: center;
-	background: #f8fafc;
+	background: linear-gradient(180deg, #fff, var(--aipc-bg-soft));
 }
 
 .aipc-stat strong {
@@ -758,6 +902,23 @@
 	align-items: center;
 	gap: 6px;
 	margin: 0;
+	padding: 4px 12px;
+	border: 1px solid var(--aipc-line);
+	border-radius: 999px;
+	background: #fff;
+	cursor: pointer;
+	user-select: none;
+}
+
+.aipc-day:hover {
+	border-color: var(--aipc-primary-line);
+}
+
+.aipc-day:has(input:checked) {
+	background: var(--aipc-primary-soft);
+	border-color: var(--aipc-primary-line);
+	color: var(--aipc-primary-dark);
+	font-weight: 600;
 }
 
 .aipc-checks {
@@ -830,20 +991,20 @@
 }
 .aipc-help summary:hover,
 .aipc-help[open] summary {
-	color: #2271b1;
-	border-color: #2271b1;
-	background: #f0f6fc;
+	color: var(--aipc-primary);
+	border-color: var(--aipc-primary-line);
+	background: var(--aipc-primary-soft);
 }
 .aipc-help-panel {
 	margin: 8px 0 4px;
-	padding: 10px 12px;
+	padding: 10px 14px;
 	max-width: 640px;
 	font-size: 12.5px;
 	line-height: 1.9;
-	border-inline-start: 3px solid #2271b1;
-	border-radius: 4px;
-	background: #f0f6fc;
-	color: #3c434a;
+	border-inline-start: 3px solid var(--aipc-primary);
+	border-radius: var(--aipc-radius-sm);
+	background: var(--aipc-primary-soft);
+	color: var(--aipc-ink);
 }
 .aipc-help-panel p {
 	margin: 0 0 6px;
@@ -861,9 +1022,10 @@
 
 .aipc-tq-suggest {
 	margin-block-start: 10px;
-	padding: 12px;
-	border: 1px dashed #c3c4c7;
-	border-radius: 4px;
+	padding: 14px;
+	border: 1px dashed var(--aipc-primary-line);
+	border-radius: 10px;
+	background: var(--aipc-bg-soft);
 }
 
 .aipc-tq-list {
@@ -879,10 +1041,10 @@
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	padding: 6px 8px;
+	padding: 7px 10px;
 	background: #fff;
-	border: 1px solid #dcdcde;
-	border-radius: 4px;
+	border: 1px solid var(--aipc-line);
+	border-radius: var(--aipc-radius-sm);
 }
 
 .aipc-tq-item .aipc-badge {
@@ -892,7 +1054,11 @@
 
 .aipc-card-inner {
 	margin-block-start: 14px;
-	padding: 12px;
+	margin-bottom: 0;
+	padding: 14px 16px;
+	background: var(--aipc-bg-soft);
+	border-radius: 10px;
+	box-shadow: none;
 }
 
 .aipc-card-inner h3 {

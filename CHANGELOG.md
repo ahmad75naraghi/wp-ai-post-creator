@@ -3,6 +3,42 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.7.2] — 2026-09-30
+
+### Fixed
+- **Connecting to AI gateways/routers (e.g. OmniRoute) no longer fails
+  confusingly.** A base URL without a path now gets `/v1` appended
+  automatically for every host (previously only `api.openai.com`); the
+  connection test probes the `/v1` variant when the first attempt fails and
+  auto-corrects the field (`fixed_base_url` in the REST response); and when
+  an address returns a web page instead of an API response, the error says
+  exactly that ("looks like a website URL, not an API base URL") instead of
+  dumping HTML fragments.
+
+### Added
+- **"Allow private/LAN addresses" setting** (Settings → Advanced): lets a
+  self-hosted gateway (OmniRoute, Ollama, LM Studio on another machine)
+  be reached without writing a filter. Default off; loopback stays always
+  allowed; the `aipc_allow_private_hosts` filter still has the final word.
+- OmniRoute (`http://localhost:20128/v1`) added to the example endpoints,
+  with a note about self-hosted gateways and LAN addresses.
+
+### Changed — admin UI polish
+- The Schedule page got the same header (logo + title + subtitle) as every
+  other page instead of a bare `<h1>`.
+- Field alignment unified: the grid/toggle gutters now apply only inside the
+  boxed "Options" panels, so forms rendered directly in cards line up with
+  the card edge (Connections, Prompts, Schedule, Update).
+- Tables restyled consistently (soft header row, hover, rounded corners);
+  key-value tables get their own class instead of inline widths.
+- Day-of-week checkboxes on the Schedule form became selectable pills;
+  topic-queue and contextual-help ("?") elements now follow the plugin's
+  design tokens instead of WP-gray one-offs.
+- All inline `style="…"` attributes removed from the views; every input,
+  select and textarea got a consistent focus ring; responsive tweaks for
+  narrow screens.
+- fa_IR translation updated (637 msgids).
+
 ## [1.7.1] — 2026-09-30
 
 ### Documentation

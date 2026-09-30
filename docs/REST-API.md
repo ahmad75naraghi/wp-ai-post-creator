@@ -120,7 +120,12 @@ Resets the failed step of an `error` job and sets it back to `running`.
 
 Tests one connection — either a saved one (`id`) or raw values
 (`base_url`, `api_key`, `chat_model`). Returns
-`{ "ok": true, "model": "…" }` or `{ "ok": false, "error": "…" }`.
+`{ "ok": true, "models": […] }` (or `"chat": true` when the provider has no
+`/models`). Since v1.7.2, when the first attempt fails and the base URL does
+not end in `/v1`, the `/v1` variant is probed automatically — on success the
+response carries `"fixed_base_url"` with the corrected URL (the admin JS
+writes it back into the form). Failures return the provider error, with a
+clear message when the address served an HTML page instead of an API.
 
 ### POST `/aipc/v1/connection/models`
 

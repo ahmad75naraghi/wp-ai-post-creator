@@ -82,7 +82,14 @@
 
 		api('connection/test', cfg).then(function (res) {
 			if (res && res.ok) {
-				if (res.models && res.models.length) {
+				if (res.fixed_base_url) {
+					var form = btn.closest('form');
+					var baseField = form ? form.querySelector('[name="base_url"]') : null;
+					if (baseField) {
+						baseField.value = res.fixed_base_url;
+					}
+					setStatus(out, String(t('fixedBase')).replace('%s', res.fixed_base_url), true);
+				} else if (res.models && res.models.length) {
 					setStatus(out, fmt(t('okModels'), res.models.length), true);
 				} else {
 					setStatus(out, t('okNoModels'), true);

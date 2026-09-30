@@ -68,7 +68,12 @@ final class AIPC_API_Client {
 	}
 
 	/**
-	 * Normalized base URL (adds /v1 for a bare api.openai.com host).
+	 * Normalized base URL.
+	 *
+	 * OpenAI-compatible providers serve the API under /v1 (OpenAI, OpenRouter,
+	 * Groq, Ollama, LM Studio, OmniRoute …), so a bare host without any path
+	 * gets /v1 appended automatically — entering http://localhost:20128 for a
+	 * local gateway then "just works".
 	 *
 	 * @return string
 	 */
@@ -76,7 +81,7 @@ final class AIPC_API_Client {
 		$base = rtrim( trim( (string) $this->conn['base_url'] ), '/' );
 		$host = (string) wp_parse_url( $base, PHP_URL_HOST );
 		$path = (string) wp_parse_url( $base, PHP_URL_PATH );
-		if ( 'api.openai.com' === $host && ( '' === $path || '/' === $path ) ) {
+		if ( '' !== $host && ( '' === $path || '/' === $path ) ) {
 			$base .= '/v1';
 		}
 		return $base;
@@ -145,6 +150,9 @@ final class AIPC_API_Client {
 		}
 
 		if ( ! is_array( $json ) ) {
+			if ( self::looks_like_html( $raw ) ) {
+				return new WP_Error( 'aipc_http', __( 'The address returned a web page (HTML) instead of an API response — it looks like a website URL, not an API base URL. OpenAI-compatible endpoints almost always end in /v1.', 'wp-ai-post-creator' ) );
+			}
 			return new WP_Error( 'aipc_http', __( 'The provider returned an invalid (non-JSON) response.', 'wp-ai-post-creator' ) );
 		}
 
@@ -186,7 +194,22 @@ final class AIPC_API_Client {
 				return sanitize_text_field( $json['error'] );
 			}
 		}
+		if ( self::looks_like_html( $raw ) ) {
+			return __( 'the address returned a web page (HTML), not an API response — check that the base URL is the API endpoint (it usually ends in /v1)', 'wp-ai-post-creator' );
+		}
 		return mb_substr( trim( wp_strip_all_tags( $raw ) ), 0, 300 );
+	}
+
+	/**
+	 * Whether a response body looks like an HTML document (a website,
+	 * not an API endpoint).
+	 *
+	 * @param string $raw Raw response body.
+	 * @return bool
+	 */
+	private static function looks_like_html( $raw ) {
+		$head = strtolower( ltrim( substr( (string) $raw, 0, 300 ) ) );
+		return 0 === strpos( $head, '<!doctype' ) || 0 === strpos( $head, '<html' ) || false !== strpos( $head, '<head' );
 	}
 
 	/**
@@ -422,11 +445,37 @@ final class AIPC_API_Client {
 				array( 'max_tokens' => 10, 'temperature' => 0 )
 			);
 			if ( is_wp_error( $res ) ) {
+				// Common mistake: the base URL misses its /v1 suffix
+				// (e.g. https://openrouter.ai/api). Probe the variant once.
+				$fixed = $this->probe_v1_variant();
+				if ( is_array( $fixed ) ) {
+					return $fixed;
+				}
 				return $models; // The /models error is more informative.
 			}
 			return array( 'ok' => true, 'models' => null, 'chat' => true );
 		}
 		return array( 'ok' => true, 'models' => $models );
+	}
+
+	/**
+	 * Probe the same connection with "/v1" appended to the base URL.
+	 *
+	 * @return array|null Test result with 'fixed_base_url' when the variant works.
+	 */
+	private function probe_v1_variant() {
+		$base = $this->base_url();
+		if ( '' === $base || '/v1' === substr( $base, -3 ) ) {
+			return null;
+		}
+		$alt             = $this->conn;
+		$alt['base_url'] = $base . '/v1';
+		$probe           = new self( $alt );
+		$models          = $probe->models();
+		if ( is_wp_error( $models ) ) {
+			return null;
+		}
+		return array( 'ok' => true, 'models' => $models, 'fixed_base_url' => $probe->base_url() );
 	}
 
 	/**

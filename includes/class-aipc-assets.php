@@ -207,6 +207,7 @@ final class AIPC_Assets {
 				'testing'       => __( 'Testing connection…', 'wp-ai-post-creator' ),
 				'ok'            => __( 'Connection successful!', 'wp-ai-post-creator' ),
 				'okNoModels'    => __( 'Connection successful (model list not supported by this provider).', 'wp-ai-post-creator' ),
+				'fixedBase'     => __( 'Connected via %s — the base URL was missing /v1, so the field was corrected. Save the connection to keep it.', 'wp-ai-post-creator' ),
 				'okModels'      => __( 'Connection successful — %d models found.', 'wp-ai-post-creator' ),
 				'failed'        => __( 'Connection failed:', 'wp-ai-post-creator' ),
 				'loadingModels' => __( 'Loading models…', 'wp-ai-post-creator' ),
