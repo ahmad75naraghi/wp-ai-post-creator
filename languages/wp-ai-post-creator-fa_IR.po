@@ -2675,3 +2675,39 @@ msgstr "فعال (در اجراها شرکت می‌کند)"
 #: admin/views/connections.php
 msgid "Turn off to keep this connection saved but exclude it from every run: automatic pools, fallback chains and the default choice all skip disabled connections."
 msgstr "خاموش کنید تا این اتصال ذخیره بماند ولی از همهٔ اجراها کنار گذاشته شود: استخرهای خودکار، زنجیره‌های جایگزین و انتخاب پیش‌فرض همگی از اتصال‌های غیرفعال رد می‌شوند."
+
+#: includes/class-aipc-admin.php
+msgid "A new AI featured image was generated and set for the post."
+msgstr "تصویر شاخص جدید با هوش مصنوعی ساخته و برای نوشته تنظیم شد."
+
+#: admin/views/settings.php
+msgid "Appended to every generated image prompt — use it for a consistent style (art direction, palette, mood) across all featured images. Leave empty to use the generated prompt as-is."
+msgstr "به انتهای هر پرامت تصویرِ تولیدشده افزوده می‌شود — برای یکدست شدن سبک همهٔ تصاویر شاخص (سبک هنری، پالت رنگ، حال‌وهوا) از آن استفاده کنید. اگر خالی باشد همان پرامت تولیدشده به‌تنهایی به‌کار می‌رود."
+
+#: includes/class-aipc-admin.php
+msgid "Could not generate a new featured image."
+msgstr "ساخت تصویر شاخص جدید ممکن نشد."
+
+#: admin/views/settings.php
+msgid "Default image prompt"
+msgstr "پرامت پیش‌فرض تصویر"
+
+#: includes/class-aipc-agent.php
+msgid "No image-capable connection is configured (or enabled)."
+msgstr "هیچ اتصال تصویرسازی تنظیم (یا فعال) نیست."
+
+#: includes/class-aipc-agent.php
+msgid "Post not found."
+msgstr "نوشته پیدا نشد."
+
+#: includes/class-aipc-admin.php
+msgid "Regenerate AI image"
+msgstr "ساخت مجدد تصویر شاخص"
+
+#: includes/class-aipc-admin.php
+msgid "You are not allowed to do that."
+msgstr "اجازهٔ انجام این کار را ندارید."
+
+#: admin/views/settings.php
+msgid "e.g. flat vector illustration, soft green palette, no text, 16:9"
+msgstr "مثلاً: تصویرسازی وکتور تخت، پالت سبز ملایم، بدون متن، 16:9"

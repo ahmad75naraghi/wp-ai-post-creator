@@ -133,6 +133,15 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 						<p class="description"><?php esc_html_e( '1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024. The image model itself is set per connection.', 'wp-ai-post-creator' ); ?></p>
 					</td>
 				</tr>
+				<tr>
+					<th scope="row"><label for="aipc-image-prompt-default"><?php esc_html_e( 'Default image prompt', 'wp-ai-post-creator' ); ?></label></th>
+					<td>
+						<textarea id="aipc-image-prompt-default" class="aipc-textarea" rows="3" dir="ltr"
+							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[image_prompt_default]"
+							placeholder="<?php esc_attr_e( 'e.g. flat vector illustration, soft green palette, no text, 16:9', 'wp-ai-post-creator' ); ?>"><?php echo esc_textarea( $aipc['image_prompt_default'] ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Appended to every generated image prompt — use it for a consistent style (art direction, palette, mood) across all featured images. Leave empty to use the generated prompt as-is.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
 			</table>
 		</section>
 

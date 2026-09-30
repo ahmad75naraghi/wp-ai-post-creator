@@ -571,7 +571,7 @@ $out['rewrite'] = array(
 	'same_post'     => isset( $aipc_rw_state['result']['post_id'] ) && (int) $aipc_rw_state['result']['post_id'] === (int) $aipc_old_pid,
 	'title'         => $aipc_rw_post && 'عنوان بازنویسی‌شدهٔ بهتر و سئوپسند' === $aipc_rw_post->post_title,
 	'status_kept'   => $aipc_rw_post && 'publish' === $aipc_rw_post->post_status,
-	'content_new'   => $aipc_rw_post && false !== strpos( $aipc_rw_post->post_content, 'بخش بازنویسی‌شده 1' ),
+	'content_new'   => $aipc_rw_post && false !== strpos( $aipc_rw_post->post_content, 'بخش بازنویسی&zwnj;شده 1' ), // ZWNJ stored as entity since v1.10.0.
 	'old_link_kept' => $aipc_rw_post && false !== strpos( $aipc_rw_post->post_content, 'https://example.com/old' ),
 	'internal_link' => $aipc_rw_post && false !== strpos( $aipc_rw_post->post_content, $aipc_ref_url ),
 	'h2_count'      => $aipc_rw_post ? substr_count( $aipc_rw_post->post_content, '<h2' ) : null,
@@ -1264,6 +1264,77 @@ $out['bale_format'] = array(
 	'sanitize_blocks_js' => '' === $aipc_fmt_sane_bad['default_image'],
 );
 wp_delete_post( $aipc_noimg_post, true );
+
+/* ------------------------------------------------------------------ *
+ * Persian half-space preservation (v1.10.0): rule-based ZWNJ fixing
+ * + &zwnj; armoring for post content.
+ * ------------------------------------------------------------------ */
+$out['text_zwnj'] = array(
+	'prefix_mi'        => 'می‌شود' === AIPC_Text::fix_zwnj( 'می شود' ),
+	'prefix_nemi'      => 'نمی‌تواند' === AIPC_Text::fix_zwnj( 'نمی تواند' ),
+	'mid_sentence'     => 'او می‌رود' === AIPC_Text::fix_zwnj( 'او می رود' ),
+	'suffix_ha'        => 'کتاب‌ها' === AIPC_Text::fix_zwnj( 'کتاب ها' ),
+	'suffix_tar'       => 'سریع‌تر است' === AIPC_Text::fix_zwnj( 'سریع تر است' ),
+	'suffix_tarin'     => 'مهم‌ترین نکته' === AIPC_Text::fix_zwnj( 'مهم ترین نکته' ),
+	'keeps_existing'   => 'می‌شود' === AIPC_Text::fix_zwnj( 'می‌شود' ),
+	'word_untouched'   => 'این ترکیب خوب است' === AIPC_Text::fix_zwnj( 'این ترکیب خوب است' ),
+	'latin_untouched'  => 'hello world' === AIPC_Text::fix_zwnj( 'hello world' ),
+	'entity_armor'     => '<p>می&zwnj;شود</p>' === AIPC_Text::fix_zwnj_html( '<p>می شود</p>' ),
+);
+
+/* ------------------------------------------------------------------ *
+ * Default image prompt + thumbnail regeneration (v1.10.0).
+ * ------------------------------------------------------------------ */
+$aipc_rt_set_bak  = get_option( 'aipc_settings' );
+$aipc_rt_conn_bak = get_option( 'aipc_connections' );
+
+$aipc_rt_base = is_array( $aipc_rt_set_bak ) ? $aipc_rt_set_bak : array();
+update_option( 'aipc_settings', array_merge( $aipc_rt_base, array( 'image_prompt_default' => '' ) ), false );
+$aipc_rt_empty = AIPC_Agent::apply_image_prompt_default( 'A cat on a roof' );
+
+update_option( 'aipc_settings', array_merge( $aipc_rt_base, array( 'image_prompt_default' => 'flat vector style, no text' ) ), false );
+$aipc_rt_applied = AIPC_Agent::apply_image_prompt_default( 'A cat on a roof' );
+$aipc_rt_nodup   = AIPC_Agent::apply_image_prompt_default( 'A cat, flat vector style, no text' );
+$aipc_rt_sane    = AIPC_Settings::sanitize( array( 'image_prompt_default' => '  spacious  ' . str_repeat( 'x', 700 ) ) );
+
+update_option( 'aipc_connections', array(
+	array( 'id' => 'mockrt', 'name' => 'Mock RT', 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'chat_model' => 'mock-chat', 'image_model' => 'mock-image', 'purpose' => 'both', 'priority' => 1, 'enabled' => 1, 'image_api' => 'images', 'image_format' => 'auto', 'is_default' => 1 ),
+), false );
+
+$aipc_rt_post = wp_insert_post( array( 'post_title' => 'عنوان تست تصویر شاخص', 'post_content' => '<p>متن آزمایشی.</p>', 'post_status' => 'publish' ) );
+update_post_meta( $aipc_rt_post, '_aipc_meta_description', 'خلاصهٔ آزمایشی برای تصویر.' );
+$aipc_rt_res = AIPC_Agent::regenerate_thumbnail( $aipc_rt_post );
+
+$aipc_rt_prompt = '';
+if ( file_exists( $log_file ) ) {
+	foreach ( file( $log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $line ) {
+		$aipc_row = json_decode( $line, true );
+		if ( $aipc_row && isset( $aipc_row['url'] ) && false !== strpos( (string) $aipc_row['url'], '/images/generations' )
+			&& false !== strpos( (string) $aipc_row['prompt'], 'flat vector style' ) ) {
+			$aipc_rt_prompt = (string) $aipc_row['prompt'];
+		}
+	}
+}
+
+update_option( 'aipc_connections', array(), false );
+$aipc_rt_noconn = AIPC_Agent::regenerate_thumbnail( $aipc_rt_post );
+$aipc_rt_nopost = AIPC_Agent::regenerate_thumbnail( 999999 );
+
+$out['image_defaults'] = array(
+	'empty_no_change'  => 'A cat on a roof' === $aipc_rt_empty,
+	'suffix_appended'  => 'A cat on a roof. flat vector style, no text' === $aipc_rt_applied,
+	'no_duplicate'     => 'A cat, flat vector style, no text' === $aipc_rt_nodup,
+	'sanitize_caps'    => 600 === mb_strlen( $aipc_rt_sane['image_prompt_default'] ),
+	'regen_attachment' => is_int( $aipc_rt_res ) && $aipc_rt_res > 0,
+	'regen_thumb_set'  => (int) get_post_thumbnail_id( $aipc_rt_post ) === (int) $aipc_rt_res,
+	'regen_uses_suffix' => '' !== $aipc_rt_prompt && false !== strpos( $aipc_rt_prompt, 'balcony' ),
+	'regen_no_conn'    => is_wp_error( $aipc_rt_noconn ),
+	'regen_no_post'    => is_wp_error( $aipc_rt_nopost ),
+);
+
+wp_delete_post( $aipc_rt_post, true );
+update_option( 'aipc_settings', $aipc_rt_set_bak, false );
+update_option( 'aipc_connections', $aipc_rt_conn_bak, false );
 
 /* ------------------------------------------------------------------ *
  * v1.6 — outbound network guard (SSRF protection)

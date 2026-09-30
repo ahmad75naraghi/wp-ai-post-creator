@@ -161,10 +161,10 @@ final class AIPC_Post_Builder {
 		}
 
 		$postarr = array(
-			'post_title'   => sanitize_text_field( $d['plan']['title'] ),
+			'post_title'   => AIPC_Text::fix_zwnj( sanitize_text_field( $d['plan']['title'] ) ),
 			'post_name'    => ! empty( $d['seo']['slug'] ) ? $d['seo']['slug'] : sanitize_title( $d['plan']['title'] ),
-			'post_content' => $content,
-			'post_excerpt' => isset( $d['seo']['excerpt'] ) ? $d['seo']['excerpt'] : '',
+			'post_content' => AIPC_Text::fix_zwnj_html( $content ),
+			'post_excerpt' => AIPC_Text::fix_zwnj( isset( $d['seo']['excerpt'] ) ? $d['seo']['excerpt'] : '' ),
 			'post_status'  => 'draft',
 			'post_type'    => 'post',
 			'post_author'  => get_current_user_id(),
@@ -247,8 +247,8 @@ final class AIPC_Post_Builder {
 
 		$postarr = array(
 			'ID'           => $post_id,
-			'post_title'   => sanitize_text_field( $d['plan']['title'] ),
-			'post_content' => $content,
+			'post_title'   => AIPC_Text::fix_zwnj( sanitize_text_field( $d['plan']['title'] ) ),
+			'post_content' => AIPC_Text::fix_zwnj_html( $content ),
 			'post_excerpt' => ! empty( $d['seo']['excerpt'] ) ? $d['seo']['excerpt'] : $post->post_excerpt,
 		);
 
@@ -300,8 +300,8 @@ final class AIPC_Post_Builder {
 	 * @return void
 	 */
 	public static function set_seo_meta( $post_id, $seo ) {
-		$title = isset( $seo['meta_title'] ) ? sanitize_text_field( $seo['meta_title'] ) : '';
-		$desc  = isset( $seo['meta_description'] ) ? sanitize_text_field( $seo['meta_description'] ) : '';
+		$title = AIPC_Text::fix_zwnj( isset( $seo['meta_title'] ) ? sanitize_text_field( $seo['meta_title'] ) : '' );
+		$desc  = AIPC_Text::fix_zwnj( isset( $seo['meta_description'] ) ? sanitize_text_field( $seo['meta_description'] ) : '' );
 
 		if ( '' === $title && '' === $desc ) {
 			return;

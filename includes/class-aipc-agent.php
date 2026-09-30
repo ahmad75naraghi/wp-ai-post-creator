@@ -1689,6 +1689,7 @@ final class AIPC_Agent {
 		}
 		$data    = $ip_data;
 		$iprompt = ! empty( $data['prompt'] ) ? (string) $data['prompt'] : $plan['title'];
+		$iprompt = self::apply_image_prompt_default( $iprompt );
 
 		$this->log( $job, sprintf(
 			/* translators: %s: image prompt. */
@@ -1750,6 +1751,111 @@ final class AIPC_Agent {
 			$attach_id
 		), 'success' );
 		$this->advance( $job );
+	}
+
+	/**
+	 * Append the panel-configured default image prompt (v1.10.0) to a
+	 * generated image prompt. Empty setting = no change.
+	 *
+	 * @param string $prompt Generated image prompt.
+	 * @return string
+	 */
+	public static function apply_image_prompt_default( $prompt ) {
+		$extra = trim( (string) AIPC_Settings::get( 'image_prompt_default' ) );
+		if ( '' === $extra ) {
+			return $prompt;
+		}
+		if ( false !== mb_stripos( $prompt, $extra ) ) {
+			return $prompt; // Already contained (e.g. model echoed it back).
+		}
+		return rtrim( trim( $prompt ), '.,؛;' ) . '. ' . $extra;
+	}
+
+	/**
+	 * Build and set a fresh AI featured image for an existing post
+	 * (v1.10.0 — "regenerate thumbnail" row action in the posts list).
+	 *
+	 * Runs outside a job: the title + SEO summary are turned into an
+	 * image prompt over the chat-capable connections, then the image
+	 * chain generates the picture. The old thumbnail is left in the
+	 * media library; the post simply points at the new attachment.
+	 *
+	 * @param int $post_id Post id.
+	 * @return int|WP_Error New attachment id or error.
+	 */
+	public static function regenerate_thumbnail( $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return new WP_Error( 'aipc_post', __( 'Post not found.', 'wp-ai-post-creator' ) );
+		}
+
+		$title   = $post->post_title;
+		$summary = (string) get_post_meta( $post_id, 'rank_math_description', true );
+		if ( '' === $summary ) {
+			$summary = (string) get_post_meta( $post_id, '_aipc_meta_description', true );
+		}
+		if ( '' === $summary ) {
+			$summary = (string) $post->post_excerpt;
+		}
+
+		// 1) Title + summary → image prompt (chat-capable chain).
+		$template   = AIPC_Steps::prompt_for( 'image_prompt' );
+		$prompt_msg = strtr( $template, array(
+			'{{title}}'   => $title,
+			'{{summary}}' => $summary,
+		) );
+
+		$iprompt = '';
+		foreach ( AIPC_Connections::for_purpose( 'chat' ) as $conn ) {
+			$client = new AIPC_API_Client( $conn );
+			$data   = $client->chat_json( array(
+				array( 'role' => 'system', 'content' => 'You write image-generation prompts. Respond with JSON only.' ),
+				array( 'role' => 'user', 'content' => $prompt_msg ),
+			) );
+			if ( ! is_wp_error( $data ) && ! empty( $data['data']['prompt'] ) ) {
+				$iprompt = (string) $data['data']['prompt'];
+				break;
+			}
+		}
+		if ( '' === $iprompt ) {
+			$iprompt = $title; // Graceful: the title alone still works as a prompt.
+		}
+		$iprompt = self::apply_image_prompt_default( $iprompt );
+
+		// 2) Generate the picture (image-capable chain, first success wins).
+		$last_err = null;
+		foreach ( AIPC_Connections::for_purpose( 'image' ) as $conn ) {
+			$client = new AIPC_API_Client( $conn );
+			$image  = $client->image( $iprompt );
+			if ( is_wp_error( $image ) ) {
+				$last_err = $image;
+				continue;
+			}
+
+			$bits = ! empty( $image['bits'] ) ? $image['bits'] : '';
+			if ( '' === $bits && ! empty( $image['url'] ) ) {
+				$bits = $client->download( $image['url'] );
+				if ( is_wp_error( $bits ) ) {
+					$last_err = $bits;
+					continue;
+				}
+			}
+			if ( '' === $bits ) {
+				continue;
+			}
+
+			$attach_id = AIPC_Post_Builder::upload_image( $bits, 'aipc-thumb-' . (int) $post_id . '-' . time() . '.png', $title );
+			if ( is_wp_error( $attach_id ) ) {
+				return $attach_id;
+			}
+			set_post_thumbnail( $post_id, (int) $attach_id );
+			return (int) $attach_id;
+		}
+
+		return $last_err ? $last_err : new WP_Error(
+			'aipc_image',
+			__( 'No image-capable connection is configured (or enabled).', 'wp-ai-post-creator' )
+		);
 	}
 
 	/**

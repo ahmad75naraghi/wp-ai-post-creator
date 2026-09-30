@@ -43,6 +43,15 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'A new AI featured image was generated and set for the post.': 'تصویر شاخص جدید با هوش مصنوعی ساخته و برای نوشته تنظیم شد.',
+    'Appended to every generated image prompt — use it for a consistent style (art direction, palette, mood) across all featured images. Leave empty to use the generated prompt as-is.': 'به انتهای هر پرامت تصویرِ تولیدشده افزوده می\u200cشود — برای یکدست شدن سبک همهٔ تصاویر شاخص (سبک هنری، پالت رنگ، حال\u200cوهوا) از آن استفاده کنید. اگر خالی باشد همان پرامت تولیدشده به\u200cتنهایی به\u200cکار می\u200cرود.',
+    'Could not generate a new featured image.': 'ساخت تصویر شاخص جدید ممکن نشد.',
+    'Default image prompt': 'پرامت پیش\u200cفرض تصویر',
+    'No image-capable connection is configured (or enabled).': 'هیچ اتصال تصویرسازی تنظیم (یا فعال) نیست.',
+    'Post not found.': 'نوشته پیدا نشد.',
+    'Regenerate AI image': 'ساخت مجدد تصویر شاخص',
+    'You are not allowed to do that.': 'اجازهٔ انجام این کار را ندارید.',
+    'e.g. flat vector illustration, soft green palette, no text, 16:9': 'مثلاً: تصویرسازی وکتور تخت، پالت سبز ملایم، بدون متن، 16:9',
     '(disabled)': '(غیرفعال)',
     'Connection disabled.': 'اتصال غیرفعال شد.',
     'Connection enabled.': 'اتصال فعال شد.',

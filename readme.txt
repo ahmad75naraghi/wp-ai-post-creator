@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.9.3
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.10.0 =
+* New: Persian half-spaces (نیم‌فاصله) are preserved and repaired — the common patterns (می/نمی + verb, ها/های/هایی/تر/ترین suffixes) are fixed rule-based in titles, content, excerpts and SEO meta, and the character is stored as the &zwnj; entity in post content so no editor can strip it
+* New: "Default image prompt" setting — appended to every generated image prompt for a consistent visual style across all featured images
+* New: "Regenerate AI image" action in the posts list — builds a fresh AI featured image for any post with one click (uses the chat chain for the prompt and the image chain for the picture)
 
 = 1.9.3 =
 * New: connections can be disabled without deleting them — an "Enabled" checkbox in the connection form plus a one-click Enable/Disable action and a Status column in the connections list

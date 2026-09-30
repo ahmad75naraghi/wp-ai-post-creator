@@ -3,6 +3,32 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.10.0] — 2026-09-30
+
+### Added
+- **Persian half-space (نیم‌فاصله) preservation.** New `AIPC_Text`
+  helper: rule-based ZWNJ repair (a space after «می/نمی» and before
+  «ها/های/هایی/تر/ترین» becomes a half-space; existing half-spaces are
+  never touched, non-Persian text passes through). Applied to titles,
+  content, excerpts and SEO meta on create/update — and in post
+  content the character is stored as the `&zwnj;` HTML entity, which
+  survives every editor round-trip (the classic editor is known to
+  strip the raw U+200C character).
+- **Default image prompt** (Settings → Featured images): a style
+  suffix appended to every generated image prompt — art direction,
+  palette, mood — for consistent featured images. Deduplicated when
+  the model already echoes it.
+- **Regenerate AI image** row action in the posts list: one click
+  builds a fresh featured image for any post — title + SEO summary →
+  image prompt (chat-capable chain) → picture (image-capable chain),
+  with a success/error notice. New `AIPC_Agent::regenerate_thumbnail()`
+  runs outside a job. 9 new strings translated (672 msgids).
+
+### Tests
+- New `text_zwnj` (10) and `image_defaults` (9) e2e groups; the
+  rewrite content assertion now expects the `&zwnj;` entity
+  (56 groups / 394 assertions total).
+
 ## [1.9.3] — 2026-09-30
 
 ### Added

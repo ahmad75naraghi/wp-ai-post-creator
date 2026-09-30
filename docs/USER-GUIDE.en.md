@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.9.3)
+# AI Post Creator — Complete User Guide (v1.10.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -89,6 +89,13 @@ Path: **AI Post Creator → Settings**
 | Content language | 12+ languages incl. Persian (defaults to the site locale) |
 | Default tone / length | Tone (professional, friendly, …) and length (short ~600 / medium ~1,200 / long ~2,200 words) |
 | Image / TOC / FAQ | Per-run defaults |
+| Default image prompt *(new in 1.10)* | Appended to every generated image prompt — use it for a consistent style (palette, art direction) across all featured images |
+
+> ✍️ Persian half-spaces (نیم‌فاصله) are preserved automatically since 1.10:
+> the common patterns are repaired in AI output and the character is stored
+> as `&zwnj;` in post content so no editor can strip it.
+> 🖼 The posts list (Posts → All Posts) also gets a **Regenerate AI image**
+> row action — one click builds and sets a fresh featured image for that post.
 
 > 💡 Example site prompt: "A Persian home-gardening blog for beginners; warm,
 > encouraging voice, focused on low-cost solutions for apartment dwellers."

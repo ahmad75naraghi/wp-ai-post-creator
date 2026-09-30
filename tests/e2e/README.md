@@ -6,7 +6,7 @@ inside [php-wasm](https://github.com/WordPress/php-wasm), activates the plugin,
 configures connections/schedules/Bale, and drives the agent **through the real
 REST stack** against scripted mock providers.
 
-Status at v1.9.3: **54 result groups / 375 boolean assertions green, zero PHP
+Status at v1.10.0: **56 result groups / 394 boolean assertions green, zero PHP
 warnings or deprecations.** (v1.6 added the `help_tooltips` group; v1.7 added
 `topic_queue` and `bale_commands` — the latter stages scripted getUpdates
 payloads through the Bale mock; v1.7.3 adds `assets_enqueue`, which proves

@@ -24,6 +24,9 @@ final class AIPC_Admin {
 		add_action( 'admin_post_aipc_save_connection', array( __CLASS__, 'handle_save_connection' ) );
 		add_action( 'admin_post_aipc_delete_connection', array( __CLASS__, 'handle_delete_connection' ) );
 		add_action( 'admin_post_aipc_toggle_connection', array( __CLASS__, 'handle_toggle_connection' ) );
+		add_action( 'admin_post_aipc_regen_thumb', array( __CLASS__, 'handle_regen_thumb' ) );
+		add_filter( 'post_row_actions', array( __CLASS__, 'thumb_row_action' ), 10, 2 );
+		add_action( 'admin_notices', array( __CLASS__, 'thumb_notices' ) );
 		add_action( 'admin_post_aipc_publish_draft', array( __CLASS__, 'handle_publish_draft' ) );
 		add_action( 'admin_post_aipc_save_steps', array( __CLASS__, 'handle_save_steps' ) );
 		add_action( 'admin_post_aipc_clear_logs', array( __CLASS__, 'handle_clear_logs' ) );
@@ -312,6 +315,67 @@ final class AIPC_Admin {
 			admin_url( 'admin.php' )
 		) );
 		exit;
+	}
+
+	/**
+	 * "Regenerate AI image" link in the posts-list row actions (v1.10.0).
+	 *
+	 * @param array   $actions Row actions.
+	 * @param WP_Post $post    Post.
+	 * @return array
+	 */
+	public static function thumb_row_action( $actions, $post ) {
+		if ( 'post' !== $post->post_type || ! current_user_can( 'manage_options' ) || ! current_user_can( 'edit_post', $post->ID ) ) {
+			return $actions;
+		}
+		$url = wp_nonce_url(
+			admin_url( 'admin-post.php?action=aipc_regen_thumb&post=' . (int) $post->ID ),
+			'aipc_regen_thumb_' . (int) $post->ID
+		);
+		$actions['aipc_regen_thumb'] = '<a href="' . esc_url( $url ) . '">🖼 ' . esc_html__( 'Regenerate AI image', 'wp-ai-post-creator' ) . '</a>';
+		return $actions;
+	}
+
+	/**
+	 * Generate a fresh AI featured image for one post (v1.10.0).
+	 *
+	 * @return void
+	 */
+	public static function handle_regen_thumb() {
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+		check_admin_referer( 'aipc_regen_thumb_' . $post_id );
+		if ( ! current_user_can( 'manage_options' ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'wp-ai-post-creator' ) );
+		}
+
+		$res  = AIPC_Agent::regenerate_thumbnail( $post_id );
+		$args = array( 'aipc_msg' => is_wp_error( $res ) ? 'thumb_err' : 'thumb_ok' );
+		if ( is_wp_error( $res ) ) {
+			$args['aipc_err'] = rawurlencode( mb_substr( $res->get_error_message(), 0, 200 ) );
+		}
+
+		$back = wp_get_referer();
+		$back = $back ? remove_query_arg( array( 'aipc_msg', 'aipc_err' ), $back ) : admin_url( 'edit.php' );
+		wp_safe_redirect( add_query_arg( $args, $back ) );
+		exit;
+	}
+
+	/**
+	 * Result notice for the thumbnail regeneration (posts list).
+	 *
+	 * @return void
+	 */
+	public static function thumb_notices() {
+		if ( ! isset( $_GET['aipc_msg'] ) ) {
+			return;
+		}
+		$msg = sanitize_key( wp_unslash( $_GET['aipc_msg'] ) );
+		if ( 'thumb_ok' === $msg ) {
+			echo '<div class="notice notice-success is-dismissible"><p>🖼 ' . esc_html__( 'A new AI featured image was generated and set for the post.', 'wp-ai-post-creator' ) . '</p></div>';
+		} elseif ( 'thumb_err' === $msg ) {
+			$err = isset( $_GET['aipc_err'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['aipc_err'] ) ) ) : '';
+			echo '<div class="notice notice-error is-dismissible"><p>⚠️ ' . esc_html__( 'Could not generate a new featured image.', 'wp-ai-post-creator' ) . ( $err ? ' — ' . esc_html( $err ) : '' ) . '</p></div>';
+		}
 	}
 
 	/**

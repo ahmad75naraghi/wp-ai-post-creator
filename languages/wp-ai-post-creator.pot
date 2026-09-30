@@ -68,6 +68,10 @@ msgstr ""
 msgid "A connection is one AI service: base URL, API key and the models to use. One connection is the default; steps without their own assignment use it. Use Test after saving to verify the setup."
 msgstr ""
 
+#: includes/class-aipc-admin.php
+msgid "A new AI featured image was generated and set for the post."
+msgstr ""
+
 #: admin/views/prompts.php
 msgid "A “respond ONLY with valid JSON” instruction is appended automatically."
 msgstr ""
@@ -254,6 +258,10 @@ msgstr ""
 
 #: admin/views/settings.php
 msgid "Appended to every agent request (the {{extra}} placeholder of the system prompt)."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Appended to every generated image prompt — use it for a consistent style (art direction, palette, mood) across all featured images. Leave empty to use the generated prompt as-is."
 msgstr ""
 
 #: includes/class-aipc-settings.php
@@ -608,6 +616,10 @@ msgstr ""
 msgid "Could not fetch suggestions:"
 msgstr ""
 
+#: includes/class-aipc-admin.php
+msgid "Could not generate a new featured image."
+msgstr ""
+
 #: includes/class-aipc-assets.php
 msgid "Could not load the model list:"
 msgstr ""
@@ -686,6 +698,10 @@ msgstr ""
 
 #: admin/views/prompts.php
 msgid "Default connection: %s"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Default image prompt"
 msgstr ""
 
 #: admin/views/settings.php
@@ -1292,6 +1308,10 @@ msgstr ""
 msgid "No draft found at that position — send «آخرین» to see the newest draft."
 msgstr ""
 
+#: includes/class-aipc-agent.php
+msgid "No image-capable connection is configured (or enabled)."
+msgstr ""
+
 #: admin/views/logs.php
 msgid "No jobs yet. Generate your first post!"
 msgstr ""
@@ -1454,6 +1474,10 @@ msgstr ""
 msgid "Portuguese"
 msgstr ""
 
+#: includes/class-aipc-agent.php
+msgid "Post not found."
+msgstr ""
+
 #: includes/class-aipc-bale-commands.php
 msgid "Post published via a Bale command."
 msgstr ""
@@ -1564,6 +1588,10 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "Ready-made endpoint patterns for popular providers — copy your provider’s pattern into the connection form above."
+msgstr ""
+
+#: includes/class-aipc-admin.php
+msgid "Regenerate AI image"
 msgstr ""
 
 #: admin/views/update.php
@@ -2472,6 +2500,10 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
+#: includes/class-aipc-admin.php
+msgid "You are not allowed to do that."
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "You are not allowed to edit this post."
 msgstr ""
@@ -2522,6 +2554,10 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "e.g. OpenAI · Groq · Local Ollama"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "e.g. flat vector illustration, soft green palette, no text, 16:9"
 msgstr ""
 
 #: admin/views/logs.php

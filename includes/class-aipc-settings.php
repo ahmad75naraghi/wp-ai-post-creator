@@ -30,6 +30,7 @@ final class AIPC_Settings {
 			'source_sites'       => '',
 			'image_enabled'       => 1,
 			'image_size'          => '1792x1024',
+			'image_prompt_default' => '',
 			'add_toc'             => 1,
 			'add_faq'             => 1,
 			'system_prompt_extra' => '',
@@ -245,6 +246,9 @@ final class AIPC_Settings {
 
 		$extra = isset( $in['system_prompt_extra'] ) ? sanitize_textarea_field( $in['system_prompt_extra'] ) : '';
 		$out['system_prompt_extra'] = mb_substr( $extra, 0, 2000 );
+
+		$img_default = isset( $in['image_prompt_default'] ) ? sanitize_textarea_field( $in['image_prompt_default'] ) : $old['image_prompt_default'];
+		$out['image_prompt_default'] = mb_substr( $img_default, 0, 600 );
 
 		return $out;
 	}
