@@ -253,6 +253,10 @@ msgid "All logs cleared."
 msgstr ""
 
 #: admin/views/settings.php
+msgid "Allow linking to the research source sites inside articles"
+msgstr ""
+
+#: admin/views/settings.php
 msgid "Allow private/LAN addresses (e.g. a self-hosted gateway like OmniRoute or Ollama on another machine in your network)"
 msgstr ""
 
@@ -1888,6 +1892,10 @@ msgstr ""
 msgid "Slug: /%s/"
 msgstr ""
 
+#: admin/views/settings.php
+msgid "Source links"
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Spanish"
 msgstr ""
@@ -2478,6 +2486,10 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "What this section must cover"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "When disabled, the model never receives the source URLs and any source link that still appears is removed from the final article — the research sources are then used for facts and inspiration only."
 msgstr ""
 
 #: admin/views/schedule.php

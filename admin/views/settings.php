@@ -171,6 +171,16 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 					</td>
 				</tr>
 				<tr>
+					<th scope="row"><?php esc_html_e( 'Source links', 'wp-ai-post-creator' ); ?></th>
+					<td>
+						<label class="aipc-check">
+							<input type="checkbox" name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[source_links]" value="1" <?php checked( $aipc['source_links'] ); ?> />
+							<?php esc_html_e( 'Allow linking to the research source sites inside articles', 'wp-ai-post-creator' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When disabled, the model never receives the source URLs and any source link that still appears is removed from the final article — the research sources are then used for facts and inspiration only.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
+				<tr>
 					<th scope="row"><?php esc_html_e( 'API trace log', 'wp-ai-post-creator' ); ?></th>
 					<td>
 						<label class="aipc-check">

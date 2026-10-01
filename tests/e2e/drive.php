@@ -1280,6 +1280,15 @@ $out['text_zwnj'] = array(
 	'word_untouched'   => 'این ترکیب خوب است' === AIPC_Text::fix_zwnj( 'این ترکیب خوب است' ),
 	'latin_untouched'  => 'hello world' === AIPC_Text::fix_zwnj( 'hello world' ),
 	'entity_armor'     => '<p>می&zwnj;شود</p>' === AIPC_Text::fix_zwnj_html( '<p>می شود</p>' ),
+	// v1.12.0 — glued suffixes (ZWNJ stripped entirely by the provider).
+	'glued_hay'        => 'نوشیدنی‌های گرم' === AIPC_Text::fix_zwnj( 'نوشیدنیهای گرم' ),
+	'glued_ha'         => 'خانواده‌ها' === AIPC_Text::fix_zwnj( 'خانوادهها' ),
+	'glued_eh_i'       => 'موکاچینو خانگی حرفه‌ای' === AIPC_Text::fix_zwnj( 'موکاچینو خانگی حرفهای' ),
+	'glued_mand'       => 'علاقه‌مندان' === AIPC_Text::fix_zwnj( 'علاقهمندان' ),
+	'glued_sazi'       => 'آماده‌سازی' === AIPC_Text::fix_zwnj( 'آمادهسازی' ),
+	'exception_tanha'  => 'او تنها بود' === AIPC_Text::fix_zwnj( 'او تنها بود' ),
+	'exception_baha'   => 'بهای کالا' === AIPC_Text::fix_zwnj( 'بهای کالا' ),
+	'nonjoin_safe'     => 'بارها گفتم' === AIPC_Text::fix_zwnj( 'بارها گفتم' ),
 );
 
 /* ------------------------------------------------------------------ *
@@ -1383,6 +1392,42 @@ $out['api_trace'] = array(
 );
 
 update_option( 'aipc_settings', $aipc_tl_set_bak, false );
+
+/* ------------------------------------------------------------------ *
+ * Link policy (v1.12.0): one internal link per target URL, and the
+ * optional removal of research-source links.
+ * ------------------------------------------------------------------ */
+$aipc_lp_set_bak = get_option( 'aipc_settings' );
+$aipc_lp_base    = is_array( $aipc_lp_set_bak ) ? $aipc_lp_set_bak : array();
+
+$aipc_lp_html = '<p><a href="http://localhost/a/">اول</a> و <a href="http://localhost/a/">دوم</a> و '
+	. '<a href="http://localhost/b/">دیگر</a> و <a href="https://example.com/x">بیرونی ۱</a> و '
+	. '<a href="https://example.com/x">بیرونی ۲</a> و <a href="https://news.invalid/item-1">منبع</a></p>';
+
+update_option( 'aipc_settings', array_merge( $aipc_lp_base, array( 'source_links' => 1, 'source_sites' => 'https://news.invalid' ) ), false );
+$aipc_lp_on = AIPC_Post_Builder::clean_links( $aipc_lp_html );
+
+update_option( 'aipc_settings', array_merge( $aipc_lp_base, array( 'source_links' => 0, 'source_sites' => 'https://news.invalid' ) ), false );
+$aipc_lp_off = AIPC_Post_Builder::clean_links( $aipc_lp_html );
+
+$aipc_lp_sc = new ReflectionMethod( 'AIPC_Agent', 'source_context' );
+$aipc_lp_sc->setAccessible( true );
+$aipc_lp_ctx_off = (string) $aipc_lp_sc->invoke( AIPC_Agent::instance() );
+update_option( 'aipc_settings', array_merge( $aipc_lp_base, array( 'source_links' => 1, 'source_sites' => 'https://news.invalid' ) ), false );
+$aipc_lp_ctx_on = (string) $aipc_lp_sc->invoke( AIPC_Agent::instance() );
+
+$out['link_policy'] = array(
+	'first_internal_kept'  => false !== strpos( $aipc_lp_on, '<a href="http://localhost/a/">اول</a>' ),
+	'dup_internal_unwrap'  => false !== strpos( $aipc_lp_on, '> و دوم و <' ) || ( false !== strpos( $aipc_lp_on, 'دوم' ) && 1 === substr_count( $aipc_lp_on, 'href="http://localhost/a/"' ) ),
+	'other_internal_kept'  => false !== strpos( $aipc_lp_on, '<a href="http://localhost/b/">دیگر</a>' ),
+	'external_untouched'   => 2 === substr_count( $aipc_lp_on, 'href="https://example.com/x"' ),
+	'source_kept_when_on'  => false !== strpos( $aipc_lp_on, '<a href="https://news.invalid/item-1">منبع</a>' ),
+	'source_cut_when_off'  => false === strpos( $aipc_lp_off, 'href="https://news.invalid' ) && false !== strpos( $aipc_lp_off, 'منبع' ),
+	'prompt_links_on'      => false !== strpos( $aipc_lp_ctx_on, 'https://news.invalid/item-1' ),
+	'prompt_links_off'     => false === strpos( $aipc_lp_ctx_off, 'https://news.invalid/item-1' ) && false !== strpos( $aipc_lp_ctx_off, 'SOURCE: news.invalid' ),
+);
+
+update_option( 'aipc_settings', $aipc_lp_set_bak, false );
 
 /* ------------------------------------------------------------------ *
  * v1.6 — outbound network guard (SSRF protection)

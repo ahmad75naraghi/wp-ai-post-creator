@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.11.0
+Stable tag: 1.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.12.0 =
+* New: "Source links" switch (Settings → Advanced) — choose whether articles may link to your research source sites; when off, the model never sees the URLs and any leftover source link is stripped from the final article
+* New: each internal link target is used at most ONCE per article — duplicate internal links are automatically unwrapped to plain text
+* Improved: Persian half-space repair now also fixes GLUED suffixes (providers that strip the ZWNJ entirely): «حرفهای»→«حرفه‌ای», «خانوادهها»→«خانواده‌ها», «علاقهمندان»→«علاقه‌مندان», «نوشیدنیهای»→«نوشیدنی‌های», «آمادهسازی»→«آماده‌سازی» — with an exception dictionary (تنها، بها، اشتها …) so real words are never broken
 
 = 1.11.0 =
 * New: full API trace log (Settings → Advanced) — records every AI request and response (prompts, model output, complete error bodies, HTTP status, timing) with the job, step, connection and attempt number, into a protected downloadable log file

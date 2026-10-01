@@ -1102,11 +1102,14 @@ final class AIPC_Agent {
 				continue;
 			}
 			$host = wp_parse_url( $url, PHP_URL_HOST );
+			// v1.12.0: when source links are disabled in the settings the
+			// model never sees the URLs, so it cannot link to them.
+			$with_links = (bool) AIPC_Settings::get( 'source_links' );
 			$lines .= 'SOURCE: ' . $host . "\n";
 			foreach ( $feed->get_items( 0, 6 ) as $item ) {
 				$title = wp_html_excerpt( trim( strip_tags( (string) $item->get_title() ) ), 120, '…' );
 				$desc  = wp_html_excerpt( trim( strip_tags( (string) $item->get_description() ) ), 180, '…' );
-				$link  = esc_url_raw( (string) $item->get_permalink() );
+				$link  = $with_links ? esc_url_raw( (string) $item->get_permalink() ) : '';
 				if ( '' === $title ) {
 					continue;
 				}

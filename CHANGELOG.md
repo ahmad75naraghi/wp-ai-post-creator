@@ -3,6 +3,33 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.12.0] — 2026-10-01
+
+### Added
+- **Source-links switch** (Settings → Advanced, default on). When
+  disabled, `source_context()` omits the research-source URLs from the
+  prompts (the model cannot link what it never sees) and
+  `AIPC_Post_Builder::clean_links()` strips any remaining link to a
+  configured source host from the final article.
+- **One internal link per target.** `clean_links()` (applied on create
+  and rewrite) keeps only the first `<a>` for each internal URL —
+  later duplicates are unwrapped to their anchor text. External links
+  are untouched.
+
+### Improved
+- **Half-space repair for glued words.** Some providers strip the ZWNJ
+  entirely («حرفهای», «خانوادهها», «علاقهمندان»). `AIPC_Text` now
+  repairs glued «ها/های/هایی» after joining letters and «ه + ای/مند/
+  مندان/سازی/گذاری/بندی/ریزی», with an exception list (تنها، بها،
+  اشتها، رها، بهسازی …) and a curated ه-stem dictionary for the
+  ambiguous «…های» ending (حرفه‌ای vs حرف‌های). 3 new strings
+  translated (683 msgids).
+
+### Tests
+- `text_zwnj` grew to 18 assertions (glued repairs + exceptions); new
+  `link_policy` group (8 assertions)
+  (58 groups / 420 assertions total).
+
 ## [1.11.0] — 2026-09-30
 
 ### Added

@@ -62,9 +62,62 @@ class AIPC_Text {
 			$fixed
 		);
 
+		// GLUED suffixes: some models/gateways strip the ZWNJ entirely,
+		// leaving the suffix welded to the word («حرفهای», «خانوادهها»,
+		// «علاقهمندان»). Repair word-by-word so root words that merely
+		// end in the same letters (تنها، بها، اشتها …) can be excepted.
+		$fixed2 = preg_replace_callback(
+			'/[\x{0621}-\x{06CC}\x{200C}]{3,}/u',
+			array( __CLASS__, 'fix_word' ),
+			null === $fixed ? $text : $fixed
+		);
+		if ( null !== $fixed2 ) {
+			$fixed = $fixed2;
+		}
+
 		// preg_replace() returns null on a (theoretical) PCRE error —
 		// never lose the original text in that case.
 		return null === $fixed ? $text : $fixed;
+	}
+
+	/**
+	 * Repair one Persian word with a glued suffix.
+	 *
+	 * Only unambiguous patterns are touched:
+	 * - «…ها / …های / …هایی» after a forward-joining letter (after
+	 *   non-joining letters like ا د ر و the ZWNJ has no visual effect).
+	 * - «…ه» + ای / مند(ی|ان) / سازی / گذاری / بندی / ریزی.
+	 * Root words that genuinely end in these letters are excepted.
+	 *
+	 * @param array $m Regex match (the word).
+	 * @return string
+	 */
+	public static function fix_word( $m ) {
+		$word = $m[0];
+		static $exceptions = array( 'تنها', 'تنهای', 'تنهایی', 'بها', 'بهای', 'اشتها', 'اشتهای', 'رها', 'رهای', 'رهایی', 'بهسازی' );
+		if ( in_array( $word, $exceptions, true ) || false !== strpos( $word, self::ZWNJ ) ) {
+			return $word;
+		}
+
+		// «…های» is ambiguous when glued (حرفهای = حرفه‌ای یا حرف‌های).
+		// A curated list of common ه-ending stems picks the ه+ای reading.
+		static $eh_stems = array(
+			'حرفه', 'کافه', 'خانه', 'مقاله', 'برنامه', 'نقطه', 'لحظه', 'ذره', 'ویژه', 'گسترده',
+			'ساده', 'پیچیده', 'جداگانه', 'دوگانه', 'چندگانه', 'رایانه', 'کارخانه', 'رودخانه',
+			'کتابخانه', 'شبکه', 'جلسه', 'مدرسه', 'مزرعه', 'میوه', 'قهوه', 'سرمایه', 'هزینه',
+			'گزینه', 'زمینه', 'بهینه', 'نمونه', 'نسخه', 'پایه', 'تازه', 'اندازه', 'منطقه',
+			'ماده', 'دوره', 'پروژه', 'مرحله', 'فاصله', 'علاقه', 'وقفه', 'عادلانه', 'ماهانه', 'روزانه',
+		);
+		if ( preg_match( '/^(.+ه)ای$/u', $word, $mm ) && in_array( $mm[1], $eh_stems, true ) ) {
+			return $mm[1] . self::ZWNJ . 'ای';
+		}
+
+		$join  = 'بپتثجچحخسشصضطظعغفقکگلمنهیئ';
+		$fixed = preg_replace( '/(?<=[' . $join . '])(ها|های|هایی)$/u', self::ZWNJ . '$1', $word );
+		if ( null !== $fixed && $fixed === $word ) {
+			$fixed = preg_replace( '/ه(ای|مند|مندی|مندان|سازی|گذاری|بندی|ریزی)$/u', 'ه' . self::ZWNJ . '$1', $word );
+		}
+		return null === $fixed ? $word : $fixed;
 	}
 
 	/**

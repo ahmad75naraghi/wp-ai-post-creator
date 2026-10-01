@@ -2743,3 +2743,15 @@ msgstr "فایل لاگ پاک شد."
 #: admin/views/settings.php
 msgid "Writes every prompt, model reply, error body, HTTP status and timing — with the job, step, connection and attempt — to a protected log file, so you can see exactly why a step or the image generation fails. API keys are removed and base64 image data is collapsed. Turn it off again after debugging to keep the file small."
 msgstr "هر پرامت، پاسخ مدل، متن کامل خطا، کد HTTP و زمان اجرا — همراه شناسهٔ کار، مرحله، اتصال و شمارهٔ تلاش — در یک فایل لاگ محافظت‌شده نوشته می‌شود تا دقیقاً ببینید چرا یک مرحله یا ساخت تصویر شکست می‌خورد. کلیدهای API حذف و دادهٔ base64 تصاویر فشرده می‌شود. بعد از اشکال‌زدایی دوباره خاموشش کنید تا فایل کوچک بماند."
+
+#: admin/views/settings.php
+msgid "Allow linking to the research source sites inside articles"
+msgstr "اجازهٔ لینک‌دادن به سایت‌های منبع پژوهش داخل مقاله‌ها"
+
+#: admin/views/settings.php
+msgid "Source links"
+msgstr "لینک منبع"
+
+#: admin/views/settings.php
+msgid "When disabled, the model never receives the source URLs and any source link that still appears is removed from the final article — the research sources are then used for facts and inspiration only."
+msgstr "وقتی خاموش باشد، نشانی منبع‌ها اصلاً به مدل داده نمی‌شود و اگر لینکی هم به منبع در متن بیاید، از مقالهٔ نهایی حذف می‌شود — منابع پژوهش در این حالت فقط برای واقعیت‌ها و الهام به‌کار می‌روند."

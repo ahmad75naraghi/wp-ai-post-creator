@@ -43,6 +43,9 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Allow linking to the research source sites inside articles': 'اجازهٔ لینک\u200cدادن به سایت\u200cهای منبع پژوهش داخل مقاله\u200cها',
+    'Source links': 'لینک منبع',
+    'When disabled, the model never receives the source URLs and any source link that still appears is removed from the final article — the research sources are then used for facts and inspiration only.': 'وقتی خاموش باشد، نشانی منبع\u200cها اصلاً به مدل داده نمی\u200cشود و اگر لینکی هم به منبع در متن بیاید، از مقالهٔ نهایی حذف می\u200cشود — منابع پژوهش در این حالت فقط برای واقعیت\u200cها و الهام به\u200cکار می\u200cروند.',
     'API trace log': 'لاگ کامل API',
     'Clear trace log': 'پاک کردن لاگ',
     'Current size: %s': 'حجم فعلی: %s',
