@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.16.0
+Stable tag: 1.17.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.17.0 =
+* New: one-step scheduling from chat — the «زمان‌بندی» button now offers one-tap times (tonight 21:00, tomorrow 09:00 / 18:00, in two days 09:00); sending a bare date («فردا 18:30») schedules the newest draft directly; replying to a draft notification with a date schedules exactly that post
+* New: "Jobs & Cron" admin page — see every unfinished job, pending delayed publish, scheduled post and recurring plugin cron event, and stop any of them with one click
+* Improved: already-published posts can no longer be rescheduled from chat
 
 = 1.16.0 =
 * New: instant replies via webhook — enable "Instant replies (webhook)" on the Bale / Telegram page and button presses («انتشار همین حالا» / «زمان‌بندی») and chat commands are answered within seconds; the platform pushes every update straight to a secret REST endpoint instead of waiting for the cron poll

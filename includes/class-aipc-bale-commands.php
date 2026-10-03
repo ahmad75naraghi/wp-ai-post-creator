@@ -214,7 +214,14 @@ final class AIPC_Bale_Commands {
 			return;
 		}
 
-		$reply = self::handle( $chat_id, $text );
+		// Replying to a draft notification? Then a date in the reply
+		// schedules exactly that post — one message, zero roundtrips.
+		$reply_post = 0;
+		if ( ! empty( $message['reply_to_message']['message_id'] ) ) {
+			$reply_post = AIPC_Bale::post_for_message( $chat_id, (int) $message['reply_to_message']['message_id'] );
+		}
+
+		$reply = self::handle( $chat_id, $text, $reply_post );
 		list( $r_text, $r_markup ) = self::reply_parts( $reply );
 		if ( '' !== $r_text ) {
 			AIPC_Bale::send_message( $cfg['token'], $chat_id, $r_text, $r_markup );
@@ -228,11 +235,13 @@ final class AIPC_Bale_Commands {
 	/**
 	 * Parse one message and produce the reply (null = stay silent).
 	 *
-	 * @param string $chat_id Authorized chat id.
-	 * @param string $text    Message text.
-	 * @return string|null
+	 * @param string $chat_id    Authorized chat id.
+	 * @param string $text       Message text.
+	 * @param int    $reply_post Post id when the message replies to one of
+	 *                           our draft notifications (0 = none).
+	 * @return string|array|null
 	 */
-	public static function handle( $chat_id, $text ) {
+	public static function handle( $chat_id, $text, $reply_post = 0 ) {
 		$cmd = self::normalize( $text );
 
 		if ( '' === $cmd ) {
@@ -304,6 +313,31 @@ final class AIPC_Bale_Commands {
 			return self::cmd_drafts();
 		}
 
+		// One-step scheduling (1.17.0): a bare date/time — no button press
+		// needed. As a reply to a draft notification it schedules that very
+		// post, otherwise the newest AI draft.
+		$ts = self::parse_datetime( $cmd );
+		if ( $ts ) {
+			if ( $ts < time() + MINUTE_IN_SECONDS ) {
+				return __( 'That time is already in the past — send a future date and time.', 'wp-ai-post-creator' );
+			}
+			$target = (int) $reply_post;
+			if ( ! $target ) {
+				$drafts = get_posts( array(
+					'post_type'        => 'post',
+					'post_status'      => 'draft',
+					'numberposts'      => 1,
+					'meta_key'         => '_aipc_generated',
+					'suppress_filters' => true,
+				) );
+				$target = empty( $drafts ) ? 0 : (int) $drafts[0]->ID;
+			}
+			if ( ! $target ) {
+				return __( 'No AI draft is waiting to be scheduled — start one with «نوشتن: topic» first.', 'wp-ai-post-creator' );
+			}
+			return self::schedule_post( $target, $ts );
+		}
+
 		// Unknown input: hint + the tappable menu, so nobody is ever stuck.
 		return array(
 			'text'   => __( 'I did not understand that command. Send «راهنما» (or help) for the list of commands.', 'wp-ai-post-creator' ),
@@ -329,7 +363,8 @@ final class AIPC_Bale_Commands {
 		$lines[] = __( '📱 منو — the tappable button menu (easiest way!)', 'wp-ai-post-creator' );
 		$lines[] = __( '❓ راهنما — this list', 'wp-ai-post-creator' );
 		$lines[] = '';
-		$lines[] = __( '🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — press “Schedule” and send the date as the next message.', 'wp-ai-post-creator' );
+		$lines[] = __( '🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — “Schedule” offers one-tap times, or send a date yourself.', 'wp-ai-post-creator' );
+		$lines[] = __( '⚡ Fastest: reply to a draft notification with just the date («فردا 18:30») — it is scheduled immediately, no button needed.', 'wp-ai-post-creator' );
 		$lines[] = '';
 		$lines[] = __( 'Only chats listed in the plugin settings can use commands.', 'wp-ai-post-creator' );
 
@@ -628,6 +663,12 @@ final class AIPC_Bale_Commands {
 			return self::cmd_post_card( (int) $m[1] );
 		}
 
+		// Quick-schedule preset (1.17.0): one tap, no date typing.
+		if ( preg_match( '/^aipc:when:(\d+):(tonight|tom_am|tom_pm|d2_am)$/', $data, $m ) ) {
+			self::clear_pending( $chat_id );
+			return self::schedule_post( (int) $m[1], self::preset_ts( $m[2] ) );
+		}
+
 		if ( ! preg_match( '/^aipc:(pub|sch):(\d+)$/', $data, $m ) ) {
 			return null;
 		}
@@ -646,7 +687,61 @@ final class AIPC_Bale_Commands {
 		}
 
 		self::set_pending( $chat_id, 'date', $post_id );
-		return '⏰ ' . __( 'Send the publish date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Send «لغو» to cancel.', 'wp-ai-post-creator' );
+		return array(
+			'text'   => '⏰ ' . __( 'Tap a quick time below, or send the date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Tip: next time just reply to the draft notification with a date — no button needed. Send «لغو» to cancel.', 'wp-ai-post-creator' ),
+			'markup' => self::quick_schedule_keyboard( $post_id ),
+		);
+	}
+
+	/**
+	 * Inline keyboard with four one-tap schedule presets.
+	 *
+	 * @param int $post_id Post id.
+	 * @return array
+	 */
+	public static function quick_schedule_keyboard( $post_id ) {
+		$post_id = (int) $post_id;
+		return array(
+			'inline_keyboard' => array(
+				array(
+					array( 'text' => '🌙 ' . __( 'Tonight 21:00', 'wp-ai-post-creator' ), 'callback_data' => 'aipc:when:' . $post_id . ':tonight' ),
+					array( 'text' => '🌅 ' . __( 'Tomorrow 09:00', 'wp-ai-post-creator' ), 'callback_data' => 'aipc:when:' . $post_id . ':tom_am' ),
+				),
+				array(
+					array( 'text' => '🌇 ' . __( 'Tomorrow 18:00', 'wp-ai-post-creator' ), 'callback_data' => 'aipc:when:' . $post_id . ':tom_pm' ),
+					array( 'text' => '📅 ' . __( 'In two days 09:00', 'wp-ai-post-creator' ), 'callback_data' => 'aipc:when:' . $post_id . ':d2_am' ),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Timestamp for a quick-schedule preset code, in the site timezone.
+	 * «Tonight» rolls over to tomorrow when 21:00 has already passed.
+	 *
+	 * @param string $code tonight|tom_am|tom_pm|d2_am.
+	 * @return int
+	 */
+	public static function preset_ts( $code ) {
+		$now = new DateTimeImmutable( 'now', wp_timezone() );
+		switch ( $code ) {
+			case 'tonight':
+				$dt = $now->setTime( 21, 0, 0 );
+				if ( $dt->getTimestamp() < time() + 5 * MINUTE_IN_SECONDS ) {
+					$dt = $dt->modify( '+1 day' );
+				}
+				break;
+			case 'tom_pm':
+				$dt = $now->modify( '+1 day' )->setTime( 18, 0, 0 );
+				break;
+			case 'd2_am':
+				$dt = $now->modify( '+2 day' )->setTime( 9, 0, 0 );
+				break;
+			case 'tom_am':
+			default:
+				$dt = $now->modify( '+1 day' )->setTime( 9, 0, 0 );
+		}
+		return $dt->getTimestamp();
 	}
 
 	/**
@@ -866,6 +961,9 @@ final class AIPC_Bale_Commands {
 		$post = get_post( $post_id );
 		if ( ! $post || '' === (string) get_post_meta( $post_id, '_aipc_generated', true ) ) {
 			return __( 'Post not found — it may have been deleted.', 'wp-ai-post-creator' );
+		}
+		if ( 'publish' === $post->post_status ) {
+			return __( 'This post is already published.', 'wp-ai-post-creator' ) . "\n" . '🔗 ' . get_permalink( $post_id );
 		}
 
 		$local = wp_date( 'Y-m-d H:i:s', $ts );

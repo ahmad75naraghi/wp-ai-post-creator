@@ -33,6 +33,10 @@ final class AIPC_Admin {
 		add_action( 'admin_post_aipc_save_steps', array( __CLASS__, 'handle_save_steps' ) );
 		add_action( 'admin_post_aipc_clear_logs', array( __CLASS__, 'handle_clear_logs' ) );
 		add_action( 'admin_post_aipc_delete_job', array( __CLASS__, 'handle_delete_job' ) );
+		add_action( 'admin_post_aipc_cancel_job', array( __CLASS__, 'handle_cancel_job' ) );
+		add_action( 'admin_post_aipc_cancel_all_jobs', array( __CLASS__, 'handle_cancel_all_jobs' ) );
+		add_action( 'admin_post_aipc_unschedule_publish', array( __CLASS__, 'handle_unschedule_publish' ) );
+		add_action( 'admin_post_aipc_revert_future', array( __CLASS__, 'handle_revert_future' ) );
 		add_action( 'admin_post_aipc_save_schedule', array( __CLASS__, 'handle_save_schedule' ) );
 		add_action( 'admin_post_aipc_delete_schedule', array( __CLASS__, 'handle_delete_schedule' ) );
 		add_action( 'admin_post_aipc_run_now', array( __CLASS__, 'handle_run_now' ) );
@@ -133,6 +137,15 @@ final class AIPC_Admin {
 			'manage_options',
 			'aipc-bot',
 			array( __CLASS__, 'render_bot' )
+		);
+
+		add_submenu_page(
+			'aipc',
+			__( 'Jobs & Cron', 'wp-ai-post-creator' ),
+			__( 'Jobs & Cron', 'wp-ai-post-creator' ),
+			'manage_options',
+			'aipc-cron',
+			array( __CLASS__, 'render_cron' )
 		);
 
 		add_submenu_page(
@@ -275,6 +288,93 @@ final class AIPC_Admin {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
 		}
 		require AIPC_PLUGIN_DIR . 'admin/views/bot.php';
+	}
+
+	public static function render_cron() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
+		}
+		require AIPC_PLUGIN_DIR . 'admin/views/cron.php';
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Jobs & Cron overview (1.17.0)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Everything unfinished or scheduled, in one structure.
+	 *
+	 * @return array {jobs, publishes, events, future}
+	 */
+	public static function cron_overview() {
+		$jobs = array();
+		foreach ( AIPC_Job_Store::all( 200 ) as $aipc_job ) {
+			if ( in_array( $aipc_job['status'], array( 'running', 'queued', 'error' ), true ) ) {
+				$jobs[] = $aipc_job;
+			}
+		}
+
+		$publishes = array();
+		$events    = array();
+		$crons     = function_exists( '_get_cron_array' ) ? _get_cron_array() : array();
+		foreach ( (array) $crons as $ts => $hooks ) {
+			if ( ! is_array( $hooks ) ) {
+				continue;
+			}
+			foreach ( $hooks as $hook => $entries ) {
+				if ( 0 !== strpos( (string) $hook, 'aipc' ) ) {
+					continue;
+				}
+				foreach ( (array) $entries as $entry ) {
+					$row = array(
+						'hook'     => (string) $hook,
+						'ts'       => (int) $ts,
+						'args'     => isset( $entry['args'] ) ? (array) $entry['args'] : array(),
+						'schedule' => isset( $entry['schedule'] ) && $entry['schedule'] ? (string) $entry['schedule'] : '',
+					);
+					if ( 'aipc_publish_post' === $hook ) {
+						$publishes[] = $row;
+					} else {
+						$events[] = $row;
+					}
+				}
+			}
+		}
+
+		$future = get_posts( array(
+			'post_type'        => 'post',
+			'post_status'      => 'future',
+			'numberposts'      => 50,
+			'meta_key'         => '_aipc_generated',
+			'suppress_filters' => true,
+		) );
+
+		return compact( 'jobs', 'publishes', 'events', 'future' );
+	}
+
+	/**
+	 * Remove every pending delayed-publish cron event for one post.
+	 *
+	 * @param int $post_id Post id.
+	 * @return int Number of events removed.
+	 */
+	public static function unschedule_publish( $post_id ) {
+		$post_id = (int) $post_id;
+		$removed = 0;
+		$crons   = function_exists( '_get_cron_array' ) ? _get_cron_array() : array();
+		foreach ( (array) $crons as $ts => $hooks ) {
+			if ( empty( $hooks['aipc_publish_post'] ) ) {
+				continue;
+			}
+			foreach ( (array) $hooks['aipc_publish_post'] as $entry ) {
+				$args = isset( $entry['args'] ) ? (array) $entry['args'] : array();
+				if ( isset( $args[0] ) && (int) $args[0] === $post_id ) {
+					wp_unschedule_event( (int) $ts, 'aipc_publish_post', $args );
+					$removed++;
+				}
+			}
+		}
+		return $removed;
 	}
 
 	/* ---------------------------------------------------------------------
@@ -601,6 +701,91 @@ final class AIPC_Admin {
 
 		wp_safe_redirect( add_query_arg(
 			array( 'page' => 'aipc-logs', 'aipc_msg' => 'deleted' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Cancel one unfinished job (Jobs & Cron page).
+	 *
+	 * @return void
+	 */
+	public static function handle_cancel_job() {
+		self::guard( 'aipc_cancel_job' );
+
+		$id = isset( $_GET['id'] ) ? sanitize_key( wp_unslash( $_GET['id'] ) ) : '';
+		if ( $id ) {
+			AIPC_Agent::instance()->cancel_job( $id );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-cron', 'aipc_msg' => 'job_cancelled' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Cancel every unfinished job at once (Jobs & Cron page).
+	 *
+	 * @return void
+	 */
+	public static function handle_cancel_all_jobs() {
+		self::guard( 'aipc_cancel_all_jobs' );
+
+		$overview = self::cron_overview();
+		$agent    = AIPC_Agent::instance();
+		foreach ( $overview['jobs'] as $aipc_job ) {
+			$agent->cancel_job( (string) $aipc_job['id'] );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-cron', 'aipc_msg' => 'jobs_cancelled' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Remove a pending delayed-publish cron event (post stays a draft).
+	 *
+	 * @return void
+	 */
+	public static function handle_unschedule_publish() {
+		self::guard( 'aipc_unschedule_publish' );
+
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+		if ( $post_id ) {
+			self::unschedule_publish( $post_id );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-cron', 'aipc_msg' => 'publish_unscheduled' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Move a scheduled ("future") AI post back to draft.
+	 *
+	 * @return void
+	 */
+	public static function handle_revert_future() {
+		self::guard( 'aipc_revert_future' );
+
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+		$post    = $post_id ? get_post( $post_id ) : null;
+		if ( $post && 'future' === $post->post_status && '' !== (string) get_post_meta( $post_id, '_aipc_generated', true ) ) {
+			wp_update_post( array(
+				'ID'          => $post_id,
+				'post_status' => 'draft',
+			) );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-cron', 'aipc_msg' => 'future_reverted' ),
 			admin_url( 'admin.php' )
 		) );
 		exit;

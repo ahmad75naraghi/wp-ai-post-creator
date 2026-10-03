@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.16.0)
+# AI Post Creator — Complete User Guide (v1.17.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -307,6 +307,24 @@ buttons under it:
   scheduled post and the bot sends the 🎉 notice when it goes live.
   Send `لغو` to cancel (the request also expires after 30 minutes).
 
+### ⏱ One-step scheduling (new in 1.17)
+
+Scheduling no longer needs a question-and-answer roundtrip:
+
+- **One-tap presets** — pressing **⏰ Schedule** now shows four quick
+  buttons (tonight 21:00, tomorrow 09:00, tomorrow 18:00, in two days
+  09:00). One tap and the post is scheduled — no typing.
+- **Just send a date** — send `فردا 18:30` or `1404/07/20 18:30` to the
+  bot with no button pressed at all: the newest AI draft is scheduled
+  right away.
+- **Reply to a notification** — the fastest way: swipe/long-press the
+  draft notification, choose *Reply*, and type only the date. Exactly
+  that post is scheduled, even if newer drafts exist. (The bot remembers
+  the last 100 notifications it sent.)
+
+Already-published posts are protected — the bot refuses to reschedule
+them and sends the permalink instead.
+
 ### ⚡ Instant replies — webhook (new in 1.16)
 
 By default the bot reads messages via WP-Cron about once a minute, so a
@@ -369,6 +387,23 @@ Path: **AI Post Creator → Logs**
 - **Job list** with pagination + a detail page per job: step timings, every API
   call (connection, model, tokens, duration, errors) and a full console replay
 - Delete single jobs or clear all logs
+
+### ⏳ Jobs & Cron page (new in 1.17)
+
+Path: **AI Post Creator → Jobs & Cron**
+
+Everything still running or waiting in the background, with stop
+buttons so nothing piles up:
+
+- **Unfinished jobs** — agent runs that are running, queued or stopped
+  on an error. *Cancel* stops one (its runner cron event is removed so
+  it can never resume by itself); *Cancel all* clears the lot.
+- **Pending publishes** — delayed auto-publishes created by the agent
+  (*Cancel publish* keeps the post as a draft) and scheduled posts
+  (*Back to draft* un-schedules them). Nothing is ever deleted.
+- **Recurring plugin events** — the plugin's own cron heartbeat
+  (schedule tick, bot poll, job runner), listed read-only for
+  transparency.
 
 ---
 

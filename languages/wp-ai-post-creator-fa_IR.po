@@ -114,7 +114,7 @@ msgstr "آدرس سرویس"
 msgid "Default"
 msgstr "پیش‌فرض"
 
-#: admin/views/connections.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/cron.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Actions"
 msgstr "عملیات"
 
@@ -122,7 +122,7 @@ msgstr "عملیات"
 msgid "Yes"
 msgstr "بله"
 
-#: admin/views/connections.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/cron.php admin/views/schedule.php
 msgid "Edit"
 msgstr "ویرایش"
 
@@ -162,11 +162,11 @@ msgstr "حذف کار"
 msgid "Overview"
 msgstr "نمای کلی"
 
-#: admin/views/log-detail.php admin/views/schedule.php
+#: admin/views/cron.php admin/views/log-detail.php admin/views/schedule.php
 msgid "Topic"
 msgstr "موضوع"
 
-#: admin/views/connections.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php includes/class-aipc-bale-commands.php
+#: admin/views/connections.php admin/views/cron.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php includes/class-aipc-bale-commands.php
 msgid "Status"
 msgstr "وضعیت"
 
@@ -238,7 +238,7 @@ msgstr "ناموفق"
 msgid "Console log"
 msgstr "گزارش کنسول"
 
-#: admin/views/logs.php
+#: admin/views/cron.php admin/views/logs.php
 msgid "Running"
 msgstr "در حال اجرا"
 
@@ -246,7 +246,7 @@ msgstr "در حال اجرا"
 msgid "Done"
 msgstr "انجام شد"
 
-#: admin/views/logs.php
+#: admin/views/cron.php admin/views/logs.php
 msgid "Error"
 msgstr "خطا"
 
@@ -338,7 +338,7 @@ msgstr "توکن‌ها"
 msgid "Duration"
 msgstr "مدت"
 
-#: admin/views/logs.php admin/views/review.php
+#: admin/views/cron.php admin/views/logs.php admin/views/review.php
 msgid "Scheduled"
 msgstr "زمان‌بندی‌شده"
 
@@ -658,7 +658,7 @@ msgstr "خالی = ابداع از پرامپت سایت"
 msgid "Save schedule"
 msgstr "ذخیره زمان‌بندی"
 
-#: admin/views/schedule.php
+#: admin/views/cron.php admin/views/schedule.php
 msgid "Cancel"
 msgstr "انصراف"
 
@@ -2080,7 +2080,7 @@ msgstr "پیش‌نویس‌های در انتظار بازبینی"
 msgid "Empty URL."
 msgstr "نشانی خالی است."
 
-#: admin/views/review.php admin/views/schedule.php
+#: admin/views/cron.php admin/views/review.php admin/views/schedule.php
 msgid "Manual"
 msgstr "دستی"
 
@@ -2781,10 +2781,6 @@ msgid "Scheduling cancelled — the post stays as it is."
 msgstr "زمان‌بندی لغو شد — پست همان‌طور که بود می‌ماند."
 
 #: includes/class-aipc-bale-commands.php
-msgid "Send the publish date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Send «لغو» to cancel."
-msgstr "تاریخ و ساعت انتشار را در یک پیام بفرستید — شمسی «1404/07/20 18:30» یا میلادی «2026-10-12 18:30»؛ «فردا 18:30» و «امروز 22:00» هم کار می‌کند. برای انصراف «لغو» را بفرستید."
-
-#: includes/class-aipc-bale-commands.php
 msgid "That time is already in the past — send a future date and time."
 msgstr "این زمان گذشته است — یک تاریخ و ساعت آینده بفرستید."
 
@@ -2795,10 +2791,6 @@ msgstr "این پست قبلاً منتشر شده است."
 #: includes/class-aipc-bale-commands.php
 msgid "⏰ Scheduled: “%1$s” will be published on %2$s."
 msgstr "⏰ زمان‌بندی شد: «%1$s» در %2$s منتشر می‌شود."
-
-#: includes/class-aipc-bale-commands.php
-msgid "🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — press “Schedule” and send the date as the next message."
-msgstr "🔘 زیر هر اعلان پیش‌نویس دکمه‌های «انتشار همین حالا» و «زمان‌بندی» هست — «زمان‌بندی» را بزنید و تاریخ را در پیام بعدی بفرستید."
 
 #: includes/class-aipc-bale-commands.php
 msgid "Drafts"
@@ -3031,3 +3023,191 @@ msgstr "ربات فقط از شناسه‌های چتِ فهرست‌شدهٔ ب
 #: admin/views/bot.php
 msgid "Without a webhook the bot reads new messages via WP-Cron (about once a minute, and only when the site gets visits) — so button presses and commands answer with a delay. With the webhook on, Bale/Telegram pushes every message and button press straight to your site and the bot answers within seconds. Requires a publicly reachable site over HTTPS. While the webhook is active, polling pauses automatically."
 msgstr "بدون وب‌هوک، ربات پیام‌های تازه را با WP-Cron می‌خواند (حدوداً دقیقه‌ای یک‌بار و فقط وقتی سایت بازدید دارد) — پس فشردن دکمه‌ها و دستورها با تأخیر جواب می‌گیرند. با وب‌هوکِ روشن، بله/تلگرام هر پیام و هر فشردن دکمه را مستقیم به سایت شما می‌فرستد و ربات ظرف چند ثانیه پاسخ می‌دهد. سایت باید از اینترنت با HTTPS در دسترس باشد. تا وقتی وب‌هوک فعال است، سرکشی دوره‌ای خودکار متوقف می‌شود."
+
+#: admin/views/cron.php
+msgid "%s ago"
+msgstr "%s پیش"
+
+#: admin/views/cron.php
+msgid "(no topic)"
+msgstr "(بدون موضوع)"
+
+#: admin/views/cron.php
+msgid "Agent runner — executes the next step of a job"
+msgstr "اجراکنندهٔ ایجنت — گام بعدی یک کار را اجرا می‌کند"
+
+#: admin/views/cron.php
+msgid "Agent runs that are still running, queued, or stopped on an error. Cancelling marks the job as cancelled and removes its runner cron event, so it will never resume on its own."
+msgstr "اجراهای ایجنت که هنوز در حال اجرا، در صف یا روی خطا متوقف‌اند. لغو کردن، کار را «لغوشده» علامت می‌زند و رویداد کرونِ اجراکننده‌اش را حذف می‌کند تا دیگر هرگز خودبه‌خود ادامه پیدا نکند."
+
+#: admin/views/cron.php
+msgid "All unfinished jobs cancelled."
+msgstr "همهٔ کارهای ناتمام لغو شدند."
+
+#: admin/views/cron.php
+msgid "Back to draft"
+msgstr "بازگشت به پیش‌نویس"
+
+#: admin/views/cron.php
+msgid "Bot poll — fetches new bot messages (fallback when the webhook is off)"
+msgstr "سرکشی ربات — پیام‌های جدید ربات را می‌گیرد (جایگزین وقتی وب‌هوک خاموش است)"
+
+#: admin/views/cron.php
+msgid "Cancel all"
+msgstr "لغو همه"
+
+#: admin/views/cron.php
+msgid "Cancel every unfinished job?"
+msgstr "همهٔ کارهای ناتمام لغو شوند؟"
+
+#: admin/views/cron.php
+msgid "Cancel publish"
+msgstr "لغو انتشار"
+
+#: admin/views/cron.php
+msgid "Delayed publish"
+msgstr "انتشار با تأخیر"
+
+#: admin/views/cron.php
+msgid "Delayed publish cancelled — the post stays a draft."
+msgstr "انتشار با تأخیر لغو شد — نوشته پیش‌نویس می‌ماند."
+
+#: admin/views/cron.php
+msgid "Everything still running or waiting in the background — stop any of it with one click so nothing piles up."
+msgstr "هرچه هنوز در پس‌زمینه در حال اجرا یا در انتظار است — هرکدام را با یک کلیک متوقف کنید تا چیزی روی هم تلنبار نشود."
+
+#: admin/views/cron.php
+msgid "Hook"
+msgstr "هوک"
+
+#: includes/class-aipc-bale-commands.php
+msgid "In two days 09:00"
+msgstr "پس‌فردا ۰۹:۰۰"
+
+#: admin/views/cron.php
+msgid "Job cancelled."
+msgstr "کار لغو شد."
+
+#: admin/views/cron.php includes/class-aipc-admin.php
+msgid "Jobs & Cron"
+msgstr "کارها و کرون"
+
+#: admin/views/cron.php
+msgid "Last activity"
+msgstr "آخرین فعالیت"
+
+#: admin/views/cron.php
+msgid "Next run"
+msgstr "اجرای بعدی"
+
+#: includes/class-aipc-bale-commands.php
+msgid "No AI draft is waiting to be scheduled — start one with «نوشتن: topic» first."
+msgstr "هیچ پیش‌نویس هوش مصنوعی منتظر زمان‌بندی نیست — اول با «نوشتن: موضوع» یکی بسازید."
+
+#: admin/views/cron.php
+msgid "No pending publishes."
+msgstr "انتشار در انتظاری نیست."
+
+#: admin/views/cron.php
+msgid "No plugin cron events are registered right now."
+msgstr "فعلاً هیچ رویداد کرونی از افزونه ثبت نشده است."
+
+#: admin/views/cron.php
+msgid "Nothing is running — all jobs are finished."
+msgstr "چیزی در حال اجرا نیست — همهٔ کارها تمام شده‌اند."
+
+#: admin/views/cron.php
+msgid "Pending publishes"
+msgstr "انتشارهای در انتظار"
+
+#: admin/views/cron.php
+msgid "Post"
+msgstr "نوشته"
+
+#: admin/views/cron.php
+msgid "Posts waiting to go live: delayed auto-publishes created by the agent, and posts you scheduled (from the bot or the editor). Cancelling keeps the post as a draft — nothing is deleted."
+msgstr "نوشته‌هایی که منتظر انتشارند: انتشارهای خودکارِ با تأخیر که ایجنت ساخته، و نوشته‌هایی که خودتان (از ربات یا ویرایشگر) زمان‌بندی کرده‌اید. لغو کردن، نوشته را به‌صورت پیش‌نویس نگه می‌دارد — چیزی حذف نمی‌شود."
+
+#: admin/views/cron.php
+msgid "Progress"
+msgstr "پیشرفت"
+
+#: admin/views/cron.php
+msgid "Publishes at"
+msgstr "زمان انتشار"
+
+#: admin/views/cron.php
+msgid "Queued"
+msgstr "در صف"
+
+#: admin/views/cron.php
+msgid "Recurring plugin events"
+msgstr "رویدادهای تکرارشوندهٔ افزونه"
+
+#: admin/views/cron.php
+msgid "Repeats"
+msgstr "تکرار"
+
+#: admin/views/cron.php
+msgid "Schedule tick — checks whether a scheduled topic is due"
+msgstr "تیک زمان‌بندی — بررسی می‌کند موعد موضوع زمان‌بندی‌شده‌ای رسیده یا نه"
+
+#: admin/views/cron.php
+msgid "Scheduled post"
+msgstr "نوشتهٔ زمان‌بندی‌شده"
+
+#: admin/views/cron.php
+msgid "Scheduled post moved back to draft."
+msgstr "نوشتهٔ زمان‌بندی‌شده به پیش‌نویس برگشت."
+
+#: admin/views/cron.php
+msgid "Source"
+msgstr "منبع"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tap a quick time below, or send the date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Tip: next time just reply to the draft notification with a date — no button needed. Send «لغو» to cancel."
+msgstr "یکی از زمان‌های سریع پایین را بزنید، یا تاریخ و ساعت را در یک پیام بفرستید — شمسی «1404/07/20 18:30» یا میلادی «2026-10-12 18:30»؛ «فردا 18:30» و «امروز 22:00» هم کار می‌کنند. نکته: دفعهٔ بعد کافی است به پیامِ پیش‌نویس فقط با تاریخ پاسخ (Reply) بدهید — دکمه لازم نیست. برای انصراف «لغو» بفرستید."
+
+#: admin/views/cron.php
+msgid "The plugin’s own heartbeat: these recurring events keep schedules, the bot, and job runners working. They are managed automatically — listed here for transparency only."
+msgstr "ضربان خود افزونه: این رویدادهای تکرارشونده زمان‌بندی‌ها، ربات و اجراکننده‌های کار را سر پا نگه می‌دارند. مدیریتشان خودکار است — اینجا فقط برای شفافیت فهرست شده‌اند."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tomorrow 09:00"
+msgstr "فردا ۰۹:۰۰"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tomorrow 18:00"
+msgstr "فردا ۱۸:۰۰"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tonight 21:00"
+msgstr "امشب ۲۱:۰۰"
+
+#: admin/views/cron.php
+msgid "Type"
+msgstr "نوع"
+
+#: admin/views/cron.php
+msgid "Unfinished jobs"
+msgstr "کارهای ناتمام"
+
+#: admin/views/cron.php
+msgid "View"
+msgstr "مشاهده"
+
+#: admin/views/cron.php
+msgid "What it does"
+msgstr "چه می‌کند"
+
+#: admin/views/cron.php
+msgid "once"
+msgstr "یک‌بار"
+
+#: includes/class-aipc-bale-commands.php
+msgid "⚡ Fastest: reply to a draft notification with just the date («فردا 18:30») — it is scheduled immediately, no button needed."
+msgstr "⚡ سریع‌ترین راه: به پیامِ پیش‌نویس فقط با تاریخ پاسخ (Reply) بدهید («فردا 18:30») — بلافاصله زمان‌بندی می‌شود، دکمه لازم نیست."
+
+#: includes/class-aipc-bale-commands.php
+msgid "🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — “Schedule” offers one-tap times, or send a date yourself."
+msgstr "🔘 زیر هر پیامِ پیش‌نویس دکمه‌های «انتشار فوری» و «زمان‌بندی» هست — «زمان‌بندی» زمان‌های یک‌لمسی پیشنهاد می‌دهد، یا خودتان تاریخ بفرستید."

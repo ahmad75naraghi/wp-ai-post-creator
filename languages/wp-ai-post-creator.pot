@@ -32,6 +32,10 @@ msgstr ""
 msgid "%d-step fallback chain"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "%s ago"
+msgstr ""
+
 #: admin/views/log-detail.php
 msgid "%s wall time"
 msgstr ""
@@ -46,6 +50,10 @@ msgstr ""
 
 #: admin/views/prompts.php
 msgid "(disabled)"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "(no topic)"
 msgstr ""
 
 #: admin/views/schedule.php
@@ -156,7 +164,7 @@ msgstr ""
 msgid "Accept commands from Bale chats"
 msgstr ""
 
-#: admin/views/connections.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/cron.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Actions"
 msgstr ""
 
@@ -236,6 +244,14 @@ msgstr ""
 msgid "Agent mode: give an existing post a full copywriting + SEO refresh — fresher copy, better structure, full originality."
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Agent runner — executes the next step of a job"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Agent runs that are still running, queued, or stopped on an error. Cancelling marks the job as cancelled and removes its runner cron event, so it will never resume on its own."
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "Agent started — suggested topic: “%s”"
 msgstr ""
@@ -250,6 +266,10 @@ msgstr ""
 
 #: admin/views/logs.php
 msgid "All logs cleared."
+msgstr ""
+
+#: admin/views/cron.php
+msgid "All unfinished jobs cancelled."
 msgstr ""
 
 #: admin/views/settings.php
@@ -318,6 +338,10 @@ msgstr ""
 
 #: admin/views/prompts.php
 msgid "Available placeholders"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Back to draft"
 msgstr ""
 
 #: admin/views/log-detail.php
@@ -396,6 +420,10 @@ msgstr ""
 msgid "Bot notifications & chat commands have moved to their own page, with a full step-by-step setup guide."
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Bot poll — fetches new bot messages (fallback when the webhook is off)"
+msgstr ""
+
 #: admin/views/bot.php
 msgid "Bot settings"
 msgstr ""
@@ -440,12 +468,24 @@ msgstr ""
 msgid "Calls the image API of the assigned connection and saves the result to the media library. No prompt — the image model and size come from the connection and settings."
 msgstr ""
 
-#: admin/views/schedule.php
+#: admin/views/cron.php admin/views/schedule.php
 msgid "Cancel"
 msgstr ""
 
 #: admin/views/new-post.php admin/views/rewrite.php
 msgid "Cancel agent"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Cancel all"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Cancel every unfinished job?"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Cancel publish"
 msgstr ""
 
 #: includes/class-aipc-assets.php
@@ -800,6 +840,14 @@ msgstr ""
 msgid "Delay before publishing (minutes)"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Delayed publish"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Delayed publish cancelled — the post stays a draft."
+msgstr ""
+
 #: admin/views/connections.php admin/views/logs.php admin/views/schedule.php
 msgid "Delete"
 msgstr ""
@@ -920,7 +968,7 @@ msgstr ""
 msgid "Each step uses the connection and prompt assigned under Prompts & Steps."
 msgstr ""
 
-#: admin/views/connections.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/cron.php admin/views/schedule.php
 msgid "Edit"
 msgstr ""
 
@@ -992,7 +1040,7 @@ msgstr ""
 msgid "Enter at least one chat ID."
 msgstr ""
 
-#: admin/views/logs.php
+#: admin/views/cron.php admin/views/logs.php
 msgid "Error"
 msgstr ""
 
@@ -1018,6 +1066,10 @@ msgstr ""
 
 #: admin/views/logs.php
 msgid "Every run with its status, progress, call count and tokens. Open a row for the full diary: every step, every API call and every log line. Jobs are kept for 90 days by default."
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Everything still running or waiting in the background — stop any of it with one click so nothing piles up."
 msgstr ""
 
 #: admin/views/connections.php
@@ -1152,6 +1204,10 @@ msgstr ""
 msgid "Hold Ctrl / Cmd to pick several. Each selected connection gets its own retry budget; when one keeps failing the agent automatically switches to the next. Empty = default connection."
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Hook"
+msgstr ""
+
 #: admin/views/connections.php
 msgid "How generated images are received. \"Force base64\" demands the image bytes inside the API response itself and decodes them locally — nothing depends on downloading temporary links, which makes image creation deterministic. If the provider only returns a link in this mode, the attempt fails and the run retries / falls over to the next image connection."
 msgstr ""
@@ -1212,6 +1268,10 @@ msgstr ""
 msgid "Improvement notes from the analysis step"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "In two days 09:00"
+msgstr ""
+
 #: admin/views/update.php
 msgid "Installed version"
 msgstr ""
@@ -1248,6 +1308,10 @@ msgstr ""
 msgid "Invalid webhook secret."
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Job cancelled."
+msgstr ""
+
 #: admin/views/logs.php
 msgid "Job deleted."
 msgstr ""
@@ -1268,6 +1332,10 @@ msgstr ""
 msgid "Jobs"
 msgstr ""
 
+#: admin/views/cron.php includes/class-aipc-admin.php
+msgid "Jobs & Cron"
+msgstr ""
+
 #: includes/class-aipc-bale.php
 msgid "Jobs: %1$d (✅ %2$d · ❌ %3$d)"
 msgstr ""
@@ -1278,6 +1346,10 @@ msgstr ""
 
 #: admin/views/new-post.php admin/views/rewrite.php
 msgid "Language (write its English name)"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Last activity"
 msgstr ""
 
 #: admin/views/update.php
@@ -1332,7 +1404,7 @@ msgstr ""
 msgid "Main connection"
 msgstr ""
 
-#: admin/views/review.php admin/views/schedule.php
+#: admin/views/cron.php admin/views/review.php admin/views/schedule.php
 msgid "Manual"
 msgstr ""
 
@@ -1388,6 +1460,10 @@ msgstr ""
 msgid "New topic"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Next run"
+msgstr ""
+
 #: includes/class-aipc-assets.php
 msgid "No AI connection configured"
 msgstr ""
@@ -1398,6 +1474,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "No AI connection is configured yet. Add one under AI Post Creator → Connections."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "No AI draft is waiting to be scheduled — start one with «نوشتن: topic» first."
 msgstr ""
 
 #: includes/class-aipc-bale-commands.php
@@ -1448,6 +1528,14 @@ msgstr ""
 msgid "No new topics found in your sources — try again later or add topics manually."
 msgstr ""
 
+#: admin/views/cron.php
+msgid "No pending publishes."
+msgstr ""
+
+#: admin/views/cron.php
+msgid "No plugin cron events are registered right now."
+msgstr ""
+
 #: admin/views/rewrite.php
 msgid "No posts found."
 msgstr ""
@@ -1470,6 +1558,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "No topic given — invent the single best topic yourself. It must fit the site context AND the chosen category."
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Nothing is running — all jobs are finished."
 msgstr ""
 
 #: admin/views/review.php
@@ -1562,6 +1654,10 @@ msgstr ""
 msgid "Pending"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Pending publishes"
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "Pending topics are used one by one (oldest first). Nothing is wasted: used topics are remembered so they are never suggested again."
 msgstr ""
@@ -1626,6 +1722,10 @@ msgstr ""
 msgid "Portuguese"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Post"
+msgstr ""
+
 #: includes/class-aipc-bale-commands.php
 msgid "Post not found — it may have been deleted."
 msgstr ""
@@ -1666,6 +1766,10 @@ msgstr ""
 msgid "Posts are always saved as drafts first. Here you choose what happens next: keep it as a draft (the safe default), publish immediately when the run finishes, or schedule publishing 15–10080 minutes later. Publishing needs the publish permission."
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Posts waiting to go live: delayed auto-publishes created by the agent, and posts you scheduled (from the bot or the editor). Cancelling keeps the post as a draft — nothing is deleted."
+msgstr ""
+
 #: admin/views/review.php
 msgid "Preview"
 msgstr ""
@@ -1688,6 +1792,10 @@ msgstr ""
 
 #: includes/class-aipc-settings.php
 msgid "Professional"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Progress"
 msgstr ""
 
 #: admin/views/prompts.php
@@ -1726,6 +1834,10 @@ msgstr ""
 msgid "Publish “%s” now?"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Publishes at"
+msgstr ""
+
 #: admin/views/connections.php
 msgid "Purpose"
 msgstr ""
@@ -1736,6 +1848,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Queue cleared."
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Queued"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1758,6 +1874,10 @@ msgstr ""
 msgid "Record every AI request and response (full debug trace)"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Recurring plugin events"
+msgstr ""
+
 #: includes/class-aipc-admin.php
 msgid "Regenerate AI image"
 msgstr ""
@@ -1776,6 +1896,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Remove every pending topic from the queue?"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Repeats"
 msgstr ""
 
 #: admin/views/update.php
@@ -1880,7 +2004,7 @@ msgstr ""
 msgid "Run now"
 msgstr ""
 
-#: admin/views/logs.php
+#: admin/views/cron.php admin/views/logs.php
 msgid "Running"
 msgstr ""
 
@@ -1960,8 +2084,20 @@ msgstr ""
 msgid "Schedule settings saved."
 msgstr ""
 
-#: admin/views/logs.php admin/views/review.php
+#: admin/views/cron.php
+msgid "Schedule tick — checks whether a scheduled topic is due"
+msgstr ""
+
+#: admin/views/cron.php admin/views/logs.php admin/views/review.php
 msgid "Scheduled"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Scheduled post"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Scheduled post moved back to draft."
 msgstr ""
 
 #: includes/class-aipc-bale.php
@@ -2021,10 +2157,6 @@ msgid "Send test message"
 msgstr ""
 
 #: includes/class-aipc-bale-commands.php
-msgid "Send the publish date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Send «لغو» to cancel."
-msgstr ""
-
-#: includes/class-aipc-bale-commands.php
 msgid "Send the topic as your next message — I’ll start writing right away. Send «لغو» to cancel."
 msgstr ""
 
@@ -2080,6 +2212,10 @@ msgstr ""
 msgid "Slug: /%s/"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Source"
+msgstr ""
+
 #: admin/views/settings.php
 msgid "Source links"
 msgstr ""
@@ -2092,7 +2228,7 @@ msgstr ""
 msgid "Starting the agent…"
 msgstr ""
 
-#: admin/views/connections.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php includes/class-aipc-bale-commands.php
+#: admin/views/connections.php admin/views/cron.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php includes/class-aipc-bale-commands.php
 msgid "Status"
 msgstr ""
 
@@ -2150,6 +2286,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Take the topic from the queue"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tap a quick time below, or send the date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Tip: next time just reply to the draft notification with a date — no button needed. Send «لغو» to cancel."
 msgstr ""
 
 #: includes/class-aipc-bale-commands.php
@@ -2356,6 +2496,10 @@ msgstr ""
 msgid "The plugins folder is not writable — update by FTP instead."
 msgstr ""
 
+#: admin/views/cron.php
+msgid "The plugin’s own heartbeat: these recurring events keep schedules, the bot, and job runners working. They are managed automatically — listed here for transparency only."
+msgstr ""
+
 #: admin/views/new-post.php
 msgid "The post is always saved as a draft for your review."
 msgstr ""
@@ -2532,6 +2676,14 @@ msgstr ""
 msgid "Tokens: %1$s prompt + %2$s completion"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Tomorrow 09:00"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tomorrow 18:00"
+msgstr ""
+
 #: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php
 msgid "Tone"
 msgstr ""
@@ -2540,11 +2692,15 @@ msgstr ""
 msgid "Tone / length / language"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Tonight 21:00"
+msgstr ""
+
 #: includes/class-aipc-rest.php
 msgid "Too many requests — please wait a moment and try again."
 msgstr ""
 
-#: admin/views/log-detail.php admin/views/schedule.php
+#: admin/views/cron.php admin/views/log-detail.php admin/views/schedule.php
 msgid "Topic"
 msgstr ""
 
@@ -2608,12 +2764,20 @@ msgstr ""
 msgid "Two-way commands"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Type"
+msgstr ""
+
 #: admin/views/connections.php
 msgid "Type to filter the models…"
 msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Uncategorized"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Unfinished jobs"
 msgstr ""
 
 #: admin/views/settings.php
@@ -2680,6 +2844,10 @@ msgstr ""
 msgid "Versions"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "View"
+msgstr ""
+
 #: admin/views/log-detail.php admin/views/new-post.php admin/views/rewrite.php
 msgid "View post"
 msgstr ""
@@ -2702,6 +2870,10 @@ msgstr ""
 
 #: includes/class-aipc-admin.php
 msgid "What is this section for?"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "What it does"
 msgstr ""
 
 #: admin/views/bot.php
@@ -2864,6 +3036,10 @@ msgstr ""
 msgid "not checked yet"
 msgstr ""
 
+#: admin/views/cron.php
+msgid "once"
+msgstr ""
+
 #: admin/views/update.php
 msgid "owner/name — for example ahmad75naraghi/wp-ai-post-creator"
 msgstr ""
@@ -2953,6 +3129,10 @@ msgid "⏱ Publish later"
 msgstr ""
 
 #: includes/class-aipc-bale-commands.php
+msgid "⚡ Fastest: reply to a draft notification with just the date («فردا 18:30») — it is scheduled immediately, no button needed."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
 msgid "✍️ Got it — I’m writing a draft about “%s” now. I’ll message you here as soon as it’s ready."
 msgstr ""
 
@@ -3009,7 +3189,7 @@ msgid "📲 Get the image + summary + link after every generated post, with “P
 msgstr ""
 
 #: includes/class-aipc-bale-commands.php
-msgid "🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — press “Schedule” and send the date as the next message."
+msgid "🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — “Schedule” offers one-tap times, or send a date yourself."
 msgstr ""
 
 #: admin/views/schedule.php

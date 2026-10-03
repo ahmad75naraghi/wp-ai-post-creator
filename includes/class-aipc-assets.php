@@ -95,6 +95,7 @@ final class AIPC_Assets {
 			'aipc-logs'        => 'logs',
 			'aipc-schedule'    => 'schedule',
 			'aipc-bot'         => 'bot',
+			'aipc-cron'        => 'cron',
 			'aipc-settings'    => 'settings',
 			'aipc-update'      => 'update',
 		);

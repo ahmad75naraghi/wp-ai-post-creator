@@ -1850,7 +1850,10 @@ $out['bale_buttons'] = array(
 	'pub_idempotent'     => false !== strpos( (string) $aipc_bb_again, '🔗' )
 		&& 'publish' === get_post( $aipc_bb_p1 )->post_status,
 	'keyboard_published' => null === AIPC_Bale::post_keyboard( $aipc_bb_p1 ),
-	'sch_asks_for_date'  => false !== strpos( (string) $aipc_bb_sch_reply, '⏰' ) && $aipc_bb_pending === $aipc_bb_p2,
+	'sch_asks_for_date'  => is_array( $aipc_bb_sch_reply )
+		&& false !== strpos( (string) $aipc_bb_sch_reply['text'], '⏰' )
+		&& false !== strpos( (string) wp_json_encode( $aipc_bb_sch_reply['markup'] ), 'aipc:when:' . $aipc_bb_p2 )
+		&& $aipc_bb_pending === $aipc_bb_p2,
 	'past_rejected'      => is_string( $aipc_bb_past ) && '' !== $aipc_bb_past
 		&& false === strpos( $aipc_bb_past, '⏰' ) && $aipc_bb_past_keep,
 	'badfmt_hint'        => false !== strpos( (string) $aipc_bb_badfmt, '18:30' ),
@@ -1867,6 +1870,234 @@ wp_delete_post( $aipc_bb_p1, true );
 wp_delete_post( $aipc_bb_p2, true );
 delete_option( AIPC_Bale_Commands::PENDING_OPTION );
 update_option( AIPC_Bale::OPTION, $aipc_bb_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
+ * v1.17.0 — one-step scheduling from chat (presets, bare dates, reply)
+ * ------------------------------------------------------------------ */
+$aipc_qs_old_cfg = get_option( AIPC_Bale::OPTION, array() );
+update_option( AIPC_Bale::OPTION, array_merge( is_array( $aipc_qs_old_cfg ) ? $aipc_qs_old_cfg : array(), array(
+	'enabled'  => 1,
+	'token'    => 'test-token',
+	'chat_ids' => array( '99' ),
+	'two_way'  => 1,
+) ), false );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+delete_option( AIPC_Bale::MSGMAP );
+
+$aipc_qs_reqs = array();
+$aipc_qs_mock = function ( $pre, $args, $url ) use ( &$aipc_qs_reqs ) {
+	if ( false !== strpos( $url, 'tapi.bale.ai' ) ) {
+		$aipc_qs_reqs[] = array( 'url' => $url, 'body' => isset( $args['body'] ) ? (string) $args['body'] : '' );
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '{"ok":true,"result":{"message_id":4321}}',
+			'cookies'  => array(),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_qs_mock, 4, 3 );
+
+$aipc_qs_tz    = wp_timezone();
+$aipc_qs_tom9  = ( new DateTimeImmutable( 'now', $aipc_qs_tz ) )->modify( '+1 day' )->setTime( 9, 0, 0 )->getTimestamp();
+$aipc_qs_tom18 = ( new DateTimeImmutable( 'now', $aipc_qs_tz ) )->modify( '+1 day' )->setTime( 18, 0, 0 )->getTimestamp();
+$aipc_qs_d2    = ( new DateTimeImmutable( 'now', $aipc_qs_tz ) )->modify( '+2 day' )->setTime( 9, 0, 0 )->getTimestamp();
+$aipc_qs_tom1145 = ( new DateTimeImmutable( 'now', $aipc_qs_tz ) )->modify( '+1 day' )->setTime( 11, 45, 0 )->getTimestamp();
+$aipc_qs_2030  = ( new DateTimeImmutable( '2030-01-01 10:00', $aipc_qs_tz ) )->getTimestamp();
+
+// Post A: oldest draft — the notification about it is "remembered".
+$aipc_qs_pa = wp_insert_post( array( 'post_title' => 'Quick schedule post A', 'post_content' => '<p>a</p>', 'post_status' => 'draft', 'post_date' => wp_date( 'Y-m-d H:i:s', time() - 2 * HOUR_IN_SECONDS ) ) );
+update_post_meta( $aipc_qs_pa, '_aipc_generated', time() );
+
+// notify() captures the sent message id into the msgmap.
+$aipc_qs_reqs = array();
+AIPC_Bale::notify( $aipc_qs_pa, 'no-such-job' );
+$aipc_qs_mapped = AIPC_Bale::post_for_message( '99', 4321 );
+
+// Preset keyboard + one-tap scheduling (no date typing, no pending).
+$aipc_qs_kb  = (string) wp_json_encode( AIPC_Bale_Commands::quick_schedule_keyboard( $aipc_qs_pa ) );
+$aipc_qs_tap = AIPC_Bale_Commands::handle_callback( '99', 'aipc:when:' . $aipc_qs_pa . ':tom_pm' );
+$aipc_qs_pa_post = get_post( $aipc_qs_pa );
+
+// A bare past date with no pending is rejected without side effects.
+$aipc_qs_past = AIPC_Bale_Commands::handle( '99', '2020-01-01 10:00' );
+
+// Post B: newest draft — a bare future date schedules it directly.
+$aipc_qs_pb = wp_insert_post( array( 'post_title' => 'Quick schedule post B', 'post_content' => '<p>b</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_qs_pb, '_aipc_generated', time() );
+$aipc_qs_direct  = AIPC_Bale_Commands::handle( '99', 'فردا 11:45' );
+$aipc_qs_pb_post = get_post( $aipc_qs_pb );
+
+// Post C: replying to its notification with a date schedules C itself,
+// even though it is not the newest draft.
+$aipc_qs_pc = wp_insert_post( array( 'post_title' => 'Quick schedule post C', 'post_content' => '<p>c</p>', 'post_status' => 'draft', 'post_date' => wp_date( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS ) ) );
+update_post_meta( $aipc_qs_pc, '_aipc_generated', time() );
+$aipc_qs_pd = wp_insert_post( array( 'post_title' => 'Quick schedule post D (newest)', 'post_content' => '<p>d</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_qs_pd, '_aipc_generated', time() );
+AIPC_Bale::remember_message( '99', 555, $aipc_qs_pc );
+$aipc_qs_reqs = array();
+AIPC_Bale_Commands::process_update( array(
+	'update_id' => 1,
+	'message'   => array(
+		'message_id'       => 556,
+		'chat'             => array( 'id' => 99 ),
+		'text'             => '2030-01-01 10:00',
+		'reply_to_message' => array( 'message_id' => 555 ),
+	),
+), null );
+$aipc_qs_pc_post = get_post( $aipc_qs_pc );
+$aipc_qs_pd_post = get_post( $aipc_qs_pd );
+$aipc_qs_reply_body = ! empty( $aipc_qs_reqs ) ? $aipc_qs_reqs[ count( $aipc_qs_reqs ) - 1 ]['body'] : '';
+
+// Published posts cannot be (re)scheduled.
+$aipc_qs_pe = wp_insert_post( array( 'post_title' => 'Quick schedule post E', 'post_content' => '<p>e</p>', 'post_status' => 'publish' ) );
+update_post_meta( $aipc_qs_pe, '_aipc_generated', time() );
+$aipc_qs_pub_guard = AIPC_Bale_Commands::schedule_post( $aipc_qs_pe, time() + DAY_IN_SECONDS );
+
+// The msgmap never grows past 100 entries.
+for ( $aipc_qs_i = 0; $aipc_qs_i < 110; $aipc_qs_i++ ) {
+	AIPC_Bale::remember_message( '99', 10000 + $aipc_qs_i, $aipc_qs_pa );
+}
+$aipc_qs_map = get_option( AIPC_Bale::MSGMAP, array() );
+
+$out['bale_quick_schedule'] = array(
+	'notify_remembers'   => $aipc_qs_mapped === (int) $aipc_qs_pa,
+	'preset_keyboard'    => false !== strpos( $aipc_qs_kb, ':tonight' ) && false !== strpos( $aipc_qs_kb, ':tom_am' )
+		&& false !== strpos( $aipc_qs_kb, ':tom_pm' ) && false !== strpos( $aipc_qs_kb, ':d2_am' )
+		&& false !== strpos( $aipc_qs_kb, 'aipc:when:' . $aipc_qs_pa . ':' ),
+	'preset_timestamps'  => AIPC_Bale_Commands::preset_ts( 'tom_am' ) === $aipc_qs_tom9
+		&& AIPC_Bale_Commands::preset_ts( 'tom_pm' ) === $aipc_qs_tom18
+		&& AIPC_Bale_Commands::preset_ts( 'd2_am' ) === $aipc_qs_d2,
+	'preset_tonight'     => AIPC_Bale_Commands::preset_ts( 'tonight' ) > time(),
+	'tap_schedules'      => 'future' === $aipc_qs_pa_post->post_status
+		&& strtotime( $aipc_qs_pa_post->post_date_gmt . ' +0000' ) === $aipc_qs_tom18
+		&& false !== strpos( (string) $aipc_qs_tap, "\xe2\x8f\xb0" )
+		&& 0 === AIPC_Bale_Commands::get_pending( '99' ),
+	'direct_past'        => is_string( $aipc_qs_past ) && '' !== $aipc_qs_past
+		&& false === strpos( $aipc_qs_past, "\xe2\x8f\xb0" ),
+	'direct_date_newest' => 'future' === $aipc_qs_pb_post->post_status
+		&& strtotime( $aipc_qs_pb_post->post_date_gmt . ' +0000' ) === $aipc_qs_tom1145
+		&& false !== strpos( (string) $aipc_qs_direct, "\xe2\x8f\xb0" ),
+	'reply_targets_post' => 'future' === $aipc_qs_pc_post->post_status
+		&& strtotime( $aipc_qs_pc_post->post_date_gmt . ' +0000' ) === $aipc_qs_2030
+		&& 'draft' === $aipc_qs_pd_post->post_status
+		&& false !== strpos( $aipc_qs_reply_body, '2030' ),
+	'published_guard'    => is_string( $aipc_qs_pub_guard )
+		&& false !== strpos( $aipc_qs_pub_guard, "\xf0\x9f\x94\x97" )
+		&& 'publish' === get_post( $aipc_qs_pe )->post_status,
+	'map_trimmed'        => count( $aipc_qs_map ) <= 100
+		&& (int) $aipc_qs_pa === AIPC_Bale::post_for_message( '99', 10109 ),
+);
+
+remove_filter( 'pre_http_request', $aipc_qs_mock, 4 );
+foreach ( array( $aipc_qs_pa, $aipc_qs_pb, $aipc_qs_pc, $aipc_qs_pd, $aipc_qs_pe ) as $aipc_qs_del ) {
+	wp_delete_post( $aipc_qs_del, true );
+}
+delete_option( AIPC_Bale::MSGMAP );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+update_option( AIPC_Bale::OPTION, $aipc_qs_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
+ * v1.17.0 — Jobs & Cron admin page (overview + stop controls)
+ * ------------------------------------------------------------------ */
+$aipc_jc_job = array(
+	'id'      => 'job_qc_1',
+	'created' => time(),
+	'updated' => time(),
+	'status'  => 'running',
+	'mode'    => 'new',
+	'source'  => 'cron',
+	'user'    => 1,
+	'topic'   => 'کار ناتمام تستی',
+	'args'    => array(),
+	'cursor'  => 0,
+	'steps'   => array(
+		array( 'id' => 'plan', 'label' => 'P', 'status' => 'running' ),
+	),
+	'data'    => array(),
+	'usage'   => array( 'prompt' => 0, 'completion' => 0, 'calls' => 0 ),
+	'calls'   => array(),
+	'timings' => array(),
+	'log'     => array(),
+	'post_id' => 0,
+	'error'   => null,
+	'stats_recorded' => 0,
+);
+AIPC_Agent::instance()->save_job( $aipc_jc_job );
+
+$aipc_jc_pub = wp_insert_post( array( 'post_title' => 'Delayed publish target', 'post_content' => '<p>q</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_jc_pub, '_aipc_generated', time() );
+wp_schedule_single_event( time() + HOUR_IN_SECONDS, 'aipc_publish_post', array( $aipc_jc_pub, 'job_qc_1' ) );
+
+$aipc_jc_fut_date = wp_date( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS );
+$aipc_jc_fut = wp_insert_post( array(
+	'post_title'    => 'Future scheduled AI post',
+	'post_content'  => '<p>f</p>',
+	'post_status'   => 'future',
+	'post_date'     => $aipc_jc_fut_date,
+	'post_date_gmt' => get_gmt_from_date( $aipc_jc_fut_date ),
+) );
+update_post_meta( $aipc_jc_fut, '_aipc_generated', time() );
+
+if ( ! wp_next_scheduled( AIPC_Scheduler::CRON_HOOK ) ) {
+	wp_schedule_event( time() + 2 * MINUTE_IN_SECONDS, 'aipc_quarter_hour', AIPC_Scheduler::CRON_HOOK );
+}
+
+$aipc_jc_ov = AIPC_Admin::cron_overview();
+
+$aipc_jc_found_job = false;
+foreach ( $aipc_jc_ov['jobs'] as $aipc_jc_row ) {
+	if ( 'job_qc_1' === $aipc_jc_row['id'] && 'running' === $aipc_jc_row['status'] ) {
+		$aipc_jc_found_job = true;
+	}
+}
+$aipc_jc_found_pub = false;
+foreach ( $aipc_jc_ov['publishes'] as $aipc_jc_row ) {
+	if ( isset( $aipc_jc_row['args'][0] ) && (int) $aipc_jc_row['args'][0] === (int) $aipc_jc_pub
+		&& $aipc_jc_row['ts'] > time() + 50 * MINUTE_IN_SECONDS && '' === $aipc_jc_row['schedule'] ) {
+		$aipc_jc_found_pub = true;
+	}
+}
+$aipc_jc_hooks = wp_list_pluck( $aipc_jc_ov['events'], 'hook' );
+
+ob_start();
+AIPC_Admin::render_cron();
+$aipc_jc_html = ob_get_clean();
+
+$aipc_jc_removed = AIPC_Admin::unschedule_publish( $aipc_jc_pub );
+$aipc_jc_gone    = false === wp_next_scheduled( 'aipc_publish_post', array( $aipc_jc_pub, 'job_qc_1' ) );
+
+$aipc_jc_cancel = AIPC_Agent::instance()->cancel_job( 'job_qc_1' );
+$aipc_jc_still  = false;
+foreach ( AIPC_Admin::cron_overview()['jobs'] as $aipc_jc_row ) {
+	if ( 'job_qc_1' === $aipc_jc_row['id'] ) {
+		$aipc_jc_still = true;
+	}
+}
+
+$out['jobs_cron_page'] = array(
+	'jobs_listed'      => $aipc_jc_found_job,
+	'publish_listed'   => $aipc_jc_found_pub,
+	'future_listed'    => in_array( $aipc_jc_fut, wp_list_pluck( $aipc_jc_ov['future'], 'ID' ), true ),
+	'recurring_listed' => in_array( AIPC_Scheduler::CRON_HOOK, $aipc_jc_hooks, true )
+		&& ! in_array( 'aipc_publish_post', $aipc_jc_hooks, true ),
+	'page_renders'     => false !== strpos( $aipc_jc_html, 'کار ناتمام تستی' )
+		&& false !== strpos( $aipc_jc_html, 'Delayed publish target' )
+		&& false !== strpos( $aipc_jc_html, 'Future scheduled AI post' ),
+	'page_stop_links'  => false !== strpos( $aipc_jc_html, 'aipc_cancel_job' )
+		&& false !== strpos( $aipc_jc_html, 'aipc_cancel_all_jobs' )
+		&& false !== strpos( $aipc_jc_html, 'aipc_unschedule_publish' )
+		&& false !== strpos( $aipc_jc_html, 'aipc_revert_future' ),
+	'unschedule_works' => 1 === $aipc_jc_removed && $aipc_jc_gone,
+	'cancel_stops'     => is_array( $aipc_jc_cancel ) && 'cancelled' === $aipc_jc_cancel['status'] && ! $aipc_jc_still,
+	'screen_mapped'    => 'cron' === AIPC_Assets::screen_for_hook( 'ai-post-creator_page_aipc-cron' ),
+);
+
+AIPC_Agent::instance()->delete_job( 'job_qc_1' );
+wp_delete_post( $aipc_jc_pub, true );
+wp_delete_post( $aipc_jc_fut, true );
+
 
 /* ------------------------------------------------------------------ *
  * v1.6 — outbound network guard (SSRF protection)

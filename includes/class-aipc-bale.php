@@ -18,6 +18,7 @@ final class AIPC_Bale {
 	const OPTION      = 'aipc_bale';
 	const API_BASE    = 'https://tapi.bale.ai/bot';
 	const API_BASE_TG = 'https://api.telegram.org/bot';
+	const MSGMAP      = 'aipc_bale_msgmap'; // chat:message_id → post_id (reply-to scheduling).
 
 	/**
 	 * Hook the post-created notification.
@@ -426,6 +427,45 @@ final class AIPC_Bale {
 	}
 
 	/* ---------------------------------------------------------------------
+	 * Notification message ↔ post map (reply-to scheduling, 1.17.0)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Remember which post a sent notification message belongs to, so a
+	 * date sent as a reply to that message schedules exactly that post.
+	 *
+	 * @param string $chat_id    Chat id.
+	 * @param int    $message_id Sent message id.
+	 * @param int    $post_id    Post id.
+	 * @return void
+	 */
+	public static function remember_message( $chat_id, $message_id, $post_id ) {
+		if ( ! $message_id || ! $post_id ) {
+			return;
+		}
+		$map = get_option( self::MSGMAP, array() );
+		$map = is_array( $map ) ? $map : array();
+		$map[ $chat_id . ':' . (int) $message_id ] = (int) $post_id;
+		if ( count( $map ) > 100 ) {
+			$map = array_slice( $map, -100, null, true );
+		}
+		update_option( self::MSGMAP, $map, false );
+	}
+
+	/**
+	 * The post a notification message was about (0 = unknown).
+	 *
+	 * @param string $chat_id    Chat id.
+	 * @param int    $message_id Replied-to message id.
+	 * @return int
+	 */
+	public static function post_for_message( $chat_id, $message_id ) {
+		$map = get_option( self::MSGMAP, array() );
+		$key = $chat_id . ':' . (int) $message_id;
+		return isset( $map[ $key ] ) ? (int) $map[ $key ] : 0;
+	}
+
+	/* ---------------------------------------------------------------------
 	 * Post notification
 	 * ------------------------------------------------------------------- */
 
@@ -476,6 +516,9 @@ final class AIPC_Bale {
 			}
 			if ( $done ) {
 				$sent++;
+				if ( is_array( $res ) && isset( $res['result']['message_id'] ) ) {
+					self::remember_message( $chat_id, (int) $res['result']['message_id'], (int) $post_id );
+				}
 			}
 		}
 

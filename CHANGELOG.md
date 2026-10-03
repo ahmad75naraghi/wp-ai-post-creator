@@ -3,6 +3,43 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.17.0] — 2026-10-03
+
+### Added
+- **One-step scheduling from chat.** Three ways to skip the old
+  "press Schedule → wait → send date" roundtrip:
+  - the «زمان‌بندی» prompt now carries four one-tap presets
+    (`aipc:when:<post>:<code>` — tonight 21:00, tomorrow 09:00,
+    tomorrow 18:00, in two days 09:00) that schedule immediately;
+  - a bare date sent to the bot (`فردا 18:30`, `1404/07/20 18:30`,
+    `2026-10-12 18:30`) with no pending question schedules the newest
+    AI draft directly;
+  - replying to a draft notification with a date schedules **that
+    very post** — `notify()` remembers each sent `message_id` in the
+    `aipc_bale_msgmap` option (capped at 100 entries) and
+    `process_update()` resolves `reply_to_message` against it.
+- **Jobs & Cron admin page** (`aipc-cron`): unfinished agent jobs
+  (running / queued / error) with per-job Cancel and a Cancel-all
+  button, pending delayed publishes (`aipc_publish_post` events) with
+  Cancel-publish, scheduled ("future") AI posts with Back-to-draft,
+  and a read-only list of the plugin's recurring cron events — so
+  nothing piles up unseen in the background.
+
+### Changed
+- `schedule_post()` refuses to reschedule an already-published post.
+- Bot help mentions the reply-with-a-date shortcut.
+  47 new strings translated (797 msgids).
+
+### Tests
+- New `bale_quick_schedule` group (10): msgmap capture + trim, preset
+  keyboard/timestamps, one-tap scheduling, bare-date scheduling of
+  the newest draft, past-date rejection, reply-targeted scheduling
+  through `process_update()`, published-post guard. New
+  `jobs_cron_page` group (9): overview listing (jobs, delayed
+  publishes, future posts, recurring events), page rendering with all
+  stop controls, `unschedule_publish()`, `cancel_job()`, screen map —
+  **66 groups / 507 assertions total**.
+
 ## [1.16.0] — 2026-10-03
 
 ### Added
