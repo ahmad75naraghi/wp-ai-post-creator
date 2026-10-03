@@ -744,6 +744,72 @@ final class AIPC_Agent {
 	 * ------------------------------------------------------------------- */
 
 	/**
+	 * Runner-lock TTL. Thanks to the heartbeat it only needs to outlive a
+	 * single HTTP request, not a whole step.
+	 */
+	const LOCK_TTL = 900;
+
+	/** @var string Current runner-lock transient name ('' = none held). */
+	private $lock_key = '';
+
+	/** @var string Token proving THIS runner owns the lock. */
+	private $lock_token = '';
+
+	/**
+	 * Take the runner lock for this process and start the heartbeat.
+	 *
+	 * @param string $key Lock transient name.
+	 * @return void
+	 */
+	private function lock_acquire( $key ) {
+		$this->lock_key   = $key;
+		$this->lock_token = uniqid( 'r', true ) . wp_rand( 1000, 9999 );
+		set_transient( $key, $this->lock_token, self::LOCK_TTL );
+		add_filter( 'pre_http_request', array( $this, 'lock_heartbeat' ), 1, 3 );
+	}
+
+	/**
+	 * Heartbeat: refresh the lock before every outbound HTTP request
+	 * (provider calls, image downloads, stock photos — everything goes
+	 * through the WP HTTP API). Refreshes only while we still own it.
+	 *
+	 * @param false|array|WP_Error $pre  Pre-emptive response (passthrough).
+	 * @param array                $args Request args (unused).
+	 * @param string               $url  Request URL (unused).
+	 * @return false|array|WP_Error Unchanged $pre.
+	 */
+	public function lock_heartbeat( $pre, $args = array(), $url = '' ) {
+		if ( '' !== $this->lock_key && get_transient( $this->lock_key ) === $this->lock_token ) {
+			set_transient( $this->lock_key, $this->lock_token, self::LOCK_TTL );
+		}
+		return $pre;
+	}
+
+	/**
+	 * Does this process still own the runner lock?
+	 *
+	 * @return bool
+	 */
+	private function lock_owned() {
+		return '' !== $this->lock_key && get_transient( $this->lock_key ) === $this->lock_token;
+	}
+
+	/**
+	 * Release the lock (only when still owned — never steal it back from
+	 * a runner that legitimately took over) and stop the heartbeat.
+	 *
+	 * @return void
+	 */
+	private function lock_release() {
+		if ( $this->lock_owned() ) {
+			delete_transient( $this->lock_key );
+		}
+		remove_filter( 'pre_http_request', array( $this, 'lock_heartbeat' ), 1 );
+		$this->lock_key   = '';
+		$this->lock_token = '';
+	}
+
+	/**
 	 * Execute the next step of a job. Each call runs exactly one step so the
 	 * browser can stream progress without hitting PHP execution limits.
 	 *
@@ -770,9 +836,14 @@ final class AIPC_Agent {
 			$state['busy'] = true;
 			return $state;
 		}
-		// 900 s: must outlive the longest provider request (users set chat
-		// timeouts up to 600 s) or an overlapping runner re-runs the step.
-		set_transient( $lock_key, 1, 900 );
+		// Owner-token lock with heartbeat (1.19.1): the transient stores a
+		// token unique to THIS runner and is refreshed before every outbound
+		// HTTP request (pre_http_request, see lock_heartbeat), so it never
+		// expires while the step is genuinely working — no matter how many
+		// retries/connections/downloads the step needs. It only dies when
+		// this process truly froze, and then the ownership check below
+		// makes the stale runner discard its copy instead of saving it.
+		$this->lock_acquire( $lock_key );
 
 		// Give slow steps room to finish (retries included).
 		if ( function_exists( 'set_time_limit' ) ) {
@@ -781,7 +852,7 @@ final class AIPC_Agent {
 
 		$step = isset( $job['steps'][ $job['cursor'] ] ) ? $job['steps'][ $job['cursor'] ] : null;
 		if ( ! $step ) {
-			delete_transient( $lock_key );
+			$this->lock_release();
 			return $this->client_state( $job, $since );
 		}
 
@@ -820,7 +891,9 @@ final class AIPC_Agent {
 							$conn['name'],
 							$last_error
 						), 'warn' );
-						$this->save_job( $job );
+						if ( $this->lock_owned() ) { // Never let a stale runner overwrite the new owner's copy.
+							$this->save_job( $job );
+						}
 					}
 				}
 			}
@@ -835,11 +908,27 @@ final class AIPC_Agent {
 					$max_attempts,
 					$chain[ $aipc_ci + 1 ]['name']
 				), 'warn' );
-				$this->save_job( $job );
+				if ( $this->lock_owned() ) { // Never let a stale runner overwrite the new owner's copy.
+					$this->save_job( $job );
+				}
 			}
 		}
 
 		AIPC_Trace::clear_context();
+
+		// Lost the lock mid-step? Then this process froze long enough for
+		// another runner to take over legitimately (1.19.1). The new
+		// owner's copy of the job is the truth now — discard every local
+		// change. Saving our stale copy would rewind the cursor and make
+		// finished steps run again: regenerated featured images, repeated
+		// notifications, image-less reruns. Exactly the churn we fix here.
+		if ( ! $this->lock_owned() ) {
+			$this->lock_release(); // Removes the heartbeat only — never steals the new owner's lock.
+			$fresh         = $this->get_job( $id );
+			$state         = $this->client_state( $fresh ? $fresh : $job, $since );
+			$state['busy'] = true;
+			return $state;
+		}
 
 		// Step timing (all attempts).
 		$job['timings'][ $step['id'] ] = (int) round( ( microtime( true ) - $t0 ) * 1000 );
@@ -850,7 +939,7 @@ final class AIPC_Agent {
 			if ( $this->image_fallback( $job ) ) {
 				$this->advance( $job );
 				$this->save_job( $job );
-				delete_transient( $lock_key );
+				$this->lock_release();
 				return $this->client_state( $job, $since );
 			}
 			// The featured image is optional — skip gracefully when every
@@ -858,7 +947,7 @@ final class AIPC_Agent {
 			$this->log( $job, __( 'Image generation failed on every connection — continuing without a featured image.', 'wp-ai-post-creator' ), 'warn' );
 			$this->advance( $job, 'skipped' );
 			$this->save_job( $job );
-			delete_transient( $lock_key );
+			$this->lock_release();
 			return $this->client_state( $job, $since );
 		}
 
@@ -883,12 +972,12 @@ final class AIPC_Agent {
 			// Release the topic claim so the user can retry right away —
 			// failed jobs never block a fresh attempt (1.19.0).
 			self::release( 'topic_' . self::topic_norm( $job['topic'] ) );
-			delete_transient( $lock_key );
+			$this->lock_release();
 			return $this->client_state( $job, $since );
 		}
 
 		$this->save_job( $job );
-		delete_transient( $lock_key );
+		$this->lock_release();
 
 		if ( 'done' === $job['status'] ) {
 			// Nothing left to run in the background.

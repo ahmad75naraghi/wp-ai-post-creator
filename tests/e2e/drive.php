@@ -2510,6 +2510,78 @@ foreach ( array( 'e2e_dd_a', 'e2e_dd_b', 'e2e_dd_c',
 	AIPC_Agent::release( $aipc_dd_k );
 }
 
+/* ------------------------------------------------------------------ *
+ * v1.19.1 — owner-token runner lock (heartbeat + stale-runner discard)
+ * ------------------------------------------------------------------ */
+$aipc_rl2_job = AIPC_Agent::instance()->create_job( 'تست قفل اجراکننده', array( 'length' => 'short', 'language' => 'fa' ) );
+$aipc_rl2_id  = $aipc_rl2_job['id'];
+$aipc_rl2_lk  = 'aipc_lock_' . $aipc_rl2_id;
+
+// 1) A held lock (any owner) makes execute_step return busy, untouched.
+set_transient( $aipc_rl2_lk, 'someone-else', 60 );
+$aipc_rl2_busy  = AIPC_Agent::instance()->execute_step( $aipc_rl2_id );
+$aipc_rl2_after = AIPC_Agent::instance()->get_job( $aipc_rl2_id );
+$aipc_rl2_busy_ok = ! empty( $aipc_rl2_busy['busy'] ) && 0 === (int) $aipc_rl2_after['cursor'];
+delete_transient( $aipc_rl2_lk );
+
+// 2) Heartbeat: before every outbound HTTP call the lock holds this
+// runner's unique token and gets refreshed (observer at priority 0 runs
+// before the heartbeat at priority 1 — it sees the PREVIOUS refresh).
+$aipc_rl2_seen = array();
+$aipc_rl2_spy  = function ( $pre, $args = array(), $url = '' ) use ( $aipc_rl2_lk, &$aipc_rl2_seen ) {
+	$aipc_rl2_seen[] = get_transient( $aipc_rl2_lk );
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_rl2_spy, 0, 3 );
+AIPC_Agent::instance()->execute_step( $aipc_rl2_id ); // plan step via mock host
+remove_filter( 'pre_http_request', $aipc_rl2_spy, 0 );
+$aipc_rl2_j2 = AIPC_Agent::instance()->get_job( $aipc_rl2_id );
+$aipc_rl2_hb_ok = count( $aipc_rl2_seen ) >= 1
+	&& is_string( $aipc_rl2_seen[0] ) && 0 === strpos( $aipc_rl2_seen[0], 'r' )
+	&& '1' !== $aipc_rl2_seen[0]
+	&& 1 === (int) $aipc_rl2_j2['cursor']
+	&& false === get_transient( $aipc_rl2_lk ); // released after the step
+
+// 3) Stolen lock mid-step (simulates a runner that froze past the TTL
+// while another one took over): the loser must DISCARD its copy — no
+// save, no cursor rewind, and the new owner's lock stays untouched.
+$aipc_rl2_cursor_before = (int) $aipc_rl2_j2['cursor'];
+$aipc_rl2_log_before    = count( $aipc_rl2_j2['log'] );
+$aipc_rl2_theft = function ( $pre, $args = array(), $url = '' ) use ( $aipc_rl2_lk ) {
+	set_transient( $aipc_rl2_lk, 'stolen-by-new-runner', 300 );
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_rl2_theft, 0, 3 );
+$aipc_rl2_stale = AIPC_Agent::instance()->execute_step( $aipc_rl2_id ); // outline step runs, then must be discarded
+remove_filter( 'pre_http_request', $aipc_rl2_theft, 0 );
+$aipc_rl2_j3 = AIPC_Agent::instance()->get_job( $aipc_rl2_id );
+$aipc_rl2_stale_ok = ! empty( $aipc_rl2_stale['busy'] )
+	&& $aipc_rl2_cursor_before === (int) $aipc_rl2_j3['cursor']           // no rewind / no advance saved
+	&& $aipc_rl2_log_before === count( $aipc_rl2_j3['log'] )              // nothing written
+	&& 'stolen-by-new-runner' === get_transient( $aipc_rl2_lk );          // owner's lock untouched
+
+// 4) Once the other lock is gone the job simply continues from where
+// the stored copy stands.
+delete_transient( $aipc_rl2_lk );
+$aipc_rl2_cont = AIPC_Agent::instance()->execute_step( $aipc_rl2_id );
+$aipc_rl2_j4 = AIPC_Agent::instance()->get_job( $aipc_rl2_id );
+$aipc_rl2_cont_ok = empty( $aipc_rl2_cont['busy'] )
+	&& (int) $aipc_rl2_j4['cursor'] === $aipc_rl2_cursor_before + 1
+	&& false === get_transient( $aipc_rl2_lk );
+
+$out['runner_lock'] = array(
+	'busy_guard'    => $aipc_rl2_busy_ok,
+	'heartbeat'     => $aipc_rl2_hb_ok,
+	'stale_discard' => $aipc_rl2_stale_ok,
+	'recovers'      => $aipc_rl2_cont_ok,
+);
+
+// Cleanup.
+AIPC_Scheduler::unschedule_runner( $aipc_rl2_id );
+AIPC_Agent::instance()->delete_job( $aipc_rl2_id );
+AIPC_Agent::release( 'topic_' . AIPC_Agent::topic_norm( 'تست قفل اجراکننده' ) );
+delete_transient( $aipc_rl2_lk );
+
 
 
 

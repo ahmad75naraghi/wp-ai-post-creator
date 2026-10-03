@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.19.0
+Stable tag: 1.19.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,9 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.19.1 =
+* Fix: one article could get its featured image regenerated and its notification repeated (and even end up image-less) when a background runner outlived its lock — the runner lock now carries an owner token and a heartbeat that refreshes it before every outbound request, and a runner that truly lost its lock discards its changes instead of rewinding the job
 
 = 1.19.0 =
 * New: duplicate-request guard — the same article can never be written twice: every start path (console, REST, chat bot, scheduler) first checks that the topic isn't already being written by a running job, wasn't the subject of an article created in the last 30 days (filter aipc_duplicate_window), and isn't still waiting in the topic queue; topics are compared in a canonical form (half-spaces, Arabic letters, digit styles, case and extra spaces unified)

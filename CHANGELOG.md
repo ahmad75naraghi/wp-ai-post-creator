@@ -3,6 +3,34 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.19.1] — 2026-10-03
+
+### Fixed
+- **Image churn + repeated notifications on one article** (field report:
+  a post arrived with an image, then its image changed with another
+  notification, then it went out image-less). Root cause: the runner
+  lock was a fixed-TTL transient, but one step can legitimately run
+  longer than any fixed TTL (3 retries × connection chain × slow
+  provider calls). When it expired mid-step a second runner re-ran the
+  step (new featured image), and the frozen first runner later **saved
+  its stale copy of the job, rewinding the cursor** — so steps ran yet
+  again: image regenerated, notification repeated, and an eventual
+  image failure produced the image-less final state.
+- The runner lock is now an **owner-token lock with a heartbeat**: it
+  stores a token unique to the running process and is refreshed before
+  every outbound HTTP request (`pre_http_request`, priority 1 — covers
+  provider calls, image downloads and stock photos alike), so it never
+  expires while the step is actually working. If a runner nevertheless
+  loses the lock (true process freeze), it now **discards all local
+  changes** instead of saving them — no cursor rewind, no re-run steps,
+  no stolen locks (release and mid-step saves are ownership-checked).
+
+### Tests
+- New e2e group `runner_lock` (4 assertions): busy guard, token
+  heartbeat on real HTTP, stale-runner discard (lock stolen mid-step →
+  no save, owner's lock untouched), clean continuation afterwards —
+  70 groups / 539 assertions green.
+
 ## [1.19.0] — 2026-10-03
 
 ### Added

@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.19.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.19.1**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -140,8 +140,17 @@ an Openverse stock photo (opt-in, query = the image-prompt step's English
 site-wide default featured image (`image_fallback` setting; external URLs
 are imported once and reused via the `aipc_image_fallback_cache` option)
 before the step is skipped.
-A transient lock (`aipc_lock_<job>`, 900 s since 1.19.0 — it must outlive the
-longest provider request) prevents concurrent execution.
+An **owner-token lock** (`aipc_lock_<job>`, 1.19.1) prevents concurrent
+execution: the transient stores a token unique to the running process and a
+**heartbeat** refreshes it (TTL 900 s, `AIPC_Agent::LOCK_TTL`) before every
+outbound HTTP request (`pre_http_request` priority 1 — provider calls, image
+downloads, stock photos all pass through the WP HTTP API), so the lock never
+expires while a step is genuinely working, no matter how many retries or
+connections it needs. A runner that nevertheless loses the lock (true process
+freeze beyond the TTL) **discards every local change** — it neither saves the
+stale job copy (which would rewind the cursor and re-run finished steps:
+regenerated images, repeated notifications) nor deletes the new owner's lock;
+mid-step retry-log saves are ownership-checked too.
 When a job reaches `done`, `aipc_post_created` fires **once** (`notified` flag
 guarded by the atomic claim `notify_<job>` since 1.19.0).
 
@@ -341,8 +350,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 69 result
-groups / 535 assertions green at v1.19.0, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 70 result
+groups / 539 assertions green at v1.19.1, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference
