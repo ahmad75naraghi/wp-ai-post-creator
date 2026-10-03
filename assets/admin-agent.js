@@ -28,6 +28,7 @@
 		optImage: document.getElementById('aipc-opt-image'),
 		optFaq: document.getElementById('aipc-opt-faq'),
 		optToc: document.getElementById('aipc-opt-toc'),
+		optForce: document.getElementById('aipc-opt-force'),
 		start: document.getElementById('aipc-start'),
 		console: document.getElementById('aipc-console'),
 		terminal: document.getElementById('aipc-terminal'),
@@ -274,7 +275,8 @@
 			language_custom: el.languageCustom ? el.languageCustom.value.trim() : '',
 			image: !!(el.optImage && el.optImage.checked),
 			faq: !!(el.optFaq && el.optFaq.checked),
-			toc: !!(el.optToc && el.optToc.checked)
+			toc: !!(el.optToc && el.optToc.checked),
+			force: (el.optForce && el.optForce.checked) ? 1 : 0
 		};
 		if (CFG.extraArgs) {
 			Object.keys(CFG.extraArgs).forEach(function (key) {

@@ -419,11 +419,154 @@ final class AIPC_Agent {
 	}
 
 	/**
+	 * Canonical form of a topic for duplicate detection (1.19.0):
+	 * Arabic→Persian letters, digit unification, lowercase, ZWNJ/NBSP →
+	 * space, collapsed whitespace.
+	 *
+	 * @param string $topic Raw topic.
+	 * @return string
+	 */
+	public static function topic_norm( $topic ) {
+		$t = AIPC_Topic_Queue::normalize_key( wp_strip_all_tags( (string) $topic ) );
+		$t = preg_replace( '/[\x{200c}\x{200b}\x{00a0}]/u', ' ', $t );
+		$t = preg_replace( '/\s+/u', ' ', (string) $t );
+		return trim( (string) $t );
+	}
+
+	/**
+	 * Atomic one-winner lock built on add_option()'s unique-key INSERT —
+	 * unlike transients there is no read-then-write race (1.19.0).
+	 *
+	 * @param string $key Logical lock name.
+	 * @param int    $ttl Seconds the claim stays valid.
+	 * @return bool True when this caller won the claim.
+	 */
+	public static function claim( $key, $ttl = 600 ) {
+		$name = 'aipc_claim_' . md5( $key );
+		$ts   = (int) get_option( $name, 0 );
+		if ( $ts && $ts > time() - max( 1, (int) $ttl ) ) {
+			return false;
+		}
+		if ( $ts ) {
+			delete_option( $name );
+		}
+		// Opportunistic cleanup of long-expired claim rows.
+		if ( 1 === wp_rand( 1, 25 ) ) {
+			global $wpdb;
+			$wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s AND option_value < %d",
+				$wpdb->esc_like( 'aipc_claim_' ) . '%',
+				time() - 2 * DAY_IN_SECONDS
+			) );
+		}
+		return false !== add_option( $name, time(), '', false );
+	}
+
+	/**
+	 * Drop a claim before its TTL expires (e.g. after a failed job).
+	 *
+	 * @param string $key Logical lock name.
+	 * @return void
+	 */
+	public static function release( $key ) {
+		delete_option( 'aipc_claim_' . md5( $key ) );
+	}
+
+	/**
+	 * Is this topic already being written, recently written, or queued?
+	 *
+	 * @param string $topic      Topic text.
+	 * @param string $source     Request source (cron skips the queue check —
+	 *                           the scheduler legitimately consumes queue items).
+	 * @param bool   $skip_queue Also skip the queue check (callers that
+	 *                           consume a queue item themselves).
+	 * @return array|null {type: job|post|queue, id, title} or null.
+	 */
+	public static function duplicate_of( $topic, $source = 'manual', $skip_queue = false ) {
+		$norm = self::topic_norm( $topic );
+		if ( '' === $norm ) {
+			return null;
+		}
+
+		// 1) A job is writing this very topic right now.
+		foreach ( AIPC_Job_Store::all( 100 ) as $row ) {
+			if ( 'running' === $row['status'] && self::topic_norm( $row['topic'] ) === $norm ) {
+				return array( 'type' => 'job', 'id' => (string) $row['id'], 'title' => (string) $row['topic'] );
+			}
+		}
+
+		// 2) An article about it was created recently.
+		$days = max( 0, (int) apply_filters( 'aipc_duplicate_window', 30 ) );
+		if ( $days > 0 ) {
+			$ids = get_posts( array(
+				'post_type'        => 'post',
+				'post_status'      => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+				'numberposts'      => 1,
+				'fields'           => 'ids',
+				'no_found_rows'    => true,
+				'suppress_filters' => true,
+				'meta_key'         => '_aipc_topic_norm',
+				'meta_value'       => $norm,
+				'date_query'       => array( array( 'after' => $days . ' days ago' ) ),
+			) );
+			if ( ! empty( $ids ) ) {
+				return array( 'type' => 'post', 'id' => (int) $ids[0], 'title' => get_the_title( $ids[0] ) );
+			}
+		}
+
+		// 3) Waiting in the topic queue (manual/bot starts only).
+		if ( 'cron' !== $source && ! $skip_queue ) {
+			$cfg = AIPC_Topic_Queue::all();
+			foreach ( $cfg['items'] as $item ) {
+				$status = isset( $item['status'] ) ? $item['status'] : 'pending';
+				$raw    = isset( $item['text'] ) ? $item['text'] : ( isset( $item['norm'] ) ? $item['norm'] : '' );
+				$inorm  = self::topic_norm( $raw );
+				if ( 'pending' === $status && '' !== $inorm && $inorm === $norm ) {
+					return array( 'type' => 'queue', 'id' => isset( $item['id'] ) ? (string) $item['id'] : '', 'title' => (string) $raw );
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Human message for a duplicate_of() hit.
+	 *
+	 * @param array $dup Duplicate info.
+	 * @return string
+	 */
+	public static function duplicate_message( $dup ) {
+		if ( 'job' === $dup['type'] ) {
+			return sprintf(
+				/* translators: %s: topic. */
+				__( 'Duplicate request blocked: a job is already writing “%s” right now. Wait for it to finish, or enable “Allow duplicate topic” to override.', 'wp-ai-post-creator' ),
+				$dup['title']
+			);
+		}
+		if ( 'queue' === $dup['type'] ) {
+			return sprintf(
+				/* translators: %s: topic. */
+				__( 'Duplicate request blocked: “%s” is already waiting in the topic queue and will be written on schedule.', 'wp-ai-post-creator' ),
+				$dup['title']
+			);
+		}
+		return sprintf(
+			/* translators: 1: post title, 2: post id. */
+			__( 'Duplicate request blocked: an article about this topic was already created recently — “%1$s” (post #%2$d). Change the topic, or enable “Allow duplicate topic” to write it again.', 'wp-ai-post-creator' ),
+			$dup['title'],
+			(int) $dup['id']
+		);
+	}
+
+	/**
 	 * Create a new job. The topic is optional: when empty, the agent invents
 	 * one from the site prompt during the plan step.
 	 *
-	 * @param string $topic Optional topic hint.
-	 * @param array  $args  Options from the request.
+	 * @param string $topic  Optional topic hint.
+	 * @param array  $args   Options from the request ('force' => 1 skips
+	 *                       the duplicate-topic guard).
+	 * @param string $source Request source (manual|cron|bale).
 	 * @return array|WP_Error Job or error.
 	 */
 	public function create_job( $topic, $args = array(), $source = 'manual' ) {
@@ -434,6 +577,22 @@ final class AIPC_Agent {
 		$topic = trim( wp_strip_all_tags( (string) $topic ) );
 		if ( mb_strlen( $topic ) > 400 ) {
 			$topic = mb_substr( $topic, 0, 400 );
+		}
+
+		// Duplicate-request guard (1.19.0): never write the same topic twice
+		// — not while another job is writing it, not when an article about
+		// it was created recently, and not when two identical requests race
+		// each other. `force` (admin opt-in) bypasses everything.
+		$req_mode = isset( $args['mode'] ) && 'rewrite' === $args['mode'] ? 'rewrite' : 'new';
+		$force    = ! empty( $args['force'] );
+		if ( 'new' === $req_mode && '' !== $topic && ! $force ) {
+			$dup = self::duplicate_of( $topic, $source, ! empty( $args['from_queue'] ) );
+			if ( $dup ) {
+				return new WP_Error( 'aipc_duplicate', self::duplicate_message( $dup ) );
+			}
+			if ( ! self::claim( 'topic_' . self::topic_norm( $topic ), 10 * MINUTE_IN_SECONDS ) ) {
+				return new WP_Error( 'aipc_duplicate', __( 'An identical request arrived moments ago and is already being processed — duplicate blocked.', 'wp-ai-post-creator' ) );
+			}
 		}
 
 		$s   = AIPC_Settings::all();
@@ -549,6 +708,7 @@ final class AIPC_Agent {
 			$this->record_stats( $job );
 			$this->save_job( $job );
 			AIPC_Scheduler::unschedule_runner( $id );
+			self::release( 'topic_' . self::topic_norm( $job['topic'] ) );
 		}
 		return $job;
 	}
@@ -610,7 +770,9 @@ final class AIPC_Agent {
 			$state['busy'] = true;
 			return $state;
 		}
-		set_transient( $lock_key, 1, 600 );
+		// 900 s: must outlive the longest provider request (users set chat
+		// timeouts up to 600 s) or an overlapping runner re-runs the step.
+		set_transient( $lock_key, 1, 900 );
 
 		// Give slow steps room to finish (retries included).
 		if ( function_exists( 'set_time_limit' ) ) {
@@ -718,6 +880,9 @@ final class AIPC_Agent {
 			$this->record_stats( $job );
 			$this->save_job( $job );
 			AIPC_Scheduler::unschedule_runner( $job['id'] );
+			// Release the topic claim so the user can retry right away —
+			// failed jobs never block a fresh attempt (1.19.0).
+			self::release( 'topic_' . self::topic_norm( $job['topic'] ) );
 			delete_transient( $lock_key );
 			return $this->client_state( $job, $since );
 		}
@@ -730,7 +895,8 @@ final class AIPC_Agent {
 			AIPC_Scheduler::unschedule_runner( $job['id'] );
 		}
 
-		if ( 'done' === $job['status'] && empty( $job['notified'] ) ) {
+		if ( 'done' === $job['status'] && empty( $job['notified'] )
+			&& self::claim( 'notify_' . $job['id'], DAY_IN_SECONDS ) ) {
 			$job['notified'] = 1;
 			$this->save_job( $job );
 
@@ -2252,6 +2418,30 @@ final class AIPC_Agent {
 	 * @throws Exception On failure.
 	 */
 	private function step_finalize( array &$job ) {
+		// Idempotency guard (1.19.0): when an overlapping runner already
+		// created this job's post (e.g. a cron re-arm during a hanging
+		// provider request), reuse it — never create the post twice.
+		$existing = AIPC_Post_Builder::post_for_job( $job['id'] );
+		if ( $existing && 'rewrite' !== $job['mode'] ) {
+			$job['post_id'] = (int) $existing;
+			$job['data']['result'] = array(
+				'post_id' => (int) $existing,
+				'title'   => get_the_title( $existing ),
+				'edit'    => admin_url( 'post.php?post=' . $existing . '&action=edit' ),
+				'view'    => (string) get_permalink( $existing ),
+				'words'   => self::count_words( AIPC_Post_Builder::build_content( $job ) ),
+				'status'  => (string) get_post_status( $existing ),
+			);
+			$this->log( $job, sprintf(
+				/* translators: %d: post id. */
+				__( 'This job already created post #%d — duplicate finalize skipped.', 'wp-ai-post-creator' ),
+				$existing
+			), 'warn' );
+			$job['status'] = 'done';
+			$this->advance( $job );
+			return;
+		}
+
 		$post_id = AIPC_Post_Builder::create( $job );
 		if ( is_wp_error( $post_id ) ) {
 			throw new Exception( $post_id->get_error_message() );

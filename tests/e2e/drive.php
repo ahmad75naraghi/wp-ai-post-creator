@@ -2363,6 +2363,153 @@ foreach ( array_unique( array( $aipc_ir_att1, $aipc_ir_att3 ) ) as $aipc_ir_del 
 }
 update_option( AIPC_Settings::OPTION, $aipc_ir_old_settings, false );
 
+/* ------------------------------------------------------------------ *
+ * v1.19.0 — duplicate-request guard (topic_norm / claim / duplicate_of)
+ * ------------------------------------------------------------------ */
+$aipc_dd_old_queue = get_option( AIPC_Topic_Queue::OPTION );
+
+// 1) Topic normalisation: ZWNJ/NBSP/extra spaces, Arabic letters, case.
+$aipc_dd_norm = AIPC_Agent::topic_norm( 'آموزش برنامه‌نویسی پایتون' ); // with ZWNJ
+$aipc_dd_norm_ok = $aipc_dd_norm === AIPC_Agent::topic_norm( "آموزش  برنامه نویسی\u{00a0}پایتون " ) // spaces + NBSP
+	&& AIPC_Agent::topic_norm( 'Hello  WORLD' ) === AIPC_Agent::topic_norm( 'hello world' )
+	&& AIPC_Agent::topic_norm( 'علي' ) === AIPC_Agent::topic_norm( 'علی' ); // Arabic ya
+
+// 2) Atomic claim: first caller wins, twin loses, expiry + release reopen it.
+$aipc_dd_c1 = AIPC_Agent::claim( 'e2e_dd_a', 600 );
+$aipc_dd_c2 = AIPC_Agent::claim( 'e2e_dd_a', 600 );
+update_option( 'aipc_claim_' . md5( 'e2e_dd_b' ), time() - 700, false );
+$aipc_dd_c3 = AIPC_Agent::claim( 'e2e_dd_b', 600 ); // expired → wins again
+AIPC_Agent::release( 'e2e_dd_c' );
+$aipc_dd_c4 = AIPC_Agent::claim( 'e2e_dd_c', 600 );
+AIPC_Agent::release( 'e2e_dd_c' );
+$aipc_dd_c5 = AIPC_Agent::claim( 'e2e_dd_c', 600 ); // released → wins again
+
+// 3) A running job blocks the same topic (even written differently).
+$aipc_dd_job = array(
+	'id'      => 'job_dd_run',
+	'created' => time(),
+	'updated' => time(),
+	'status'  => 'running',
+	'mode'    => 'new',
+	'source'  => 'manual',
+	'user'    => 1,
+	'topic'   => 'مزایای کسب‌وکار اینترنتی',
+	'args'    => array(),
+	'cursor'  => 0,
+	'steps'   => array( array( 'id' => 'plan', 'label' => 'P', 'status' => 'running' ) ),
+	'data'    => array(),
+	'usage'   => array( 'prompt' => 0, 'completion' => 0, 'calls' => 0 ),
+	'calls'   => array(),
+	'timings' => array(),
+	'log'     => array(),
+	'post_id' => 0,
+	'error'   => null,
+	'stats_recorded' => 0,
+);
+AIPC_Agent::instance()->save_job( $aipc_dd_job );
+$aipc_dd_hit_job = AIPC_Agent::duplicate_of( 'مزایای کسب وکار اینترنتی', 'manual' ); // no ZWNJ
+$aipc_dd_blocked_job = AIPC_Agent::instance()->create_job( 'مزایای کسب وکار اینترنتی', array() );
+
+// 4) A recently created post blocks the topic; `force` overrides it.
+$aipc_dd_post = wp_insert_post( array(
+	'post_title'   => 'راهنمای خرید لپ‌تاپ',
+	'post_content' => '<p>متن</p>',
+	'post_status'  => 'publish',
+) );
+update_post_meta( $aipc_dd_post, '_aipc_topic_norm', AIPC_Agent::topic_norm( 'راهنمای خرید لپ‌تاپ' ) );
+$aipc_dd_hit_post = AIPC_Agent::duplicate_of( 'راهنمای خرید لپ تاپ', 'manual' );
+$aipc_dd_blocked_post = AIPC_Agent::instance()->create_job( 'راهنمای خرید لپ تاپ', array() );
+$aipc_dd_forced = AIPC_Agent::instance()->create_job( 'راهنمای خرید لپ تاپ', array( 'force' => 1 ) );
+if ( is_array( $aipc_dd_forced ) ) {
+	AIPC_Scheduler::unschedule_runner( $aipc_dd_forced['id'] );
+	AIPC_Agent::instance()->delete_job( $aipc_dd_forced['id'] );
+}
+
+// 5) The topic-claim alone blocks an identical twin request (no job row,
+// no post) — this is the double-click / race shield.
+$aipc_dd_t1 = AIPC_Agent::instance()->create_job( 'موضوع یکتای تستی دوقلو', array() );
+if ( is_array( $aipc_dd_t1 ) ) {
+	AIPC_Scheduler::unschedule_runner( $aipc_dd_t1['id'] );
+	AIPC_Agent::instance()->delete_job( $aipc_dd_t1['id'] ); // job row gone …
+}
+$aipc_dd_t2 = AIPC_Agent::instance()->create_job( 'موضوع یکتای تستی دوقلو', array() ); // … claim still holds
+AIPC_Agent::release( 'topic_' . AIPC_Agent::topic_norm( 'موضوع یکتای تستی دوقلو' ) );
+
+// 6) A pending queue item blocks manual/bot starts but never cron (the
+// scheduler legitimately consumes queue items).
+AIPC_Topic_Queue::add( 'موضوع صف تستی', 'manual' );
+$aipc_dd_hit_q    = AIPC_Agent::duplicate_of( 'موضوع  صف تستی', 'manual' );
+$aipc_dd_hit_qcr  = AIPC_Agent::duplicate_of( 'موضوع صف تستی', 'cron' );
+
+// 7) create() stores _aipc_topic_norm + post_for_job finds the job's post.
+$aipc_dd_bjob = array(
+	'id'      => 'job_dd_build',
+	'created' => time(),
+	'updated' => time(),
+	'status'  => 'running',
+	'mode'    => 'new',
+	'source'  => 'manual',
+	'user'    => 1,
+	'topic'   => 'ساخت پست تستی ددوپ',
+	'args'    => array( 'toc' => false, 'faq' => false, 'image' => false ),
+	'cursor'  => 0,
+	'steps'   => array(),
+	'data'    => array(
+		'plan'    => array( 'title' => 'ساخت پست تستی ددوپ' ),
+		'outline' => array( array( 'heading' => 'بخش اول' ) ),
+		'content' => array( 'intro' => '<p>مقدمه</p>', 'sections' => array( '<p>متن بخش</p>' ) ),
+		'seo'     => array(),
+	),
+	'usage'   => array( 'prompt' => 0, 'completion' => 0, 'calls' => 0 ),
+	'calls'   => array(),
+	'timings' => array(),
+	'log'     => array(),
+	'post_id' => 0,
+	'error'   => null,
+	'stats_recorded' => 0,
+);
+$aipc_dd_built = AIPC_Post_Builder::create( $aipc_dd_bjob );
+$aipc_dd_meta  = is_wp_error( $aipc_dd_built ) ? '' : (string) get_post_meta( $aipc_dd_built, '_aipc_topic_norm', true );
+$aipc_dd_found = AIPC_Post_Builder::post_for_job( 'job_dd_build' );
+
+$out['dedup'] = array(
+	'topic_norm'      => '' !== $aipc_dd_norm && $aipc_dd_norm_ok,
+	'claim_atomic'    => true === $aipc_dd_c1 && false === $aipc_dd_c2,
+	'claim_expiry'    => true === $aipc_dd_c3,
+	'claim_release'   => true === $aipc_dd_c4 && true === $aipc_dd_c5,
+	'blocks_running'  => is_array( $aipc_dd_hit_job ) && 'job' === $aipc_dd_hit_job['type']
+		&& is_wp_error( $aipc_dd_blocked_job ) && 'aipc_duplicate' === $aipc_dd_blocked_job->get_error_code(),
+	'blocks_recent'   => is_array( $aipc_dd_hit_post ) && 'post' === $aipc_dd_hit_post['type']
+		&& (int) $aipc_dd_hit_post['id'] === (int) $aipc_dd_post
+		&& is_wp_error( $aipc_dd_blocked_post ) && 'aipc_duplicate' === $aipc_dd_blocked_post->get_error_code(),
+	'force_bypasses'  => is_array( $aipc_dd_forced ) && ! empty( $aipc_dd_forced['id'] ),
+	'claim_vs_twin'   => is_array( $aipc_dd_t1 )
+		&& is_wp_error( $aipc_dd_t2 ) && 'aipc_duplicate' === $aipc_dd_t2->get_error_code(),
+	'blocks_queued'   => is_array( $aipc_dd_hit_q ) && 'queue' === $aipc_dd_hit_q['type'],
+	'cron_skips_queue' => null === $aipc_dd_hit_qcr,
+	'norm_meta_saved' => ! is_wp_error( $aipc_dd_built )
+		&& $aipc_dd_meta === AIPC_Agent::topic_norm( 'ساخت پست تستی ددوپ' ),
+	'post_for_job'    => (int) $aipc_dd_found === (int) $aipc_dd_built,
+);
+
+// Cleanup: jobs, posts, queue, claim rows.
+AIPC_Agent::instance()->delete_job( 'job_dd_run' );
+wp_delete_post( $aipc_dd_post, true );
+if ( ! is_wp_error( $aipc_dd_built ) ) {
+	wp_delete_post( $aipc_dd_built, true );
+}
+if ( false === $aipc_dd_old_queue ) {
+	delete_option( AIPC_Topic_Queue::OPTION );
+} else {
+	update_option( AIPC_Topic_Queue::OPTION, $aipc_dd_old_queue, false );
+}
+foreach ( array( 'e2e_dd_a', 'e2e_dd_b', 'e2e_dd_c',
+	'topic_' . AIPC_Agent::topic_norm( 'مزایای کسب وکار اینترنتی' ),
+	'topic_' . AIPC_Agent::topic_norm( 'راهنمای خرید لپ تاپ' ),
+	'topic_' . AIPC_Agent::topic_norm( 'موضوع یکتای تستی دوقلو' ) ) as $aipc_dd_k ) {
+	AIPC_Agent::release( $aipc_dd_k );
+}
+
 
 
 

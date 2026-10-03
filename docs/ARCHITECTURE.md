@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.18.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.19.0**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -70,8 +70,10 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 | `aipc_bale` | `enabled`, `token` (write-only), `chat_ids[]`, `report` (''/daily/weekly), `report_time`, `report_day` (weekday for weekly, default 6), `last_report` (Y-m-d), `two_way` (accept commands, 1.7.0), `last_update_id` (getUpdates offset) |
 | `aipc_bale_msgmap` (autoload off) | `{"<chat_id>:<message_id>": post_id}` — sent draft-notification ids captured by `AIPC_Bale::notify()`, capped at 100; lets a Reply containing a date schedule exactly that post (1.17.0) |
 | `aipc_topic_queue` | `items[]` (`{id (tq_*), text (≤400), norm (dedup key), source (manual/rss), added, status (pending/used), job_id, used_at}`) — FIFO bank consumed by schedule entries with `use_queue`; used items are kept as dedup memory and pruned by `AIPC_Topic_Queue::prune()` |
+| `aipc_claim_<md5>` (autoload off, 1.19.0) | atomic one-winner locks (`AIPC_Agent::claim()`): value = claim timestamp; keys `topic_<norm>` (10 min), `notify_<job>` / `entry_<id>_<date>` (1 day); long-expired rows pruned opportunistically |
 
 Post meta written by the builder: `_aipc_generated`, `_aipc_job`,
+`_aipc_topic_norm` (canonical topic for the duplicate guard, 1.19.0),
 `_aipc_faq_schema` (FAQPage JSON-LD), `_aipc_meta_title`,
 `_aipc_meta_description` (mirrored to Yoast `_yoast_wpseo_*` and Rank Math
 `rank_math_*` keys + `rank_math_focus_keyword`).
@@ -138,8 +140,37 @@ an Openverse stock photo (opt-in, query = the image-prompt step's English
 site-wide default featured image (`image_fallback` setting; external URLs
 are imported once and reused via the `aipc_image_fallback_cache` option)
 before the step is skipped.
-A transient lock (`aipc_lock_<job>`, 600 s) prevents concurrent execution.
-When a job reaches `done`, `aipc_post_created` fires **once** (`notified` flag).
+A transient lock (`aipc_lock_<job>`, 900 s since 1.19.0 — it must outlive the
+longest provider request) prevents concurrent execution.
+When a job reaches `done`, `aipc_post_created` fires **once** (`notified` flag
+guarded by the atomic claim `notify_<job>` since 1.19.0).
+
+### 5.2.2 Duplicate-request guard (1.19.0)
+
+`create_job()` (the single funnel for console/REST/Bale/scheduler) blocks a
+new-mode job with a non-empty topic when `AIPC_Agent::duplicate_of()` finds
+
+1. a **running job** with the same canonical topic,
+2. a **recent post** (`_aipc_topic_norm` meta written by
+   `AIPC_Post_Builder::create()`, window `aipc_duplicate_window` = 30 days,
+   statuses publish/future/draft/pending/private), or
+3. a **pending topic-queue item** — skipped for `source = cron` and for the
+   Bale queue button (`from_queue` arg), because those callers legitimately
+   consume queue items (the scheduler additionally marks a duplicate queue
+   item used so the queue never stalls).
+
+Canonicalisation (`AIPC_Agent::topic_norm()`) builds on
+`AIPC_Topic_Queue::normalize_key()` (Arabic ي/ك→Persian, digit styles,
+lowercase) and additionally maps ZWNJ/ZWSP/NBSP to spaces and collapses
+whitespace. Passing `force` (REST flag / "Allow duplicate topic" toggle)
+bypasses the guard. Surviving requests must then win the **atomic claim**
+`topic_<norm>` (10 min) — `AIPC_Agent::claim()` is a one-winner lock built on
+`add_option()`'s unique key (no read-then-write race, unlike transients),
+stored as autoload-off `aipc_claim_<md5>` rows with opportunistic pruning;
+`release()` drops a claim early (done on job failure/cancel so retries are
+never blocked). `step_finalize` is idempotent: if the job already owns a post
+(`AIPC_Post_Builder::post_for_job()` via `_aipc_job` meta) it is reused —
+no duplicate post/publish/notification.
 
 ### 5.2.1 Background runner (since v1.6.0)
 
@@ -186,7 +217,7 @@ rewrite preserves status/author/slug/categories and appends tags). Then:
 
 | Route | Method | Capability | Notes |
 |---|---|---|---|
-| `/start` | POST | `edit_posts` + rate limit | args: `topic, tone, length, language, language_custom, image, faq, toc, mode, post_id`; `publish_mode`/`publish_delay` only forwarded with `publish_posts`; returns `client_state()`; arms the background runner |
+| `/start` | POST | `edit_posts` + rate limit | args: `topic, tone, length, language, language_custom, image, faq, toc, mode, post_id, force` (`force` = bypass the 1.19.0 duplicate-topic guard; a blocked request returns `aipc_duplicate`, HTTP 400); `publish_mode`/`publish_delay` only forwarded with `publish_posts`; returns `client_state()`; arms the background runner |
 | `/step` | POST | `edit_posts` + rate limit | executes the next step synchronously (compat); `job_id`, `since` (log cursor) |
 | `/state` | POST | `edit_posts` + rate limit | **read-only**: returns `client_state()` without executing anything (`job_id`, `since`) |
 | `/cancel` | POST | `edit_posts` | cancels a running job |
@@ -245,7 +276,9 @@ controls.
   (3) retry failed jobs (≤ 3 ticks, 1-day window) → (4) daily-limit check →
   (5) fire the earliest due entry (`entry_due()`: time window, weekday,
   `state[id] != today`; the fired date is recorded → no double-firing,
-  same-day catch-up included).
+  same-day catch-up included; since 1.19.0 the atomic claim
+  `entry_<id>_<date>` additionally stops two overlapping ticks that both
+  read the pre-mark state from firing the same entry twice).
 - Firing an entry = `create_job(topic, opts + publish_mode/publish_delay,
   'cron')` driven synchronously within the tick (the runner event keeps it
   going if the tick budget runs out).
@@ -296,7 +329,7 @@ events read-only. admin-post actions: `aipc_cancel_job`,
 
 ## 10. Internationalization
 
-814 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+821 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals
@@ -308,8 +341,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 68 result
-groups / 523 assertions green at v1.18.0, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 69 result
+groups / 535 assertions green at v1.19.0, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference
@@ -326,4 +359,6 @@ runs on GitHub Actions (`.github/workflows/ci.yml`).
 `aipc_system_prompt($system, $job)` · `aipc_post_args($post_args, $job)` ·
 `aipc_outbound_allowlist($hosts)` · `aipc_allow_private_hosts($bool)` ·
 `aipc_allow_loopback($bool)` · `aipc_rest_rate_limit($limit, $route)` ·
-`aipc_job_retention_days($days)` · `aipc_jobs_table_enabled($bool)`
+`aipc_job_retention_days($days)` · `aipc_jobs_table_enabled($bool)` ·
+`aipc_image_timeout($seconds)` (default 180, 1.17.1) ·
+`aipc_duplicate_window($days)` (default 30, duplicate-topic guard, 1.19.0)

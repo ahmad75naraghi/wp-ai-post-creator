@@ -280,12 +280,20 @@ msgstr ""
 msgid "All unfinished jobs cancelled."
 msgstr ""
 
+#: admin/views/new-post.php
+msgid "Allow duplicate topic"
+msgstr ""
+
 #: admin/views/settings.php
 msgid "Allow linking to the research source sites inside articles"
 msgstr ""
 
 #: admin/views/settings.php
 msgid "Allow private/LAN addresses (e.g. a self-hosted gateway like OmniRoute or Ollama on another machine in your network)"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "An identical request arrived moments ago and is already being processed — duplicate blocked."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -966,6 +974,18 @@ msgstr ""
 
 #: includes/class-aipc-bale-commands.php
 msgid "Drafts waiting for review: %d"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Duplicate request blocked: a job is already writing “%s” right now. Wait for it to finish, or enable “Allow duplicate topic” to override."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Duplicate request blocked: an article about this topic was already created recently — “%1$s” (post #%2$d). Change the topic, or enable “Allow duplicate topic” to write it again."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Duplicate request blocked: “%s” is already waiting in the topic queue and will be written on schedule."
 msgstr ""
 
 #: admin/views/logs.php
@@ -2684,6 +2704,10 @@ msgstr ""
 msgid "This base URL is blocked by the outbound network guard (private or reserved address)."
 msgstr ""
 
+#: includes/class-aipc-agent.php
+msgid "This job already created post #%d — duplicate finalize skipped."
+msgstr ""
+
 #: includes/class-aipc-bale-commands.php
 msgid "This post is already published."
 msgstr ""
@@ -3122,6 +3146,10 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "sk-… (any value for Ollama/LM Studio)"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "skip the repeated-topic guard this once"
 msgstr ""
 
 #: admin/views/logs.php

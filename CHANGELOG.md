@@ -3,6 +3,51 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.19.0] — 2026-10-03
+
+### Added
+- **Duplicate-request guard — the same article can never be written
+  twice.** Before a new job starts, the plugin now checks (on every
+  path: admin console, REST, Bale bot and the scheduler) that the
+  topic is not
+  1. already being written by a running job,
+  2. the subject of an article created in the last 30 days (filter
+     `aipc_duplicate_window`; every new post stores a canonical
+     `_aipc_topic_norm` meta key — ZWNJ/half-space, Arabic «ي/ك»,
+     digit style, letter case and extra whitespace are all unified
+     via `AIPC_Agent::topic_norm()`), or
+  3. still pending in the topic queue (manual/bot starts only — the
+     scheduler itself legitimately consumes queue items).
+  Blocked requests return a clear `aipc_duplicate` error naming the
+  conflicting job/post/queue item.
+- **Race-proof claims** (`AIPC_Agent::claim()` / `release()`): an
+  atomic one-winner lock built on `add_option()`'s unique key. Used to
+  shield against double-clicks and parallel identical requests (topic
+  claim, 10 min — released automatically when a job fails or is
+  cancelled), duplicate done-notifications, and overlapping scheduler
+  cron ticks firing the same entry twice on the same day.
+- New-post console gained an **"Allow duplicate topic"** toggle
+  (REST `force` flag) to deliberately rewrite a topic again.
+
+### Fixed
+- **Double-published posts.** A hanging provider request could outlive
+  the 600-second runner lock; a second (cron re-armed) runner then
+  re-ran the finalize step and created + published the same article a
+  second time. The runner lock now lasts 900 s and the finalize step is
+  idempotent: when the job already owns a post (`_aipc_job` meta), it
+  is reused instead of created again — no duplicate post, no duplicate
+  publish, no duplicate Bale notification.
+- A queued topic that turns out to be a duplicate no longer stalls the
+  queue: the scheduler marks it consumed and moves on next tick.
+
+### Tests / i18n
+- New e2e group `dedup` (12 assertions): normalisation variants, atomic
+  claim/expiry/release, running-job + recent-post + queue blocking,
+  cron queue exemption, `force` bypass, twin-request claim shield,
+  `_aipc_topic_norm` persistence and `post_for_job()` lookup —
+  69 groups / 535 assertions green.
+- 7 new strings translated (821 msgids).
+
 ## [1.18.0] — 2026-10-03
 
 ### Added

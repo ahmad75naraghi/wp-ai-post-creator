@@ -204,6 +204,26 @@ final class AIPC_Post_Builder {
 		return null === $fixed ? (string) $html : $fixed;
 	}
 
+	/**
+	 * Post already created by a given job, if any (idempotency, 1.19.0).
+	 *
+	 * @param string $job_id Job id.
+	 * @return int Post id or 0.
+	 */
+	public static function post_for_job( $job_id ) {
+		$ids = get_posts( array(
+			'post_type'        => 'post',
+			'post_status'      => 'any',
+			'numberposts'      => 1,
+			'fields'           => 'ids',
+			'no_found_rows'    => true,
+			'suppress_filters' => true,
+			'meta_key'         => '_aipc_job',
+			'meta_value'       => (string) $job_id,
+		) );
+		return empty( $ids ) ? 0 : (int) $ids[0];
+	}
+
 	public static function create( array $job ) {
 		$d = $job['data'];
 
@@ -269,6 +289,10 @@ final class AIPC_Post_Builder {
 		// Markers + FAQ schema.
 		update_post_meta( $post_id, '_aipc_generated', time() );
 		update_post_meta( $post_id, '_aipc_job', $job['id'] );
+		if ( '' !== trim( (string) $job['topic'] ) ) {
+			// Canonical topic key — lets the duplicate guard spot repeats.
+			update_post_meta( $post_id, '_aipc_topic_norm', AIPC_Agent::topic_norm( $job['topic'] ) );
+		}
 		if ( ! empty( $d['faq']['items'] ) ) {
 			update_post_meta( $post_id, '_aipc_faq_schema', self::faq_schema( $d['faq']['items'] ) );
 		}

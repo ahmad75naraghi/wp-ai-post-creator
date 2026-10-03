@@ -40,6 +40,7 @@ final class AIPC_REST {
 					'image'           => array( 'type' => 'boolean' ),
 					'faq'             => array( 'type' => 'boolean' ),
 					'toc'             => array( 'type' => 'boolean' ),
+					'force'           => array( 'type' => 'boolean', 'default' => false ),
 				),
 			)
 		);
@@ -507,6 +508,7 @@ final class AIPC_REST {
 			'toc'             => $request->get_param( 'toc' ),
 			'mode'            => $request->get_param( 'mode' ),
 			'post_id'         => $request->get_param( 'post_id' ),
+			'force'           => $request->get_param( 'force' ) ? 1 : 0,
 		);
 
 		// Auto-publishing from the console requires the publish capability.

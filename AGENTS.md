@@ -28,8 +28,8 @@ current Arena session branch (`arena/<id>-wp-ai-post-creator`) with a PR against
 ## Golden rules
 
 1. **Never claim something works without running the verification suite** (below).
-2. **Never break the e2e suite** — it is the project's contract (68 result
-   groups / 523 boolean assertions green at v1.18.0, zero PHP warnings).
+2. **Never break the e2e suite** — it is the project's contract (69 result
+   groups / 535 boolean assertions green at v1.19.0, zero PHP warnings).
 3. **PHP 7.4 compatible** syntax only (the linter parses with `version: 704`).
    No enums, no readonly, no match expressions, no named args.
 4. **No build step, no runtime dependencies.** Plain PHP + jQuery-free vanilla JS.
@@ -137,9 +137,9 @@ block with all assertion groups.
 | Path | Role |
 |---|---|
 | `wp-ai-post-creator.php` | Bootstrap: constants, requires, activation, cron hooks, admin-bar link |
-| `includes/class-aipc-agent.php` | The state machine: job facade over `AIPC_Job_Store`, step manifests, chain-retry loop, all `step_*()` implementations, context helpers, stats |
+| `includes/class-aipc-agent.php` | The state machine: job facade over `AIPC_Job_Store`, step manifests, chain-retry loop, all `step_*()` implementations, context helpers, stats; duplicate-request guard (`topic_norm`/`claim`/`release`/`duplicate_of`, 1.19.0) |
 | `includes/class-aipc-steps.php` | 13-step registry (prompts + kinds) and per-step `connections[]` config |
-| `includes/class-aipc-post-builder.php` | Assembles/saves posts (`create()` new, `update()` rewrite), TOC/FAQ HTML, SEO meta, featured image |
+| `includes/class-aipc-post-builder.php` | Assembles/saves posts (`create()` new, `update()` rewrite), TOC/FAQ HTML, SEO meta, featured image, `_aipc_topic_norm` meta + `post_for_job()` idempotency lookup (1.19.0) |
 | `includes/class-aipc-connections.php` | CRUD + sanitize for AI connections (write-only API keys) |
 | `includes/class-aipc-api-client.php` | OpenAI-compatible HTTP client: chat (JSON extraction + corrective retries), images, models, downloads (guard-checked); one internal retry on 429/5xx |
 | `includes/class-aipc-job-store.php` | Jobs storage: `{prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |

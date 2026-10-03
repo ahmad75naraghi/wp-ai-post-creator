@@ -132,6 +132,11 @@ $aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 						<span><?php esc_html_e( 'Table of contents', 'wp-ai-post-creator' ); ?></span>
 						<em><?php esc_html_e( 'linked jump menu', 'wp-ai-post-creator' ); ?></em>
 					</label>
+					<label class="aipc-toggle">
+						<input type="checkbox" id="aipc-opt-force" />
+						<span><?php esc_html_e( 'Allow duplicate topic', 'wp-ai-post-creator' ); ?></span>
+						<em><?php esc_html_e( 'skip the repeated-topic guard this once', 'wp-ai-post-creator' ); ?></em>
+					</label>
 				</div>
 			</details>
 

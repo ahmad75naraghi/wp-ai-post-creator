@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.18.0
+Stable tag: 1.19.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,12 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.19.0 =
+* New: duplicate-request guard — the same article can never be written twice: every start path (console, REST, chat bot, scheduler) first checks that the topic isn't already being written by a running job, wasn't the subject of an article created in the last 30 days (filter aipc_duplicate_window), and isn't still waiting in the topic queue; topics are compared in a canonical form (half-spaces, Arabic letters, digit styles, case and extra spaces unified)
+* New: "Allow duplicate topic" toggle on the new-post console deliberately overrides the guard
+* Fix: double-published posts — a hanging provider request could let a second background runner re-run the final step and create + publish the same article twice; the finalize step is now idempotent, the runner lock outlives the longest request, and done-notifications are sent exactly once
+* Fix: overlapping cron ticks can no longer fire the same schedule entry twice on the same day, and a queued topic that's already been written no longer stalls the queue
 
 = 1.18.0 =
 * New: image rescue ladder — posts need never go out without a featured image: a rejected image model id is automatically swapped for one the gateway actually offers (via its /models list, cached a day); if all AI generation fails, an optional Openverse stock-photo fallback fetches a free CC-licensed photo matching the article (no API key, attribution saved on the attachment); and a new "Default featured image" setting (media ID or URL) is the guaranteed last resort

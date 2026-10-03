@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.18.0)
+# AI Post Creator — Complete User Guide (v1.19.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -149,6 +149,17 @@ WP-Cron is not running on your site).
 **Internal linking:** while planning, the agent looks at your existing related
 posts and weaves up to 4 internal links naturally into the content — no action
 needed from you.
+
+**🚫 Duplicate-request guard (new in 1.19):** the same article can never be
+written twice. Before a job starts — from this page, the REST API, the chat
+bot or the scheduler — the plugin checks that the topic is not already being
+written by a running job, was not the subject of an article created in the
+last 30 days, and is not still waiting in the topic queue. Topics are compared
+intelligently: half-spaces (ZWNJ), Arabic «ي/ك» letters, Persian/Arabic digit
+styles, letter case and extra spaces are all treated as the same. Double-clicks
+and simultaneous identical requests are caught too. If you really do want a
+second article about the same topic, tick **"Allow duplicate topic"** under
+Options before pressing Generate.
 
 ---
 

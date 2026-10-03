@@ -393,7 +393,7 @@ final class AIPC_Bale_Commands {
 	 * @param string $topic Topic text.
 	 * @return array {reply: string, job_id: string ('' on failure)}
 	 */
-	private static function start_draft( $topic ) {
+	private static function start_draft( $topic, $extra_args = array() ) {
 		$topic = trim( $topic );
 		if ( mb_strlen( $topic ) < 3 ) {
 			return array(
@@ -415,7 +415,7 @@ final class AIPC_Bale_Commands {
 			);
 		}
 
-		$job = AIPC_Agent::instance()->create_job( $topic, array( 'publish_mode' => 'draft' ), 'bale' );
+		$job = AIPC_Agent::instance()->create_job( $topic, array_merge( array( 'publish_mode' => 'draft' ), $extra_args ), 'bale' );
 		if ( is_wp_error( $job ) ) {
 			return array(
 				'reply'  => $job->get_error_message(),
@@ -812,7 +812,9 @@ final class AIPC_Bale_Commands {
 			return __( 'That topic is no longer in the queue — send «صف» for the current list.', 'wp-ai-post-creator' );
 		}
 
-		$res = self::start_draft( $topic );
+		// `from_queue`: this command consumes the queue item itself, so the
+		// duplicate guard must not treat that very item as a conflict.
+		$res = self::start_draft( $topic, array( 'from_queue' => $id ) );
 		if ( '' !== $res['job_id'] ) {
 			AIPC_Topic_Queue::mark_used( $id, $res['job_id'] );
 		}

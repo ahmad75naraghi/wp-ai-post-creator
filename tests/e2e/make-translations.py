@@ -43,6 +43,13 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Duplicate request blocked: a job is already writing “%s” right now. Wait for it to finish, or enable “Allow duplicate topic” to override.': 'درخواست تکراری مسدود شد: همین حالا یک کار در حال نوشتن «%s» است. صبر کنید تمام شود، یا «اجازهٔ موضوع تکراری» را فعال کنید.',
+    'Duplicate request blocked: “%s” is already waiting in the topic queue and will be written on schedule.': 'درخواست تکراری مسدود شد: «%s» از قبل در صف موضوع\\u200cها منتظر است و طبق زمان\\u200cبندی نوشته خواهد شد.',
+    'Duplicate request blocked: an article about this topic was already created recently — “%1$s” (post #%2$d). Change the topic, or enable “Allow duplicate topic” to write it again.': 'درخواست تکراری مسدود شد: به\\u200cتازگی مقاله\\u200cای دربارهٔ همین موضوع ساخته شده — «%1$s» (نوشتهٔ #%2$d). موضوع را عوض کنید، یا برای نوشتن دوباره «اجازهٔ موضوع تکراری» را فعال کنید.',
+    'An identical request arrived moments ago and is already being processed — duplicate blocked.': 'درخواستی یکسان لحظاتی پیش رسیده و در حال پردازش است — درخواست تکراری مسدود شد.',
+    'This job already created post #%d — duplicate finalize skipped.': 'این کار قبلاً نوشتهٔ #%d را ساخته است — ذخیرهٔ تکراری نادیده گرفته شد.',
+    'Allow duplicate topic': 'اجازهٔ موضوع تکراری',
+    'skip the repeated-topic guard this once': 'فقط همین یک بار از سد موضوع تکراری عبور کن',
     'AI image generation failed — attached a CC-licensed stock photo from Openverse instead (#%d, attribution saved on the attachment).': 'ساخت تصویر با هوش مصنوعی شکست خورد — به\u200cجایش یک عکس استوک با مجوز CC از Openverse پیوست شد (#%d، منبع روی خود پیوست ذخیره شد).',
     'AI image generation failed — using the default featured image (#%d).': 'ساخت تصویر با هوش مصنوعی شکست خورد — از تصویر شاخص پیش\u200cفرض استفاده شد (#%d).',
     'Could not download any of the stock photo candidates.': 'هیچ\u200cکدام از گزینه\u200cهای عکس استوک دانلود نشد.',
