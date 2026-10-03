@@ -38,7 +38,7 @@ msgstr "آدرس پایه API"
 msgid "API key"
 msgstr "کلید API"
 
-#: admin/views/connections.php admin/views/schedule.php admin/views/update.php
+#: admin/views/bot.php admin/views/connections.php admin/views/update.php
 msgid "••••• (saved — leave empty to keep)"
 msgstr "••••• (ذخیره شده — برای حفظ آن خالی بگذارید)"
 
@@ -574,7 +574,7 @@ msgstr "ایجنت همین حالا شروع کرد — صفحهٔ کنسول �
 msgid "Could not start the agent. Check that a connection is configured."
 msgstr "شروع ایجنت ممکن نشد. بررسی کنید که یک اتصال پیکربندی شده باشد."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Bale notification settings saved."
 msgstr "تنظیمات اطلاع‌رسانی بله ذخیره شد."
 
@@ -662,67 +662,63 @@ msgstr "ذخیره زمان‌بندی"
 msgid "Cancel"
 msgstr "انصراف"
 
-#: admin/views/schedule.php
-msgid "Bale notifications"
-msgstr "اطلاع‌رسانی بله"
-
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "After every generated post the agent can message a Bale chat with the featured image, the summary and the link to the article. Create a bot with @Bot_Father in Bale, paste its token here, and enter the chat ID of the person (or channel) that should receive the messages."
 msgstr "بعد از هر نوشتهٔ تولیدشده، ایجنت می‌تواند به یک گفتگوی بله پیام بفرستد شامل تصویر شاخص، خلاصه و لینک مقاله. با @Bot_Father در بله یک ربات بسازید، توکنش را اینجا بچسبانید و شناسهٔ گفتگوی شخص (یا کانال) دریافت‌کنندهٔ پیام‌ها را وارد کنید."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Bot token"
 msgstr "توکن ربات"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Chat IDs (one per line)"
 msgstr "شناسه‌های گفتگو (هر خط یک شناسه)"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "One chat ID per line — a person’s numeric ID or a @channel username. Send any message to your bot, then use the button below to detect it automatically."
 msgstr "هر خط یک شناسهٔ گفتگو — شناسهٔ عددی شخص یا نام کاربری @کانال. یک پیام به ربات‌تان بفرستید و سپس با دکمهٔ پایین آن را به‌طور خودکار شناسایی کنید."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Periodic report"
 msgstr "گزارش دوره‌ای"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Off"
 msgstr "خاموش"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Daily"
 msgstr "روزانه"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Weekly"
 msgstr "هفتگی"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Reports are sent once per day/week at this time, after it has passed."
 msgstr "گزارش‌ها یک بار در روز/هفته پس از گذشت این ساعت ارسال می‌شوند."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Report time"
 msgstr "ساعت گزارش"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Report day (weekly reports)"
 msgstr "روز گزارش (گزارش‌های هفتگی)"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Send a Bale message after every generated post"
 msgstr "بعد از هر نوشتهٔ تولیدشده، پیام بله ارسال شود"
 
-#: admin/views/schedule.php admin/views/settings.php admin/views/update.php
+#: admin/views/bot.php admin/views/settings.php admin/views/update.php
 msgid "Save settings"
 msgstr "ذخیره تنظیمات"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Send test message"
 msgstr "ارسال پیام آزمایشی"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Detect chat ID"
 msgstr "شناسایی شناسهٔ گفتگو"
 
@@ -2164,7 +2160,7 @@ msgstr "هر اتصال یعنی یک سرویس هوش مصنوعی: نشانی
 msgid "Aggregate statistics across all jobs: totals, success/fail counts, API calls and token usage per connection."
 msgstr "آمار تجمعی همهٔ کارها: جمع کل، شمار موفق/ناموفق، فراخوانی‌های API و مصرف توکن به تفکیک اتصال."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Bale is an Iranian messenger. The bot token comes from @Bot_Father; each chat ID receives the post’s featured image, summary and link when a run finishes (and a periodic report, if enabled). Delivery results are recorded in the job log."
 msgstr "بله یک پیام‌رسان ایرانی است. توکن ربات را از @Bot_Father بگیرید؛ هر شناسهٔ گفتگو پس از پایان هر اجرا، تصویر شاخص، خلاصه و لینک نوشته را دریافت می‌کند (و در صورت فعال بودن، گزارش دوره‌ای). نتیجهٔ ارسال در لاگ کار ثبت می‌شود."
 
@@ -2272,7 +2268,7 @@ msgstr "انباری از موضوع‌ها برای زمان‌بندی‌ها�
 msgid "AI Post Creator — commands:"
 msgstr "دستورهای ساخت نوشته با هوش مصنوعی:"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Accept commands from Bale chats"
 msgstr "پذیرش فرمان از گفتگوهای بله"
 
@@ -2300,7 +2296,7 @@ msgstr "در حال افزودن…"
 msgid "Clear queue"
 msgstr "خالی کردن صف"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Commands: نوشتن: <topic> · وضعیت · آخرین · انتشار · صف · راهنما"
 msgstr "فرمان‌ها: نوشتن: <موضوع> · وضعیت · آخرین · انتشار · صف · راهنما"
 
@@ -2412,7 +2408,7 @@ msgstr "پیشنهاد موضوع از منابع من"
 msgid "Take the topic from the queue"
 msgstr "موضوع را از صف بردار"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "The bot checks for new messages every ~5 minutes (via WP-Cron) and only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Up to 20 posts per day can be started from Bale."
 msgstr "ربات تقریباً هر ۵ دقیقه (از طریق WP-Cron) پیام‌های تازه را بررسی می‌کند و فقط به شناسه‌های گفتگوی بالا گوش می‌دهد. هر کس در آن گفتگوها می‌تواند: با «نوشتن: یک موضوع» یک پیش‌نویس شروع کند، «وضعیت» برای اجراهای امروز، «آخرین» برای جدیدترین پیش‌نویس، «انتشار» برای انتشار آن، «صف» برای صف موضوع‌ها و «راهنما» برای فهرست کامل. حداکثر ۲۰ نوشته در روز را می‌توان از داخل بله شروع کرد."
 
@@ -2456,7 +2452,7 @@ msgstr "موضوع حذف شد."
 msgid "Topics added to the queue."
 msgstr "موضوع‌ها به صف اضافه شدند."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Two-way commands"
 msgstr "فرمان‌های دوسویه"
 
@@ -2632,7 +2628,7 @@ msgstr "مسیر گفتگو تصویری برنگرداند — احتمالاً
 msgid "Which API route generates images. OpenAI-style services use the images endpoint (/images/generations); Gemini-style gateways (OpenRouter, Antigravity …) return the picture as base64 inside a chat completion instead — pick \"Chat completions\" for those, with an image-capable model (e.g. gemini-2.5-flash-image) in the Image model field. \"Automatic\" tries the images endpoint first and falls back to the chat route by itself."
 msgstr "تصویر از کدام مسیر API ساخته شود. سرویس‌های سبک OpenAI از اندپوینت تصویر (‎/images/generations) استفاده می‌کنند؛ اما گیت‌وی‌های سبک Gemini (مانند OpenRouter و Antigravity و…) تصویر را به‌صورت Base64 داخل پاسخ گفتگو برمی‌گردانند — برای آن‌ها «گفتگو» را انتخاب کنید و در فیلد «مدل تصویر» یک مدل تصویرساز (مثلاً gemini-2.5-flash-image) بگذارید. حالت «خودکار» اول اندپوینت تصویر را امتحان می‌کند و در صورت شکست، خودش سراغ مسیر گفتگو می‌رود."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Default notification image (URL)"
 msgstr "تصویر پیش‌فرض اعلان (نشانی)"
 
@@ -2640,7 +2636,7 @@ msgstr "تصویر پیش‌فرض اعلان (نشانی)"
 msgid "Read the full article at the link below"
 msgstr "ادامه مطلب در لینک زیر"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Sent above the message when a post has no featured image. Paste an image address from your media library; leave empty to send text-only in that case."
 msgstr "وقتی نوشته تصویر شاخص ندارد، این تصویر بالای پیام فرستاده می‌شود. نشانی یک تصویر از کتابخانهٔ رسانه را بگذارید؛ اگر خالی باشد در آن حالت فقط متن ارسال می‌شود."
 
@@ -2863,3 +2859,139 @@ msgstr "📑 پیش‌نویس‌ها — آخرین پیش‌نویس‌ها، 
 #: includes/class-aipc-bale-commands.php
 msgid "📱 منو — the tappable button menu (easiest way!)"
 msgstr "📱 منو — منوی دکمه‌ای لمسی (ساده‌ترین راه!)"
+
+#: includes/class-aipc-admin.php
+msgid "Bale / Telegram"
+msgstr "بله / تلگرام"
+
+#: admin/views/bot.php admin/views/schedule.php includes/class-aipc-admin.php
+msgid "Bale / Telegram Bot"
+msgstr "ربات بله / تلگرام"
+
+#: admin/views/bot.php
+msgid "Bale and Telegram bots speak the same API, so the plugin supports both — pick the platform in the settings below. Everything here needs WP-Cron: the bot polls for new messages roughly every 5 minutes, so replies are never instant."
+msgstr "ربات‌های بله و تلگرام یک API مشترک دارند، پس افزونه هر دو را پشتیبانی می‌کند — پلتفرم را در تنظیمات پایین انتخاب کنید. همهٔ این‌ها به WP-Cron وابسته است: ربات حدوداً هر ۵ دقیقه پیام‌های تازه را می‌خواند، پس پاسخ‌ها هیچ‌وقت لحظه‌ای نیستند."
+
+#: admin/views/schedule.php
+msgid "Bot notifications & chat commands have moved to their own page, with a full step-by-step setup guide."
+msgstr "اعلان‌ها و دستورهای چتیِ ربات به صفحهٔ اختصاصی خودش منتقل شد — همراه با راهنمای راه‌اندازی قدم‌به‌قدم."
+
+#: admin/views/bot.php
+msgid "Bot settings"
+msgstr "تنظیمات ربات"
+
+#: admin/views/bot.php
+msgid "Both platforms speak the same bot API. Your server must be able to reach the one you pick: from inside Iran Telegram’s API is usually blocked (Bale works), while some foreign hosts cannot reach Bale."
+msgstr "هر دو پلتفرم یک API مشترک دارند. سرور شما باید به پلتفرم انتخابی دسترسی داشته باشد: از داخل ایران API تلگرام معمولاً مسدود است (بله کار می‌کند) و بعضی هاست‌های خارجی هم به بله دسترسی ندارند."
+
+#: admin/views/bot.php
+msgid "Channel gets nothing? The bot must be an admin of the channel, and the recipient must be @channelusername (or the channel’s numeric ID)."
+msgstr "به کانال چیزی نمی‌رسد؟ ربات باید ادمین کانال باشد و گیرنده هم @نام‌کاربری‌کانال (یا شناسهٔ عددی کانال) باشد."
+
+#: admin/views/bot.php
+msgid "Commands: on"
+msgstr "دستورها: فعال"
+
+#: admin/views/bot.php
+msgid "Connect the agent to a Bale or Telegram bot: get notified about every post, and run everything — writing, publishing, scheduling — straight from the chat."
+msgstr "عامل را به یک ربات بله یا تلگرام وصل کنید: از هر پست باخبر شوید و همه‌چیز — نوشتن، انتشار، زمان‌بندی — را مستقیم از داخل چت مدیریت کنید."
+
+#: admin/views/bot.php
+msgid "Create the bot — in Bale message @Bot_Father (in Telegram: @BotFather), send /newbot, pick a name, and copy the token it hands back (it looks like 123456:ABC-DEF…)."
+msgstr "ساخت ربات — در بله به @Bot_Father پیام بدهید (در تلگرام: @BotFather)، دستور /newbot را بفرستید، یک نام انتخاب کنید و توکنی را که می‌دهد کپی کنید (شبیه 123456:ABC-DEF… است)."
+
+#: admin/views/bot.php
+msgid "Detect your chat ID — click “Detect chat ID”; your numeric ID is filled in automatically. For a channel, make the bot an admin and enter @channelusername as a recipient."
+msgstr "تشخیص شناسهٔ چت — روی «تشخیص شناسهٔ چت» بزنید؛ شناسهٔ عددی شما خودکار پر می‌شود. برای کانال، ربات را ادمین کنید و @نام‌کاربری‌کانال را به گیرنده‌ها اضافه کنید."
+
+#: admin/views/bot.php
+msgid "Enable & test — tick both checkboxes (message after every post + accept commands), save, then “Send test message” must deliver a ✅ to your chat."
+msgstr "فعال‌سازی و تست — هر دو گزینه را تیک بزنید (پیام بعد از هر پست + پذیرش دستورها)، ذخیره کنید و بعد «ارسال پیام آزمایشی» باید یک ✅ به چت شما برساند."
+
+#: admin/views/bot.php
+msgid "Follow these six steps once; after that everything runs from the chat."
+msgstr "این شش قدم را یک‌بار انجام بدهید؛ بعد از آن همه‌چیز از داخل چت اداره می‌شود."
+
+#: admin/views/bot.php
+msgid "Keep the token private — anyone who has it controls the bot, and two sites polling the same bot steal each other’s messages."
+msgstr "توکن را محرمانه نگه دارید — هرکس آن را داشته باشد ربات را کنترل می‌کند، و دو سایت با یک ربات مشترک پیام‌های همدیگر را می‌دزدند."
+
+#: admin/views/bot.php
+msgid "No answer to commands or buttons? Enable “Accept commands from Bale chats” and remember replies ride on WP-Cron — they can take up to ~5 minutes. If nothing ever arrives, check the Cron status box on the Schedule page."
+msgstr "به دستورها یا دکمه‌ها جواب نمی‌دهد؟ «پذیرش دستور از چت‌های بله» را فعال کنید و یادتان باشد پاسخ‌ها با WP-Cron می‌آیند — تا حدود ۵ دقیقه طول می‌کشد. اگر هیچ‌وقت چیزی نیامد، جعبهٔ «وضعیت کرون» در صفحهٔ زمان‌بندی را ببینید."
+
+#: admin/views/schedule.php
+msgid "Notifications: off"
+msgstr "اعلان‌ها: خاموش"
+
+#: admin/views/bot.php admin/views/schedule.php
+msgid "Notifications: on"
+msgstr "اعلان‌ها: فعال"
+
+#: admin/views/bot.php
+msgid "Once two-way commands are on, every authorized chat can:"
+msgstr "وقتی دستورهای دوطرفه فعال باشد، هر چت مجاز می‌تواند:"
+
+#: admin/views/schedule.php
+msgid "Open the Bale / Telegram page"
+msgstr "باز کردن صفحهٔ بله / تلگرام"
+
+#: admin/views/bot.php
+msgid "Pick the platform & paste the token — choose Bale or Telegram below, paste the token and save."
+msgstr "انتخاب پلتفرم و چسباندن توکن — پایین، بله یا تلگرام را انتخاب کنید، توکن را بچسبانید و ذخیره کنید."
+
+#: admin/views/bot.php
+msgid "Platform"
+msgstr "پلتفرم"
+
+#: admin/views/bot.php
+msgid "Say hello to your bot — open it in the messenger and send it any message (bots can never write first)."
+msgstr "به ربات سلام کنید — آن را در پیام‌رسان باز کنید و هر پیامی بفرستید (ربات‌ها هیچ‌وقت نمی‌توانند اول پیام بدهند)."
+
+#: admin/views/bot.php
+msgid "Send «منو» to the bot — the tappable menu appears and everything (new topic, queue, drafts, publish, schedule) is one button away."
+msgstr "به ربات «منو» بفرستید — منوی لمسی می‌آید و همه‌چیز (موضوع جدید، صف، پیش‌نویس‌ها، انتشار، زمان‌بندی) با یک دکمه در دسترس است."
+
+#: admin/views/bot.php
+msgid "Setup guide"
+msgstr "راهنمای راه‌اندازی"
+
+#: admin/views/bot.php
+msgid "Test message fails? Re-check the token (no stray spaces), make sure the platform matches the token’s messenger, and add at least one chat ID — the exact error appears next to the button."
+msgstr "پیام آزمایشی نمی‌رسد؟ توکن را دوباره چک کنید (بدون فاصلهٔ اضافی)، مطمئن شوید پلتفرم با پیام‌رسانِ توکن یکی است و دست‌کم یک شناسهٔ چت وارد کنید — متن دقیق خطا کنار دکمه نمایش داده می‌شود."
+
+#: admin/views/bot.php
+msgid "The two most common causes: WP-Cron not running (nothing is polled, nothing is sent on schedule) and a token/platform mismatch. The Cron status box on the Schedule page shows whether ticks actually happen."
+msgstr "دو علت رایج: کار نکردن WP-Cron (نه پیامی خوانده می‌شود نه چیزی سر وقت ارسال می‌شود) و ناهماهنگی توکن/پلتفرم. جعبهٔ «وضعیت کرون» در صفحهٔ زمان‌بندی نشان می‌دهد تیک‌ها واقعاً اجرا می‌شوند یا نه."
+
+#: admin/views/bot.php
+msgid "Troubleshooting"
+msgstr "رفع اشکال"
+
+#: admin/views/bot.php
+msgid "What the bot can do"
+msgstr "ربات چه کارهایی می‌تواند بکند"
+
+#: admin/views/bot.php
+msgid "“Detect chat ID” finds nothing? Send a fresh message to the bot first — detection reads the bot’s most recent incoming messages."
+msgstr "«تشخیص شناسهٔ چت» چیزی پیدا نمی‌کند؟ اول یک پیام تازه به ربات بفرستید — تشخیص از آخرین پیام‌های دریافتی ربات می‌خواند."
+
+#: admin/views/bot.php
+msgid "⏰ Schedule with Jalali or Gregorian dates — «1404/07/20 18:30», «2026-10-12 18:30», «فردا 18:30»."
+msgstr "⏰ زمان‌بندی با تاریخ شمسی یا میلادی — «1404/07/20 18:30»، «2026-10-12 18:30»، «فردا 18:30»."
+
+#: admin/views/bot.php
+msgid "✍️ Start drafts with «نوشتن: topic» or straight from the queue buttons."
+msgstr "✍️ شروع پیش‌نویس با «نوشتن: موضوع» یا مستقیم از دکمه‌های صف."
+
+#: admin/views/bot.php
+msgid "📱 Open the tappable menu with «منو»: new topic, topic queue, drafts, status."
+msgstr "📱 باز کردن منوی لمسی با «منو»: موضوع جدید، صف موضوعات، پیش‌نویس‌ها، وضعیت."
+
+#: admin/views/bot.php
+msgid "📲 Get the image + summary + link after every generated post, with “Publish now” / “Schedule” buttons under drafts."
+msgstr "📲 دریافت تصویر + خلاصه + لینک بعد از هر پست تولیدشده، با دکمه‌های «انتشار همین حالا» / «زمان‌بندی» زیر پیش‌نویس‌ها."
+
+#: admin/views/bot.php
+msgid "🧾 Receive daily or weekly activity reports at the time you pick."
+msgstr "🧾 دریافت گزارش فعالیت روزانه یا هفتگی در ساعتی که خودتان انتخاب می‌کنید."

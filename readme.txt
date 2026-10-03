@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.14.0
+Stable tag: 1.15.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.15.0 =
+* New: dedicated "Bale / Telegram" admin page with a six-step setup guide, the bot settings (moved from the Schedule page, which now links there), a capabilities overview and a troubleshooting reference
+* New: Telegram support — the bot settings have a Platform selector (Bale or Telegram); both speak the same bot API, so notifications, commands, buttons and scheduling all work on either
+* Fix: AIPC_Bale::recipients() no longer warns when given a partial settings array
 
 = 1.14.0 =
 * New: interactive Bale menu — send «منو» (or /menu, or just press a button under /start and راهنما): ✍️ new topic (the bot asks for it in chat), 📋 topic queue with a button per topic that starts writing it right away, 📑 latest drafts with per-draft action cards (publish now / schedule), 📊 status and ❓ help

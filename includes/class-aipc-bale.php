@@ -15,8 +15,9 @@ defined( 'ABSPATH' ) || exit;
 
 final class AIPC_Bale {
 
-	const OPTION   = 'aipc_bale';
-	const API_BASE = 'https://tapi.bale.ai/bot';
+	const OPTION      = 'aipc_bale';
+	const API_BASE    = 'https://tapi.bale.ai/bot';
+	const API_BASE_TG = 'https://api.telegram.org/bot';
 
 	/**
 	 * Hook the post-created notification.
@@ -41,6 +42,7 @@ final class AIPC_Bale {
 		$cfg = is_array( $cfg ) ? $cfg : array();
 		return wp_parse_args( $cfg, array(
 			'enabled'        => 0,
+			'platform'       => 'bale', // bale|telegram — same Bot API, different endpoint (1.15.0).
 			'token'          => '',
 			'chat_ids'       => array(),
 			'chat_id'        => '', // Legacy single recipient (1.3.0).
@@ -62,7 +64,10 @@ final class AIPC_Bale {
 	 * @return array
 	 */
 	public static function recipients( $cfg = null ) {
-		$cfg = null === $cfg ? self::all() : $cfg;
+		// Tolerate partial arrays (e.g. sanitize() with an empty $old).
+		$cfg = null === $cfg
+			? self::all()
+			: wp_parse_args( (array) $cfg, array( 'chat_ids' => array(), 'chat_id' => '' ) );
 
 		$ids = array();
 		foreach ( (array) $cfg['chat_ids'] as $id ) {
@@ -143,8 +148,14 @@ final class AIPC_Bale {
 			$default_image = '';
 		}
 
+		$platform = isset( $in['platform'] ) ? sanitize_key( $in['platform'] ) : ( isset( $old['platform'] ) ? $old['platform'] : 'bale' );
+		if ( ! in_array( $platform, array( 'bale', 'telegram' ), true ) ) {
+			$platform = 'bale';
+		}
+
 		return array(
 			'enabled'        => empty( $in['enabled'] ) ? 0 : 1,
+			'platform'       => $platform,
 			'token'          => sanitize_text_field( $token ),
 			'chat_ids'       => $chat_ids,
 			'chat_id'        => isset( $old['chat_id'] ) ? $old['chat_id'] : '',
@@ -174,6 +185,17 @@ final class AIPC_Bale {
 	 * ------------------------------------------------------------------- */
 
 	/**
+	 * The Bot API base URL for the configured platform. Bale and Telegram
+	 * speak the same protocol — only the endpoint differs.
+	 *
+	 * @return string
+	 */
+	public static function api_base() {
+		$cfg = self::all();
+		return 'telegram' === $cfg['platform'] ? self::API_BASE_TG : self::API_BASE;
+	}
+
+	/**
 	 * Call a Bot API method.
 	 *
 	 * @param string $token  Bot token.
@@ -187,7 +209,7 @@ final class AIPC_Bale {
 		}
 
 		$res = wp_remote_post(
-			self::API_BASE . $token . '/' . $method,
+			self::api_base() . $token . '/' . $method,
 			array(
 				'timeout' => 20,
 				'headers' => array( 'Content-Type' => 'application/json; charset=utf-8' ),

@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.14.0)
+# AI Post Creator — Complete User Guide (v1.15.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -244,9 +244,16 @@ restores the default.
 
 ---
 
-## 9. Bale notifications
+## 9. Bale / Telegram bot
 
-Path: **AI Post Creator → Schedule → "Bale notifications" section**
+Path: **AI Post Creator → Bale / Telegram** *(its own page since 1.15 —
+with the full six-step setup guide built right in; the Schedule page
+links there)*
+
+**Platform:** pick Bale or Telegram in the settings — both use the same
+bot API, so everything below works identically on either. Note that the
+server must be able to reach the chosen API (from inside Iran Telegram
+is usually blocked; Bale works).
 
 1. Create a bot with [@Bot_Father](https://web.bale.ai/) in Bale and copy its token
 2. Paste it into "Bot token" (write-only — leave empty to keep the current one)

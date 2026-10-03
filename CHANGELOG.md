@@ -3,6 +3,32 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.15.0] — 2026-10-03
+
+### Added
+- **Dedicated “Bale / Telegram” admin page** (`aipc-bot`): a six-step
+  setup guide (create the bot, paste the token, say hello, detect the
+  chat ID, enable + test, send «منو»), the bot settings card (moved
+  from the Schedule page, which now shows a link card instead), a
+  “what the bot can do” overview and a troubleshooting reference.
+  The test-message / detect-chat-ID buttons work there too.
+- **Telegram support.** A Platform selector (Bale / Telegram) switches
+  the Bot API endpoint (`tapi.bale.ai` ↔ `api.telegram.org`) — the
+  protocol is identical, so notifications, the interactive menu,
+  inline buttons and chat scheduling all work on either platform.
+  34 new strings translated (743 msgids).
+
+### Fixed
+- `AIPC_Bale::recipients()` warned (`Undefined array key`) when handed
+  a partial settings array (e.g. `sanitize()` with an empty `$old`).
+
+### Tests
+- New `bot_platform` group (8): endpoint routing per platform,
+  platform sanitize (accept/reject/keep), default, and the new page's
+  form + guide markers. `admin_pages` now covers the bot page (6) and
+  the schedule page's link card; help-toggle expectations moved with
+  the section — 63 groups / 478 assertions total.
+
 ## [1.14.0] — 2026-10-03
 
 ### Added

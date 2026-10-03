@@ -59,7 +59,9 @@ final class AIPC_Assets {
 				true
 			);
 			self::inline_data( 'aipc-connections', self::data_for_connections() );
-		} elseif ( 'schedule' === $screen ) {
+		} elseif ( 'schedule' === $screen || 'bot' === $screen ) {
+			// The bot page reuses the schedule driver (Bale/Telegram test
+			// message + chat-ID detection buttons).
 			wp_enqueue_script(
 				'aipc-schedule',
 				AIPC_PLUGIN_URL . 'assets/admin-schedule.js',
@@ -92,6 +94,7 @@ final class AIPC_Assets {
 			'aipc-prompts'     => 'prompts',
 			'aipc-logs'        => 'logs',
 			'aipc-schedule'    => 'schedule',
+			'aipc-bot'         => 'bot',
 			'aipc-settings'    => 'settings',
 			'aipc-update'      => 'update',
 		);

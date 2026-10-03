@@ -128,6 +128,15 @@ final class AIPC_Admin {
 
 		add_submenu_page(
 			'aipc',
+			__( 'Bale / Telegram Bot', 'wp-ai-post-creator' ),
+			__( 'Bale / Telegram', 'wp-ai-post-creator' ),
+			'manage_options',
+			'aipc-bot',
+			array( __CLASS__, 'render_bot' )
+		);
+
+		add_submenu_page(
+			'aipc',
 			__( 'AI Settings', 'wp-ai-post-creator' ),
 			__( 'Settings', 'wp-ai-post-creator' ),
 			'manage_options',
@@ -259,6 +268,13 @@ final class AIPC_Admin {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
 		}
 		require AIPC_PLUGIN_DIR . 'admin/views/settings.php';
+	}
+
+	public static function render_bot() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
+		}
+		require AIPC_PLUGIN_DIR . 'admin/views/bot.php';
 	}
 
 	/* ---------------------------------------------------------------------
@@ -865,7 +881,7 @@ final class AIPC_Admin {
 		AIPC_Bale_Commands::maybe_schedule();
 
 		wp_safe_redirect( add_query_arg(
-			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'bale_saved' ),
+			array( 'page' => 'aipc-bot', 'aipc_msg' => 'bale_saved' ),
 			admin_url( 'admin.php' )
 		) );
 		exit;

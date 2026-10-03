@@ -810,22 +810,32 @@ $out['sanitize_v130'] = array(
 	'limit_clamped' => $aipc_limit_clamped,
 );
 
-// Schedule admin page renders.
+// Schedule admin page renders (since 1.15.0 the Bale/Telegram settings
+// live on their own page — the schedule page links to it instead).
 ob_start();
 AIPC_Admin::render_schedule();
 $aipc_sched_html = ob_get_clean();
+ob_start();
+AIPC_Admin::render_bot();
+$aipc_bot_html = ob_get_clean();
 $out['admin_pages']['schedule'] = array(
-	'rendered'     => false !== strpos( $aipc_sched_html, 'aipc-btn-bale-test' ),
+	'rendered'     => false !== strpos( $aipc_sched_html, 'aipc-sch-publish' ),
 	'shows_entry'  => false !== strpos( $aipc_sched_html, 'شروع کاشت قارچ در خانه' ),
-	'shows_bale'   => false !== strpos( $aipc_sched_html, 'aipc_save_bale' ),
+	'links_bot'    => false !== strpos( $aipc_sched_html, 'page=aipc-bot' ),
 	'shows_limit'  => false !== strpos( $aipc_sched_html, __( 'Max scheduled posts per day', 'wp-ai-post-creator' ) ),
-	'shows_report' => false !== strpos( $aipc_sched_html, __( 'Periodic report', 'wp-ai-post-creator' ) ),
 	'publish_sel'  => false !== strpos( $aipc_sched_html, 'aipc-sch-publish' ),
 	'delay_field'  => false !== strpos( $aipc_sched_html, 'publish_delay' ),
 	'publish_col'  => false !== strpos( $aipc_sched_html, '⏱' ) || false !== strpos( $aipc_sched_html, '🚀' ),
 	'shows_queue'  => false !== strpos( $aipc_sched_html, 'aipc-tq-suggest-btn' ) && false !== strpos( $aipc_sched_html, 'aipc_add_topics' ),
 	'shows_use_queue' => false !== strpos( $aipc_sched_html, 'name="use_queue"' ),
-	'shows_two_way'   => false !== strpos( $aipc_sched_html, 'name="two_way"' ),
+);
+$out['admin_pages']['bot'] = array(
+	'rendered'     => false !== strpos( $aipc_bot_html, 'aipc-btn-bale-test' ),
+	'shows_bale'   => false !== strpos( $aipc_bot_html, 'aipc_save_bale' ),
+	'shows_report' => false !== strpos( $aipc_bot_html, __( 'Periodic report', 'wp-ai-post-creator' ) ),
+	'shows_two_way'   => false !== strpos( $aipc_bot_html, 'name="two_way"' ),
+	'shows_platform'  => false !== strpos( $aipc_bot_html, 'name="platform"' ),
+	'shows_guide'     => false !== strpos( $aipc_bot_html, __( 'Setup guide', 'wp-ai-post-creator' ) ),
 );
 
 /* ------------------------------------------------------------------ *
@@ -1493,6 +1503,60 @@ $out['image_size_custom'] = array(
 );
 
 /* ------------------------------------------------------------------ *
+ * Bot platform (v1.15.0): Bale vs Telegram endpoint, sanitize, and the
+ * dedicated admin page.
+ * ------------------------------------------------------------------ */
+$aipc_bp_old_cfg = get_option( AIPC_Bale::OPTION, array() );
+
+$aipc_bp_urls = array();
+$aipc_bp_mock = function ( $pre, $args, $url ) use ( &$aipc_bp_urls ) {
+	if ( false !== strpos( $url, 'tapi.bale.ai' ) || false !== strpos( $url, 'api.telegram.org' ) ) {
+		$aipc_bp_urls[] = $url;
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '{"ok":true,"result":{}}',
+			'cookies'  => array(),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_bp_mock, 4, 3 );
+
+update_option( AIPC_Bale::OPTION, array( 'token' => 't1', 'platform' => 'bale' ), false );
+AIPC_Bale::send_message( 't1', '7', 'x' );
+update_option( AIPC_Bale::OPTION, array( 'token' => 't1', 'platform' => 'telegram' ), false );
+AIPC_Bale::send_message( 't1', '7', 'x' );
+
+$aipc_bp_s1 = AIPC_Bale::sanitize( array( 'platform' => 'telegram' ), array() );
+$aipc_bp_s2 = AIPC_Bale::sanitize( array( 'platform' => 'whatsapp' ), array() );
+$aipc_bp_s3 = AIPC_Bale::sanitize( array( 'report' => 'daily' ), array( 'platform' => 'telegram' ) );
+
+update_option( AIPC_Bale::OPTION, array( 'token' => 't1' ), false );
+$aipc_bp_default = AIPC_Bale::all();
+
+ob_start();
+AIPC_Admin::render_bot();
+$aipc_bp_view = ob_get_clean();
+
+$out['bot_platform'] = array(
+	'url_bale'         => isset( $aipc_bp_urls[0] ) && 0 === strpos( $aipc_bp_urls[0], AIPC_Bale::API_BASE ),
+	'url_telegram'     => isset( $aipc_bp_urls[1] ) && 0 === strpos( $aipc_bp_urls[1], AIPC_Bale::API_BASE_TG ),
+	'sanitize_accepts' => 'telegram' === $aipc_bp_s1['platform'],
+	'sanitize_rejects' => 'bale' === $aipc_bp_s2['platform'],
+	'sanitize_keeps'   => 'telegram' === $aipc_bp_s3['platform'],
+	'default_is_bale'  => 'bale' === $aipc_bp_default['platform'],
+	'page_has_form'    => false !== strpos( $aipc_bp_view, 'name="platform"' )
+		&& false !== strpos( $aipc_bp_view, 'aipc_save_bale' )
+		&& false !== strpos( $aipc_bp_view, 'api.telegram.org' ),
+	'page_has_guide'   => false !== strpos( $aipc_bp_view, 'data-aipc-help="bot-setup"' )
+		&& false !== strpos( $aipc_bp_view, 'data-aipc-help="bot-trouble"' ),
+);
+
+remove_filter( 'pre_http_request', $aipc_bp_mock, 4 );
+update_option( AIPC_Bale::OPTION, $aipc_bp_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
  * Bale interactive menu (v1.14.0): main menu keyboard, new-topic
  * conversation, queue buttons that start a draft, drafts list and
  * per-draft action cards.
@@ -2143,6 +2207,10 @@ AIPC_Admin::render_schedule();
 $aipc_help_pages['schedule'] = ob_get_clean();
 
 ob_start();
+AIPC_Admin::render_bot();
+$aipc_help_pages['bot'] = ob_get_clean();
+
+ob_start();
 AIPC_Admin::render_settings();
 $aipc_help_pages['settings'] = ob_get_clean();
 
@@ -2167,7 +2235,8 @@ $aipc_help_expected = array(
 	'review'      => 1,
 	'connections' => 3,
 	'prompts'     => 2,
-	'schedule'    => 7,
+	'schedule'    => 5,
+	'bot'         => 4,
 	'settings'    => 4,
 	'logs'        => 2,
 	'log_detail'  => 4,
@@ -2191,10 +2260,10 @@ $out['help_tooltips'] += array(
 	'slug_review'     => false !== strpos( $aipc_help_pages['review'], 'data-aipc-help="review-inbox"' ),
 	'slug_conn_form'  => false !== strpos( $aipc_help_pages['connections'], 'data-aipc-help="conn-form"' ),
 	'slug_chain'      => false !== strpos( $aipc_help_pages['prompts'], 'data-aipc-help="pr-chains"' ),
-	'slug_bale'       => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-bale"' ),
+	'slug_bale'       => false !== strpos( $aipc_help_pages['bot'], 'data-aipc-help="sched-bale"' ),
 	'slug_queue'      => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-queue"' ),
 	'slug_use_queue'  => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-use-queue"' ),
-	'slug_two_way'    => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="bale-two-way"' ),
+	'slug_two_way'    => false !== strpos( $aipc_help_pages['bot'], 'data-aipc-help="bale-two-way"' ),
 	'slug_limit'      => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-limit"' ),
 	'slug_settings'   => false !== strpos( $aipc_help_pages['settings'], 'data-aipc-help="settings-site-prompt"' ),
 	'slug_logs'       => false !== strpos( $aipc_help_pages['logs'], 'data-aipc-help="logs-jobs"' ),
