@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.19.1**. Audience: contributors and
+Technical reference for AI Post Creator **v1.20.0**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -89,6 +89,26 @@ and the client extracts/repairs JSON), `chat_html` ("raw HTML only"), `image`.
 `AIPC_Steps::get($step)` returns `{connections[], prompt}`; `prompt_for()`
 falls back to the registry default; a stored prompt identical to the default is
 treated as non-custom.
+
+**Editorial-depth pipeline (1.20.0):** `plan` classifies the real
+**search intent** (`search_intent` English token + `structure_hint`, stored in
+`data.plan`) and must never present search-volume/difficulty numbers (KEYWORD
+HONESTY); `outline` mirrors the intent (tutorial → steps, comparison →
+criteria + table, troubleshooting → symptoms/causes/fixes/prevention, …), uses
+technical terms in headings only when necessary, and plans one concrete
+**evidence** element per section (kept in `data.outline[i].evidence`);
+`section` receives it as MUST DELIVER, treats the word target as a ceiling and
+forbids padding and fabricated statistics/benchmarks/case studies; `copywrite`
+is an **Expert Editorial Rewrite** (machine-cliché removal, varied
+sentence/paragraph lengths, no identical section openings, natural
+transitions, keyword de-stuffing, bullets-to-prose, unsupported claims
+stripped — may restructure freely inside sections); `rw_rewrite` carries the
+same HUMAN VOICE + HONESTY rules. The system prompt bans fabricated
+benchmarks/case studies/customer stories/prices globally. Custom prompts must
+keep their routing phrases (first line) for the e2e mock to recognize steps.
+Internal-link candidates (`link_candidates()`) are relevance-ranked by
+normalized token overlap with the topic over a pool of up to 100 recent posts
+(`aipc_link_candidate_pool` filter) instead of newest-first.
 
 ## 5. Job execution
 
@@ -338,7 +358,7 @@ events read-only. admin-post actions: `aipc_cancel_job`,
 
 ## 10. Internationalization
 
-821 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+824 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals
@@ -350,8 +370,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 70 result
-groups / 539 assertions green at v1.19.1, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 71 result
+groups / 545 assertions green at v1.20.0, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference
@@ -370,4 +390,5 @@ runs on GitHub Actions (`.github/workflows/ci.yml`).
 `aipc_allow_loopback($bool)` · `aipc_rest_rate_limit($limit, $route)` ·
 `aipc_job_retention_days($days)` · `aipc_jobs_table_enabled($bool)` ·
 `aipc_image_timeout($seconds)` (default 180, 1.17.1) ·
-`aipc_duplicate_window($days)` (default 30, duplicate-topic guard, 1.19.0)
+`aipc_duplicate_window($days)` (default 30, duplicate-topic guard, 1.19.0) ·
+`aipc_link_candidate_pool($count)` (default 100, internal-link relevance pool, 1.20.0)

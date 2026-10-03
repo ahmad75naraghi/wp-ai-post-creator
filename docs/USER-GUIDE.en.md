@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.19.1)
+# AI Post Creator — Complete User Guide (v1.20.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -149,6 +149,18 @@ WP-Cron is not running on your site).
 **Internal linking:** while planning, the agent looks at your existing related
 posts and weaves up to 4 internal links naturally into the content — no action
 needed from you.
+
+**✍️ Depth & human-like writing (new in 1.20):** the content pipeline was
+redesigned so articles stop reading like AI: the real **search intent** is
+classified first (tutorial? comparison? troubleshooting? buying guide?
+definition?) and the structure mirrors it; every section gets a planned
+**concrete element** (real example, actionable steps, common mistake + fix,
+comparison or table) and the writer may not pad for word count; a final
+**Expert Editorial Rewrite** removes machine clichés, varies sentence and
+paragraph lengths, kills identical section openings and strips any
+unsupported statistic/benchmark/case study. The model is forbidden from
+inventing volume/difficulty numbers or fake case studies. Internal links are
+now picked by **topical relevance** from the last 100 posts, not recency.
 
 **🚫 Duplicate-request guard (new in 1.19):** the same article can never be
 written twice. Before a job starts — from this page, the REST API, the chat

@@ -431,6 +431,8 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 			'topic_brief'          => 'راهنمای عملی کاشت سبزیجات در بالکن کوچک از انتخاب خاک تا برداشت.',
 			'audience'             => 'ساکنان آپارتمان‌های کوچک و مبتدیان باغبانی',
 			'intent'               => 'اطلاعاتی و آموزشی',
+			'search_intent'        => 'tutorial',
+			'structure_hint'       => 'آموزش گام‌به‌گام از انتخاب خاک تا برداشت محصول.',
 			'primary_keyword'      => 'سبزی‌کاری در بالکن',
 			'secondary_keywords'   => array( 'کاشت سبزیجات', 'بالکن کوچک', 'خاک مناسب', 'آبیاری صحیح', 'نور کافی' ),
 			'angle'                => 'تمرکز بر راه‌حل‌های کم‌جا و کم‌هزینه',
@@ -446,8 +448,9 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		$sections = array();
 		for ( $i = 1; $i <= $n; $i++ ) {
 			$sections[] = array(
-				'heading' => "بخش آزمایشی شماره {$i}",
-				'brief'   => "در این بخش به موضوع {$i} پرداخته می‌شود و نکات کلیدی آن بررسی می‌گردد.",
+				'heading'  => "بخش آزمایشی شماره {$i}",
+				'brief'    => "در این بخش به موضوع {$i} پرداخته می‌شود و نکات کلیدی آن بررسی می‌گردد.",
+				'evidence' => "مثال واقعی و گام‌های اجرایی شماره {$i}",
 			);
 		}
 		return $chat( json_encode( array( 'sections' => $sections ), JSON_UNESCAPED_UNICODE ) );

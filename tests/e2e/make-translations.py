@@ -43,6 +43,9 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Search-intent token from the plan step': 'نشانهٔ هدف جست\u200cوجو از مرحلهٔ برنامه\u200cریزی',
+    'Recommended structure from the plan step': 'ساختار پیشنهادی از مرحلهٔ برنامه\u200cریزی',
+    'Concrete element planned for this section in the outline (or a generic fallback)': 'عنصر مشخصی که در طرح کلی برای این بخش برنامه\u200cریزی شده (یا جایگزین عمومی)',
     'Duplicate request blocked: a job is already writing “%s” right now. Wait for it to finish, or enable “Allow duplicate topic” to override.': 'درخواست تکراری مسدود شد: همین حالا یک کار در حال نوشتن «%s» است. صبر کنید تمام شود، یا «اجازهٔ موضوع تکراری» را فعال کنید.',
     'Duplicate request blocked: “%s” is already waiting in the topic queue and will be written on schedule.': 'درخواست تکراری مسدود شد: «%s» از قبل در صف موضوع\\u200cها منتظر است و طبق زمان\\u200cبندی نوشته خواهد شد.',
     'Duplicate request blocked: an article about this topic was already created recently — “%1$s” (post #%2$d). Change the topic, or enable “Allow duplicate topic” to write it again.': 'درخواست تکراری مسدود شد: به\\u200cتازگی مقاله\\u200cای دربارهٔ همین موضوع ساخته شده — «%1$s» (نوشتهٔ #%2$d). موضوع را عوض کنید، یا برای نوشتن دوباره «اجازهٔ موضوع تکراری» را فعال کنید.',

@@ -3307,3 +3307,15 @@ msgstr "این کار قبلاً نوشتهٔ #%d را ساخته است — ذ�
 #: admin/views/new-post.php
 msgid "skip the repeated-topic guard this once"
 msgstr "فقط همین یک بار از سد موضوع تکراری عبور کن"
+
+#: includes/class-aipc-steps.php
+msgid "Concrete element planned for this section in the outline (or a generic fallback)"
+msgstr "عنصر مشخصی که در طرح کلی برای این بخش برنامه‌ریزی شده (یا جایگزین عمومی)"
+
+#: includes/class-aipc-steps.php
+msgid "Recommended structure from the plan step"
+msgstr "ساختار پیشنهادی از مرحلهٔ برنامه‌ریزی"
+
+#: includes/class-aipc-steps.php
+msgid "Search-intent token from the plan step"
+msgstr "نشانهٔ هدف جست‌وجو از مرحلهٔ برنامه‌ریزی"

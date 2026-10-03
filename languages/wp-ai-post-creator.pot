@@ -600,6 +600,10 @@ msgstr ""
 msgid "Conclusion written (%d words)"
 msgstr ""
 
+#: includes/class-aipc-steps.php
+msgid "Concrete element planned for this section in the outline (or a generic fallback)"
+msgstr ""
+
 #: admin/views/connections.php
 msgid "Configure any number of OpenAI-compatible providers — then assign each pipeline step its own connection under Prompts & Steps."
 msgstr ""
@@ -1930,6 +1934,10 @@ msgstr ""
 msgid "Ready-made endpoint patterns for popular providers — copy your provider’s pattern into the connection form above."
 msgstr ""
 
+#: includes/class-aipc-steps.php
+msgid "Recommended structure from the plan step"
+msgstr ""
+
 #: admin/views/settings.php
 msgid "Record every AI request and response (full debug trace)"
 msgstr ""
@@ -2174,6 +2182,10 @@ msgstr ""
 
 #: includes/class-aipc-bale-commands.php
 msgid "Scheduling cancelled — the post stays as it is."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Search-intent token from the plan step"
 msgstr ""
 
 #: includes/class-aipc-steps.php

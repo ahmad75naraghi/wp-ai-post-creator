@@ -1310,17 +1310,24 @@ final class AIPC_Agent {
 	}
 
 	/**
-	 * Internal-link candidates: recent published posts with their permalinks.
+	 * Internal-link candidates: published posts with their permalinks.
 	 *
-	 * @param int $exclude Post id to exclude (rewrite mode).
-	 * @param int $limit   Maximum candidates.
+	 * Since 1.20.0 the candidates are RELEVANCE-ranked, not just "the most
+	 * recent": up to 100 recent posts are scored by word overlap between
+	 * their title and the topic context, so the model links to genuinely
+	 * related articles instead of whatever was published last.
+	 *
+	 * @param int    $exclude Post id to exclude (rewrite mode).
+	 * @param int    $limit   Maximum candidates.
+	 * @param string $context Topic/title text used for relevance ranking.
 	 * @return string Bullet list.
 	 */
-	private function link_candidates( $exclude = 0, $limit = 20 ) {
+	private function link_candidates( $exclude = 0, $limit = 20, $context = '' ) {
+		$pool = (int) apply_filters( 'aipc_link_candidate_pool', 100 );
 		$posts = get_posts( array(
 			'post_type'        => 'post',
 			'post_status'      => 'publish',
-			'numberposts'      => $limit,
+			'numberposts'      => max( $limit, $pool ),
 			'orderby'          => 'date',
 			'order'            => 'DESC',
 			'post__not_in'     => $exclude ? array( (int) $exclude ) : array(),
@@ -1331,11 +1338,52 @@ final class AIPC_Agent {
 			return '- ' . __( '(No published posts yet.)', 'wp-ai-post-creator' );
 		}
 
+		// Relevance ranking by normalized token overlap with the context.
+		$ctx_tokens = $this->title_tokens( $context );
+		if ( ! empty( $ctx_tokens ) && count( $posts ) > $limit ) {
+			$scored = array();
+			foreach ( $posts as $idx => $post ) {
+				$overlap = count( array_intersect( $ctx_tokens, $this->title_tokens( $post->post_title ) ) );
+				$scored[] = array( 'post' => $post, 'score' => $overlap, 'recency' => -$idx );
+			}
+			usort( $scored, function ( $a, $b ) {
+				if ( $a['score'] !== $b['score'] ) {
+					return $b['score'] - $a['score'];
+				}
+				return $b['recency'] - $a['recency']; // Newer first on ties.
+			} );
+			$posts = array_map( function ( $row ) {
+				return $row['post'];
+			}, $scored );
+		}
+		$posts = array_slice( $posts, 0, $limit );
+
 		$lines = '';
 		foreach ( $posts as $post ) {
 			$lines .= '- ' . wp_html_excerpt( $post->post_title, 110, '…' ) . ' — ' . get_permalink( $post ) . "\n";
 		}
 		return trim( $lines );
+	}
+
+	/**
+	 * Normalized, de-duplicated meaningful tokens of a title/topic
+	 * (ZWNJ/case/digit variants unified, short stop-tokens dropped).
+	 *
+	 * @param string $text Input text.
+	 * @return string[]
+	 */
+	private function title_tokens( $text ) {
+		$norm = self::topic_norm( $text );
+		if ( '' === $norm ) {
+			return array();
+		}
+		$tokens = array();
+		foreach ( preg_split( '/[^\p{L}\p{N}]+/u', $norm ) as $tok ) {
+			if ( mb_strlen( $tok ) >= 3 ) {
+				$tokens[ $tok ] = true;
+			}
+		}
+		return array_keys( $tokens );
 	}
 
 	/**
@@ -1463,7 +1511,7 @@ final class AIPC_Agent {
 			'{{categories}}'      => trim( $cat_lines ),
 			'{{recent_posts}}'    => $this->recent_posts_context(),
 			'{{sources}}'         => $this->source_context(),
-			'{{link_candidates}}' => $this->link_candidates(),
+			'{{link_candidates}}' => $this->link_candidates( 0, 20, $job['topic'] ),
 			'{{topic_hint}}'      => $topic_hint,
 			'{{words}}'           => (string) $spec['words'],
 			'{{sections}}'        => (string) $spec['sections'],
@@ -1559,6 +1607,8 @@ final class AIPC_Agent {
 			'{{topic_brief}}'     => isset( $plan['topic_brief'] ) ? (string) $plan['topic_brief'] : '',
 			'{{primary_keyword}}' => isset( $plan['primary_keyword'] ) ? (string) $plan['primary_keyword'] : '',
 			'{{angle}}'           => isset( $plan['angle'] ) ? (string) $plan['angle'] : '',
+			'{{search_intent}}'   => ! empty( $plan['search_intent'] ) ? sanitize_text_field( (string) $plan['search_intent'] ) : 'informational',
+			'{{structure_hint}}'  => isset( $plan['structure_hint'] ) ? sanitize_text_field( (string) $plan['structure_hint'] ) : '',
 			'{{words}}'           => (string) $spec['words'],
 			'{{sections}}'        => (string) $spec['sections'],
 			'{{lang}}'            => $lang,
@@ -1573,8 +1623,11 @@ final class AIPC_Agent {
 					continue;
 				}
 				$sections[] = array(
-					'heading' => sanitize_text_field( (string) $section['heading'] ),
-					'brief'   => isset( $section['brief'] ) ? sanitize_text_field( (string) $section['brief'] ) : '',
+					'heading'  => sanitize_text_field( (string) $section['heading'] ),
+					'brief'    => isset( $section['brief'] ) ? sanitize_text_field( (string) $section['brief'] ) : '',
+					// Evidence plan (1.20.0): the one concrete element this
+					// section promises — handed to the writer step.
+					'evidence' => isset( $section['evidence'] ) ? sanitize_text_field( (string) $section['evidence'] ) : '',
 				);
 			}
 		}
@@ -1687,6 +1740,9 @@ final class AIPC_Agent {
 			'{{title}}'           => $plan['title'],
 			'{{section_heading}}' => $section['heading'],
 			'{{section_brief}}'   => $section['brief'],
+			'{{section_evidence}}' => ( isset( $section['evidence'] ) && '' !== $section['evidence'] )
+				? $section['evidence']
+				: 'at least one concrete, useful element: a real example, actionable steps, a comparison, or a common mistake and its fix',
 			'{{per_words}}'       => (string) $per_words,
 			'{{primary_keyword}}' => isset( $plan['primary_keyword'] ) ? (string) $plan['primary_keyword'] : '',
 			'{{keywords_block}}'  => $keywords_block,
@@ -2297,7 +2353,7 @@ final class AIPC_Agent {
 			'{{existing_content}}' => $existing,
 			'{{site_context}}'     => $site_context,
 			'{{sources}}'          => $this->source_context(),
-			'{{link_candidates}}'  => $this->link_candidates( $post->ID ),
+			'{{link_candidates}}'  => $this->link_candidates( $post->ID, 20, $post->post_title ),
 			'{{words}}'            => (string) $spec['words'],
 			'{{lang}}'             => $lang,
 		);

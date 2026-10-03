@@ -3,6 +3,53 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.20.0] — 2026-10-03
+
+Editorial-depth package, driven by an external content-quality review
+(the applicable items of an n8n-workflow audit, adapted to this plugin).
+
+### Added
+- **Search-intent analysis before structure** (review P0): the plan step
+  now classifies the real search intent (`search_intent` token:
+  tutorial / comparison / troubleshooting / buying-guide / definition /
+  selection-guide / informational + a `structure_hint`), and the outline
+  step must mirror it — tutorials become ordered steps, comparisons get
+  criteria + a table section, troubleshooting gets symptoms → causes →
+  fixes → prevention, buying guides get needs/criteria/trade-offs.
+- **Evidence plan per section** (review P0 "depth, not word count"):
+  every outline section now declares the ONE concrete element it will
+  deliver (real example, actionable steps, configuration sample, common
+  mistake + fix, comparison, trade-offs or table); the writer prompt
+  receives it as MUST DELIVER and treats the word target as a ceiling —
+  "if you have nothing genuinely useful left to say, end the section
+  early; padding and generic filler are forbidden".
+- **Expert Editorial Rewrite** (review P0 human-like writing): the
+  copywriting pass became a real human-voice edit — delete machine
+  clichés and stock AI phrasing (with concrete examples), no two
+  sections may open with the same pattern, varied sentence/paragraph
+  lengths, natural transitions, practitioner-style terminology, keyword
+  de-stuffing, bullet lists that hide explanations become prose, padding
+  sentences and unsupported statistics/benchmarks/case studies are
+  removed; it may restructure freely inside sections. The rewrite-mode
+  pass got the same HUMAN VOICE + HONESTY rules.
+- **Honest keywords** (review P0): the plan step now states it has no
+  search-volume/difficulty data and must never present such numbers;
+  the system prompt forbids fabricated benchmarks, case studies,
+  customer stories and prices outright.
+- **Entity sanity** (review P0): headings may use technical terms ONLY
+  when necessary to answer the query — no forced terminology.
+- **Relevance-ranked internal links** (review P1): link candidates are
+  now scored by normalized word overlap against the topic over a pool
+  of up to 100 recent posts (`aipc_link_candidate_pool` filter) instead
+  of "the 20 most recent" — older but related articles now beat fresh
+  but unrelated ones.
+
+### Tests / i18n
+- New e2e group `editorial` (6 assertions): prompt rules present, intent
+  + evidence survive into job data and into the actual provider
+  requests, relevance-ranked links — 71 groups / 545 assertions green.
+- 3 new strings translated (824 msgids).
+
 ## [1.19.1] — 2026-10-03
 
 ### Fixed

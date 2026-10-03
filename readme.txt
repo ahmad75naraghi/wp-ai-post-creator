@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.19.1
+Stable tag: 1.20.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,14 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.20.0 =
+* New: search-intent analysis — the plan step classifies what the searcher actually wants (tutorial / comparison / troubleshooting / buying guide / definition …) and the outline must mirror that structure
+* New: evidence plan — every section declares the one concrete element it will deliver (real example, steps, configuration, common mistake + fix, comparison, table); the writer treats the word target as a ceiling: no padding, no generic filler
+* New: Expert Editorial Rewrite — the copywriting pass now removes machine clichés and stock AI phrasing, varies sentence/paragraph lengths, forbids identical section openings, writes natural transitions, de-stuffs keywords, turns explanation-hiding bullet lists into prose and strips unsupported statistics/benchmarks/case studies
+* New: honest keywords — the model must never present search-volume or difficulty numbers (it has no real SERP data); fabricated benchmarks/case studies/prices are forbidden at system-prompt level
+* Improved: internal-link candidates are relevance-ranked over up to 100 recent posts instead of just "the 20 newest" (filter aipc_link_candidate_pool)
+* Improved: headings may use technical terms only when necessary to answer the query
 
 = 1.19.1 =
 * Fix: one article could get its featured image regenerated and its notification repeated (and even end up image-less) when a background runner outlived its lock — the runner lock now carries an owner token and a heartbeat that refreshes it before every outbound request, and a runner that truly lost its lock discards its changes instead of rewinding the job

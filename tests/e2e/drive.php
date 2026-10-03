@@ -2582,6 +2582,84 @@ AIPC_Agent::instance()->delete_job( $aipc_rl2_id );
 AIPC_Agent::release( 'topic_' . AIPC_Agent::topic_norm( 'تست قفل اجراکننده' ) );
 delete_transient( $aipc_rl2_lk );
 
+/* ------------------------------------------------------------------ *
+ * v1.20.0 — editorial depth: intent analysis, evidence plan,
+ * human-voice rewrite, honest keywords, relevance-ranked links
+ * ------------------------------------------------------------------ */
+$aipc_ed_reg = AIPC_Steps::registry();
+
+// 1) The default prompts carry the new editorial rules.
+$aipc_ed_prompts_ok = false !== strpos( $aipc_ed_reg['system']['prompt'], 'Never fabricate benchmarks' )
+	&& false !== strpos( $aipc_ed_reg['plan']['prompt'], '"search_intent"' )
+	&& false !== strpos( $aipc_ed_reg['plan']['prompt'], 'KEYWORD HONESTY' )
+	&& false !== strpos( $aipc_ed_reg['outline']['prompt'], 'STRUCTURE BY INTENT' )
+	&& false !== strpos( $aipc_ed_reg['outline']['prompt'], '"evidence"' )
+	&& false !== strpos( $aipc_ed_reg['outline']['prompt'], 'never force unrelated terminology' )
+	&& false !== strpos( $aipc_ed_reg['section']['prompt'], 'DEPTH OVER LENGTH' )
+	&& false !== strpos( $aipc_ed_reg['section']['prompt'], 'padding and generic filler are forbidden' )
+	&& false !== strpos( $aipc_ed_reg['copywrite']['prompt'], 'EXPERT EDITORIAL REWRITE' )
+	&& false !== strpos( $aipc_ed_reg['copywrite']['prompt'], 'machine clich' )
+	&& false !== strpos( $aipc_ed_reg['copywrite']['prompt'], 'never pad' )
+	&& false !== strpos( $aipc_ed_reg['rw_rewrite']['prompt'], 'HUMAN VOICE' );
+
+// 2) The plan step stored the intent fields from the model.
+$aipc_ed_main = AIPC_Agent::instance()->get_job( $job_id );
+$aipc_ed_plan_ok = is_array( $aipc_ed_main )
+	&& isset( $aipc_ed_main['data']['plan']['search_intent'] )
+	&& 'tutorial' === $aipc_ed_main['data']['plan']['search_intent'];
+
+// 3) The outline kept the per-section evidence plan.
+$aipc_ed_outline_ok = isset( $aipc_ed_main['data']['outline'][0]['evidence'] )
+	&& false !== strpos( (string) $aipc_ed_main['data']['outline'][0]['evidence'], 'مثال واقعی' );
+
+// 4) + 5) The actual provider requests: the outline prompt carried the
+// intent, and the writer prompt carried the planned evidence.
+$aipc_ed_reqs = array();
+if ( file_exists( WP_CONTENT_DIR . '/mock-api-log.jsonl' ) ) {
+	foreach ( file( WP_CONTENT_DIR . '/mock-api-log.jsonl', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $aipc_ed_line ) {
+		$aipc_ed_reqs[] = json_decode( $aipc_ed_line, true );
+	}
+}
+$aipc_ed_outline_req = null;
+$aipc_ed_sec_req     = null;
+foreach ( $aipc_ed_reqs as $aipc_ed_r ) {
+	$aipc_ed_p = isset( $aipc_ed_r['prompt'] ) ? (string) $aipc_ed_r['prompt'] : '';
+	if ( ! $aipc_ed_outline_req && false !== strpos( $aipc_ed_p, 'Create the outline' ) ) {
+		$aipc_ed_outline_req = $aipc_ed_p;
+	}
+	if ( ! $aipc_ed_sec_req && false !== strpos( $aipc_ed_p, 'You are writing section 1' ) ) {
+		$aipc_ed_sec_req = $aipc_ed_p;
+	}
+}
+$aipc_ed_intent_sent   = $aipc_ed_outline_req && false !== strpos( $aipc_ed_outline_req, 'Search intent: tutorial' );
+$aipc_ed_evidence_sent = $aipc_ed_sec_req && false !== strpos( $aipc_ed_sec_req, 'MUST DELIVER' )
+	&& false !== strpos( $aipc_ed_sec_req, 'مثال واقعی و گام‌های اجرایی شماره 1' );
+
+// 6) Internal-link candidates are relevance-ranked, not just recent:
+// an older related post must beat two fresher unrelated ones.
+$aipc_ed_rel  = wp_insert_post( array( 'post_title' => 'راهنمای پرورش زنبور عسل برای مبتدیان', 'post_content' => '<p>x</p>', 'post_status' => 'publish', 'post_date' => wp_date( 'Y-m-d H:i:s', time() - 5 * DAY_IN_SECONDS ) ) );
+$aipc_ed_ir1  = wp_insert_post( array( 'post_title' => 'یادداشت نامرتبط دربارهٔ آشپزی ایتالیایی', 'post_content' => '<p>x</p>', 'post_status' => 'publish' ) );
+$aipc_ed_ir2  = wp_insert_post( array( 'post_title' => 'گزارش نامرتبط از نمایشگاه خودرو', 'post_content' => '<p>x</p>', 'post_status' => 'publish' ) );
+$aipc_ed_ref  = new ReflectionMethod( 'AIPC_Agent', 'link_candidates' );
+$aipc_ed_ref->setAccessible( true );
+$aipc_ed_list = (string) $aipc_ed_ref->invoke( AIPC_Agent::instance(), 0, 2, 'پرورش زنبور عسل در شهر' );
+$aipc_ed_lines = preg_split( '/\n/', $aipc_ed_list );
+$aipc_ed_links_ok = false !== strpos( $aipc_ed_lines[0], 'زنبور عسل' )     // related post ranked FIRST although 2 posts are fresher
+	&& false === strpos( $aipc_ed_list, 'آشپزی ایتالیایی' );                 // an unrelated fresh post fell out of the top-2
+
+$out['editorial'] = array(
+	'prompts_human'     => $aipc_ed_prompts_ok,
+	'plan_intent_saved' => $aipc_ed_plan_ok,
+	'outline_evidence'  => $aipc_ed_outline_ok,
+	'intent_sent'       => (bool) $aipc_ed_intent_sent,
+	'evidence_sent'     => (bool) $aipc_ed_evidence_sent,
+	'links_relevance'   => $aipc_ed_links_ok,
+);
+
+foreach ( array( $aipc_ed_rel, $aipc_ed_ir1, $aipc_ed_ir2 ) as $aipc_ed_del ) {
+	wp_delete_post( $aipc_ed_del, true );
+}
+
 
 
 
