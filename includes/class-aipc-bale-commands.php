@@ -34,7 +34,7 @@ defined( 'ABSPATH' ) || exit;
 final class AIPC_Bale_Commands {
 
 	const POLL_HOOK       = 'aipc_bale_poll';
-	const POLL_INTERVAL   = 300; // Seconds.
+	const POLL_INTERVAL   = 60; // Seconds (was 300 before 1.16.0).
 	const MAX_DAILY_JOBS  = 20;  // Bale-started jobs per day.
 	const MAX_PUBLISH_POS = 10;  // "انتشار n" — newest n drafts.
 	const PENDING_OPTION  = 'aipc_bale_pending'; // chat_id → awaited schedule date.
@@ -62,7 +62,7 @@ final class AIPC_Bale_Commands {
 	public static function cron_schedules( $schedules ) {
 		$schedules['aipc_bale_5min'] = array(
 			'interval' => self::POLL_INTERVAL,
-			'display'  => __( 'Every 5 minutes (AI Post Creator — Bale commands)', 'wp-ai-post-creator' ),
+			'display'  => __( 'Every minute (AI Post Creator — bot commands)', 'wp-ai-post-creator' ),
 		);
 		return $schedules;
 	}
@@ -88,7 +88,14 @@ final class AIPC_Bale_Commands {
 	 */
 	public static function maybe_schedule() {
 		if ( self::is_enabled() ) {
-			if ( ! wp_next_scheduled( self::POLL_HOOK ) ) {
+			// Re-register when the interval changed in an update (e.g. the
+			// 300s → 60s change in 1.16.0): old events keep their snapshot.
+			$event = wp_get_scheduled_event( self::POLL_HOOK );
+			if ( $event && isset( $event->interval ) && (int) $event->interval !== self::POLL_INTERVAL ) {
+				wp_clear_scheduled_hook( self::POLL_HOOK );
+				$event = false;
+			}
+			if ( ! $event && ! wp_next_scheduled( self::POLL_HOOK ) ) {
 				wp_schedule_event( time() + MINUTE_IN_SECONDS, 'aipc_bale_5min', self::POLL_HOOK );
 			}
 			return;
@@ -119,9 +126,11 @@ final class AIPC_Bale_Commands {
 		if ( ! self::is_enabled( $cfg ) ) {
 			return;
 		}
+		if ( AIPC_Bale::webhook_active( $cfg ) ) {
+			return; // Instant mode: the platform pushes updates to us.
+		}
 
-		$recipients = AIPC_Bale::recipients( $cfg );
-		$last       = isset( $cfg['last_update_id'] ) ? (int) $cfg['last_update_id'] : 0;
+		$last = isset( $cfg['last_update_id'] ) ? (int) $cfg['last_update_id'] : 0;
 
 		$json = AIPC_Bale::get_updates( $cfg['token'], $last + 1, 20 );
 		if ( is_wp_error( $json ) ) {
@@ -139,58 +148,76 @@ final class AIPC_Bale_Commands {
 			if ( $uid > $max ) {
 				$max = $uid;
 			}
-
-			// Inline-keyboard button press (Publish now / Schedule).
-			if ( ! empty( $update['callback_query'] ) && is_array( $update['callback_query'] ) ) {
-				$cb      = $update['callback_query'];
-				$chat_id = isset( $cb['message']['chat']['id'] ) ? (string) $cb['message']['chat']['id'] : '';
-				$data    = isset( $cb['data'] ) ? (string) $cb['data'] : '';
-
-				if ( '' !== $chat_id && in_array( $chat_id, $recipients, true ) ) {
-					if ( ! empty( $cb['id'] ) ) {
-						AIPC_Bale::answer_callback( $cfg['token'], (string) $cb['id'] );
-					}
-					$reply = self::handle_callback( $chat_id, $data );
-					list( $r_text, $r_markup ) = self::reply_parts( $reply );
-					if ( '' !== $r_text ) {
-						AIPC_Bale::send_message( $cfg['token'], $chat_id, $r_text, $r_markup );
-					}
-				}
-				continue;
-			}
-
-			$message = null;
-			foreach ( array( 'message', 'channel_post', 'edited_message' ) as $key ) {
-				if ( ! empty( $update[ $key ]['chat']['id'] ) ) {
-					$message = $update[ $key ];
-					break;
-				}
-			}
-			if ( ! $message ) {
-				continue;
-			}
-
-			$chat_id = (string) $message['chat']['id'];
-			$text    = isset( $message['text'] ) ? trim( (string) $message['text'] ) : '';
-			if ( '' === $chat_id || '' === $text ) {
-				continue;
-			}
-
-			// Only the configured chats may command the site.
-			if ( ! in_array( $chat_id, $recipients, true ) ) {
-				continue;
-			}
-
-			$reply = self::handle( $chat_id, $text );
-			list( $r_text, $r_markup ) = self::reply_parts( $reply );
-			if ( '' !== $r_text ) {
-				AIPC_Bale::send_message( $cfg['token'], $chat_id, $r_text, $r_markup );
-			}
+			self::process_update( $update, $cfg );
 		}
 
 		if ( $max !== $last ) {
+			$cfg = AIPC_Bale::all(); // Re-read: handlers may have written options.
 			$cfg['last_update_id'] = $max;
 			AIPC_Bale::save( $cfg );
+		}
+	}
+
+	/**
+	 * Handle one update (message or button press) — shared by the cron
+	 * poll and the instant webhook.
+	 *
+	 * @param array      $update One Bot API update.
+	 * @param array|null $cfg    Bale settings (default: stored).
+	 * @return void
+	 */
+	public static function process_update( $update, $cfg = null ) {
+		$cfg = null === $cfg ? AIPC_Bale::all() : $cfg;
+		if ( ! self::is_enabled( $cfg ) || ! is_array( $update ) ) {
+			return;
+		}
+		$recipients = AIPC_Bale::recipients( $cfg );
+
+		// Inline-keyboard button press (menu / publish now / schedule).
+		if ( ! empty( $update['callback_query'] ) && is_array( $update['callback_query'] ) ) {
+			$cb      = $update['callback_query'];
+			$chat_id = isset( $cb['message']['chat']['id'] ) ? (string) $cb['message']['chat']['id'] : '';
+			$data    = isset( $cb['data'] ) ? (string) $cb['data'] : '';
+
+			if ( '' !== $chat_id && in_array( $chat_id, $recipients, true ) ) {
+				if ( ! empty( $cb['id'] ) ) {
+					AIPC_Bale::answer_callback( $cfg['token'], (string) $cb['id'] );
+				}
+				$reply = self::handle_callback( $chat_id, $data );
+				list( $r_text, $r_markup ) = self::reply_parts( $reply );
+				if ( '' !== $r_text ) {
+					AIPC_Bale::send_message( $cfg['token'], $chat_id, $r_text, $r_markup );
+				}
+			}
+			return;
+		}
+
+		$message = null;
+		foreach ( array( 'message', 'channel_post', 'edited_message' ) as $key ) {
+			if ( ! empty( $update[ $key ]['chat']['id'] ) ) {
+				$message = $update[ $key ];
+				break;
+			}
+		}
+		if ( ! $message ) {
+			return;
+		}
+
+		$chat_id = (string) $message['chat']['id'];
+		$text    = isset( $message['text'] ) ? trim( (string) $message['text'] ) : '';
+		if ( '' === $chat_id || '' === $text ) {
+			return;
+		}
+
+		// Only the configured chats may command the site.
+		if ( ! in_array( $chat_id, $recipients, true ) ) {
+			return;
+		}
+
+		$reply = self::handle( $chat_id, $text );
+		list( $r_text, $r_markup ) = self::reply_parts( $reply );
+		if ( '' !== $r_text ) {
+			AIPC_Bale::send_message( $cfg['token'], $chat_id, $r_text, $r_markup );
 		}
 	}
 

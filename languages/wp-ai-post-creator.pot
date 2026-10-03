@@ -264,6 +264,10 @@ msgstr ""
 msgid "Analyzes the existing post (rewrite mode) and builds the improved outline."
 msgstr ""
 
+#: admin/views/bot.php
+msgid "Answer instantly via webhook (recommended)"
+msgstr ""
+
 #: admin/views/settings.php
 msgid "Appended to every agent request (the {{extra}} placeholder of the system prompt)."
 msgstr ""
@@ -333,7 +337,7 @@ msgid "Bale API error: %s"
 msgstr ""
 
 #: admin/views/bot.php
-msgid "Bale and Telegram bots speak the same API, so the plugin supports both — pick the platform in the settings below. Everything here needs WP-Cron: the bot polls for new messages roughly every 5 minutes, so replies are never instant."
+msgid "Bale and Telegram bots speak the same API, so the plugin supports both — pick the platform in the settings below. Replies arrive in one of two ways: instantly via the webhook (recommended), or through the WP-Cron poll about once a minute."
 msgstr ""
 
 #: includes/class-aipc-bale.php
@@ -996,10 +1000,6 @@ msgstr ""
 msgid "Every 15 minutes (AI Post Creator)"
 msgstr ""
 
-#: includes/class-aipc-bale-commands.php
-msgid "Every 5 minutes (AI Post Creator — Bale commands)"
-msgstr ""
-
 #: admin/views/review.php
 msgid "Every AI-generated draft lands here until you decide: edit, preview, publish with one click, or send it back for another rewrite. Nothing goes live until you say so."
 msgstr ""
@@ -1010,6 +1010,10 @@ msgstr ""
 
 #: admin/views/logs.php
 msgid "Every agent run: status, timing, tokens, per-step API calls and the full console log."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Every minute (AI Post Creator — bot commands)"
 msgstr ""
 
 #: admin/views/logs.php
@@ -1212,6 +1216,14 @@ msgstr ""
 msgid "Installed version"
 msgstr ""
 
+#: includes/class-aipc-bale.php
+msgid "Instant mode is not configured."
+msgstr ""
+
+#: admin/views/bot.php
+msgid "Instant replies (webhook)"
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Internal linking list chosen in the plan step (or empty)"
 msgstr ""
@@ -1230,6 +1242,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Introduction written (%d words)"
+msgstr ""
+
+#: includes/class-aipc-rest.php
+msgid "Invalid webhook secret."
 msgstr ""
 
 #: admin/views/logs.php
@@ -1389,7 +1405,7 @@ msgid "No AI drafts yet — start one with «نوشتن: <topic>»."
 msgstr ""
 
 #: admin/views/bot.php
-msgid "No answer to commands or buttons? Enable “Accept commands from Bale chats” and remember replies ride on WP-Cron — they can take up to ~5 minutes. If nothing ever arrives, check the Cron status box on the Schedule page."
+msgid "No answer to commands or buttons? First enable “Accept commands from Bale chats”. Without the webhook, replies ride on WP-Cron — expect a delay of a minute or more (longer on sites with little traffic). If nothing ever arrives, check the Cron status box on the Schedule page."
 msgstr ""
 
 #: admin/views/log-detail.php
@@ -1767,6 +1783,10 @@ msgid "Replace all plugin files with the latest version from GitHub?"
 msgstr ""
 
 #: admin/views/bot.php
+msgid "Replies too slow? Turn on “Instant replies (webhook)” above and save — button presses and commands are then answered within seconds instead of waiting for the next cron poll."
+msgstr ""
+
+#: admin/views/bot.php
 msgid "Report day (weekly reports)"
 msgstr ""
 
@@ -1913,6 +1933,10 @@ msgid "Save settings"
 msgstr ""
 
 #: admin/views/bot.php
+msgid "Saving with this on registers the webhook with the platform automatically; turning it off removes it and polling resumes."
+msgstr ""
+
+#: admin/views/bot.php
 msgid "Say hello to your bot — open it in the messenger and send it any message (bots can never write first)."
 msgstr ""
 
@@ -2018,6 +2042,14 @@ msgstr ""
 
 #: admin/views/new-post.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "Settings"
+msgstr ""
+
+#: admin/views/bot.php
+msgid "Settings saved — the webhook is registered: the bot now answers instantly."
+msgstr ""
+
+#: admin/views/bot.php
+msgid "Settings saved, but the webhook could not be registered: %s — the bot falls back to polling every minute."
 msgstr ""
 
 #: admin/views/bot.php
@@ -2217,7 +2249,7 @@ msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending 
 msgstr ""
 
 #: admin/views/bot.php
-msgid "The bot checks for new messages every ~5 minutes (via WP-Cron) and only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Up to 20 posts per day can be started from Bale."
+msgid "The bot only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Without the webhook, messages are read via WP-Cron about once a minute. Up to 20 posts per day can be started from the chat."
 msgstr ""
 
 #: includes/class-aipc-updater.php
@@ -2702,6 +2734,10 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "Which API route generates images. OpenAI-style services use the images endpoint (/images/generations); Gemini-style gateways (OpenRouter, Antigravity …) return the picture as base64 inside a chat completion instead — pick \"Chat completions\" for those, with an image-capable model (e.g. gemini-2.5-flash-image) in the Image model field. \"Automatic\" tries the images endpoint first and falls back to the chat route by itself."
+msgstr ""
+
+#: admin/views/bot.php
+msgid "Without a webhook the bot reads new messages via WP-Cron (about once a minute, and only when the site gets visits) — so button presses and commands answer with a delay. With the webhook on, Bale/Telegram pushes every message and button press straight to your site and the bot answers within seconds. Requires a publicly reachable site over HTTPS. While the webhook is active, polling pauses automatically."
 msgstr ""
 
 #: includes/class-aipc-steps.php

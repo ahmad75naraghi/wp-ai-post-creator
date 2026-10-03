@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.15.0
+Stable tag: 1.16.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.16.0 =
+* New: instant replies via webhook — enable "Instant replies (webhook)" on the Bale / Telegram page and button presses («انتشار همین حالا» / «زمان‌بندی») and chat commands are answered within seconds; the platform pushes every update straight to a secret REST endpoint instead of waiting for the cron poll
+* Improved: the polling fallback now runs every minute instead of every 5 (existing schedules are migrated automatically); polling pauses while the webhook is active
+* The troubleshooting section explains the delay and the fix
 
 = 1.15.0 =
 * New: dedicated "Bale / Telegram" admin page with a six-step setup guide, the bot settings (moved from the Schedule page, which now links there), a capabilities overview and a troubleshooting reference

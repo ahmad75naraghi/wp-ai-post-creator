@@ -51,6 +51,8 @@ final class AIPC_Bale {
 			'report_day'     => 6, // Weekday for weekly reports (Saturday).
 			'last_report'    => '', // Y-m-d when the last report was sent.
 			'two_way'        => 0, // Accept commands from chats (1.7.0).
+			'webhook'        => 0, // Instant replies via webhook (1.16.0).
+			'webhook_secret' => '', // Random path secret for the webhook route.
 			'last_update_id' => 0, // Last processed getUpdates id.
 			'default_image'  => '', // Fallback picture for posts without a featured image (1.9.2).
 		) );
@@ -153,6 +155,12 @@ final class AIPC_Bale {
 			$platform = 'bale';
 		}
 
+		$webhook = empty( $in['webhook'] ) ? 0 : 1;
+		$secret  = isset( $old['webhook_secret'] ) ? (string) $old['webhook_secret'] : '';
+		if ( $webhook && '' === $secret ) {
+			$secret = strtolower( wp_generate_password( 32, false, false ) );
+		}
+
 		return array(
 			'enabled'        => empty( $in['enabled'] ) ? 0 : 1,
 			'platform'       => $platform,
@@ -164,6 +172,8 @@ final class AIPC_Bale {
 			'report_day'     => $report_day,
 			'last_report'    => isset( $old['last_report'] ) ? $old['last_report'] : '',
 			'two_way'        => empty( $in['two_way'] ) ? 0 : 1,
+			'webhook'        => $webhook,
+			'webhook_secret' => $secret,
 			'last_update_id' => isset( $old['last_update_id'] ) ? absint( $old['last_update_id'] ) : 0,
 			'default_image'  => $default_image,
 		);
@@ -299,6 +309,59 @@ final class AIPC_Bale {
 		return self::api( $token, 'answerCallbackQuery', array(
 			'callback_query_id' => $callback_id,
 		) );
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Instant replies — webhook (1.16.0)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Whether instant mode is fully configured (toggle + secret).
+	 *
+	 * @param array|null $cfg Settings (default: stored).
+	 * @return bool
+	 */
+	public static function webhook_active( $cfg = null ) {
+		$cfg = null === $cfg ? self::all() : $cfg;
+		return ! empty( $cfg['webhook'] ) && '' !== (string) $cfg['webhook_secret'];
+	}
+
+	/**
+	 * The public webhook URL the platform pushes updates to.
+	 *
+	 * @param array|null $cfg Settings (default: stored).
+	 * @return string '' when instant mode is not configured.
+	 */
+	public static function webhook_url( $cfg = null ) {
+		$cfg = null === $cfg ? self::all() : $cfg;
+		if ( '' === (string) $cfg['webhook_secret'] ) {
+			return '';
+		}
+		return rest_url( 'aipc/v1/bot-webhook/' . $cfg['webhook_secret'] );
+	}
+
+	/**
+	 * Register the webhook with the platform (setWebhook).
+	 *
+	 * @return array|WP_Error
+	 */
+	public static function set_webhook() {
+		$cfg = self::all();
+		$url = self::webhook_url( $cfg );
+		if ( '' === $url ) {
+			return new WP_Error( 'aipc_bale', __( 'Instant mode is not configured.', 'wp-ai-post-creator' ) );
+		}
+		return self::api( $cfg['token'], 'setWebhook', array( 'url' => $url ) );
+	}
+
+	/**
+	 * Remove the webhook so polling takes over again (deleteWebhook).
+	 *
+	 * @return array|WP_Error
+	 */
+	public static function delete_webhook() {
+		$cfg = self::all();
+		return self::api( $cfg['token'], 'deleteWebhook', array() );
 	}
 
 	/**

@@ -12,8 +12,18 @@ $aipc_bale = AIPC_Bale::all();
 $aipc_msg  = isset( $_GET['aipc_msg'] ) ? sanitize_key( wp_unslash( $_GET['aipc_msg'] ) ) : '';
 
 $aipc_notices = array(
-	'bale_saved' => __( 'Bale notification settings saved.', 'wp-ai-post-creator' ),
+	'bale_saved'  => __( 'Bale notification settings saved.', 'wp-ai-post-creator' ),
+	'webhook_ok'  => __( 'Settings saved — the webhook is registered: the bot now answers instantly.', 'wp-ai-post-creator' ),
+	'webhook_fail' => '', // Built below from the stored error.
 );
+if ( 'webhook_fail' === $aipc_msg ) {
+	$aipc_notices['webhook_fail'] = sprintf(
+		/* translators: %s: error message. */
+		__( 'Settings saved, but the webhook could not be registered: %s — the bot falls back to polling every minute.', 'wp-ai-post-creator' ),
+		(string) get_transient( 'aipc_webhook_error' )
+	);
+	delete_transient( 'aipc_webhook_error' );
+}
 ?>
 <div class="wrap aipc-wrap">
 
@@ -34,14 +44,14 @@ $aipc_notices = array(
 		</div>
 	</div>
 
-	<?php if ( $aipc_msg && isset( $aipc_notices[ $aipc_msg ] ) ) : ?>
-		<div class="notice notice-success is-dismissible"><p><?php echo esc_html( $aipc_notices[ $aipc_msg ] ); ?></p></div>
+	<?php if ( $aipc_msg && ! empty( $aipc_notices[ $aipc_msg ] ) ) : ?>
+		<div class="notice <?php echo 'webhook_fail' === $aipc_msg ? 'notice-warning' : 'notice-success'; ?> is-dismissible"><p><?php echo esc_html( $aipc_notices[ $aipc_msg ] ); ?></p></div>
 	<?php endif; ?>
 
 	<div class="aipc-card">
 		<div class="aipc-heading">
 			<h2><?php esc_html_e( 'Setup guide', 'wp-ai-post-creator' ); ?></h2>
-			<?php aipc_help( 'bot-setup', __( 'Bale and Telegram bots speak the same API, so the plugin supports both — pick the platform in the settings below. Everything here needs WP-Cron: the bot polls for new messages roughly every 5 minutes, so replies are never instant.', 'wp-ai-post-creator' ) ); ?>
+			<?php aipc_help( 'bot-setup', __( 'Bale and Telegram bots speak the same API, so the plugin supports both — pick the platform in the settings below. Replies arrive in one of two ways: instantly via the webhook (recommended), or through the WP-Cron poll about once a minute.', 'wp-ai-post-creator' ) ); ?>
 		</div>
 		<p class="description"><?php esc_html_e( 'Follow these six steps once; after that everything runs from the chat.', 'wp-ai-post-creator' ); ?></p>
 		<ol class="aipc-steps-list">
@@ -123,12 +133,26 @@ $aipc_notices = array(
 			<div class="aipc-card aipc-card-inner">
 				<div class="aipc-heading">
 					<h3><?php esc_html_e( 'Two-way commands', 'wp-ai-post-creator' ); ?></h3>
-					<?php aipc_help( 'bale-two-way', __( 'The bot checks for new messages every ~5 minutes (via WP-Cron) and only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Up to 20 posts per day can be started from Bale.', 'wp-ai-post-creator' ) ); ?>
+					<?php aipc_help( 'bale-two-way', __( 'The bot only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Without the webhook, messages are read via WP-Cron about once a minute. Up to 20 posts per day can be started from the chat.', 'wp-ai-post-creator' ) ); ?>
 				</div>
 				<div class="aipc-checks">
 					<label class="aipc-check"><input type="checkbox" name="two_way" value="1" <?php checked( ! empty( $aipc_bale['two_way'] ) ); ?> /> <?php esc_html_e( 'Accept commands from Bale chats', 'wp-ai-post-creator' ); ?></label>
 				</div>
 				<p class="description"><?php esc_html_e( 'Commands: نوشتن: <topic> · وضعیت · آخرین · انتشار · صف · راهنما', 'wp-ai-post-creator' ); ?></p>
+			</div>
+
+			<div class="aipc-card aipc-card-inner">
+				<div class="aipc-heading">
+					<h3><?php esc_html_e( 'Instant replies (webhook)', 'wp-ai-post-creator' ); ?></h3>
+					<?php aipc_help( 'bot-webhook', __( 'Without a webhook the bot reads new messages via WP-Cron (about once a minute, and only when the site gets visits) — so button presses and commands answer with a delay. With the webhook on, Bale/Telegram pushes every message and button press straight to your site and the bot answers within seconds. Requires a publicly reachable site over HTTPS. While the webhook is active, polling pauses automatically.', 'wp-ai-post-creator' ) ); ?>
+				</div>
+				<div class="aipc-checks">
+					<label class="aipc-check"><input type="checkbox" name="webhook" value="1" <?php checked( ! empty( $aipc_bale['webhook'] ) ); ?> /> <?php esc_html_e( 'Answer instantly via webhook (recommended)', 'wp-ai-post-creator' ); ?></label>
+				</div>
+				<p class="description"><?php esc_html_e( 'Saving with this on registers the webhook with the platform automatically; turning it off removes it and polling resumes.', 'wp-ai-post-creator' ); ?></p>
+				<?php if ( AIPC_Bale::webhook_active( $aipc_bale ) ) : ?>
+					<p class="description" style="direction:ltr;text-align:left"><code><?php echo esc_html( AIPC_Bale::webhook_url( $aipc_bale ) ); ?></code></p>
+				<?php endif; ?>
 			</div>
 
 			<p>
@@ -160,7 +184,8 @@ $aipc_notices = array(
 			<?php aipc_help( 'bot-trouble', __( 'The two most common causes: WP-Cron not running (nothing is polled, nothing is sent on schedule) and a token/platform mismatch. The Cron status box on the Schedule page shows whether ticks actually happen.', 'wp-ai-post-creator' ) ); ?>
 		</div>
 		<ul class="aipc-steps-list">
-			<li><?php esc_html_e( 'No answer to commands or buttons? Enable “Accept commands from Bale chats” and remember replies ride on WP-Cron — they can take up to ~5 minutes. If nothing ever arrives, check the Cron status box on the Schedule page.', 'wp-ai-post-creator' ); ?></li>
+			<li><?php esc_html_e( 'No answer to commands or buttons? First enable “Accept commands from Bale chats”. Without the webhook, replies ride on WP-Cron — expect a delay of a minute or more (longer on sites with little traffic). If nothing ever arrives, check the Cron status box on the Schedule page.', 'wp-ai-post-creator' ); ?></li>
+			<li><?php esc_html_e( 'Replies too slow? Turn on “Instant replies (webhook)” above and save — button presses and commands are then answered within seconds instead of waiting for the next cron poll.', 'wp-ai-post-creator' ); ?></li>
 			<li><?php esc_html_e( 'Test message fails? Re-check the token (no stray spaces), make sure the platform matches the token’s messenger, and add at least one chat ID — the exact error appears next to the button.', 'wp-ai-post-creator' ); ?></li>
 			<li><?php esc_html_e( '“Detect chat ID” finds nothing? Send a fresh message to the bot first — detection reads the bot’s most recent incoming messages.', 'wp-ai-post-creator' ); ?></li>
 			<li><?php esc_html_e( 'Channel gets nothing? The bot must be an admin of the channel, and the recipient must be @channelusername (or the channel’s numeric ID).', 'wp-ai-post-creator' ); ?></li>

@@ -1503,6 +1503,107 @@ $out['image_size_custom'] = array(
 );
 
 /* ------------------------------------------------------------------ *
+ * Instant replies via webhook (v1.16.0): secret generation, REST route
+ * auth, instant processing of messages and button presses, paused
+ * polling, 1-minute poll fallback.
+ * ------------------------------------------------------------------ */
+$aipc_wh_old_cfg = get_option( AIPC_Bale::OPTION, array() );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+
+$aipc_wh_reqs = array();
+$aipc_wh_mock = function ( $pre, $args, $url ) use ( &$aipc_wh_reqs ) {
+	if ( false !== strpos( $url, 'tapi.bale.ai' ) || false !== strpos( $url, 'api.telegram.org' ) ) {
+		$aipc_wh_reqs[] = array( 'url' => $url, 'body' => isset( $args['body'] ) ? (string) $args['body'] : '' );
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '{"ok":true,"result":{}}',
+			'cookies'  => array(),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_wh_mock, 4, 3 );
+
+// Secret generation + stability.
+$aipc_wh_c1 = AIPC_Bale::sanitize( array( 'webhook' => 1, 'enabled' => 1, 'two_way' => 1, 'token' => 'wh-token', 'chat_ids' => '77' ), array() );
+$aipc_wh_c2 = AIPC_Bale::sanitize( array( 'webhook' => 1, 'enabled' => 1, 'two_way' => 1, 'chat_ids' => '77' ), $aipc_wh_c1 );
+AIPC_Bale::save( $aipc_wh_c2 );
+$aipc_wh_secret = $aipc_wh_c2['webhook_secret'];
+
+// setWebhook call carries the public URL.
+$aipc_wh_reqs = array();
+AIPC_Bale::set_webhook();
+$aipc_wh_set = ! empty( $aipc_wh_reqs ) ? $aipc_wh_reqs[0] : array( 'url' => '', 'body' => '' );
+
+// Polling pauses while instant mode is active.
+$aipc_wh_reqs = array();
+AIPC_Bale_Commands::poll();
+$aipc_wh_poll_paused = empty( $aipc_wh_reqs );
+
+// REST: wrong secret is rejected.
+$aipc_wh_bad = rest_do_request( new WP_REST_Request( 'POST', '/aipc/v1/bot-webhook/' . str_repeat( 'x', 32 ) ) );
+
+// REST: a message update is processed instantly (reply sent).
+$aipc_wh_reqs = array();
+$aipc_wh_req1 = new WP_REST_Request( 'POST', '/aipc/v1/bot-webhook/' . $aipc_wh_secret );
+$aipc_wh_req1->set_header( 'Content-Type', 'application/json' );
+$aipc_wh_req1->set_body( wp_json_encode( array(
+	'update_id' => 991,
+	'message'   => array( 'chat' => array( 'id' => 77 ), 'text' => 'وضعیت' ),
+) ) );
+$aipc_wh_r1 = rest_do_request( $aipc_wh_req1 );
+$aipc_wh_msg_replied = false;
+foreach ( $aipc_wh_reqs as $aipc_wh_r ) {
+	if ( false !== strpos( $aipc_wh_r['url'], 'sendMessage' ) ) {
+		$aipc_wh_msg_replied = true;
+	}
+}
+
+// REST: a button press publishes instantly.
+$aipc_wh_p = wp_insert_post( array( 'post_title' => 'پست وب‌هوک آنی', 'post_content' => '<p>w</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_wh_p, '_aipc_generated', time() );
+$aipc_wh_reqs = array();
+$aipc_wh_req2 = new WP_REST_Request( 'POST', '/aipc/v1/bot-webhook/' . $aipc_wh_secret );
+$aipc_wh_req2->set_header( 'Content-Type', 'application/json' );
+$aipc_wh_req2->set_body( wp_json_encode( array(
+	'update_id'      => 992,
+	'callback_query' => array(
+		'id'      => 'cbq-1',
+		'data'    => 'aipc:pub:' . $aipc_wh_p,
+		'message' => array( 'chat' => array( 'id' => 77 ) ),
+	),
+) ) );
+$aipc_wh_r2 = rest_do_request( $aipc_wh_req2 );
+$aipc_wh_answered = false;
+foreach ( $aipc_wh_reqs as $aipc_wh_r ) {
+	if ( false !== strpos( $aipc_wh_r['url'], 'answerCallbackQuery' ) ) {
+		$aipc_wh_answered = true;
+	}
+}
+
+$out['bale_webhook'] = array(
+	'secret_generated' => 1 === $aipc_wh_c1['webhook'] && strlen( (string) $aipc_wh_c1['webhook_secret'] ) >= 24,
+	'secret_stable'    => $aipc_wh_c2['webhook_secret'] === $aipc_wh_c1['webhook_secret'],
+	'url_has_secret'   => false !== strpos( AIPC_Bale::webhook_url(), '/aipc/v1/bot-webhook/' . $aipc_wh_secret ),
+	'set_webhook_call' => false !== strpos( $aipc_wh_set['url'], '/setWebhook' )
+		&& false !== strpos( $aipc_wh_set['body'], 'bot-webhook' ),
+	'poll_paused'      => $aipc_wh_poll_paused,
+	'bad_secret_403'   => 403 === $aipc_wh_bad->get_status(),
+	'message_instant'  => 200 === $aipc_wh_r1->get_status() && $aipc_wh_msg_replied,
+	'tracks_update_id' => (int) AIPC_Bale::all()['last_update_id'] >= 992,
+	'callback_instant' => 200 === $aipc_wh_r2->get_status()
+		&& 'publish' === get_post( $aipc_wh_p )->post_status
+		&& $aipc_wh_answered,
+	'poll_interval_1m' => 60 === AIPC_Bale_Commands::POLL_INTERVAL,
+);
+
+remove_filter( 'pre_http_request', $aipc_wh_mock, 4 );
+wp_delete_post( $aipc_wh_p, true );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+update_option( AIPC_Bale::OPTION, $aipc_wh_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
  * Bot platform (v1.15.0): Bale vs Telegram endpoint, sanitize, and the
  * dedicated admin page.
  * ------------------------------------------------------------------ */
@@ -2548,7 +2649,7 @@ delete_option( 'aipc_mock_bale_updates' );
 
 $out['bale_commands'] = array(
 	'poll_event'     => false !== $aipc_bc_event_on,
-	'interval'       => isset( wp_get_schedules()['aipc_bale_5min'] ) && 300 === (int) wp_get_schedules()['aipc_bale_5min']['interval'],
+	'interval'       => isset( wp_get_schedules()['aipc_bale_5min'] ) && AIPC_Bale_Commands::POLL_INTERVAL === (int) wp_get_schedules()['aipc_bale_5min']['interval'],
 	'job_created'    => ! empty( $aipc_bc_job ) && 'موضوع تست فرمان بله' === $aipc_bc_job['topic'],
 	'job_source'     => ! empty( $aipc_bc_job ) && 'bale' === $aipc_bc_job['source'],
 	'job_is_draft'   => ! empty( $aipc_bc_job ) && 'draft' === ( isset( $aipc_bc_job['args']['publish_mode'] ) ? $aipc_bc_job['args']['publish_mode'] : '' ),

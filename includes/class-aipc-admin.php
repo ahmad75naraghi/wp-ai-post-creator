@@ -876,12 +876,27 @@ final class AIPC_Admin {
 	public static function handle_save_bale() {
 		self::guard( 'aipc_save_bale' );
 
-		$cfg = AIPC_Bale::sanitize( wp_unslash( $_POST ), AIPC_Bale::all() );
+		$old = AIPC_Bale::all();
+		$cfg = AIPC_Bale::sanitize( wp_unslash( $_POST ), $old );
 		AIPC_Bale::save( $cfg );
 		AIPC_Bale_Commands::maybe_schedule();
 
+		// Register / remove the instant-mode webhook with the platform.
+		$msg = 'bale_saved';
+		if ( AIPC_Bale::webhook_active( $cfg ) && '' !== $cfg['token'] ) {
+			$res = AIPC_Bale::set_webhook();
+			if ( is_wp_error( $res ) ) {
+				$msg = 'webhook_fail';
+				set_transient( 'aipc_webhook_error', $res->get_error_message(), 5 * MINUTE_IN_SECONDS );
+			} else {
+				$msg = 'webhook_ok';
+			}
+		} elseif ( ! empty( $old['webhook'] ) && empty( $cfg['webhook'] ) && '' !== $cfg['token'] ) {
+			AIPC_Bale::delete_webhook(); // Back to polling; errors are harmless.
+		}
+
 		wp_safe_redirect( add_query_arg(
-			array( 'page' => 'aipc-bot', 'aipc_msg' => 'bale_saved' ),
+			array( 'page' => 'aipc-bot', 'aipc_msg' => $msg ),
 			admin_url( 'admin.php' )
 		) );
 		exit;

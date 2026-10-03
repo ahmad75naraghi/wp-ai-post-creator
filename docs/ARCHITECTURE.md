@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.15.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.16.0**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -262,7 +262,7 @@ a stable emoji (✍️📊📄🚀📋🤖) so tests can match it across transla
 
 ## 10. Internationalization
 
-743 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+752 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals

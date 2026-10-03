@@ -2320,10 +2320,6 @@ msgstr "به سقف روزانه رسیده‌اید: حداکثر %d نوشته
 msgid "Drafts waiting for review: %d"
 msgstr "پیش‌نویس‌های در انتظار بازبینی: %d"
 
-#: includes/class-aipc-bale-commands.php
-msgid "Every 5 minutes (AI Post Creator — Bale commands)"
-msgstr "هر ۵ دقیقه (ساخت نوشته با هوش مصنوعی — فرمان‌های بله)"
-
 #: includes/class-aipc-assets.php
 msgid "Fetching suggestions from your sources…"
 msgstr "در حال دریافت پیشنهاد از منابع شما…"
@@ -2407,10 +2403,6 @@ msgstr "پیشنهاد موضوع از منابع من"
 #: admin/views/schedule.php
 msgid "Take the topic from the queue"
 msgstr "موضوع را از صف بردار"
-
-#: admin/views/bot.php
-msgid "The bot checks for new messages every ~5 minutes (via WP-Cron) and only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Up to 20 posts per day can be started from Bale."
-msgstr "ربات تقریباً هر ۵ دقیقه (از طریق WP-Cron) پیام‌های تازه را بررسی می‌کند و فقط به شناسه‌های گفتگوی بالا گوش می‌دهد. هر کس در آن گفتگوها می‌تواند: با «نوشتن: یک موضوع» یک پیش‌نویس شروع کند، «وضعیت» برای اجراهای امروز، «آخرین» برای جدیدترین پیش‌نویس، «انتشار» برای انتشار آن، «صف» برای صف موضوع‌ها و «راهنما» برای فهرست کامل. حداکثر ۲۰ نوشته در روز را می‌توان از داخل بله شروع کرد."
 
 #: admin/views/schedule.php
 msgid "The queue is empty. Add topics below or suggest them from your research sources."
@@ -2868,10 +2860,6 @@ msgstr "بله / تلگرام"
 msgid "Bale / Telegram Bot"
 msgstr "ربات بله / تلگرام"
 
-#: admin/views/bot.php
-msgid "Bale and Telegram bots speak the same API, so the plugin supports both — pick the platform in the settings below. Everything here needs WP-Cron: the bot polls for new messages roughly every 5 minutes, so replies are never instant."
-msgstr "ربات‌های بله و تلگرام یک API مشترک دارند، پس افزونه هر دو را پشتیبانی می‌کند — پلتفرم را در تنظیمات پایین انتخاب کنید. همهٔ این‌ها به WP-Cron وابسته است: ربات حدوداً هر ۵ دقیقه پیام‌های تازه را می‌خواند، پس پاسخ‌ها هیچ‌وقت لحظه‌ای نیستند."
-
 #: admin/views/schedule.php
 msgid "Bot notifications & chat commands have moved to their own page, with a full step-by-step setup guide."
 msgstr "اعلان‌ها و دستورهای چتیِ ربات به صفحهٔ اختصاصی خودش منتقل شد — همراه با راهنمای راه‌اندازی قدم‌به‌قدم."
@@ -2915,10 +2903,6 @@ msgstr "این شش قدم را یک‌بار انجام بدهید؛ بعد ا�
 #: admin/views/bot.php
 msgid "Keep the token private — anyone who has it controls the bot, and two sites polling the same bot steal each other’s messages."
 msgstr "توکن را محرمانه نگه دارید — هرکس آن را داشته باشد ربات را کنترل می‌کند، و دو سایت با یک ربات مشترک پیام‌های همدیگر را می‌دزدند."
-
-#: admin/views/bot.php
-msgid "No answer to commands or buttons? Enable “Accept commands from Bale chats” and remember replies ride on WP-Cron — they can take up to ~5 minutes. If nothing ever arrives, check the Cron status box on the Schedule page."
-msgstr "به دستورها یا دکمه‌ها جواب نمی‌دهد؟ «پذیرش دستور از چت‌های بله» را فعال کنید و یادتان باشد پاسخ‌ها با WP-Cron می‌آیند — تا حدود ۵ دقیقه طول می‌کشد. اگر هیچ‌وقت چیزی نیامد، جعبهٔ «وضعیت کرون» در صفحهٔ زمان‌بندی را ببینید."
 
 #: admin/views/schedule.php
 msgid "Notifications: off"
@@ -2995,3 +2979,55 @@ msgstr "📲 دریافت تصویر + خلاصه + لینک بعد از هر پ
 #: admin/views/bot.php
 msgid "🧾 Receive daily or weekly activity reports at the time you pick."
 msgstr "🧾 دریافت گزارش فعالیت روزانه یا هفتگی در ساعتی که خودتان انتخاب می‌کنید."
+
+#: admin/views/bot.php
+msgid "Answer instantly via webhook (recommended)"
+msgstr "پاسخ آنی از طریق وب‌هوک (پیشنهادی)"
+
+#: admin/views/bot.php
+msgid "Bale and Telegram bots speak the same API, so the plugin supports both — pick the platform in the settings below. Replies arrive in one of two ways: instantly via the webhook (recommended), or through the WP-Cron poll about once a minute."
+msgstr "ربات‌های بله و تلگرام یک API مشترک دارند، پس افزونه هر دو را پشتیبانی می‌کند — پلتفرم را در تنظیمات پایین انتخاب کنید. پاسخ‌ها به یکی از دو روش می‌رسند: آنی از طریق وب‌هوک (پیشنهادی)، یا با سرکشی WP-Cron حدوداً دقیقه‌ای یک‌بار."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Every minute (AI Post Creator — bot commands)"
+msgstr "هر دقیقه (AI Post Creator — دستورهای ربات)"
+
+#: includes/class-aipc-bale.php
+msgid "Instant mode is not configured."
+msgstr "حالت آنی پیکربندی نشده است."
+
+#: admin/views/bot.php
+msgid "Instant replies (webhook)"
+msgstr "پاسخ آنی (وب‌هوک)"
+
+#: includes/class-aipc-rest.php
+msgid "Invalid webhook secret."
+msgstr "رمز وب‌هوک نامعتبر است."
+
+#: admin/views/bot.php
+msgid "No answer to commands or buttons? First enable “Accept commands from Bale chats”. Without the webhook, replies ride on WP-Cron — expect a delay of a minute or more (longer on sites with little traffic). If nothing ever arrives, check the Cron status box on the Schedule page."
+msgstr "به دستورها یا دکمه‌ها جواب نمی‌دهد؟ اول «پذیرش دستور از چت‌های بله» را فعال کنید. بدون وب‌هوک، پاسخ‌ها با WP-Cron می‌آیند — یک دقیقه یا بیشتر تأخیر طبیعی است (در سایت‌های کم‌بازدید بیشتر). اگر هیچ‌وقت چیزی نیامد، جعبهٔ «وضعیت کرون» در صفحهٔ زمان‌بندی را ببینید."
+
+#: admin/views/bot.php
+msgid "Replies too slow? Turn on “Instant replies (webhook)” above and save — button presses and commands are then answered within seconds instead of waiting for the next cron poll."
+msgstr "پاسخ‌ها کند است؟ بالا «پاسخ آنی (وب‌هوک)» را روشن و ذخیره کنید — فشردن دکمه‌ها و دستورها به‌جای انتظار برای کرون بعدی، ظرف چند ثانیه جواب می‌گیرند."
+
+#: admin/views/bot.php
+msgid "Saving with this on registers the webhook with the platform automatically; turning it off removes it and polling resumes."
+msgstr "با ذخیره در حالت روشن، وب‌هوک خودکار نزد پلتفرم ثبت می‌شود؛ با خاموش کردنش حذف می‌شود و سرکشی دوره‌ای از سر گرفته می‌شود."
+
+#: admin/views/bot.php
+msgid "Settings saved — the webhook is registered: the bot now answers instantly."
+msgstr "تنظیمات ذخیره شد — وب‌هوک ثبت شد: ربات از این پس آنی پاسخ می‌دهد."
+
+#: admin/views/bot.php
+msgid "Settings saved, but the webhook could not be registered: %s — the bot falls back to polling every minute."
+msgstr "تنظیمات ذخیره شد، اما ثبت وب‌هوک ممکن نشد: %s — ربات به سرکشی دقیقه‌ای برمی‌گردد."
+
+#: admin/views/bot.php
+msgid "The bot only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Without the webhook, messages are read via WP-Cron about once a minute. Up to 20 posts per day can be started from the chat."
+msgstr "ربات فقط از شناسه‌های چتِ فهرست‌شدهٔ بالا فرمان می‌گیرد. هرکس در آن چت‌ها می‌تواند: «نوشتن: یک موضوع» برای شروع پیش‌نویس، «وضعیت» برای اجراهای امروز، «آخرین» برای تازه‌ترین پیش‌نویس، «انتشار» برای انتشار آن، «صف» برای صف موضوعات و «راهنما» برای فهرست کامل بفرستد. بدون وب‌هوک، پیام‌ها با WP-Cron حدوداً دقیقه‌ای یک‌بار خوانده می‌شوند. حداکثر ۲۰ پست در روز از چت قابل شروع است."
+
+#: admin/views/bot.php
+msgid "Without a webhook the bot reads new messages via WP-Cron (about once a minute, and only when the site gets visits) — so button presses and commands answer with a delay. With the webhook on, Bale/Telegram pushes every message and button press straight to your site and the bot answers within seconds. Requires a publicly reachable site over HTTPS. While the webhook is active, polling pauses automatically."
+msgstr "بدون وب‌هوک، ربات پیام‌های تازه را با WP-Cron می‌خواند (حدوداً دقیقه‌ای یک‌بار و فقط وقتی سایت بازدید دارد) — پس فشردن دکمه‌ها و دستورها با تأخیر جواب می‌گیرند. با وب‌هوکِ روشن، بله/تلگرام هر پیام و هر فشردن دکمه را مستقیم به سایت شما می‌فرستد و ربات ظرف چند ثانیه پاسخ می‌دهد. سایت باید از اینترنت با HTTPS در دسترس باشد. تا وقتی وب‌هوک فعال است، سرکشی دوره‌ای خودکار متوقف می‌شود."

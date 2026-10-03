@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.15.0)
+# AI Post Creator — Complete User Guide (v1.16.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -306,6 +306,16 @@ buttons under it:
   time off means 09:00. The post is scheduled like a normal WordPress
   scheduled post and the bot sends the 🎉 notice when it goes live.
   Send `لغو` to cancel (the request also expires after 30 minutes).
+
+### ⚡ Instant replies — webhook (new in 1.16)
+
+By default the bot reads messages via WP-Cron about once a minute, so a
+button press can take a minute or more to answer (longer on quiet
+sites). Turn on **Instant replies (webhook)** on the Bale / Telegram
+page and save: the platform then pushes every message and button press
+straight to your site and the bot answers within seconds. Requires the
+site to be publicly reachable over HTTPS; turning the box off removes
+the webhook and polling resumes automatically.
 
 ### 📱 Interactive menu (new in 1.14)
 

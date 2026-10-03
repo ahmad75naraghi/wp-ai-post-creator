@@ -3,6 +3,35 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.16.0] — 2026-10-03
+
+### Added
+- **Instant replies (webhook).** The reported "pressed the button and
+  nothing happened" was polling latency: button presses only reach the
+  site with the WP-Cron `getUpdates` poll. New checkbox on the
+  Bale / Telegram page registers a webhook (`setWebhook`) pointing at
+  a secret public REST route (`aipc/v1/bot-webhook/<32-char secret>`,
+  `hash_equals` validation) — the platform then pushes every message
+  and button press immediately and the bot answers within seconds.
+  Turning it off calls `deleteWebhook` and polling resumes; save
+  shows success/failure notices with the exact platform error.
+- `process_update()` — the per-update handler shared by the poll loop
+  and the webhook; webhook processing also advances `last_update_id`
+  so switching back to polling never replays handled updates.
+
+### Changed
+- Polling fallback interval: **5 minutes → 1 minute**; stale scheduled
+  events are migrated automatically; the poll is paused entirely while
+  the webhook is active (avoids getUpdates/webhook conflicts).
+  13 new strings translated (752 msgids).
+
+### Tests
+- New `bale_webhook` group (10): secret generation/stability, webhook
+  URL, the `setWebhook` call, paused polling, 403 on a wrong secret,
+  instant message + instant button-press publishing through the real
+  REST dispatcher, `last_update_id` tracking, and the 1-minute
+  interval — 64 groups / 489 assertions total.
+
 ## [1.15.0] — 2026-10-03
 
 ### Added
