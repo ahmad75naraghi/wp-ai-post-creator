@@ -43,6 +43,8 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Custom…': 'سفارشی…',
+    'Pick “Custom…” and type width×height (e.g. 800x600) for any other size — if the provider rejects it, the request is automatically retried without a size.': 'برای هر اندازهٔ دیگر «سفارشی…» را انتخاب و عرض×ارتفاع را بنویسید (مثلاً 800x600) — اگر ارائه\u200cدهنده آن را نپذیرد، درخواست خودکار بدون اندازه تکرار می\u200cشود.',
     'Allow linking to the research source sites inside articles': 'اجازهٔ لینک\u200cدادن به سایت\u200cهای منبع پژوهش داخل مقاله\u200cها',
     'Source links': 'لینک منبع',
     'When disabled, the model never receives the source URLs and any source link that still appears is removed from the final article — the research sources are then used for facts and inspiration only.': 'وقتی خاموش باشد، نشانی منبع\u200cها اصلاً به مدل داده نمی\u200cشود و اگر لینکی هم به منبع در متن بیاید، از مقالهٔ نهایی حذف می\u200cشود — منابع پژوهش در این حالت فقط برای واقعیت\u200cها و الهام به\u200cکار می\u200cروند.',

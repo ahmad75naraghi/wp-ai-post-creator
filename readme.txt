@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.12.0
+Stable tag: 1.12.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.12.1 =
+* New: custom image size — pick "Custom…" in Settings → Featured images and enter any width×height (e.g. 800x600); providers that reject the size automatically fall back to a size-less request
+* Verified: a new 10-stage forensic test proves the Persian half-space survives every stage inside the plugin and WordPress (provider JSON both escaped and raw, kses, DB save/read, front-end filters, editor-style re-save) — when half-spaces disappear, the provider output itself is the source, which the glued-word repair from 1.12.0 fixes
 
 = 1.12.0 =
 * New: "Source links" switch (Settings → Advanced) — choose whether articles may link to your research source sites; when off, the model never sees the URLs and any leftover source link is stripped from the final article

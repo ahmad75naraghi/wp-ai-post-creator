@@ -2755,3 +2755,11 @@ msgstr "لینک منبع"
 #: admin/views/settings.php
 msgid "When disabled, the model never receives the source URLs and any source link that still appears is removed from the final article — the research sources are then used for facts and inspiration only."
 msgstr "وقتی خاموش باشد، نشانی منبع‌ها اصلاً به مدل داده نمی‌شود و اگر لینکی هم به منبع در متن بیاید، از مقالهٔ نهایی حذف می‌شود — منابع پژوهش در این حالت فقط برای واقعیت‌ها و الهام به‌کار می‌روند."
+
+#: admin/views/settings.php
+msgid "Custom…"
+msgstr "سفارشی…"
+
+#: admin/views/settings.php
+msgid "Pick “Custom…” and type width×height (e.g. 800x600) for any other size — if the provider rejects it, the request is automatically retried without a size."
+msgstr "برای هر اندازهٔ دیگر «سفارشی…» را انتخاب و عرض×ارتفاع را بنویسید (مثلاً 800x600) — اگر ارائه‌دهنده آن را نپذیرد، درخواست خودکار بدون اندازه تکرار می‌شود."

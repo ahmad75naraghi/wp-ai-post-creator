@@ -1430,6 +1430,69 @@ $out['link_policy'] = array(
 update_option( 'aipc_settings', $aipc_lp_set_bak, false );
 
 /* ------------------------------------------------------------------ *
+ * ZWNJ forensic pipeline (v1.12.1): prove the half-space survives every
+ * single stage — provider bytes (escaped + raw), kses, DB save, read
+ * back, front-end filters, and an editor-style re-save.
+ * ------------------------------------------------------------------ */
+$aipc_zp_zwnj = "\xE2\x80\x8C";
+
+// Stage 1: provider JSON → PHP string (both encodings providers use).
+$aipc_zp_escaped = json_decode( '{"content":"<p>می\u200cشود تست</p>"}', true );
+$aipc_zp_raw     = json_decode( '{"content":"<p>می' . $aipc_zp_zwnj . 'شود تست</p>"}', true );
+
+// Stage 2: the agent's HTML cleanup (wp_kses_post) on both forms.
+$aipc_zp_kses_char   = wp_kses_post( '<p>می' . $aipc_zp_zwnj . 'شود</p>' );
+$aipc_zp_kses_entity = wp_kses_post( '<p>می&zwnj;شود</p>' );
+
+// Stage 3: save → DB → read back (raw char and armored entity).
+$aipc_zp_pid  = wp_insert_post( array(
+	'post_title'   => 'عنوان می' . $aipc_zp_zwnj . 'شود',
+	'post_content' => '<p>خام: می' . $aipc_zp_zwnj . 'شود — زره: می&zwnj;شود</p>',
+	'post_status'  => 'publish',
+) );
+$aipc_zp_post = get_post( $aipc_zp_pid );
+
+// Stage 4: front-end rendering filters.
+$aipc_zp_front = apply_filters( 'the_content', $aipc_zp_post->post_content );
+
+// Stage 5: editor-style re-save WITHOUT unfiltered_html (kses filters
+// active, data slashed exactly like wp-admin does).
+kses_init_filters();
+wp_update_post( wp_slash( array( 'ID' => $aipc_zp_pid, 'post_content' => $aipc_zp_post->post_content ) ) );
+kses_remove_filters();
+$aipc_zp_resaved = get_post( $aipc_zp_pid );
+
+$out['zwnj_pipeline'] = array(
+	'provider_escaped' => is_array( $aipc_zp_escaped ) && false !== strpos( $aipc_zp_escaped['content'], $aipc_zp_zwnj ),
+	'provider_raw'     => is_array( $aipc_zp_raw ) && false !== strpos( $aipc_zp_raw['content'], $aipc_zp_zwnj ),
+	'kses_keeps_char'  => false !== strpos( $aipc_zp_kses_char, $aipc_zp_zwnj ),
+	'kses_keeps_entity' => false !== strpos( $aipc_zp_kses_entity, '&zwnj;' ),
+	'db_keeps_title'   => false !== strpos( $aipc_zp_post->post_title, $aipc_zp_zwnj ),
+	'db_keeps_char'    => false !== strpos( $aipc_zp_post->post_content, $aipc_zp_zwnj ),
+	'db_keeps_entity'  => false !== strpos( $aipc_zp_post->post_content, '&zwnj;' ),
+	'front_renders'    => false !== strpos( $aipc_zp_front, $aipc_zp_zwnj ) && false !== strpos( $aipc_zp_front, '&zwnj;' ),
+	'editor_resave'    => false !== strpos( $aipc_zp_resaved->post_content, '&zwnj;' ) && false !== strpos( $aipc_zp_resaved->post_content, $aipc_zp_zwnj ),
+	'armor_converts'   => 'می&zwnj;شود' === AIPC_Text::fix_zwnj_html( 'می' . $aipc_zp_zwnj . 'شود' ),
+);
+wp_delete_post( $aipc_zp_pid, true );
+
+/* ------------------------------------------------------------------ *
+ * Custom image size (v1.12.1).
+ * ------------------------------------------------------------------ */
+$aipc_cs_ok1 = AIPC_Settings::sanitize( array( 'image_size_select' => 'custom', 'image_size_custom' => '800x600' ) );
+$aipc_cs_ok2 = AIPC_Settings::sanitize( array( 'image_size_select' => '1024x1024' ) );
+$aipc_cs_ok3 = AIPC_Settings::sanitize( array( 'image_size' => '640X480' ) );
+$aipc_cs_bad = AIPC_Settings::sanitize( array( 'image_size_select' => 'custom', 'image_size_custom' => 'huge;drop table' ) );
+$aipc_cs_old = AIPC_Settings::all();
+
+$out['image_size_custom'] = array(
+	'custom_accepted'  => '800x600' === $aipc_cs_ok1['image_size'],
+	'preset_accepted'  => '1024x1024' === $aipc_cs_ok2['image_size'],
+	'direct_normalized' => '640x480' === $aipc_cs_ok3['image_size'],
+	'junk_rejected'    => $aipc_cs_bad['image_size'] === $aipc_cs_old['image_size'],
+);
+
+/* ------------------------------------------------------------------ *
  * v1.6 — outbound network guard (SSRF protection)
  * ------------------------------------------------------------------ */
 $aipc_is_safe = function ( $url ) {

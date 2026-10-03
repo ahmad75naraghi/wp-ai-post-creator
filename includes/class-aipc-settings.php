@@ -236,8 +236,15 @@ final class AIPC_Settings {
 		$out['source_sites'] = implode( "\n", array_slice( array_values( array_unique( $aipc_sources ) ), 0, 8 ) );
 
 
-		$out['image_size'] = isset( $in['image_size'] ) ? sanitize_text_field( $in['image_size'] ) : $old['image_size'];
-		if ( ! in_array( $out['image_size'], self::image_sizes(), true ) ) {
+		// v1.12.1: a free-form WxH size is accepted besides the presets.
+		$aipc_size = isset( $in['image_size_select'] ) ? (string) $in['image_size_select'] : ( isset( $in['image_size'] ) ? (string) $in['image_size'] : (string) $old['image_size'] );
+		if ( 'custom' === $aipc_size ) {
+			$aipc_size = isset( $in['image_size_custom'] ) ? (string) $in['image_size_custom'] : '';
+		}
+		$aipc_size = strtolower( str_replace( array( '×', ' ' ), array( 'x', '' ), sanitize_text_field( $aipc_size ) ) );
+		if ( in_array( $aipc_size, self::image_sizes(), true ) || preg_match( '/^\d{2,4}x\d{2,4}$/', $aipc_size ) ) {
+			$out['image_size'] = $aipc_size;
+		} else {
 			$out['image_size'] = $old['image_size'];
 		}
 

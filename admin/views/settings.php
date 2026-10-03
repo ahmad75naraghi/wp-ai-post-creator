@@ -124,13 +124,20 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 				<tr>
 					<th scope="row"><label for="aipc-image-size"><?php esc_html_e( 'Image size', 'wp-ai-post-creator' ); ?></label></th>
 					<td>
+						<?php $aipc_size_known = in_array( $aipc['image_size'], AIPC_Settings::image_sizes(), true ); ?>
 						<select id="aipc-image-size" class="aipc-select"
-							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[image_size]">
+							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[image_size_select]">
 							<?php foreach ( AIPC_Settings::image_sizes() as $size ) : ?>
-								<option value="<?php echo esc_attr( $size ); ?>" <?php selected( $aipc['image_size'], $size ); ?>><?php echo esc_html( $size ); ?></option>
+								<option value="<?php echo esc_attr( $size ); ?>" <?php selected( $aipc_size_known && $aipc['image_size'] === $size ); ?>><?php echo esc_html( $size ); ?></option>
 							<?php endforeach; ?>
+							<option value="custom" <?php selected( ! $aipc_size_known ); ?>><?php esc_html_e( 'Custom…', 'wp-ai-post-creator' ); ?></option>
 						</select>
-						<p class="description"><?php esc_html_e( '1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024. The image model itself is set per connection.', 'wp-ai-post-creator' ); ?></p>
+						<input type="text" class="aipc-input" style="max-width:140px" dir="ltr"
+							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[image_size_custom]"
+							value="<?php echo esc_attr( $aipc_size_known ? '' : $aipc['image_size'] ); ?>"
+							placeholder="800x600" />
+						<p class="description"><?php esc_html_e( '1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024. The image model itself is set per connection.', 'wp-ai-post-creator' ); ?>
+							<?php esc_html_e( 'Pick “Custom…” and type width×height (e.g. 800x600) for any other size — if the provider rejects it, the request is automatically retried without a size.', 'wp-ai-post-creator' ); ?></p>
 					</td>
 				</tr>
 				<tr>

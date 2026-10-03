@@ -3,6 +3,29 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.12.1] — 2026-10-01
+
+### Added
+- **Custom image size.** Settings → Featured images now has a
+  "Custom…" choice with a free width×height field (e.g. `800x600`,
+  `×`/spaces normalized, strict `\d{2,4}x\d{2,4}` validation). The
+  API client already retries without a size when a provider rejects
+  it. 2 new strings translated (685 msgids).
+
+### Verified
+- **ZWNJ forensic pipeline test** (`zwnj_pipeline`, 10 assertions):
+  provider JSON with `\u200c` and with raw bytes, `wp_kses_post` on
+  the raw character and the `&zwnj;` entity, DB insert/read for title
+  and content, `the_content` front-end filters, an editor-style
+  re-save with kses filters active, and the entity armoring — all
+  preserve the half-space. Conclusion: disappearing half-spaces
+  originate in the provider output (fixed by the 1.12.0 glued-word
+  repair), not in transit or on save.
+
+### Tests
+- New `zwnj_pipeline` (10) and `image_size_custom` (4) groups
+  (60 groups / 434 assertions total).
+
 ## [1.12.0] — 2026-10-01
 
 ### Added

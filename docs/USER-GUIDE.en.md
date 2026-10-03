@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.12.0)
+# AI Post Creator — Complete User Guide (v1.12.1)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -88,7 +88,7 @@ Path: **AI Post Creator → Settings**
 | **Research source sites** | Optional — one URL per line (max 8). The agent reads each site's RSS feed while planning and grounds the topic and facts in their latest articles |
 | Content language | 12+ languages incl. Persian (defaults to the site locale) |
 | Default tone / length | Tone (professional, friendly, …) and length (short ~600 / medium ~1,200 / long ~2,200 words) |
-| Image / TOC / FAQ | Per-run defaults |
+| Image / TOC / FAQ | Per-run defaults — the image size offers presets plus a free “Custom…” width×height (new in 1.12.1) |
 | Default image prompt *(new in 1.10)* | Appended to every generated image prompt — use it for a consistent style (palette, art direction) across all featured images |
 | Source links *(new in 1.12)* | Whether articles may link to the research source sites — off = sources are used for facts only, links stripped |
 

@@ -688,6 +688,10 @@ msgstr ""
 msgid "Current size: %s"
 msgstr ""
 
+#: admin/views/settings.php
+msgid "Custom…"
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "Daily"
 msgstr ""
@@ -1476,6 +1480,10 @@ msgstr ""
 
 #: admin/views/rewrite.php
 msgid "Pick the post to rewrite. The agent rewrites it in place: status, author, address and category stay untouched — only the content (and optionally the image and SEO metadata) is refreshed."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Pick “Custom…” and type width×height (e.g. 800x600) for any other size — if the provider rejects it, the request is automatically retried without a size."
 msgstr ""
 
 #: includes/class-aipc-steps.php
