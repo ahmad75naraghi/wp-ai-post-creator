@@ -282,6 +282,8 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 				$prompt = (string) $message['content'];
 			}
 		}
+	} elseif ( is_array( $body ) && isset( $body['prompt'] ) ) {
+		$prompt = (string) $body['prompt']; // Image generations.
 	}
 
 	aipc_mock_log( array(
@@ -325,8 +327,35 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		);
 	}
 
+	// Chat-completions image route (Gemini/OpenRouter style): an image
+	// request arriving at /chat/completions returns a base64 data: URI
+	// inside message.images[].
+	if ( false !== strpos( $url, '/chat/completions' ) && ( isset( $body['modalities'] ) || false !== strpos( $prompt, 'CHATIMG' ) ) ) {
+		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' );
+		return array(
+			'body'     => json_encode( array(
+				'choices' => array( array( 'message' => array(
+					'role'    => 'assistant',
+					'content' => '',
+					'images'  => array( array( 'type' => 'image_url', 'image_url' => array( 'url' => 'data:image/png;base64,' . base64_encode( $png ) ) ) ),
+				) ) ),
+			) ),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+		);
+	}
+
 	// POST /images/generations
 	if ( false !== strpos( $url, '/images/generations' ) ) {
+		// A provider that can only return links (image_format=b64 must refuse it).
+		if ( false !== strpos( $prompt, 'URLONLY' ) ) {
+			return array(
+				'body'     => json_encode( array(
+					'created' => time(),
+					'data'    => array( array( 'url' => 'https://mock.invalid/generated.png' ) ),
+				) ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}
 		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' );
 		return array(
 			'body'     => json_encode( array(
@@ -402,6 +431,8 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 			'topic_brief'          => 'راهنمای عملی کاشت سبزیجات در بالکن کوچک از انتخاب خاک تا برداشت.',
 			'audience'             => 'ساکنان آپارتمان‌های کوچک و مبتدیان باغبانی',
 			'intent'               => 'اطلاعاتی و آموزشی',
+			'search_intent'        => 'tutorial',
+			'structure_hint'       => 'آموزش گام‌به‌گام از انتخاب خاک تا برداشت محصول.',
 			'primary_keyword'      => 'سبزی‌کاری در بالکن',
 			'secondary_keywords'   => array( 'کاشت سبزیجات', 'بالکن کوچک', 'خاک مناسب', 'آبیاری صحیح', 'نور کافی' ),
 			'angle'                => 'تمرکز بر راه‌حل‌های کم‌جا و کم‌هزینه',
@@ -417,8 +448,9 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		$sections = array();
 		for ( $i = 1; $i <= $n; $i++ ) {
 			$sections[] = array(
-				'heading' => "بخش آزمایشی شماره {$i}",
-				'brief'   => "در این بخش به موضوع {$i} پرداخته می‌شود و نکات کلیدی آن بررسی می‌گردد.",
+				'heading'  => "بخش آزمایشی شماره {$i}",
+				'brief'    => "در این بخش به موضوع {$i} پرداخته می‌شود و نکات کلیدی آن بررسی می‌گردد.",
+				'evidence' => "مثال واقعی و گام‌های اجرایی شماره {$i}",
 			);
 		}
 		return $chat( json_encode( array( 'sections' => $sections ), JSON_UNESCAPED_UNICODE ) );

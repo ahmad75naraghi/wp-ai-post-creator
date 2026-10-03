@@ -96,7 +96,7 @@ $aipc_ver        = isset( $_GET['ver'] ) ? sanitize_text_field( rawurldecode( wp
 				<p class="description"><?php esc_html_e( 'Used for private repositories and higher rate limits. Stored on your site only, never displayed again, and sent only to github.com over HTTPS.', 'wp-ai-post-creator' ); ?></p>
 			</div>
 
-			<p style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+			<p class="aipc-inline-form">
 				<button type="submit" class="button button-primary">💾 <?php esc_html_e( 'Save settings', 'wp-ai-post-creator' ); ?></button>
 				<button type="submit" class="button"
 					formaction="<?php echo esc_url( admin_url( 'admin-post.php?action=aipc_git_test' ) ); ?>">🔌 <?php esc_html_e( 'Test connection', 'wp-ai-post-creator' ); ?></button>
@@ -110,7 +110,7 @@ $aipc_ver        = isset( $_GET['ver'] ) ? sanitize_text_field( rawurldecode( wp
 					<h2><?php esc_html_e( 'Versions', 'wp-ai-post-creator' ); ?></h2>
 			<?php aipc_help( 'up-versions', __( 'Compares the installed version with the remote branch. A newer remote version means an update is available.', 'wp-ai-post-creator' ) ); ?>
 		</div>
-		<table class="aipc-table widefat" style="max-width:640px;">
+		<table class="aipc-table widefat aipc-kv-table">
 			<tbody>
 				<tr>
 					<td><strong><?php esc_html_e( 'Installed version', 'wp-ai-post-creator' ); ?></strong></td>
@@ -136,7 +136,7 @@ $aipc_ver        = isset( $_GET['ver'] ) ? sanitize_text_field( rawurldecode( wp
 			</tbody>
 		</table>
 
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-block-start:14px;">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="aipc-form-gap">
 			<?php wp_nonce_field( 'aipc_git_check' ); ?>
 			<input type="hidden" name="action" value="aipc_git_check" />
 			<button type="submit" class="button">🔄 <?php esc_html_e( 'Check for updates now', 'wp-ai-post-creator' ); ?></button>
@@ -153,7 +153,7 @@ $aipc_ver        = isset( $_GET['ver'] ) ? sanitize_text_field( rawurldecode( wp
 			<?php esc_html_e( 'Your settings, connections, schedules and posts are files-independent and stay untouched.', 'wp-ai-post-creator' ); ?>
 		</p>
 		<?php if ( '' !== $aipc_remote && version_compare( $aipc_remote, AIPC_VERSION, '<' ) ) : ?>
-			<div class="notice notice-warning inline" style="max-width:760px;"><p>
+			<div class="notice notice-warning inline aipc-notice-narrow"><p>
 				<?php
 				printf(
 					/* translators: %s: branch name. */

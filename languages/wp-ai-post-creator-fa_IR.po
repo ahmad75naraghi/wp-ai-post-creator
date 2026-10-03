@@ -38,7 +38,7 @@ msgstr "آدرس پایه API"
 msgid "API key"
 msgstr "کلید API"
 
-#: admin/views/connections.php admin/views/schedule.php admin/views/update.php
+#: admin/views/bot.php admin/views/connections.php admin/views/update.php
 msgid "••••• (saved — leave empty to keep)"
 msgstr "••••• (ذخیره شده — برای حفظ آن خالی بگذارید)"
 
@@ -114,7 +114,7 @@ msgstr "آدرس سرویس"
 msgid "Default"
 msgstr "پیش‌فرض"
 
-#: admin/views/connections.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/cron.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
 msgid "Actions"
 msgstr "عملیات"
 
@@ -122,7 +122,7 @@ msgstr "عملیات"
 msgid "Yes"
 msgstr "بله"
 
-#: admin/views/connections.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/cron.php admin/views/schedule.php
 msgid "Edit"
 msgstr "ویرایش"
 
@@ -162,11 +162,11 @@ msgstr "حذف کار"
 msgid "Overview"
 msgstr "نمای کلی"
 
-#: admin/views/log-detail.php admin/views/schedule.php
+#: admin/views/cron.php admin/views/log-detail.php admin/views/schedule.php
 msgid "Topic"
 msgstr "موضوع"
 
-#: admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/cron.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php includes/class-aipc-bale-commands.php
 msgid "Status"
 msgstr "وضعیت"
 
@@ -238,7 +238,7 @@ msgstr "ناموفق"
 msgid "Console log"
 msgstr "گزارش کنسول"
 
-#: admin/views/logs.php
+#: admin/views/cron.php admin/views/logs.php
 msgid "Running"
 msgstr "در حال اجرا"
 
@@ -246,7 +246,7 @@ msgstr "در حال اجرا"
 msgid "Done"
 msgstr "انجام شد"
 
-#: admin/views/logs.php
+#: admin/views/cron.php admin/views/logs.php
 msgid "Error"
 msgstr "خطا"
 
@@ -338,7 +338,7 @@ msgstr "توکن‌ها"
 msgid "Duration"
 msgstr "مدت"
 
-#: admin/views/logs.php admin/views/review.php
+#: admin/views/cron.php admin/views/logs.php admin/views/review.php
 msgid "Scheduled"
 msgstr "زمان‌بندی‌شده"
 
@@ -574,7 +574,7 @@ msgstr "ایجنت همین حالا شروع کرد — صفحهٔ کنسول �
 msgid "Could not start the agent. Check that a connection is configured."
 msgstr "شروع ایجنت ممکن نشد. بررسی کنید که یک اتصال پیکربندی شده باشد."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Bale notification settings saved."
 msgstr "تنظیمات اطلاع‌رسانی بله ذخیره شد."
 
@@ -606,7 +606,7 @@ msgstr "روزها"
 msgid "Automatic (site prompt)"
 msgstr "خودکار (پرامپت سایت)"
 
-#: admin/views/schedule.php
+#: admin/views/connections.php admin/views/schedule.php
 msgid "Active"
 msgstr "فعال"
 
@@ -658,71 +658,67 @@ msgstr "خالی = ابداع از پرامپت سایت"
 msgid "Save schedule"
 msgstr "ذخیره زمان‌بندی"
 
-#: admin/views/schedule.php
+#: admin/views/cron.php admin/views/schedule.php
 msgid "Cancel"
 msgstr "انصراف"
 
-#: admin/views/schedule.php
-msgid "Bale notifications"
-msgstr "اطلاع‌رسانی بله"
-
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "After every generated post the agent can message a Bale chat with the featured image, the summary and the link to the article. Create a bot with @Bot_Father in Bale, paste its token here, and enter the chat ID of the person (or channel) that should receive the messages."
 msgstr "بعد از هر نوشتهٔ تولیدشده، ایجنت می‌تواند به یک گفتگوی بله پیام بفرستد شامل تصویر شاخص، خلاصه و لینک مقاله. با @Bot_Father در بله یک ربات بسازید، توکنش را اینجا بچسبانید و شناسهٔ گفتگوی شخص (یا کانال) دریافت‌کنندهٔ پیام‌ها را وارد کنید."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Bot token"
 msgstr "توکن ربات"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Chat IDs (one per line)"
 msgstr "شناسه‌های گفتگو (هر خط یک شناسه)"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "One chat ID per line — a person’s numeric ID or a @channel username. Send any message to your bot, then use the button below to detect it automatically."
 msgstr "هر خط یک شناسهٔ گفتگو — شناسهٔ عددی شخص یا نام کاربری @کانال. یک پیام به ربات‌تان بفرستید و سپس با دکمهٔ پایین آن را به‌طور خودکار شناسایی کنید."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Periodic report"
 msgstr "گزارش دوره‌ای"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Off"
 msgstr "خاموش"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Daily"
 msgstr "روزانه"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Weekly"
 msgstr "هفتگی"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Reports are sent once per day/week at this time, after it has passed."
 msgstr "گزارش‌ها یک بار در روز/هفته پس از گذشت این ساعت ارسال می‌شوند."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Report time"
 msgstr "ساعت گزارش"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Report day (weekly reports)"
 msgstr "روز گزارش (گزارش‌های هفتگی)"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Send a Bale message after every generated post"
 msgstr "بعد از هر نوشتهٔ تولیدشده، پیام بله ارسال شود"
 
-#: admin/views/schedule.php admin/views/settings.php admin/views/update.php
+#: admin/views/bot.php admin/views/settings.php admin/views/update.php
 msgid "Save settings"
 msgstr "ذخیره تنظیمات"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Send test message"
 msgstr "ارسال پیام آزمایشی"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Detect chat ID"
 msgstr "شناسایی شناسهٔ گفتگو"
 
@@ -846,7 +842,7 @@ msgstr "پست جدید با هوش مصنوعی"
 msgid "AI Schedule"
 msgstr "زمان‌بندی هوش مصنوعی"
 
-#: includes/class-aipc-admin.php wp-ai-post-creator.php
+#: includes/class-aipc-admin.php includes/class-aipc-bale.php wp-ai-post-creator.php
 msgid "Schedule"
 msgstr "زمان‌بندی"
 
@@ -1051,10 +1047,6 @@ msgid "Generating featured image — prompt: %s"
 msgstr "در حال تولید تصویر شاخص — پرامپت: %s"
 
 #: includes/class-aipc-agent.php
-msgid "Could not download the generated image — continuing without one."
-msgstr "دانلود تصویر تولیدشده ممکن نشد — بدون تصویر ادامه می‌دهیم."
-
-#: includes/class-aipc-agent.php
 msgid "Could not save the image to the media library (%s) — continuing without one."
 msgstr "ذخیره تصویر در کتابخانه رسانه ممکن نشد (%s) — بدون تصویر ادامه می‌دهیم."
 
@@ -1237,14 +1229,6 @@ msgstr "شناسهٔ گفتگوی بله پیکربندی نشده است."
 #: includes/class-aipc-bale.php
 msgid "Test message from AI Post Creator — your Bale connection works!"
 msgstr "پیام آزمایشی از AI Post Creator — اتصال بله شما کار می‌کند!"
-
-#: includes/class-aipc-bale.php
-msgid "New AI post is ready"
-msgstr "نوشتهٔ جدید هوش مصنوعی آماده است"
-
-#: includes/class-aipc-bale.php
-msgid "%d words · saved as a draft"
-msgstr "%d واژه · به‌صورت پیش‌نویس ذخیره شد"
 
 #: includes/class-aipc-bale.php
 msgid "Bale notification sent (image, summary and link)."
@@ -1590,10 +1574,6 @@ msgstr "تصویر شاخص (API تصویر)"
 msgid "Calls the image API of the assigned connection and saves the result to the media library. No prompt — the image model and size come from the connection and settings."
 msgstr "API تصویرِ اتصال تخصیص‌یافته را فراخوانی می‌کند و نتیجه را در کتابخانه رسانه ذخیره می‌کند. پرامپتی ندارد — مدل و اندازه تصویر از اتصال و تنظیمات می‌آیند."
 
-#: includes/class-aipc-bale.php
-msgid "%d words · published"
-msgstr "%d کلمه · منتشر شد"
-
 #: admin/views/prompts.php
 msgid "%d-step fallback chain"
 msgstr "زنجیرهٔ جایگزین %d مرحله‌ای"
@@ -1606,10 +1586,6 @@ msgstr "(هنوز هیچ نوشتهٔ منتشرشده‌ای وجود ندار�
 msgid "15–10080 minutes (up to a week). Only used with “Publish later”."
 msgstr "۱۵ تا ۱۰۰۸۰ دقیقه (حداکثر یک هفته). فقط با گزینهٔ «انتشار بعداً» استفاده می‌شود."
 
-#: includes/class-aipc-bale.php
-msgid "A new AI post is published"
-msgstr "یک نوشتهٔ جدید هوش مصنوعی منتشر شد"
-
 #: admin/views/prompts.php
 msgid "AI connections chain (fallback order)"
 msgstr "زنجیرهٔ اتصال‌های هوش مصنوعی (ترتیب جایگزینی)"
@@ -1621,10 +1597,6 @@ msgstr "پس از ساخت"
 #: admin/views/rewrite.php
 msgid "Agent mode: give an existing post a full copywriting + SEO refresh — fresher copy, better structure, full originality."
 msgstr "حالت ایجنت: یک نوشتهٔ موجود را کاملاً بازنویسی و از نظر سئو و اصالت متن بهینه می‌کند — متن تازه‌تر، ساختار بهتر."
-
-#: includes/class-aipc-bale.php
-msgid "An existing post was rewritten by the AI"
-msgstr "یک نوشتهٔ موجود توسط هوش مصنوعی بازنویسی شد"
 
 #: includes/class-aipc-steps.php
 msgid "Analyzes the existing post (rewrite mode) and builds the improved outline."
@@ -2088,10 +2060,6 @@ msgstr "پیش‌نویس‌های تولیدشده با هوش مصنوعی د�
 msgid "Blocked: loopback hosts are disabled on this site (aipc_allow_loopback filter)."
 msgstr "مسدود: هاست‌های لوکال‌هاست در این سایت غیرفعال‌اند (فیلتر aipc_allow_loopback)."
 
-#: includes/class-aipc-network.php
-msgid "Blocked: the host is a private or reserved address. Add it to the “aipc_outbound_allowlist” filter (or enable “aipc_allow_private_hosts”) to allow it."
-msgstr "مسدود: این هاست نشانی خصوصی یا رزروشده است. برای مجاز کردن، آن را به فیلتر «aipc_outbound_allowlist» اضافه کنید (یا «aipc_allow_private_hosts» را فعال کنید)."
-
 #: admin/views/review.php
 msgid "Could not publish the draft. Please try again from the editor."
 msgstr "انتشار پیش‌نویس ممکن نشد. لطفاً از ویرایشگر دوباره تلاش کنید."
@@ -2112,7 +2080,7 @@ msgstr "پیش‌نویس‌های در انتظار بازبینی"
 msgid "Empty URL."
 msgstr "نشانی خالی است."
 
-#: admin/views/review.php admin/views/schedule.php
+#: admin/views/cron.php admin/views/review.php admin/views/schedule.php
 msgid "Manual"
 msgstr "دستی"
 
@@ -2192,7 +2160,7 @@ msgstr "هر اتصال یعنی یک سرویس هوش مصنوعی: نشانی
 msgid "Aggregate statistics across all jobs: totals, success/fail counts, API calls and token usage per connection."
 msgstr "آمار تجمعی همهٔ کارها: جمع کل، شمار موفق/ناموفق، فراخوانی‌های API و مصرف توکن به تفکیک اتصال."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Bale is an Iranian messenger. The bot token comes from @Bot_Father; each chat ID receives the post’s featured image, summary and link when a run finishes (and a periodic report, if enabled). Delivery results are recorded in the job log."
 msgstr "بله یک پیام‌رسان ایرانی است. توکن ربات را از @Bot_Father بگیرید؛ هر شناسهٔ گفتگو پس از پایان هر اجرا، تصویر شاخص، خلاصه و لینک نوشته را دریافت می‌کند (و در صورت فعال بودن، گزارش دوره‌ای). نتیجهٔ ارسال در لاگ کار ثبت می‌شود."
 
@@ -2248,17 +2216,9 @@ msgstr "پرامپت‌ها دستوراتی هستند که برای هر مر�
 msgid "Ready-made endpoint patterns for popular providers — copy your provider’s pattern into the connection form above."
 msgstr "الگوهای آمادهٔ نشانی برای سرویس‌های پرکاربرد — الگوی سرویس خودتان را در فرم اتصال بالا کپی کنید."
 
-#: admin/views/connections.php
-msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless allowlisted."
-msgstr "نشانی پایه باید به یک نقطهٔ پایانی سازگار با OpenAI اشاره کند، معمولاً با /v1 در انتها (مثلاً https://api.openai.com/v1). کلید API فقط نوشتنی است: برای نگه‌داشتن کلید ذخیره‌شده فیلد را خالی بگذارید. نشانی‌های خصوصی/داخلی توسط گارد شبکهٔ خروجی مسدود می‌شوند مگر اینکه مجاز اعلام شوند."
-
 #: admin/views/new-post.php
 msgid "The console is a live viewer: the job runs on the server, so you can close this tab and it keeps going. Steps, logs and progress update automatically while the agent works — and if a step fails after all retries, the Retry button re-runs only that step."
 msgstr "کنسول یک نمایشگر زنده است: کار روی سرور اجرا می‌شود، پس می‌توانید این برگه را ببندید و کار ادامه پیدا می‌کند. مراحل، لاگ‌ها و پیشرفت هنگام کار ایجنت خودکار به‌روز می‌شوند — و اگر مرحله‌ای بعد از همهٔ تلاش‌ها شکست بخورد، دکمهٔ «تلاش دوباره» فقط همان مرحله را اجرا می‌کند."
-
-#: admin/views/settings.php
-msgid "The global switch and size for AI featured images. The image model is set per connection; if image generation fails on every provider, the post is still saved — just without an image."
-msgstr "کلید سراسری و اندازهٔ تصاویر شاخص هوش مصنوعی. مدل تصویر برای هر اتصال جداگانه تنظیم می‌شود؛ اگر تولید تصویر در همهٔ سرویس‌ها شکست بخورد، نوشته بدون تصویر ذخیره می‌شود."
 
 #: admin/views/log-detail.php
 msgid "The human-readable diary of the run, exactly as it was shown live in the console."
@@ -2304,7 +2264,7 @@ msgstr "انباری از موضوع‌ها برای زمان‌بندی‌ها�
 msgid "AI Post Creator — commands:"
 msgstr "دستورهای ساخت نوشته با هوش مصنوعی:"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Accept commands from Bale chats"
 msgstr "پذیرش فرمان از گفتگوهای بله"
 
@@ -2332,7 +2292,7 @@ msgstr "در حال افزودن…"
 msgid "Clear queue"
 msgstr "خالی کردن صف"
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Commands: نوشتن: <topic> · وضعیت · آخرین · انتشار · صف · راهنما"
 msgstr "فرمان‌ها: نوشتن: <موضوع> · وضعیت · آخرین · انتشار · صف · راهنما"
 
@@ -2355,10 +2315,6 @@ msgstr "به سقف روزانه رسیده‌اید: حداکثر %d نوشته
 #: includes/class-aipc-bale-commands.php
 msgid "Drafts waiting for review: %d"
 msgstr "پیش‌نویس‌های در انتظار بازبینی: %d"
-
-#: includes/class-aipc-bale-commands.php
-msgid "Every 5 minutes (AI Post Creator — Bale commands)"
-msgstr "هر ۵ دقیقه (ساخت نوشته با هوش مصنوعی — فرمان‌های بله)"
 
 #: includes/class-aipc-assets.php
 msgid "Fetching suggestions from your sources…"
@@ -2445,10 +2401,6 @@ msgid "Take the topic from the queue"
 msgstr "موضوع را از صف بردار"
 
 #: admin/views/schedule.php
-msgid "The bot checks for new messages every ~5 minutes (via WP-Cron) and only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Up to 20 posts per day can be started from Bale."
-msgstr "ربات تقریباً هر ۵ دقیقه (از طریق WP-Cron) پیام‌های تازه را بررسی می‌کند و فقط به شناسه‌های گفتگوی بالا گوش می‌دهد. هر کس در آن گفتگوها می‌تواند: با «نوشتن: یک موضوع» یک پیش‌نویس شروع کند، «وضعیت» برای اجراهای امروز، «آخرین» برای جدیدترین پیش‌نویس، «انتشار» برای انتشار آن، «صف» برای صف موضوع‌ها و «راهنما» برای فهرست کامل. حداکثر ۲۰ نوشته در روز را می‌توان از داخل بله شروع کرد."
-
-#: admin/views/schedule.php
 msgid "The queue is empty. Add topics below or suggest them from your research sources."
 msgstr "صف خالی است. موضوع‌ها را در پایین اضافه کنید یا از منابع پژوهشی پیشنهاد بگیرید."
 
@@ -2476,7 +2428,7 @@ msgstr "این موضوع از قبل در صف است: %s"
 msgid "Today’s status"
 msgstr "وضعیت امروز"
 
-#: admin/views/schedule.php
+#: admin/views/schedule.php includes/class-aipc-bale-commands.php
 msgid "Topic queue"
 msgstr "صف موضوع‌ها"
 
@@ -2488,7 +2440,7 @@ msgstr "موضوع حذف شد."
 msgid "Topics added to the queue."
 msgstr "موضوع‌ها به صف اضافه شدند."
 
-#: admin/views/schedule.php
+#: admin/views/bot.php
 msgid "Two-way commands"
 msgstr "فرمان‌های دوسویه"
 
@@ -2543,3 +2495,827 @@ msgstr "🚀 منتشر شد: %s"
 #: includes/class-aipc-bale-commands.php
 msgid "🚀 انتشار [number] — publish the newest (or n-th) draft"
 msgstr "🚀 انتشار [شماره] — انتشار جدیدترین (یا نهایی) پیش‌نویس"
+
+#: admin/views/settings.php
+msgid "Allow private/LAN addresses (e.g. a self-hosted gateway like OmniRoute or Ollama on another machine in your network)"
+msgstr "اجازه به نشانی‌های خصوصی/شبکهٔ محلی (مثلاً گیت‌وی سلف‌هاست مانند OmniRoute یا Ollama روی دستگاه دیگری در شبکهٔ شما)"
+
+#: includes/class-aipc-network.php
+msgid "Blocked: the host is a private or reserved address. Enable “Allow private/LAN addresses” under Settings → Advanced (or use the “aipc_outbound_allowlist” filter) to allow it."
+msgstr "مسدود شد: میزبان یک نشانی خصوصی یا رزروشده است. برای مجاز کردن آن، «اجازه به نشانی‌های خصوصی/شبکهٔ محلی» را در تنظیمات ← پیشرفته فعال کنید (یا از فیلتر «aipc_outbound_allowlist» استفاده کنید)."
+
+#: includes/class-aipc-assets.php
+msgid "Connected via %s — the base URL was missing /v1, so the field was corrected. Save the connection to keep it."
+msgstr "اتصال از طریق %s برقرار شد — نشانی پایه /v1 نداشت و فیلد اصلاح شد. برای ماندگاری، اتصال را ذخیره کنید."
+
+#: admin/views/settings.php
+msgid "Local & LAN providers"
+msgstr "سرویس‌دهنده‌های محلی و شبکهٔ داخلی"
+
+#: admin/views/connections.php
+msgid "Self-hosted gateways (OmniRoute, Ollama, LM Studio) run on your own machine — the WordPress server must be able to reach that address. If the gateway runs on another machine in your network, enter its LAN address and enable “Allow private/LAN addresses” under Settings → Advanced."
+msgstr "گیت‌وی‌های سلف‌هاست (OmniRoute، Ollama، LM Studio) روی دستگاه خود شما اجرا می‌شوند — سرور وردپرس باید بتواند به آن نشانی دسترسی داشته باشد. اگر گیت‌وی روی دستگاه دیگری در شبکهٔ شماست، نشانی داخلی آن را وارد کنید و «اجازه به نشانی‌های خصوصی/شبکهٔ محلی» را در تنظیمات ← پیشرفته فعال کنید."
+
+#: includes/class-aipc-api-client.php
+msgid "The address returned a web page (HTML) instead of an API response — it looks like a website URL, not an API base URL. OpenAI-compatible endpoints almost always end in /v1."
+msgstr "این نشانی به‌جای پاسخ API یک صفحهٔ وب (HTML) برگرداند — به نظر می‌رسد نشانی وب‌سایت است، نه نشانی پایهٔ API. اندپوینت‌های سازگار با OpenAI تقریباً همیشه به /v1 ختم می‌شوند."
+
+#: admin/views/settings.php
+msgid "localhost is always allowed. Only enable this when the AI gateway really runs inside your own network — it relaxes the outbound request guard (SSRF protection) for private addresses."
+msgstr "localhost همیشه مجاز است. این گزینه را فقط وقتی فعال کنید که گیت‌وی هوش مصنوعی واقعاً داخل شبکهٔ خودتان اجرا می‌شود — چون گارد درخواست‌های خروجی (محافظت SSRF) را برای نشانی‌های خصوصی سست می‌کند."
+
+#: includes/class-aipc-api-client.php
+msgid "the address returned a web page (HTML), not an API response — check that the base URL is the API endpoint (it usually ends in /v1)"
+msgstr "این نشانی یک صفحهٔ وب (HTML) برگرداند، نه پاسخ API — بررسی کنید که نشانی پایه همان اندپوینت API باشد (معمولاً به /v1 ختم می‌شود)"
+
+#: admin/views/connections.php
+msgid "The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). A provider’s website address is not an API endpoint. Small mistakes are corrected automatically: a pasted full endpoint URL (e.g. …/v1/chat/completions) has its endpoint path stripped, and if the test finds the API under /v1 the field is fixed for you. The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless you enable “Allow private/LAN addresses” in Settings → Advanced."
+msgstr "نشانی پایه باید به یک اندپوینت سازگار با OpenAI اشاره کند و معمولاً به /v1 ختم می‌شود (مثلاً https://api.openai.com/v1). نشانی وب‌سایتِ سرویس‌دهنده اندپوینت API نیست. اشتباه‌های کوچک به‌طور خودکار اصلاح می‌شوند: اگر نشانی کامل اندپوینت را جای‌گذاری کنید (مثلاً …/v1/chat/completions)، مسیر اندپوینت حذف می‌شود و اگر تست، API را زیر /v1 پیدا کند، فیلد برایتان اصلاح می‌شود. کلید API فقط‌نوشتنی است: برای نگه داشتن کلید ذخیره‌شده، فیلد را خالی بگذارید. نشانی‌های خصوصی یا داخلی توسط گارد شبکهٔ خروجی مسدود می‌شوند مگر «اجازه به نشانی‌های خصوصی/شبکهٔ محلی» را در تنظیمات ← پیشرفته فعال کنید."
+
+#: includes/class-aipc-assets.php
+msgid "No models match your filter."
+msgstr "هیچ مدلی با فیلتر شما مطابقت ندارد."
+
+#: admin/views/connections.php
+msgid "Type to filter the models…"
+msgstr "برای فیلتر کردن مدل‌ها تایپ کنید…"
+
+#: admin/views/connections.php
+msgid "Chat & images"
+msgstr "گفتگو و تصویر"
+
+#: admin/views/connections.php
+msgid "Chat only"
+msgstr "فقط گفتگو"
+
+#: admin/views/connections.php
+msgid "Images only"
+msgstr "فقط تصویر"
+
+#: admin/views/connections.php
+msgid "Lower number = tried first (1 is the highest priority). When a connection fails 3 attempts in a row, the run automatically switches to the next connection of the same purpose in priority order."
+msgstr "عدد کوچک‌تر = زودتر امتحان می‌شود (۱ بالاترین اولویت است). وقتی یک اتصال ۳ بار پشت‌سرهم خطا بدهد، اجرا به‌طور خودکار سراغ اتصال بعدیِ همان کاربرد به‌ترتیب اولویت می‌رود."
+
+#: admin/views/connections.php
+msgid "Priority"
+msgstr "اولویت"
+
+#: admin/views/connections.php
+msgid "Purpose"
+msgstr "کاربرد"
+
+#: admin/views/connections.php
+msgid "What this connection is used for. Steps without an explicit connection chain (Prompts page) automatically use every matching connection in priority order: text steps take the chat-capable connections, the featured-image step takes the image-capable ones. This is how you send images to a different server than the text."
+msgstr "این اتصال برای چه کاری استفاده شود. گام‌هایی که زنجیرهٔ اتصال مشخصی ندارند (صفحهٔ پرامپت‌ها) به‌طور خودکار همهٔ اتصال‌های هم‌خوان را به‌ترتیب اولویت به کار می‌گیرند: گام‌های متنی از اتصال‌های دارای قابلیت گفتگو و گام تصویر شاخص از اتصال‌های دارای قابلیت تصویر. به همین شکل می‌توانید ساخت تصویر را به سروری جدا از متن بسپارید."
+
+#: admin/views/connections.php
+msgid "Automatic (base64 or link)"
+msgstr "خودکار (Base64 یا لینک)"
+
+#: includes/class-aipc-api-client.php
+msgid "Base64 mode: the provider returned a link instead of base64 image data — failing over to the next image connection."
+msgstr "حالت Base64: سرویس‌دهنده به‌جای دادهٔ Base64 تصویر، لینک برگرداند — رفتن به اتصال تصویر بعدی."
+
+#: admin/views/connections.php
+msgid "Force base64 (decode locally — most reliable)"
+msgstr "اجباری Base64 (تبدیل محلی — مطمئن‌ترین)"
+
+#: admin/views/connections.php
+msgid "How generated images are received. \"Force base64\" demands the image bytes inside the API response itself and decodes them locally — nothing depends on downloading temporary links, which makes image creation deterministic. If the provider only returns a link in this mode, the attempt fails and the run retries / falls over to the next image connection."
+msgstr "تصویرهای تولیدشده چگونه دریافت شوند. «اجباری Base64» بایت‌های تصویر را داخل خودِ پاسخ API می‌خواهد و همان‌جا به‌صورت محلی تبدیل می‌کند — هیچ‌چیز به دانلود لینک‌های موقتی وابسته نیست و ساخت تصویر قطعی می‌شود. اگر سرویس‌دهنده در این حالت فقط لینک بدهد، تلاش ناموفق می‌شود و اجرا دوباره تلاش می‌کند / سراغ اتصال تصویر بعدی می‌رود."
+
+#: admin/views/connections.php
+msgid "Image delivery"
+msgstr "دریافت تصویر"
+
+#: includes/class-aipc-agent.php
+msgid "Could not download the generated image: %s"
+msgstr "دانلود تصویر تولیدشده ممکن نشد: %s"
+
+#: admin/views/connections.php
+msgid "Automatic (images endpoint, then chat)"
+msgstr "خودکار (اول اندپوینت تصویر، بعد گفتگو)"
+
+#: admin/views/connections.php
+msgid "Chat completions (Gemini/OpenRouter-style)"
+msgstr "گفتگو — Chat completions (سبک Gemini/OpenRouter)"
+
+#: admin/views/connections.php
+msgid "Image route"
+msgstr "مسیر تولید تصویر"
+
+#: admin/views/connections.php
+msgid "Images endpoint (/images/generations)"
+msgstr "اندپوینت تصویر (‎/images/generations)"
+
+#: includes/class-aipc-api-client.php
+msgid "The chat route returned no image — the model may not support image output."
+msgstr "مسیر گفتگو تصویری برنگرداند — احتمالاً این مدل از خروجی تصویر پشتیبانی نمی‌کند."
+
+#: admin/views/connections.php
+msgid "Which API route generates images. OpenAI-style services use the images endpoint (/images/generations); Gemini-style gateways (OpenRouter, Antigravity …) return the picture as base64 inside a chat completion instead — pick \"Chat completions\" for those, with an image-capable model (e.g. gemini-2.5-flash-image) in the Image model field. \"Automatic\" tries the images endpoint first and falls back to the chat route by itself."
+msgstr "تصویر از کدام مسیر API ساخته شود. سرویس‌های سبک OpenAI از اندپوینت تصویر (‎/images/generations) استفاده می‌کنند؛ اما گیت‌وی‌های سبک Gemini (مانند OpenRouter و Antigravity و…) تصویر را به‌صورت Base64 داخل پاسخ گفتگو برمی‌گردانند — برای آن‌ها «گفتگو» را انتخاب کنید و در فیلد «مدل تصویر» یک مدل تصویرساز (مثلاً gemini-2.5-flash-image) بگذارید. حالت «خودکار» اول اندپوینت تصویر را امتحان می‌کند و در صورت شکست، خودش سراغ مسیر گفتگو می‌رود."
+
+#: admin/views/bot.php
+msgid "Default notification image (URL)"
+msgstr "تصویر پیش‌فرض اعلان (نشانی)"
+
+#: includes/class-aipc-bale.php
+msgid "Read the full article at the link below"
+msgstr "ادامه مطلب در لینک زیر"
+
+#: admin/views/bot.php
+msgid "Sent above the message when a post has no featured image. Paste an image address from your media library; leave empty to send text-only in that case."
+msgstr "وقتی نوشته تصویر شاخص ندارد، این تصویر بالای پیام فرستاده می‌شود. نشانی یک تصویر از کتابخانهٔ رسانه را بگذارید؛ اگر خالی باشد در آن حالت فقط متن ارسال می‌شود."
+
+#: admin/views/prompts.php
+msgid "(disabled)"
+msgstr "(غیرفعال)"
+
+#: admin/views/connections.php
+msgid "Connection disabled."
+msgstr "اتصال غیرفعال شد."
+
+#: admin/views/connections.php
+msgid "Connection enabled."
+msgstr "اتصال فعال شد."
+
+#: admin/views/connections.php
+msgid "Disable"
+msgstr "غیرفعال کردن"
+
+#: admin/views/connections.php
+msgid "Disabled"
+msgstr "غیرفعال"
+
+#: admin/views/connections.php
+msgid "Enable"
+msgstr "فعال کردن"
+
+#: admin/views/connections.php
+msgid "Enabled (participates in runs)"
+msgstr "فعال (در اجراها شرکت می‌کند)"
+
+#: admin/views/connections.php
+msgid "Turn off to keep this connection saved but exclude it from every run: automatic pools, fallback chains and the default choice all skip disabled connections."
+msgstr "خاموش کنید تا این اتصال ذخیره بماند ولی از همهٔ اجراها کنار گذاشته شود: استخرهای خودکار، زنجیره‌های جایگزین و انتخاب پیش‌فرض همگی از اتصال‌های غیرفعال رد می‌شوند."
+
+#: includes/class-aipc-admin.php
+msgid "A new AI featured image was generated and set for the post."
+msgstr "تصویر شاخص جدید با هوش مصنوعی ساخته و برای نوشته تنظیم شد."
+
+#: admin/views/settings.php
+msgid "Appended to every generated image prompt — use it for a consistent style (art direction, palette, mood) across all featured images. Leave empty to use the generated prompt as-is."
+msgstr "به انتهای هر پرامت تصویرِ تولیدشده افزوده می‌شود — برای یکدست شدن سبک همهٔ تصاویر شاخص (سبک هنری، پالت رنگ، حال‌وهوا) از آن استفاده کنید. اگر خالی باشد همان پرامت تولیدشده به‌تنهایی به‌کار می‌رود."
+
+#: includes/class-aipc-admin.php
+msgid "Could not generate a new featured image."
+msgstr "ساخت تصویر شاخص جدید ممکن نشد."
+
+#: admin/views/settings.php
+msgid "Default image prompt"
+msgstr "پرامت پیش‌فرض تصویر"
+
+#: includes/class-aipc-agent.php
+msgid "No image-capable connection is configured (or enabled)."
+msgstr "هیچ اتصال تصویرسازی تنظیم (یا فعال) نیست."
+
+#: includes/class-aipc-agent.php
+msgid "Post not found."
+msgstr "نوشته پیدا نشد."
+
+#: includes/class-aipc-admin.php
+msgid "Regenerate AI image"
+msgstr "ساخت مجدد تصویر شاخص"
+
+#: includes/class-aipc-admin.php
+msgid "You are not allowed to do that."
+msgstr "اجازهٔ انجام این کار را ندارید."
+
+#: admin/views/settings.php
+msgid "e.g. flat vector illustration, soft green palette, no text, 16:9"
+msgstr "مثلاً: تصویرسازی وکتور تخت، پالت سبز ملایم، بدون متن، 16:9"
+
+#: admin/views/settings.php
+msgid "API trace log"
+msgstr "لاگ کامل API"
+
+#: admin/views/settings.php
+msgid "Clear trace log"
+msgstr "پاک کردن لاگ"
+
+#: admin/views/settings.php
+msgid "Current size: %s"
+msgstr "حجم فعلی: %s"
+
+#: admin/views/settings.php
+msgid "Download trace log"
+msgstr "دانلود فایل لاگ"
+
+#: admin/views/settings.php
+msgid "Record every AI request and response (full debug trace)"
+msgstr "ثبت تمام درخواست‌ها و پاسخ‌های هوش مصنوعی (ردیابی کامل اشکال‌زدایی)"
+
+#: admin/views/settings.php includes/class-aipc-admin.php
+msgid "The trace log is empty — enable it and run a job first."
+msgstr "فایل لاگ خالی است — اول آن را فعال کنید و یک کار اجرا کنید."
+
+#: includes/class-aipc-admin.php
+msgid "Trace log cleared."
+msgstr "فایل لاگ پاک شد."
+
+#: admin/views/settings.php
+msgid "Writes every prompt, model reply, error body, HTTP status and timing — with the job, step, connection and attempt — to a protected log file, so you can see exactly why a step or the image generation fails. API keys are removed and base64 image data is collapsed. Turn it off again after debugging to keep the file small."
+msgstr "هر پرامت، پاسخ مدل، متن کامل خطا، کد HTTP و زمان اجرا — همراه شناسهٔ کار، مرحله، اتصال و شمارهٔ تلاش — در یک فایل لاگ محافظت‌شده نوشته می‌شود تا دقیقاً ببینید چرا یک مرحله یا ساخت تصویر شکست می‌خورد. کلیدهای API حذف و دادهٔ base64 تصاویر فشرده می‌شود. بعد از اشکال‌زدایی دوباره خاموشش کنید تا فایل کوچک بماند."
+
+#: admin/views/settings.php
+msgid "Allow linking to the research source sites inside articles"
+msgstr "اجازهٔ لینک‌دادن به سایت‌های منبع پژوهش داخل مقاله‌ها"
+
+#: admin/views/settings.php
+msgid "Source links"
+msgstr "لینک منبع"
+
+#: admin/views/settings.php
+msgid "When disabled, the model never receives the source URLs and any source link that still appears is removed from the final article — the research sources are then used for facts and inspiration only."
+msgstr "وقتی خاموش باشد، نشانی منبع‌ها اصلاً به مدل داده نمی‌شود و اگر لینکی هم به منبع در متن بیاید، از مقالهٔ نهایی حذف می‌شود — منابع پژوهش در این حالت فقط برای واقعیت‌ها و الهام به‌کار می‌روند."
+
+#: admin/views/settings.php
+msgid "Custom…"
+msgstr "سفارشی…"
+
+#: admin/views/settings.php
+msgid "Pick “Custom…” and type width×height (e.g. 800x600) for any other size — if the provider rejects it, the request is automatically retried without a size."
+msgstr "برای هر اندازهٔ دیگر «سفارشی…» را انتخاب و عرض×ارتفاع را بنویسید (مثلاً 800x600) — اگر ارائه‌دهنده آن را نپذیرد، درخواست خودکار بدون اندازه تکرار می‌شود."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Could not schedule: %s"
+msgstr "زمان‌بندی ممکن نشد: %s"
+
+#: includes/class-aipc-bale-commands.php
+msgid "I could not read that date — send it like «1404/07/20 18:30» or «2026-10-12 18:30», or «لغو» to cancel."
+msgstr "این تاریخ را متوجه نشدم — به این شکل بفرستید: «1404/07/20 18:30» یا «2026-10-12 18:30»، یا برای انصراف «لغو»."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Post not found — it may have been deleted."
+msgstr "پست پیدا نشد — شاید حذف شده باشد."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Post scheduled from Bale for %s."
+msgstr "پست از بله برای %s زمان‌بندی شد."
+
+#: includes/class-aipc-bale.php
+msgid "Publish now"
+msgstr "انتشار همین حالا"
+
+#: includes/class-aipc-bale.php
+msgid "Scheduled post published."
+msgstr "پست زمان‌بندی‌شده منتشر شد."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Scheduling cancelled — the post stays as it is."
+msgstr "زمان‌بندی لغو شد — پست همان‌طور که بود می‌ماند."
+
+#: includes/class-aipc-bale-commands.php
+msgid "That time is already in the past — send a future date and time."
+msgstr "این زمان گذشته است — یک تاریخ و ساعت آینده بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "This post is already published."
+msgstr "این پست قبلاً منتشر شده است."
+
+#: includes/class-aipc-bale-commands.php
+msgid "⏰ Scheduled: “%1$s” will be published on %2$s."
+msgstr "⏰ زمان‌بندی شد: «%1$s» در %2$s منتشر می‌شود."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Drafts"
+msgstr "پیش‌نویس‌ها"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Help"
+msgstr "راهنما"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Latest drafts — tap one for actions:"
+msgstr "آخرین پیش‌نویس‌ها — روی یکی بزنید تا گزینه‌هایش بیاید:"
+
+#: includes/class-aipc-bale-commands.php
+msgid "New topic"
+msgstr "موضوع جدید"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Okay, cancelled."
+msgstr "باشه، لغو شد."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Send the topic as your next message — I’ll start writing right away. Send «لغو» to cancel."
+msgstr "موضوع را در پیام بعدی بفرستید — همان لحظه شروع به نوشتن می‌کنم. برای انصراف «لغو» را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: draft — choose an action below."
+msgstr "وضعیت: پیش‌نویس — از دکمه‌های زیر انتخاب کنید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: scheduled for %s."
+msgstr "وضعیت: زمان‌بندی‌شده برای %s."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tap a topic to start writing it right away."
+msgstr "روی هر موضوع بزنید تا همان لحظه نوشتنش شروع شود."
+
+#: includes/class-aipc-bale-commands.php
+msgid "That topic is no longer in the queue — send «صف» for the current list."
+msgstr "این موضوع دیگر در صف نیست — برای فهرست فعلی «صف» را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "What would you like to do?"
+msgstr "چه کاری برایتان انجام بدهم؟"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📑 پیش‌نویس‌ها — the latest drafts, each with action buttons"
+msgstr "📑 پیش‌نویس‌ها — آخرین پیش‌نویس‌ها، هرکدام با دکمه‌های اقدام"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📱 منو — the tappable button menu (easiest way!)"
+msgstr "📱 منو — منوی دکمه‌ای لمسی (ساده‌ترین راه!)"
+
+#: includes/class-aipc-admin.php
+msgid "Bale / Telegram"
+msgstr "بله / تلگرام"
+
+#: admin/views/bot.php admin/views/schedule.php includes/class-aipc-admin.php
+msgid "Bale / Telegram Bot"
+msgstr "ربات بله / تلگرام"
+
+#: admin/views/schedule.php
+msgid "Bot notifications & chat commands have moved to their own page, with a full step-by-step setup guide."
+msgstr "اعلان‌ها و دستورهای چتیِ ربات به صفحهٔ اختصاصی خودش منتقل شد — همراه با راهنمای راه‌اندازی قدم‌به‌قدم."
+
+#: admin/views/bot.php
+msgid "Bot settings"
+msgstr "تنظیمات ربات"
+
+#: admin/views/bot.php
+msgid "Both platforms speak the same bot API. Your server must be able to reach the one you pick: from inside Iran Telegram’s API is usually blocked (Bale works), while some foreign hosts cannot reach Bale."
+msgstr "هر دو پلتفرم یک API مشترک دارند. سرور شما باید به پلتفرم انتخابی دسترسی داشته باشد: از داخل ایران API تلگرام معمولاً مسدود است (بله کار می‌کند) و بعضی هاست‌های خارجی هم به بله دسترسی ندارند."
+
+#: admin/views/bot.php
+msgid "Channel gets nothing? The bot must be an admin of the channel, and the recipient must be @channelusername (or the channel’s numeric ID)."
+msgstr "به کانال چیزی نمی‌رسد؟ ربات باید ادمین کانال باشد و گیرنده هم @نام‌کاربری‌کانال (یا شناسهٔ عددی کانال) باشد."
+
+#: admin/views/bot.php
+msgid "Commands: on"
+msgstr "دستورها: فعال"
+
+#: admin/views/bot.php
+msgid "Connect the agent to a Bale or Telegram bot: get notified about every post, and run everything — writing, publishing, scheduling — straight from the chat."
+msgstr "عامل را به یک ربات بله یا تلگرام وصل کنید: از هر پست باخبر شوید و همه‌چیز — نوشتن، انتشار، زمان‌بندی — را مستقیم از داخل چت مدیریت کنید."
+
+#: admin/views/bot.php
+msgid "Create the bot — in Bale message @Bot_Father (in Telegram: @BotFather), send /newbot, pick a name, and copy the token it hands back (it looks like 123456:ABC-DEF…)."
+msgstr "ساخت ربات — در بله به @Bot_Father پیام بدهید (در تلگرام: @BotFather)، دستور /newbot را بفرستید، یک نام انتخاب کنید و توکنی را که می‌دهد کپی کنید (شبیه 123456:ABC-DEF… است)."
+
+#: admin/views/bot.php
+msgid "Detect your chat ID — click “Detect chat ID”; your numeric ID is filled in automatically. For a channel, make the bot an admin and enter @channelusername as a recipient."
+msgstr "تشخیص شناسهٔ چت — روی «تشخیص شناسهٔ چت» بزنید؛ شناسهٔ عددی شما خودکار پر می‌شود. برای کانال، ربات را ادمین کنید و @نام‌کاربری‌کانال را به گیرنده‌ها اضافه کنید."
+
+#: admin/views/bot.php
+msgid "Enable & test — tick both checkboxes (message after every post + accept commands), save, then “Send test message” must deliver a ✅ to your chat."
+msgstr "فعال‌سازی و تست — هر دو گزینه را تیک بزنید (پیام بعد از هر پست + پذیرش دستورها)، ذخیره کنید و بعد «ارسال پیام آزمایشی» باید یک ✅ به چت شما برساند."
+
+#: admin/views/bot.php
+msgid "Follow these six steps once; after that everything runs from the chat."
+msgstr "این شش قدم را یک‌بار انجام بدهید؛ بعد از آن همه‌چیز از داخل چت اداره می‌شود."
+
+#: admin/views/bot.php
+msgid "Keep the token private — anyone who has it controls the bot, and two sites polling the same bot steal each other’s messages."
+msgstr "توکن را محرمانه نگه دارید — هرکس آن را داشته باشد ربات را کنترل می‌کند، و دو سایت با یک ربات مشترک پیام‌های همدیگر را می‌دزدند."
+
+#: admin/views/schedule.php
+msgid "Notifications: off"
+msgstr "اعلان‌ها: خاموش"
+
+#: admin/views/bot.php admin/views/schedule.php
+msgid "Notifications: on"
+msgstr "اعلان‌ها: فعال"
+
+#: admin/views/bot.php
+msgid "Once two-way commands are on, every authorized chat can:"
+msgstr "وقتی دستورهای دوطرفه فعال باشد، هر چت مجاز می‌تواند:"
+
+#: admin/views/schedule.php
+msgid "Open the Bale / Telegram page"
+msgstr "باز کردن صفحهٔ بله / تلگرام"
+
+#: admin/views/bot.php
+msgid "Pick the platform & paste the token — choose Bale or Telegram below, paste the token and save."
+msgstr "انتخاب پلتفرم و چسباندن توکن — پایین، بله یا تلگرام را انتخاب کنید، توکن را بچسبانید و ذخیره کنید."
+
+#: admin/views/bot.php
+msgid "Platform"
+msgstr "پلتفرم"
+
+#: admin/views/bot.php
+msgid "Say hello to your bot — open it in the messenger and send it any message (bots can never write first)."
+msgstr "به ربات سلام کنید — آن را در پیام‌رسان باز کنید و هر پیامی بفرستید (ربات‌ها هیچ‌وقت نمی‌توانند اول پیام بدهند)."
+
+#: admin/views/bot.php
+msgid "Send «منو» to the bot — the tappable menu appears and everything (new topic, queue, drafts, publish, schedule) is one button away."
+msgstr "به ربات «منو» بفرستید — منوی لمسی می‌آید و همه‌چیز (موضوع جدید، صف، پیش‌نویس‌ها، انتشار، زمان‌بندی) با یک دکمه در دسترس است."
+
+#: admin/views/bot.php
+msgid "Setup guide"
+msgstr "راهنمای راه‌اندازی"
+
+#: admin/views/bot.php
+msgid "Test message fails? Re-check the token (no stray spaces), make sure the platform matches the token’s messenger, and add at least one chat ID — the exact error appears next to the button."
+msgstr "پیام آزمایشی نمی‌رسد؟ توکن را دوباره چک کنید (بدون فاصلهٔ اضافی)، مطمئن شوید پلتفرم با پیام‌رسانِ توکن یکی است و دست‌کم یک شناسهٔ چت وارد کنید — متن دقیق خطا کنار دکمه نمایش داده می‌شود."
+
+#: admin/views/bot.php
+msgid "The two most common causes: WP-Cron not running (nothing is polled, nothing is sent on schedule) and a token/platform mismatch. The Cron status box on the Schedule page shows whether ticks actually happen."
+msgstr "دو علت رایج: کار نکردن WP-Cron (نه پیامی خوانده می‌شود نه چیزی سر وقت ارسال می‌شود) و ناهماهنگی توکن/پلتفرم. جعبهٔ «وضعیت کرون» در صفحهٔ زمان‌بندی نشان می‌دهد تیک‌ها واقعاً اجرا می‌شوند یا نه."
+
+#: admin/views/bot.php
+msgid "Troubleshooting"
+msgstr "رفع اشکال"
+
+#: admin/views/bot.php
+msgid "What the bot can do"
+msgstr "ربات چه کارهایی می‌تواند بکند"
+
+#: admin/views/bot.php
+msgid "“Detect chat ID” finds nothing? Send a fresh message to the bot first — detection reads the bot’s most recent incoming messages."
+msgstr "«تشخیص شناسهٔ چت» چیزی پیدا نمی‌کند؟ اول یک پیام تازه به ربات بفرستید — تشخیص از آخرین پیام‌های دریافتی ربات می‌خواند."
+
+#: admin/views/bot.php
+msgid "⏰ Schedule with Jalali or Gregorian dates — «1404/07/20 18:30», «2026-10-12 18:30», «فردا 18:30»."
+msgstr "⏰ زمان‌بندی با تاریخ شمسی یا میلادی — «1404/07/20 18:30»، «2026-10-12 18:30»، «فردا 18:30»."
+
+#: admin/views/bot.php
+msgid "✍️ Start drafts with «نوشتن: topic» or straight from the queue buttons."
+msgstr "✍️ شروع پیش‌نویس با «نوشتن: موضوع» یا مستقیم از دکمه‌های صف."
+
+#: admin/views/bot.php
+msgid "📱 Open the tappable menu with «منو»: new topic, topic queue, drafts, status."
+msgstr "📱 باز کردن منوی لمسی با «منو»: موضوع جدید، صف موضوعات، پیش‌نویس‌ها، وضعیت."
+
+#: admin/views/bot.php
+msgid "📲 Get the image + summary + link after every generated post, with “Publish now” / “Schedule” buttons under drafts."
+msgstr "📲 دریافت تصویر + خلاصه + لینک بعد از هر پست تولیدشده، با دکمه‌های «انتشار همین حالا» / «زمان‌بندی» زیر پیش‌نویس‌ها."
+
+#: admin/views/bot.php
+msgid "🧾 Receive daily or weekly activity reports at the time you pick."
+msgstr "🧾 دریافت گزارش فعالیت روزانه یا هفتگی در ساعتی که خودتان انتخاب می‌کنید."
+
+#: admin/views/bot.php
+msgid "Answer instantly via webhook (recommended)"
+msgstr "پاسخ آنی از طریق وب‌هوک (پیشنهادی)"
+
+#: admin/views/bot.php
+msgid "Bale and Telegram bots speak the same API, so the plugin supports both — pick the platform in the settings below. Replies arrive in one of two ways: instantly via the webhook (recommended), or through the WP-Cron poll about once a minute."
+msgstr "ربات‌های بله و تلگرام یک API مشترک دارند، پس افزونه هر دو را پشتیبانی می‌کند — پلتفرم را در تنظیمات پایین انتخاب کنید. پاسخ‌ها به یکی از دو روش می‌رسند: آنی از طریق وب‌هوک (پیشنهادی)، یا با سرکشی WP-Cron حدوداً دقیقه‌ای یک‌بار."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Every minute (AI Post Creator — bot commands)"
+msgstr "هر دقیقه (AI Post Creator — دستورهای ربات)"
+
+#: includes/class-aipc-bale.php
+msgid "Instant mode is not configured."
+msgstr "حالت آنی پیکربندی نشده است."
+
+#: admin/views/bot.php
+msgid "Instant replies (webhook)"
+msgstr "پاسخ آنی (وب‌هوک)"
+
+#: includes/class-aipc-rest.php
+msgid "Invalid webhook secret."
+msgstr "رمز وب‌هوک نامعتبر است."
+
+#: admin/views/bot.php
+msgid "No answer to commands or buttons? First enable “Accept commands from Bale chats”. Without the webhook, replies ride on WP-Cron — expect a delay of a minute or more (longer on sites with little traffic). If nothing ever arrives, check the Cron status box on the Schedule page."
+msgstr "به دستورها یا دکمه‌ها جواب نمی‌دهد؟ اول «پذیرش دستور از چت‌های بله» را فعال کنید. بدون وب‌هوک، پاسخ‌ها با WP-Cron می‌آیند — یک دقیقه یا بیشتر تأخیر طبیعی است (در سایت‌های کم‌بازدید بیشتر). اگر هیچ‌وقت چیزی نیامد، جعبهٔ «وضعیت کرون» در صفحهٔ زمان‌بندی را ببینید."
+
+#: admin/views/bot.php
+msgid "Replies too slow? Turn on “Instant replies (webhook)” above and save — button presses and commands are then answered within seconds instead of waiting for the next cron poll."
+msgstr "پاسخ‌ها کند است؟ بالا «پاسخ آنی (وب‌هوک)» را روشن و ذخیره کنید — فشردن دکمه‌ها و دستورها به‌جای انتظار برای کرون بعدی، ظرف چند ثانیه جواب می‌گیرند."
+
+#: admin/views/bot.php
+msgid "Saving with this on registers the webhook with the platform automatically; turning it off removes it and polling resumes."
+msgstr "با ذخیره در حالت روشن، وب‌هوک خودکار نزد پلتفرم ثبت می‌شود؛ با خاموش کردنش حذف می‌شود و سرکشی دوره‌ای از سر گرفته می‌شود."
+
+#: admin/views/bot.php
+msgid "Settings saved — the webhook is registered: the bot now answers instantly."
+msgstr "تنظیمات ذخیره شد — وب‌هوک ثبت شد: ربات از این پس آنی پاسخ می‌دهد."
+
+#: admin/views/bot.php
+msgid "Settings saved, but the webhook could not be registered: %s — the bot falls back to polling every minute."
+msgstr "تنظیمات ذخیره شد، اما ثبت وب‌هوک ممکن نشد: %s — ربات به سرکشی دقیقه‌ای برمی‌گردد."
+
+#: admin/views/bot.php
+msgid "The bot only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Without the webhook, messages are read via WP-Cron about once a minute. Up to 20 posts per day can be started from the chat."
+msgstr "ربات فقط از شناسه‌های چتِ فهرست‌شدهٔ بالا فرمان می‌گیرد. هرکس در آن چت‌ها می‌تواند: «نوشتن: یک موضوع» برای شروع پیش‌نویس، «وضعیت» برای اجراهای امروز، «آخرین» برای تازه‌ترین پیش‌نویس، «انتشار» برای انتشار آن، «صف» برای صف موضوعات و «راهنما» برای فهرست کامل بفرستد. بدون وب‌هوک، پیام‌ها با WP-Cron حدوداً دقیقه‌ای یک‌بار خوانده می‌شوند. حداکثر ۲۰ پست در روز از چت قابل شروع است."
+
+#: admin/views/bot.php
+msgid "Without a webhook the bot reads new messages via WP-Cron (about once a minute, and only when the site gets visits) — so button presses and commands answer with a delay. With the webhook on, Bale/Telegram pushes every message and button press straight to your site and the bot answers within seconds. Requires a publicly reachable site over HTTPS. While the webhook is active, polling pauses automatically."
+msgstr "بدون وب‌هوک، ربات پیام‌های تازه را با WP-Cron می‌خواند (حدوداً دقیقه‌ای یک‌بار و فقط وقتی سایت بازدید دارد) — پس فشردن دکمه‌ها و دستورها با تأخیر جواب می‌گیرند. با وب‌هوکِ روشن، بله/تلگرام هر پیام و هر فشردن دکمه را مستقیم به سایت شما می‌فرستد و ربات ظرف چند ثانیه پاسخ می‌دهد. سایت باید از اینترنت با HTTPS در دسترس باشد. تا وقتی وب‌هوک فعال است، سرکشی دوره‌ای خودکار متوقف می‌شود."
+
+#: admin/views/cron.php
+msgid "%s ago"
+msgstr "%s پیش"
+
+#: admin/views/cron.php
+msgid "(no topic)"
+msgstr "(بدون موضوع)"
+
+#: admin/views/cron.php
+msgid "Agent runner — executes the next step of a job"
+msgstr "اجراکنندهٔ ایجنت — گام بعدی یک کار را اجرا می‌کند"
+
+#: admin/views/cron.php
+msgid "Agent runs that are still running, queued, or stopped on an error. Cancelling marks the job as cancelled and removes its runner cron event, so it will never resume on its own."
+msgstr "اجراهای ایجنت که هنوز در حال اجرا، در صف یا روی خطا متوقف‌اند. لغو کردن، کار را «لغوشده» علامت می‌زند و رویداد کرونِ اجراکننده‌اش را حذف می‌کند تا دیگر هرگز خودبه‌خود ادامه پیدا نکند."
+
+#: admin/views/cron.php
+msgid "All unfinished jobs cancelled."
+msgstr "همهٔ کارهای ناتمام لغو شدند."
+
+#: admin/views/cron.php
+msgid "Back to draft"
+msgstr "بازگشت به پیش‌نویس"
+
+#: admin/views/cron.php
+msgid "Bot poll — fetches new bot messages (fallback when the webhook is off)"
+msgstr "سرکشی ربات — پیام‌های جدید ربات را می‌گیرد (جایگزین وقتی وب‌هوک خاموش است)"
+
+#: admin/views/cron.php
+msgid "Cancel all"
+msgstr "لغو همه"
+
+#: admin/views/cron.php
+msgid "Cancel every unfinished job?"
+msgstr "همهٔ کارهای ناتمام لغو شوند؟"
+
+#: admin/views/cron.php
+msgid "Cancel publish"
+msgstr "لغو انتشار"
+
+#: admin/views/cron.php
+msgid "Delayed publish"
+msgstr "انتشار با تأخیر"
+
+#: admin/views/cron.php
+msgid "Delayed publish cancelled — the post stays a draft."
+msgstr "انتشار با تأخیر لغو شد — نوشته پیش‌نویس می‌ماند."
+
+#: admin/views/cron.php
+msgid "Everything still running or waiting in the background — stop any of it with one click so nothing piles up."
+msgstr "هرچه هنوز در پس‌زمینه در حال اجرا یا در انتظار است — هرکدام را با یک کلیک متوقف کنید تا چیزی روی هم تلنبار نشود."
+
+#: admin/views/cron.php
+msgid "Hook"
+msgstr "هوک"
+
+#: includes/class-aipc-bale-commands.php
+msgid "In two days 09:00"
+msgstr "پس‌فردا ۰۹:۰۰"
+
+#: admin/views/cron.php
+msgid "Job cancelled."
+msgstr "کار لغو شد."
+
+#: admin/views/cron.php includes/class-aipc-admin.php
+msgid "Jobs & Cron"
+msgstr "کارها و کرون"
+
+#: admin/views/cron.php
+msgid "Last activity"
+msgstr "آخرین فعالیت"
+
+#: admin/views/cron.php
+msgid "Next run"
+msgstr "اجرای بعدی"
+
+#: includes/class-aipc-bale-commands.php
+msgid "No AI draft is waiting to be scheduled — start one with «نوشتن: topic» first."
+msgstr "هیچ پیش‌نویس هوش مصنوعی منتظر زمان‌بندی نیست — اول با «نوشتن: موضوع» یکی بسازید."
+
+#: admin/views/cron.php
+msgid "No pending publishes."
+msgstr "انتشار در انتظاری نیست."
+
+#: admin/views/cron.php
+msgid "No plugin cron events are registered right now."
+msgstr "فعلاً هیچ رویداد کرونی از افزونه ثبت نشده است."
+
+#: admin/views/cron.php
+msgid "Nothing is running — all jobs are finished."
+msgstr "چیزی در حال اجرا نیست — همهٔ کارها تمام شده‌اند."
+
+#: admin/views/cron.php
+msgid "Pending publishes"
+msgstr "انتشارهای در انتظار"
+
+#: admin/views/cron.php
+msgid "Post"
+msgstr "نوشته"
+
+#: admin/views/cron.php
+msgid "Posts waiting to go live: delayed auto-publishes created by the agent, and posts you scheduled (from the bot or the editor). Cancelling keeps the post as a draft — nothing is deleted."
+msgstr "نوشته‌هایی که منتظر انتشارند: انتشارهای خودکارِ با تأخیر که ایجنت ساخته، و نوشته‌هایی که خودتان (از ربات یا ویرایشگر) زمان‌بندی کرده‌اید. لغو کردن، نوشته را به‌صورت پیش‌نویس نگه می‌دارد — چیزی حذف نمی‌شود."
+
+#: admin/views/cron.php
+msgid "Progress"
+msgstr "پیشرفت"
+
+#: admin/views/cron.php
+msgid "Publishes at"
+msgstr "زمان انتشار"
+
+#: admin/views/cron.php
+msgid "Queued"
+msgstr "در صف"
+
+#: admin/views/cron.php
+msgid "Recurring plugin events"
+msgstr "رویدادهای تکرارشوندهٔ افزونه"
+
+#: admin/views/cron.php
+msgid "Repeats"
+msgstr "تکرار"
+
+#: admin/views/cron.php
+msgid "Schedule tick — checks whether a scheduled topic is due"
+msgstr "تیک زمان‌بندی — بررسی می‌کند موعد موضوع زمان‌بندی‌شده‌ای رسیده یا نه"
+
+#: admin/views/cron.php
+msgid "Scheduled post"
+msgstr "نوشتهٔ زمان‌بندی‌شده"
+
+#: admin/views/cron.php
+msgid "Scheduled post moved back to draft."
+msgstr "نوشتهٔ زمان‌بندی‌شده به پیش‌نویس برگشت."
+
+#: admin/views/cron.php
+msgid "Source"
+msgstr "منبع"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tap a quick time below, or send the date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Tip: next time just reply to the draft notification with a date — no button needed. Send «لغو» to cancel."
+msgstr "یکی از زمان‌های سریع پایین را بزنید، یا تاریخ و ساعت را در یک پیام بفرستید — شمسی «1404/07/20 18:30» یا میلادی «2026-10-12 18:30»؛ «فردا 18:30» و «امروز 22:00» هم کار می‌کنند. نکته: دفعهٔ بعد کافی است به پیامِ پیش‌نویس فقط با تاریخ پاسخ (Reply) بدهید — دکمه لازم نیست. برای انصراف «لغو» بفرستید."
+
+#: admin/views/cron.php
+msgid "The plugin’s own heartbeat: these recurring events keep schedules, the bot, and job runners working. They are managed automatically — listed here for transparency only."
+msgstr "ضربان خود افزونه: این رویدادهای تکرارشونده زمان‌بندی‌ها، ربات و اجراکننده‌های کار را سر پا نگه می‌دارند. مدیریتشان خودکار است — اینجا فقط برای شفافیت فهرست شده‌اند."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tomorrow 09:00"
+msgstr "فردا ۰۹:۰۰"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tomorrow 18:00"
+msgstr "فردا ۱۸:۰۰"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tonight 21:00"
+msgstr "امشب ۲۱:۰۰"
+
+#: admin/views/cron.php
+msgid "Type"
+msgstr "نوع"
+
+#: admin/views/cron.php
+msgid "Unfinished jobs"
+msgstr "کارهای ناتمام"
+
+#: admin/views/cron.php
+msgid "View"
+msgstr "مشاهده"
+
+#: admin/views/cron.php
+msgid "What it does"
+msgstr "چه می‌کند"
+
+#: admin/views/cron.php
+msgid "once"
+msgstr "یک‌بار"
+
+#: includes/class-aipc-bale-commands.php
+msgid "⚡ Fastest: reply to a draft notification with just the date («فردا 18:30») — it is scheduled immediately, no button needed."
+msgstr "⚡ سریع‌ترین راه: به پیامِ پیش‌نویس فقط با تاریخ پاسخ (Reply) بدهید («فردا 18:30») — بلافاصله زمان‌بندی می‌شود، دکمه لازم نیست."
+
+#: includes/class-aipc-bale-commands.php
+msgid "🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — “Schedule” offers one-tap times, or send a date yourself."
+msgstr "🔘 زیر هر پیامِ پیش‌نویس دکمه‌های «انتشار فوری» و «زمان‌بندی» هست — «زمان‌بندی» زمان‌های یک‌لمسی پیشنهاد می‌دهد، یا خودتان تاریخ بفرستید."
+
+#: includes/class-aipc-agent.php
+msgid "AI image generation failed — attached a CC-licensed stock photo from Openverse instead (#%d, attribution saved on the attachment)."
+msgstr "ساخت تصویر با هوش مصنوعی شکست خورد — به‌جایش یک عکس استوک با مجوز CC از Openverse پیوست شد (#%d، منبع روی خود پیوست ذخیره شد)."
+
+#: includes/class-aipc-agent.php
+msgid "AI image generation failed — using the default featured image (#%d)."
+msgstr "ساخت تصویر با هوش مصنوعی شکست خورد — از تصویر شاخص پیش‌فرض استفاده شد (#%d)."
+
+#: includes/class-aipc-stock.php
+msgid "Could not download any of the stock photo candidates."
+msgstr "هیچ‌کدام از گزینه‌های عکس استوک دانلود نشد."
+
+#: admin/views/settings.php includes/class-aipc-agent.php
+msgid "Default featured image"
+msgstr "تصویر شاخص پیش‌فرض"
+
+#: includes/class-aipc-stock.php
+msgid "Empty stock photo query."
+msgstr "عبارت جست‌وجوی عکس استوک خالی است."
+
+#: admin/views/settings.php
+msgid "If every AI image connection fails, fetch a free CC-licensed photo from Openverse that matches the article subject"
+msgstr "اگر همهٔ اتصال‌های تصویرِ هوش مصنوعی شکست خوردند، یک عکس رایگان با مجوز CC از Openverse متناسب با موضوع مقاله گرفته شود"
+
+#: admin/views/settings.php
+msgid "Openverse (a WordPress project) needs no API key. The photo credit is saved in the attachment caption, as Creative Commons licenses require."
+msgstr "Openverse (از پروژه‌های وردپرس) به کلید API نیاز ندارد. اعتبار عکاس — طبق الزام مجوزهای کریتیو کامنز — در توضیح پیوست ذخیره می‌شود."
+
+#: includes/class-aipc-stock.php
+msgid "Openverse returned no results (HTTP %d)."
+msgstr "Openverse نتیجه‌ای برنگرداند (HTTP %d)."
+
+#: includes/class-aipc-stock.php
+msgid "Openverse returned no usable photo candidates."
+msgstr "Openverse هیچ گزینهٔ عکس قابل استفاده‌ای برنگرداند."
+
+#: includes/class-aipc-stock.php
+msgid "Photo: %1$s — via Openverse (%2$s)"
+msgstr "عکس: %1$s — از Openverse (%2$s)"
+
+#: includes/class-aipc-stock.php
+msgid "Stock photo download failed (HTTP %d)."
+msgstr "دانلود عکس استوک شکست خورد (HTTP %d)."
+
+#: admin/views/settings.php
+msgid "Stock photo fallback"
+msgstr "عکس استوک جایگزین"
+
+#: includes/class-aipc-agent.php
+msgid "Stock photo fallback failed: %s"
+msgstr "جایگزین عکس استوک شکست خورد: %s"
+
+#: includes/class-aipc-agent.php
+msgid "The default featured image setting could not be resolved to an image."
+msgstr "مقدار «تصویر شاخص پیش‌فرض» به یک تصویر معتبر نرسید."
+
+#: admin/views/settings.php
+msgid "The global switch and size for AI featured images. The image model is set per connection. When generation fails on every provider, the rescue ladder kicks in: a rejected model id is swapped for one the gateway actually offers, then the Openverse stock fallback (if enabled), then the default featured image — so posts need never go out without a picture."
+msgstr "کلید کلی و اندازهٔ تصاویر شاخص هوش مصنوعی. مدل تصویر برای هر اتصال جداگانه تنظیم می‌شود. وقتی ساخت تصویر روی همهٔ سرویس‌دهنده‌ها شکست بخورد، نردبان نجات وارد می‌شود: مدلِ ردشده با مدلی که دروازه واقعاً دارد عوض می‌شود، بعد عکس استوک Openverse (اگر فعال باشد)، بعد تصویر شاخص پیش‌فرض — تا هیچ پستی بدون عکس نماند."
+
+#: admin/views/settings.php
+msgid "The guaranteed last resort: used when AI generation and the stock fallback both fail, so every post still gets a featured image. Paste a media-library image ID or URL (an external URL is imported once and reused). Leave empty to allow posts without an image."
+msgstr "آخرین راه تضمینی: وقتی هم ساخت با هوش مصنوعی و هم عکس استوک شکست بخورند استفاده می‌شود تا هر پست باز هم تصویر شاخص داشته باشد. شناسهٔ (ID) یا آدرس تصویری از کتابخانهٔ رسانه را بچسبانید (آدرس خارجی یک‌بار وارد و بعد بازاستفاده می‌شود). خالی بگذارید تا پست بدون عکس مجاز باشد."
+
+#: includes/class-aipc-stock.php
+msgid "Unknown author"
+msgstr "پدیدآور ناشناس"
+
+#: includes/class-aipc-stock.php
+msgid "Unsafe stock photo URL blocked."
+msgstr "آدرس ناامن عکس استوک مسدود شد."
+
+#: admin/views/new-post.php
+msgid "Allow duplicate topic"
+msgstr "اجازهٔ موضوع تکراری"
+
+#: includes/class-aipc-agent.php
+msgid "An identical request arrived moments ago and is already being processed — duplicate blocked."
+msgstr "درخواستی یکسان لحظاتی پیش رسیده و در حال پردازش است — درخواست تکراری مسدود شد."
+
+#: includes/class-aipc-agent.php
+msgid "Duplicate request blocked: a job is already writing “%s” right now. Wait for it to finish, or enable “Allow duplicate topic” to override."
+msgstr "درخواست تکراری مسدود شد: همین حالا یک کار در حال نوشتن «%s» است. صبر کنید تمام شود، یا «اجازهٔ موضوع تکراری» را فعال کنید."
+
+#: includes/class-aipc-agent.php
+msgid "Duplicate request blocked: an article about this topic was already created recently — “%1$s” (post #%2$d). Change the topic, or enable “Allow duplicate topic” to write it again."
+msgstr "درخواست تکراری مسدود شد: به\\u200cتازگی مقاله\\u200cای دربارهٔ همین موضوع ساخته شده — «%1$s» (نوشتهٔ #%2$d). موضوع را عوض کنید، یا برای نوشتن دوباره «اجازهٔ موضوع تکراری» را فعال کنید."
+
+#: includes/class-aipc-agent.php
+msgid "Duplicate request blocked: “%s” is already waiting in the topic queue and will be written on schedule."
+msgstr "درخواست تکراری مسدود شد: «%s» از قبل در صف موضوع\\u200cها منتظر است و طبق زمان\\u200cبندی نوشته خواهد شد."
+
+#: includes/class-aipc-agent.php
+msgid "This job already created post #%d — duplicate finalize skipped."
+msgstr "این کار قبلاً نوشتهٔ #%d را ساخته است — ذخیرهٔ تکراری نادیده گرفته شد."
+
+#: admin/views/new-post.php
+msgid "skip the repeated-topic guard this once"
+msgstr "فقط همین یک بار از سد موضوع تکراری عبور کن"
+
+#: includes/class-aipc-steps.php
+msgid "Concrete element planned for this section in the outline (or a generic fallback)"
+msgstr "عنصر مشخصی که در طرح کلی برای این بخش برنامه‌ریزی شده (یا جایگزین عمومی)"
+
+#: includes/class-aipc-steps.php
+msgid "Recommended structure from the plan step"
+msgstr "ساختار پیشنهادی از مرحلهٔ برنامه‌ریزی"
+
+#: includes/class-aipc-steps.php
+msgid "Search-intent token from the plan step"
+msgstr "نشانهٔ هدف جست‌وجو از مرحلهٔ برنامه‌ریزی"

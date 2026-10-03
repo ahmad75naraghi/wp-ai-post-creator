@@ -6,9 +6,9 @@ standard WordPress cookie + nonce (the bundled admin JS sends the `wp_rest`
 nonce created for logged-in users).
 
 **Capabilities:** `start/step/state/cancel/retry` require **`edit_posts`**;
-`connection/*` and `bale/*` require **`manage_options`**. Anonymous requests
-get HTTP 401. Auto-publish params are only honored for users with
-`publish_posts`.
+`connection/*`, `bale/*` and `topics/*` require **`manage_options`**.
+Anonymous requests get HTTP 401. Auto-publish params are only honored for
+users with `publish_posts`.
 
 **Rate limits (v1.6+):** `/start`, `/step` and `/state` enforce a per-user,
 per-minute cap (30/240/300; 0 disables) — exceeding it returns HTTP 429 with
@@ -120,7 +120,16 @@ Resets the failed step of an `error` job and sets it back to `running`.
 
 Tests one connection — either a saved one (`id`) or raw values
 (`base_url`, `api_key`, `chat_model`). Returns
-`{ "ok": true, "model": "…" }` or `{ "ok": false, "error": "…" }`.
+`{ "ok": true, "models": […] }` (or `"chat": true` when the provider has no
+`/models`). Since v1.7.2, when the first attempt fails and the base URL does
+not end in `/v1`, the `/v1` variant is probed automatically. Since v1.7.4 a
+pasted full endpoint URL is normalized too: well-known endpoint paths
+(`/chat/completions`, `/completions`, `/responses`, `/models`, `/embeddings`,
+`/images/generations`) are stripped off the end of the base URL before any
+request. Whenever the working URL differs from what was typed, the success
+response carries `"fixed_base_url"` with the corrected URL (the admin JS
+writes it back into the form). Failures return the provider error, with a
+clear message when the address served an HTML page instead of an API.
 
 ### POST `/aipc/v1/connection/models`
 
@@ -146,6 +155,36 @@ Sends a test message to **every** recipient and reports per-chat results:
 
 Calls `getUpdates` on the stored bot and returns the newest detected chat id:
 `{ "ok": true, "chat_id": "98765" }`. Send a message to your bot first.
+
+---
+
+## Topic queue endpoints (`manage_options`, v1.7+)
+
+### POST `/aipc/v1/topics/suggest`
+
+Pulls fresh headline suggestions from the configured research sources
+(`source_sites` setting → RSS), cleans them (source-name suffixes stripped)
+and drops duplicates against the queue (pending **and** used) and recent
+post titles.
+
+| Param | Type | Notes |
+|---|---|---|
+| `limit` | int | max suggestions to return (default 12) |
+
+**Response:** `{ "suggestions": [ "…", … ], "count": 3, "has_sources": true }`
+— `has_sources` is `false` when no research sources are configured.
+
+### POST `/aipc/v1/topics/add`
+
+Adds topics to the FIFO queue (used by the suggestion picker and the bulk
+form). Duplicates — by normalized text, any status — are skipped.
+
+| Param | Type | Notes |
+|---|---|---|
+| `texts` | array of strings | topics to add (each ≤400 chars) |
+| `source` | string | `manual` (default) or `rss` |
+
+**Response:** `{ "added": 2, "skipped": 1, "pending": 7 }`.
 
 ---
 

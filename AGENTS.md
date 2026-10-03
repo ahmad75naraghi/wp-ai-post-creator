@@ -11,21 +11,25 @@ touching code. Companion documents:
 
 ## What this project is
 
-A WordPress plugin (v1.5.0) that turns the admin into an AI content agent: any
+A WordPress plugin (v1.7.x) that turns the admin into an AI content agent: any
 OpenAI-compatible API connection, a 13-step pipeline (new-post and rewrite modes),
 per-step connection **fallback chains**, internal linking, research source sites
-(RSS), scheduled auto-publishing, Bale messenger notifications, and a full e2e
-test suite that runs real WordPress. Persian (fa_IR) is a first-class language —
-every user-facing string is translated.
+(RSS), scheduled auto-publishing, true **background execution** (self-rescheduling
+cron runner + jobs DB table), a **topic queue** with RSS suggestions, Bale
+messenger notifications **and two-way Bale commands**, an SSRF guard + REST rate
+limits, a Git self-updater, and a full e2e test suite that runs real WordPress.
+Persian (fa_IR) is a first-class language — every user-facing string is translated.
 
-Current state: all feature work lives on the branch `arena/01a0de38-wp-ai-post-creator`
-and is tracked by **PR #1** (open, against `main`). Do not push to `main`.
+Current state: `main` contains everything through **v1.7.0** (PR #1 shipped
+v1.0–1.5.2, PR #2 shipped v1.6.0–1.7.0 — both merged). New work happens on the
+current Arena session branch (`arena/<id>-wp-ai-post-creator`) with a PR against
+`main`. Do not push to `main` directly.
 
 ## Golden rules
 
 1. **Never claim something works without running the verification suite** (below).
-2. **Never break the e2e suite** — it is the project's contract (141/141 assertion
-   groups green at v1.5.0, zero PHP warnings).
+2. **Never break the e2e suite** — it is the project's contract (72 result
+   groups / 545 boolean assertions green at v1.20.0, zero PHP warnings).
 3. **PHP 7.4 compatible** syntax only (the linter parses with `version: 704`).
    No enums, no readonly, no match expressions, no named args.
 4. **No build step, no runtime dependencies.** Plain PHP + jQuery-free vanilla JS.
@@ -122,9 +126,9 @@ block with all assertion groups.
     as a diff and issues `ALTER TABLE … CHANGE COLUMN`, which the drop-in fails
     with a `trim(null)` deprecation — so `ensure_table()` must only dbDelta when
     the table is missing, never to "upgrade" it.
-- **`gh pr edit` fails** (GraphQL "Projects (classic)" error). Update PR #1 with
-  REST instead: `gh api -X PATCH repos/ahmad75naraghi/wp-ai-post-creator/pulls/1
-  --input <json with title/body>`.
+- **`gh pr edit` fails** (GraphQL "Projects (classic)" error). Update the
+  session PR with REST instead: `gh api -X PATCH
+  repos/ahmad75naraghi/wp-ai-post-creator/pulls/<n> --input <json with title/body>`.
 - Commit as `Arena Agent <agent@arena.ai>`; commit title format `vX.Y.Z — summary`.
 - PR mergeability is unknown for ~5s after a push — sleep, then re-query.
 
@@ -133,9 +137,9 @@ block with all assertion groups.
 | Path | Role |
 |---|---|
 | `wp-ai-post-creator.php` | Bootstrap: constants, requires, activation, cron hooks, admin-bar link |
-| `includes/class-aipc-agent.php` | The state machine: job facade over `AIPC_Job_Store`, step manifests, chain-retry loop, all `step_*()` implementations, context helpers, stats |
+| `includes/class-aipc-agent.php` | The state machine: job facade over `AIPC_Job_Store`, step manifests, chain-retry loop, all `step_*()` implementations, context helpers, stats; duplicate-request guard (`topic_norm`/`claim`/`release`/`duplicate_of`, 1.19.0) |
 | `includes/class-aipc-steps.php` | 13-step registry (prompts + kinds) and per-step `connections[]` config |
-| `includes/class-aipc-post-builder.php` | Assembles/saves posts (`create()` new, `update()` rewrite), TOC/FAQ HTML, SEO meta, featured image |
+| `includes/class-aipc-post-builder.php` | Assembles/saves posts (`create()` new, `update()` rewrite), TOC/FAQ HTML, SEO meta, featured image, `_aipc_topic_norm` meta + `post_for_job()` idempotency lookup (1.19.0) |
 | `includes/class-aipc-connections.php` | CRUD + sanitize for AI connections (write-only API keys) |
 | `includes/class-aipc-api-client.php` | OpenAI-compatible HTTP client: chat (JSON extraction + corrective retries), images, models, downloads (guard-checked); one internal retry on 429/5xx |
 | `includes/class-aipc-job-store.php` | Jobs storage: `{prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
@@ -151,7 +155,7 @@ block with all assertion groups.
 | `admin/views/*.php` | One template per screen (new-post, rewrite, review, connections, prompts, schedule, settings, logs, log-detail) |
 | `assets/admin-agent.js` | The console viewer: polls the read-only `/state` endpoint while the background runner drives the job; retry/cancel, publish controls |
 | `tests/e2e/` | `e2e.js` (runner), `install.php`, `drive.php` (assertions), `mock-api.php` (AI/Bale/RSS mocks), `lint.js`, `make-translations.py` |
-| `languages/` | `wp-ai-post-creator.pot`, `-fa_IR.po/.mo` (540 msgids, incl. 3 plural entries) |
+| `languages/` | `wp-ai-post-creator.pot`, `-fa_IR.po/.mo` (630 msgids, incl. 3 plural entries) |
 | Root/community MDs | `README.md`, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`, `SUPPORT.md`, `CODE_OF_CONDUCT.md`, `AGENTS.md`, `LICENSE` (GPL-2.0), `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/workflows/ci.yml` |
 
 ## Conventions that matter
@@ -231,8 +235,8 @@ The change you are making probably matches a recipe in
 [`docs/RELEASE-CHECKLIST.md`](docs/RELEASE-CHECKLIST.md); the full list:
 bump `AIPC_VERSION` (constant + plugin header), `readme.txt` stable tag +
 changelog, `README.md` version + feature sections, re-run translations, lint +
-e2e green, commit `vX.Y.Z — summary`, push the arena branch, update PR #1 via
-REST PATCH, confirm mergeable.
+e2e green, commit `vX.Y.Z — summary`, push the arena branch, update the
+session PR via REST PATCH, confirm mergeable.
 
 ## Roadmap
 

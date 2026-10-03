@@ -82,7 +82,14 @@
 
 		api('connection/test', cfg).then(function (res) {
 			if (res && res.ok) {
-				if (res.models && res.models.length) {
+				if (res.fixed_base_url) {
+					var form = btn.closest('form');
+					var baseField = form ? form.querySelector('[name="base_url"]') : null;
+					if (baseField) {
+						baseField.value = res.fixed_base_url;
+					}
+					setStatus(out, String(t('fixedBase')).replace('%s', res.fixed_base_url), true);
+				} else if (res.models && res.models.length) {
 					setStatus(out, fmt(t('okModels'), res.models.length), true);
 				} else {
 					setStatus(out, t('okNoModels'), true);
@@ -95,6 +102,53 @@
 		}).finally(function () {
 			btn.disabled = false;
 		});
+	}
+
+	function renderPicker(form, models) {
+		var picker = form.querySelector('.aipc-model-picker');
+		if (!picker) { return; }
+		var input = form.querySelector('input[name="chat_model"]');
+		var list = picker.querySelector('.aipc-model-list');
+		var filter = picker.querySelector('.aipc-model-filter');
+
+		function draw() {
+			var q = (filter && filter.value ? filter.value : '').toLowerCase();
+			var shown = 0;
+			list.innerHTML = '';
+			models.forEach(function (id) {
+				if (q && String(id).toLowerCase().indexOf(q) === -1) { return; }
+				shown++;
+				var item = document.createElement('div');
+				item.className = 'aipc-model-item' + (input && input.value === id ? ' is-selected' : '');
+				item.textContent = id;
+				item.setAttribute('role', 'option');
+				item.addEventListener('click', function () {
+					if (input) { input.value = id; }
+					var sel = list.querySelector('.is-selected');
+					if (sel) { sel.classList.remove('is-selected'); }
+					item.classList.add('is-selected');
+				});
+				list.appendChild(item);
+			});
+			if (!shown) {
+				var empty = document.createElement('div');
+				empty.className = 'aipc-model-empty';
+				empty.textContent = t('noMatch');
+				list.appendChild(empty);
+			}
+		}
+
+		// Re-loading models must rebind the filter to the fresh list, so the
+		// single listener always delegates to the latest draw().
+		picker.aipcDraw = draw;
+		if (filter && !picker.aipcBound) {
+			picker.aipcBound = true;
+			filter.addEventListener('input', function () {
+				if (picker.aipcDraw) { picker.aipcDraw(); }
+			});
+		}
+		draw();
+		picker.hidden = false;
 	}
 
 	function onModels(btn) {
@@ -115,6 +169,9 @@
 					opt.value = id;
 					list.appendChild(opt);
 				});
+			}
+			if (form && models.length) {
+				renderPicker(form, models);
 			}
 			setStatus(out, fmt(t('modelsOk'), models.length), true);
 		}).catch(function (err) {

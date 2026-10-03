@@ -83,9 +83,19 @@ final class AIPC_Agent {
 
 		foreach ( $cfg['connections'] as $conn_id ) {
 			$conn = AIPC_Connections::get( $conn_id );
-			if ( $conn && ! empty( $conn['base_url'] ) ) {
+			// Disabled connections are skipped everywhere (v1.9.3).
+			if ( $conn && ! empty( $conn['base_url'] ) && ! empty( $conn['enabled'] ) ) {
 				$chain[] = $conn;
 			}
+		}
+
+		// No explicit chain on the step: build one automatically from the
+		// connections whose purpose matches (image steps use image-capable
+		// connections, everything else chat-capable ones), ordered by
+		// priority. Each entry keeps its own retry budget below.
+		if ( empty( $chain ) ) {
+			$purpose = ( 'image' === $step ) ? 'image' : 'chat';
+			$chain   = AIPC_Connections::for_purpose( $purpose );
 		}
 		if ( empty( $chain ) ) {
 			$default = AIPC_Connections::get_default();
@@ -262,6 +272,16 @@ final class AIPC_Agent {
 		if ( ! is_array( $job ) || empty( $job['id'] ) ) {
 			return;
 		}
+		// Cancellation is terminal (1.20.1): a runner that was mid-step
+		// when the user cancelled still holds a 'running' copy in memory
+		// and would resurrect the job seconds later by saving it. Never
+		// let a 'running' copy overwrite a job the user already cancelled.
+		if ( isset( $job['status'] ) && 'running' === $job['status'] ) {
+			$stored = AIPC_Job_Store::get( (string) $job['id'] );
+			if ( $stored && 'cancelled' === $stored['status'] ) {
+				return;
+			}
+		}
 		$job['updated'] = time();
 		AIPC_Job_Store::save( $job );
 	}
@@ -409,11 +429,154 @@ final class AIPC_Agent {
 	}
 
 	/**
+	 * Canonical form of a topic for duplicate detection (1.19.0):
+	 * Arabic→Persian letters, digit unification, lowercase, ZWNJ/NBSP →
+	 * space, collapsed whitespace.
+	 *
+	 * @param string $topic Raw topic.
+	 * @return string
+	 */
+	public static function topic_norm( $topic ) {
+		$t = AIPC_Topic_Queue::normalize_key( wp_strip_all_tags( (string) $topic ) );
+		$t = preg_replace( '/[\x{200c}\x{200b}\x{00a0}]/u', ' ', $t );
+		$t = preg_replace( '/\s+/u', ' ', (string) $t );
+		return trim( (string) $t );
+	}
+
+	/**
+	 * Atomic one-winner lock built on add_option()'s unique-key INSERT —
+	 * unlike transients there is no read-then-write race (1.19.0).
+	 *
+	 * @param string $key Logical lock name.
+	 * @param int    $ttl Seconds the claim stays valid.
+	 * @return bool True when this caller won the claim.
+	 */
+	public static function claim( $key, $ttl = 600 ) {
+		$name = 'aipc_claim_' . md5( $key );
+		$ts   = (int) get_option( $name, 0 );
+		if ( $ts && $ts > time() - max( 1, (int) $ttl ) ) {
+			return false;
+		}
+		if ( $ts ) {
+			delete_option( $name );
+		}
+		// Opportunistic cleanup of long-expired claim rows.
+		if ( 1 === wp_rand( 1, 25 ) ) {
+			global $wpdb;
+			$wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s AND option_value < %d",
+				$wpdb->esc_like( 'aipc_claim_' ) . '%',
+				time() - 2 * DAY_IN_SECONDS
+			) );
+		}
+		return false !== add_option( $name, time(), '', false );
+	}
+
+	/**
+	 * Drop a claim before its TTL expires (e.g. after a failed job).
+	 *
+	 * @param string $key Logical lock name.
+	 * @return void
+	 */
+	public static function release( $key ) {
+		delete_option( 'aipc_claim_' . md5( $key ) );
+	}
+
+	/**
+	 * Is this topic already being written, recently written, or queued?
+	 *
+	 * @param string $topic      Topic text.
+	 * @param string $source     Request source (cron skips the queue check —
+	 *                           the scheduler legitimately consumes queue items).
+	 * @param bool   $skip_queue Also skip the queue check (callers that
+	 *                           consume a queue item themselves).
+	 * @return array|null {type: job|post|queue, id, title} or null.
+	 */
+	public static function duplicate_of( $topic, $source = 'manual', $skip_queue = false ) {
+		$norm = self::topic_norm( $topic );
+		if ( '' === $norm ) {
+			return null;
+		}
+
+		// 1) A job is writing this very topic right now.
+		foreach ( AIPC_Job_Store::all( 100 ) as $row ) {
+			if ( 'running' === $row['status'] && self::topic_norm( $row['topic'] ) === $norm ) {
+				return array( 'type' => 'job', 'id' => (string) $row['id'], 'title' => (string) $row['topic'] );
+			}
+		}
+
+		// 2) An article about it was created recently.
+		$days = max( 0, (int) apply_filters( 'aipc_duplicate_window', 30 ) );
+		if ( $days > 0 ) {
+			$ids = get_posts( array(
+				'post_type'        => 'post',
+				'post_status'      => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+				'numberposts'      => 1,
+				'fields'           => 'ids',
+				'no_found_rows'    => true,
+				'suppress_filters' => true,
+				'meta_key'         => '_aipc_topic_norm',
+				'meta_value'       => $norm,
+				'date_query'       => array( array( 'after' => $days . ' days ago' ) ),
+			) );
+			if ( ! empty( $ids ) ) {
+				return array( 'type' => 'post', 'id' => (int) $ids[0], 'title' => get_the_title( $ids[0] ) );
+			}
+		}
+
+		// 3) Waiting in the topic queue (manual/bot starts only).
+		if ( 'cron' !== $source && ! $skip_queue ) {
+			$cfg = AIPC_Topic_Queue::all();
+			foreach ( $cfg['items'] as $item ) {
+				$status = isset( $item['status'] ) ? $item['status'] : 'pending';
+				$raw    = isset( $item['text'] ) ? $item['text'] : ( isset( $item['norm'] ) ? $item['norm'] : '' );
+				$inorm  = self::topic_norm( $raw );
+				if ( 'pending' === $status && '' !== $inorm && $inorm === $norm ) {
+					return array( 'type' => 'queue', 'id' => isset( $item['id'] ) ? (string) $item['id'] : '', 'title' => (string) $raw );
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Human message for a duplicate_of() hit.
+	 *
+	 * @param array $dup Duplicate info.
+	 * @return string
+	 */
+	public static function duplicate_message( $dup ) {
+		if ( 'job' === $dup['type'] ) {
+			return sprintf(
+				/* translators: %s: topic. */
+				__( 'Duplicate request blocked: a job is already writing “%s” right now. Wait for it to finish, or enable “Allow duplicate topic” to override.', 'wp-ai-post-creator' ),
+				$dup['title']
+			);
+		}
+		if ( 'queue' === $dup['type'] ) {
+			return sprintf(
+				/* translators: %s: topic. */
+				__( 'Duplicate request blocked: “%s” is already waiting in the topic queue and will be written on schedule.', 'wp-ai-post-creator' ),
+				$dup['title']
+			);
+		}
+		return sprintf(
+			/* translators: 1: post title, 2: post id. */
+			__( 'Duplicate request blocked: an article about this topic was already created recently — “%1$s” (post #%2$d). Change the topic, or enable “Allow duplicate topic” to write it again.', 'wp-ai-post-creator' ),
+			$dup['title'],
+			(int) $dup['id']
+		);
+	}
+
+	/**
 	 * Create a new job. The topic is optional: when empty, the agent invents
 	 * one from the site prompt during the plan step.
 	 *
-	 * @param string $topic Optional topic hint.
-	 * @param array  $args  Options from the request.
+	 * @param string $topic  Optional topic hint.
+	 * @param array  $args   Options from the request ('force' => 1 skips
+	 *                       the duplicate-topic guard).
+	 * @param string $source Request source (manual|cron|bale).
 	 * @return array|WP_Error Job or error.
 	 */
 	public function create_job( $topic, $args = array(), $source = 'manual' ) {
@@ -424,6 +587,22 @@ final class AIPC_Agent {
 		$topic = trim( wp_strip_all_tags( (string) $topic ) );
 		if ( mb_strlen( $topic ) > 400 ) {
 			$topic = mb_substr( $topic, 0, 400 );
+		}
+
+		// Duplicate-request guard (1.19.0): never write the same topic twice
+		// — not while another job is writing it, not when an article about
+		// it was created recently, and not when two identical requests race
+		// each other. `force` (admin opt-in) bypasses everything.
+		$req_mode = isset( $args['mode'] ) && 'rewrite' === $args['mode'] ? 'rewrite' : 'new';
+		$force    = ! empty( $args['force'] );
+		if ( 'new' === $req_mode && '' !== $topic && ! $force ) {
+			$dup = self::duplicate_of( $topic, $source, ! empty( $args['from_queue'] ) );
+			if ( $dup ) {
+				return new WP_Error( 'aipc_duplicate', self::duplicate_message( $dup ) );
+			}
+			if ( ! self::claim( 'topic_' . self::topic_norm( $topic ), 10 * MINUTE_IN_SECONDS ) ) {
+				return new WP_Error( 'aipc_duplicate', __( 'An identical request arrived moments ago and is already being processed — duplicate blocked.', 'wp-ai-post-creator' ) );
+			}
 		}
 
 		$s   = AIPC_Settings::all();
@@ -486,7 +665,7 @@ final class AIPC_Agent {
 		}
 
 		$default_conn = AIPC_Connections::get_default();
-		$job['model'] = $default_conn['chat_model'];
+		$job['model'] = ( $default_conn && ! empty( $default_conn['chat_model'] ) ) ? $default_conn['chat_model'] : '';
 
 		if ( 'rewrite' === $job['mode'] ) {
 			$this->log( $job, sprintf(
@@ -534,11 +713,19 @@ final class AIPC_Agent {
 			return new WP_Error( 'aipc_job', __( 'Job not found or already cleaned up.', 'wp-ai-post-creator' ) );
 		}
 		if ( 'running' === $job['status'] || 'error' === $job['status'] ) {
+			// Fence the in-flight runner FIRST (1.20.1): overwrite the
+			// runner lock with a token no process owns. A runner that is
+			// mid-step right now fails its ownership check at every save
+			// point and discards its stale copy instead of overwriting
+			// this cancellation — and its step loop stops because the
+			// fresh copy it reloads says 'cancelled'.
+			set_transient( 'aipc_lock_' . $job['id'], 'cancelled-' . uniqid( '', true ), self::LOCK_TTL );
 			$job['status'] = 'cancelled';
 			$this->log( $job, __( 'Agent cancelled by user.', 'wp-ai-post-creator' ), 'warn' );
 			$this->record_stats( $job );
 			$this->save_job( $job );
 			AIPC_Scheduler::unschedule_runner( $id );
+			self::release( 'topic_' . self::topic_norm( $job['topic'] ) );
 		}
 		return $job;
 	}
@@ -574,6 +761,72 @@ final class AIPC_Agent {
 	 * ------------------------------------------------------------------- */
 
 	/**
+	 * Runner-lock TTL. Thanks to the heartbeat it only needs to outlive a
+	 * single HTTP request, not a whole step.
+	 */
+	const LOCK_TTL = 900;
+
+	/** @var string Current runner-lock transient name ('' = none held). */
+	private $lock_key = '';
+
+	/** @var string Token proving THIS runner owns the lock. */
+	private $lock_token = '';
+
+	/**
+	 * Take the runner lock for this process and start the heartbeat.
+	 *
+	 * @param string $key Lock transient name.
+	 * @return void
+	 */
+	private function lock_acquire( $key ) {
+		$this->lock_key   = $key;
+		$this->lock_token = uniqid( 'r', true ) . wp_rand( 1000, 9999 );
+		set_transient( $key, $this->lock_token, self::LOCK_TTL );
+		add_filter( 'pre_http_request', array( $this, 'lock_heartbeat' ), 1, 3 );
+	}
+
+	/**
+	 * Heartbeat: refresh the lock before every outbound HTTP request
+	 * (provider calls, image downloads, stock photos — everything goes
+	 * through the WP HTTP API). Refreshes only while we still own it.
+	 *
+	 * @param false|array|WP_Error $pre  Pre-emptive response (passthrough).
+	 * @param array                $args Request args (unused).
+	 * @param string               $url  Request URL (unused).
+	 * @return false|array|WP_Error Unchanged $pre.
+	 */
+	public function lock_heartbeat( $pre, $args = array(), $url = '' ) {
+		if ( '' !== $this->lock_key && get_transient( $this->lock_key ) === $this->lock_token ) {
+			set_transient( $this->lock_key, $this->lock_token, self::LOCK_TTL );
+		}
+		return $pre;
+	}
+
+	/**
+	 * Does this process still own the runner lock?
+	 *
+	 * @return bool
+	 */
+	private function lock_owned() {
+		return '' !== $this->lock_key && get_transient( $this->lock_key ) === $this->lock_token;
+	}
+
+	/**
+	 * Release the lock (only when still owned — never steal it back from
+	 * a runner that legitimately took over) and stop the heartbeat.
+	 *
+	 * @return void
+	 */
+	private function lock_release() {
+		if ( $this->lock_owned() ) {
+			delete_transient( $this->lock_key );
+		}
+		remove_filter( 'pre_http_request', array( $this, 'lock_heartbeat' ), 1 );
+		$this->lock_key   = '';
+		$this->lock_token = '';
+	}
+
+	/**
 	 * Execute the next step of a job. Each call runs exactly one step so the
 	 * browser can stream progress without hitting PHP execution limits.
 	 *
@@ -600,7 +853,14 @@ final class AIPC_Agent {
 			$state['busy'] = true;
 			return $state;
 		}
-		set_transient( $lock_key, 1, 600 );
+		// Owner-token lock with heartbeat (1.19.1): the transient stores a
+		// token unique to THIS runner and is refreshed before every outbound
+		// HTTP request (pre_http_request, see lock_heartbeat), so it never
+		// expires while the step is genuinely working — no matter how many
+		// retries/connections/downloads the step needs. It only dies when
+		// this process truly froze, and then the ownership check below
+		// makes the stale runner discard its copy instead of saving it.
+		$this->lock_acquire( $lock_key );
 
 		// Give slow steps room to finish (retries included).
 		if ( function_exists( 'set_time_limit' ) ) {
@@ -609,7 +869,7 @@ final class AIPC_Agent {
 
 		$step = isset( $job['steps'][ $job['cursor'] ] ) ? $job['steps'][ $job['cursor'] ] : null;
 		if ( ! $step ) {
-			delete_transient( $lock_key );
+			$this->lock_release();
 			return $this->client_state( $job, $since );
 		}
 
@@ -628,6 +888,12 @@ final class AIPC_Agent {
 			$attempt = 0;
 			while ( ! $passed && $attempt < $max_attempts ) {
 				$attempt++;
+				AIPC_Trace::set_context( array(
+					'job'  => $job['id'],
+					'step' => $step['id'],
+					'conn' => $conn['name'],
+					'try'  => $attempt,
+				) );
 				try {
 					$this->run_step( $job, $step['id'], $conn );
 					$passed = true;
@@ -642,7 +908,9 @@ final class AIPC_Agent {
 							$conn['name'],
 							$last_error
 						), 'warn' );
-						$this->save_job( $job );
+						if ( $this->lock_owned() ) { // Never let a stale runner overwrite the new owner's copy.
+							$this->save_job( $job );
+						}
 					}
 				}
 			}
@@ -657,20 +925,46 @@ final class AIPC_Agent {
 					$max_attempts,
 					$chain[ $aipc_ci + 1 ]['name']
 				), 'warn' );
-				$this->save_job( $job );
+				if ( $this->lock_owned() ) { // Never let a stale runner overwrite the new owner's copy.
+					$this->save_job( $job );
+				}
 			}
+		}
+
+		AIPC_Trace::clear_context();
+
+		// Lost the lock mid-step? Then this process froze long enough for
+		// another runner to take over legitimately (1.19.1). The new
+		// owner's copy of the job is the truth now — discard every local
+		// change. Saving our stale copy would rewind the cursor and make
+		// finished steps run again: regenerated featured images, repeated
+		// notifications, image-less reruns. Exactly the churn we fix here.
+		if ( ! $this->lock_owned() ) {
+			$this->lock_release(); // Removes the heartbeat only — never steals the new owner's lock.
+			$fresh         = $this->get_job( $id );
+			$state         = $this->client_state( $fresh ? $fresh : $job, $since );
+			$state['busy'] = true;
+			return $state;
 		}
 
 		// Step timing (all attempts).
 		$job['timings'][ $step['id'] ] = (int) round( ( microtime( true ) - $t0 ) * 1000 );
 
 		if ( ! $passed && 'image' === $step['id'] ) {
+			// Rescue ladder (1.18.0): stock photo → default image. Only
+			// when both are unavailable is the step skipped.
+			if ( $this->image_fallback( $job ) ) {
+				$this->advance( $job );
+				$this->save_job( $job );
+				$this->lock_release();
+				return $this->client_state( $job, $since );
+			}
 			// The featured image is optional — skip gracefully when every
 			// connection in the chain failed to generate one.
 			$this->log( $job, __( 'Image generation failed on every connection — continuing without a featured image.', 'wp-ai-post-creator' ), 'warn' );
 			$this->advance( $job, 'skipped' );
 			$this->save_job( $job );
-			delete_transient( $lock_key );
+			$this->lock_release();
 			return $this->client_state( $job, $since );
 		}
 
@@ -692,19 +986,23 @@ final class AIPC_Agent {
 			$this->record_stats( $job );
 			$this->save_job( $job );
 			AIPC_Scheduler::unschedule_runner( $job['id'] );
-			delete_transient( $lock_key );
+			// Release the topic claim so the user can retry right away —
+			// failed jobs never block a fresh attempt (1.19.0).
+			self::release( 'topic_' . self::topic_norm( $job['topic'] ) );
+			$this->lock_release();
 			return $this->client_state( $job, $since );
 		}
 
 		$this->save_job( $job );
-		delete_transient( $lock_key );
+		$this->lock_release();
 
 		if ( 'done' === $job['status'] ) {
 			// Nothing left to run in the background.
 			AIPC_Scheduler::unschedule_runner( $job['id'] );
 		}
 
-		if ( 'done' === $job['status'] && empty( $job['notified'] ) ) {
+		if ( 'done' === $job['status'] && empty( $job['notified'] )
+			&& self::claim( 'notify_' . $job['id'], DAY_IN_SECONDS ) ) {
 			$job['notified'] = 1;
 			$this->save_job( $job );
 
@@ -1029,17 +1327,24 @@ final class AIPC_Agent {
 	}
 
 	/**
-	 * Internal-link candidates: recent published posts with their permalinks.
+	 * Internal-link candidates: published posts with their permalinks.
 	 *
-	 * @param int $exclude Post id to exclude (rewrite mode).
-	 * @param int $limit   Maximum candidates.
+	 * Since 1.20.0 the candidates are RELEVANCE-ranked, not just "the most
+	 * recent": up to 100 recent posts are scored by word overlap between
+	 * their title and the topic context, so the model links to genuinely
+	 * related articles instead of whatever was published last.
+	 *
+	 * @param int    $exclude Post id to exclude (rewrite mode).
+	 * @param int    $limit   Maximum candidates.
+	 * @param string $context Topic/title text used for relevance ranking.
 	 * @return string Bullet list.
 	 */
-	private function link_candidates( $exclude = 0, $limit = 20 ) {
+	private function link_candidates( $exclude = 0, $limit = 20, $context = '' ) {
+		$pool = (int) apply_filters( 'aipc_link_candidate_pool', 100 );
 		$posts = get_posts( array(
 			'post_type'        => 'post',
 			'post_status'      => 'publish',
-			'numberposts'      => $limit,
+			'numberposts'      => max( $limit, $pool ),
 			'orderby'          => 'date',
 			'order'            => 'DESC',
 			'post__not_in'     => $exclude ? array( (int) $exclude ) : array(),
@@ -1050,11 +1355,52 @@ final class AIPC_Agent {
 			return '- ' . __( '(No published posts yet.)', 'wp-ai-post-creator' );
 		}
 
+		// Relevance ranking by normalized token overlap with the context.
+		$ctx_tokens = $this->title_tokens( $context );
+		if ( ! empty( $ctx_tokens ) && count( $posts ) > $limit ) {
+			$scored = array();
+			foreach ( $posts as $idx => $post ) {
+				$overlap = count( array_intersect( $ctx_tokens, $this->title_tokens( $post->post_title ) ) );
+				$scored[] = array( 'post' => $post, 'score' => $overlap, 'recency' => -$idx );
+			}
+			usort( $scored, function ( $a, $b ) {
+				if ( $a['score'] !== $b['score'] ) {
+					return $b['score'] - $a['score'];
+				}
+				return $b['recency'] - $a['recency']; // Newer first on ties.
+			} );
+			$posts = array_map( function ( $row ) {
+				return $row['post'];
+			}, $scored );
+		}
+		$posts = array_slice( $posts, 0, $limit );
+
 		$lines = '';
 		foreach ( $posts as $post ) {
 			$lines .= '- ' . wp_html_excerpt( $post->post_title, 110, '…' ) . ' — ' . get_permalink( $post ) . "\n";
 		}
 		return trim( $lines );
+	}
+
+	/**
+	 * Normalized, de-duplicated meaningful tokens of a title/topic
+	 * (ZWNJ/case/digit variants unified, short stop-tokens dropped).
+	 *
+	 * @param string $text Input text.
+	 * @return string[]
+	 */
+	private function title_tokens( $text ) {
+		$norm = self::topic_norm( $text );
+		if ( '' === $norm ) {
+			return array();
+		}
+		$tokens = array();
+		foreach ( preg_split( '/[^\p{L}\p{N}]+/u', $norm ) as $tok ) {
+			if ( mb_strlen( $tok ) >= 3 ) {
+				$tokens[ $tok ] = true;
+			}
+		}
+		return array_keys( $tokens );
 	}
 
 	/**
@@ -1084,11 +1430,14 @@ final class AIPC_Agent {
 				continue;
 			}
 			$host = wp_parse_url( $url, PHP_URL_HOST );
+			// v1.12.0: when source links are disabled in the settings the
+			// model never sees the URLs, so it cannot link to them.
+			$with_links = (bool) AIPC_Settings::get( 'source_links' );
 			$lines .= 'SOURCE: ' . $host . "\n";
 			foreach ( $feed->get_items( 0, 6 ) as $item ) {
 				$title = wp_html_excerpt( trim( strip_tags( (string) $item->get_title() ) ), 120, '…' );
 				$desc  = wp_html_excerpt( trim( strip_tags( (string) $item->get_description() ) ), 180, '…' );
-				$link  = esc_url_raw( (string) $item->get_permalink() );
+				$link  = $with_links ? esc_url_raw( (string) $item->get_permalink() ) : '';
 				if ( '' === $title ) {
 					continue;
 				}
@@ -1179,7 +1528,7 @@ final class AIPC_Agent {
 			'{{categories}}'      => trim( $cat_lines ),
 			'{{recent_posts}}'    => $this->recent_posts_context(),
 			'{{sources}}'         => $this->source_context(),
-			'{{link_candidates}}' => $this->link_candidates(),
+			'{{link_candidates}}' => $this->link_candidates( 0, 20, $job['topic'] ),
 			'{{topic_hint}}'      => $topic_hint,
 			'{{words}}'           => (string) $spec['words'],
 			'{{sections}}'        => (string) $spec['sections'],
@@ -1275,6 +1624,8 @@ final class AIPC_Agent {
 			'{{topic_brief}}'     => isset( $plan['topic_brief'] ) ? (string) $plan['topic_brief'] : '',
 			'{{primary_keyword}}' => isset( $plan['primary_keyword'] ) ? (string) $plan['primary_keyword'] : '',
 			'{{angle}}'           => isset( $plan['angle'] ) ? (string) $plan['angle'] : '',
+			'{{search_intent}}'   => ! empty( $plan['search_intent'] ) ? sanitize_text_field( (string) $plan['search_intent'] ) : 'informational',
+			'{{structure_hint}}'  => isset( $plan['structure_hint'] ) ? sanitize_text_field( (string) $plan['structure_hint'] ) : '',
 			'{{words}}'           => (string) $spec['words'],
 			'{{sections}}'        => (string) $spec['sections'],
 			'{{lang}}'            => $lang,
@@ -1289,8 +1640,11 @@ final class AIPC_Agent {
 					continue;
 				}
 				$sections[] = array(
-					'heading' => sanitize_text_field( (string) $section['heading'] ),
-					'brief'   => isset( $section['brief'] ) ? sanitize_text_field( (string) $section['brief'] ) : '',
+					'heading'  => sanitize_text_field( (string) $section['heading'] ),
+					'brief'    => isset( $section['brief'] ) ? sanitize_text_field( (string) $section['brief'] ) : '',
+					// Evidence plan (1.20.0): the one concrete element this
+					// section promises — handed to the writer step.
+					'evidence' => isset( $section['evidence'] ) ? sanitize_text_field( (string) $section['evidence'] ) : '',
 				);
 			}
 		}
@@ -1403,6 +1757,9 @@ final class AIPC_Agent {
 			'{{title}}'           => $plan['title'],
 			'{{section_heading}}' => $section['heading'],
 			'{{section_brief}}'   => $section['brief'],
+			'{{section_evidence}}' => ( isset( $section['evidence'] ) && '' !== $section['evidence'] )
+				? $section['evidence']
+				: 'at least one concrete, useful element: a real example, actionable steps, a comparison, or a common mistake and its fix',
 			'{{per_words}}'       => (string) $per_words,
 			'{{primary_keyword}}' => isset( $plan['primary_keyword'] ) ? (string) $plan['primary_keyword'] : '',
 			'{{keywords_block}}'  => $keywords_block,
@@ -1680,6 +2037,20 @@ final class AIPC_Agent {
 		$data    = $ip_data;
 		$iprompt = ! empty( $data['prompt'] ) ? (string) $data['prompt'] : $plan['title'];
 
+		// Stock-photo search seed (1.18.0): prefer the model's explicit
+		// keywords; otherwise the first words of the raw English prompt
+		// (before the user's style suffix is appended).
+		$kw = '';
+		if ( ! empty( $data['keywords'] ) ) {
+			$kw = is_array( $data['keywords'] ) ? implode( ' ', array_map( 'strval', $data['keywords'] ) ) : (string) $data['keywords'];
+		}
+		if ( '' === trim( $kw ) ) {
+			$kw = implode( ' ', array_slice( preg_split( '/\s+/', $iprompt ), 0, 8 ) );
+		}
+		$job['data']['image_query'] = mb_substr( trim( $kw ), 0, 160 );
+
+		$iprompt = self::apply_image_prompt_default( $iprompt );
+
 		$this->log( $job, sprintf(
 			/* translators: %s: image prompt. */
 			__( 'Generating featured image — prompt: %s', 'wp-ai-post-creator' ),
@@ -1706,9 +2077,14 @@ final class AIPC_Agent {
 		if ( '' === $bits && ! empty( $image['url'] ) ) {
 			$bits = $client->download( $image['url'] );
 			if ( is_wp_error( $bits ) ) {
-				$this->log( $job, __( 'Could not download the generated image — continuing without one.', 'wp-ai-post-creator' ), 'warn' );
-				$this->advance( $job, 'skipped' );
-				return;
+				// Throw so the retry/failover logic can try again or move to
+				// the next image connection; when the whole chain fails the
+				// step is skipped gracefully (post continues without image).
+				throw new Exception( sprintf(
+					/* translators: %s: error message. */
+					__( 'Could not download the generated image: %s', 'wp-ai-post-creator' ),
+					$bits->get_error_message()
+				) );
 			}
 		}
 
@@ -1735,6 +2111,233 @@ final class AIPC_Agent {
 			$attach_id
 		), 'success' );
 		$this->advance( $job );
+	}
+
+	/**
+	 * Image rescue ladder (1.18.0): when every AI connection failed, try a
+	 * stock photo (Openverse, opt-in), then the site's default featured
+	 * image. Fills $job['data']['image'] and returns true on success.
+	 * Public for testability.
+	 *
+	 * @param array $job Job (by reference).
+	 * @return bool Whether an image was attached.
+	 */
+	public function image_fallback( array &$job ) {
+		$title = isset( $job['data']['plan']['title'] ) ? (string) $job['data']['plan']['title'] : '';
+
+		// 1) Openverse stock photo — relevant, CC-licensed, no API key.
+		if ( AIPC_Settings::get( 'image_fallback_stock' ) ) {
+			$query = isset( $job['data']['image_query'] ) ? trim( (string) $job['data']['image_query'] ) : '';
+			if ( '' === $query ) {
+				$query = $title;
+			}
+			$stock = AIPC_Stock::fetch( $query );
+			if ( ! is_wp_error( $stock ) ) {
+				$filename  = 'aipc-stock-' . sanitize_key( str_replace( 'job_', '', $job['id'] ) ) . '.jpg';
+				$attach_id = AIPC_Post_Builder::upload_image( $stock['bits'], $filename, '' !== $title ? $title : $query );
+				if ( ! is_wp_error( $attach_id ) ) {
+					wp_update_post( array(
+						'ID'           => (int) $attach_id,
+						'post_excerpt' => $stock['attribution'],
+					) );
+					update_post_meta( (int) $attach_id, '_aipc_stock_attribution', $stock['attribution'] );
+					if ( ! empty( $stock['meta']['source'] ) ) {
+						update_post_meta( (int) $attach_id, '_aipc_stock_source', esc_url_raw( $stock['meta']['source'] ) );
+					}
+					$job['data']['image'] = array(
+						'attachment_id' => (int) $attach_id,
+						'prompt'        => 'stock: ' . $query,
+					);
+					$this->log( $job, sprintf(
+						/* translators: %d: attachment id. */
+						__( 'AI image generation failed — attached a CC-licensed stock photo from Openverse instead (#%d, attribution saved on the attachment).', 'wp-ai-post-creator' ),
+						$attach_id
+					), 'warn' );
+					return true;
+				}
+			} else {
+				$this->log( $job, sprintf(
+					/* translators: %s: error message. */
+					__( 'Stock photo fallback failed: %s', 'wp-ai-post-creator' ),
+					$stock->get_error_message()
+				), 'warn' );
+			}
+		}
+
+		// 2) The site's default featured image — the guaranteed last resort.
+		$fallback = trim( (string) AIPC_Settings::get( 'image_fallback' ) );
+		if ( '' !== $fallback ) {
+			$attach_id = $this->resolve_fallback_attachment( $fallback );
+			if ( $attach_id ) {
+				$job['data']['image'] = array(
+					'attachment_id' => (int) $attach_id,
+					'prompt'        => 'default',
+				);
+				$this->log( $job, sprintf(
+					/* translators: %d: attachment id. */
+					__( 'AI image generation failed — using the default featured image (#%d).', 'wp-ai-post-creator' ),
+					$attach_id
+				), 'warn' );
+				return true;
+			}
+			$this->log( $job, __( 'The default featured image setting could not be resolved to an image.', 'wp-ai-post-creator' ), 'warn' );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Resolve the "default featured image" setting to an attachment id.
+	 *
+	 * Accepts a media-library attachment ID, a media-library URL, or an
+	 * external image URL (imported once and cached for reuse).
+	 *
+	 * @param string $value Setting value.
+	 * @return int Attachment id, or 0.
+	 */
+	private function resolve_fallback_attachment( $value ) {
+		if ( ctype_digit( $value ) ) {
+			$id = (int) $value;
+			return wp_attachment_is_image( $id ) ? $id : 0;
+		}
+
+		$id = (int) attachment_url_to_postid( $value );
+		if ( $id && wp_attachment_is_image( $id ) ) {
+			return $id;
+		}
+
+		// External URL: import once, remember the attachment for reuse.
+		$cache = get_option( 'aipc_image_fallback_cache', array() );
+		$cache = is_array( $cache ) ? $cache : array();
+		$key   = md5( $value );
+		if ( isset( $cache[ $key ] ) && wp_attachment_is_image( (int) $cache[ $key ] ) ) {
+			return (int) $cache[ $key ];
+		}
+		if ( ! AIPC_Network::is_safe_url( $value ) ) {
+			return 0;
+		}
+		$res = wp_remote_get( $value, array( 'timeout' => 30, 'redirection' => 3 ) );
+		if ( is_wp_error( $res ) || 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
+			return 0;
+		}
+		$type = (string) wp_remote_retrieve_header( $res, 'content-type' );
+		$bits = (string) wp_remote_retrieve_body( $res );
+		if ( strlen( $bits ) < 100 || ( '' !== $type && 0 !== strpos( $type, 'image/' ) ) ) {
+			return 0;
+		}
+		$attach = AIPC_Post_Builder::upload_image( $bits, 'aipc-default-' . substr( $key, 0, 8 ) . '.jpg', __( 'Default featured image', 'wp-ai-post-creator' ) );
+		if ( is_wp_error( $attach ) ) {
+			return 0;
+		}
+		$cache[ $key ] = (int) $attach;
+		update_option( 'aipc_image_fallback_cache', $cache, false );
+		return (int) $attach;
+	}
+
+	/**
+	 * Append the panel-configured default image prompt (v1.10.0) to a
+	 * generated image prompt. Empty setting = no change.
+	 *
+	 * @param string $prompt Generated image prompt.
+	 * @return string
+	 */
+	public static function apply_image_prompt_default( $prompt ) {
+		$extra = trim( (string) AIPC_Settings::get( 'image_prompt_default' ) );
+		if ( '' === $extra ) {
+			return $prompt;
+		}
+		if ( false !== mb_stripos( $prompt, $extra ) ) {
+			return $prompt; // Already contained (e.g. model echoed it back).
+		}
+		return rtrim( trim( $prompt ), '.,؛;' ) . '. ' . $extra;
+	}
+
+	/**
+	 * Build and set a fresh AI featured image for an existing post
+	 * (v1.10.0 — "regenerate thumbnail" row action in the posts list).
+	 *
+	 * Runs outside a job: the title + SEO summary are turned into an
+	 * image prompt over the chat-capable connections, then the image
+	 * chain generates the picture. The old thumbnail is left in the
+	 * media library; the post simply points at the new attachment.
+	 *
+	 * @param int $post_id Post id.
+	 * @return int|WP_Error New attachment id or error.
+	 */
+	public static function regenerate_thumbnail( $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return new WP_Error( 'aipc_post', __( 'Post not found.', 'wp-ai-post-creator' ) );
+		}
+		AIPC_Trace::set_context( array( 'step' => 'regen_thumbnail', 'post' => (int) $post_id ) );
+
+		$title   = $post->post_title;
+		$summary = (string) get_post_meta( $post_id, 'rank_math_description', true );
+		if ( '' === $summary ) {
+			$summary = (string) get_post_meta( $post_id, '_aipc_meta_description', true );
+		}
+		if ( '' === $summary ) {
+			$summary = (string) $post->post_excerpt;
+		}
+
+		// 1) Title + summary → image prompt (chat-capable chain).
+		$template   = AIPC_Steps::prompt_for( 'image_prompt' );
+		$prompt_msg = strtr( $template, array(
+			'{{title}}'   => $title,
+			'{{summary}}' => $summary,
+		) );
+
+		$iprompt = '';
+		foreach ( AIPC_Connections::for_purpose( 'chat' ) as $conn ) {
+			$client = new AIPC_API_Client( $conn );
+			$data   = $client->chat_json( array(
+				array( 'role' => 'system', 'content' => 'You write image-generation prompts. Respond with JSON only.' ),
+				array( 'role' => 'user', 'content' => $prompt_msg ),
+			) );
+			if ( ! is_wp_error( $data ) && ! empty( $data['data']['prompt'] ) ) {
+				$iprompt = (string) $data['data']['prompt'];
+				break;
+			}
+		}
+		if ( '' === $iprompt ) {
+			$iprompt = $title; // Graceful: the title alone still works as a prompt.
+		}
+		$iprompt = self::apply_image_prompt_default( $iprompt );
+
+		// 2) Generate the picture (image-capable chain, first success wins).
+		$last_err = null;
+		foreach ( AIPC_Connections::for_purpose( 'image' ) as $conn ) {
+			$client = new AIPC_API_Client( $conn );
+			$image  = $client->image( $iprompt );
+			if ( is_wp_error( $image ) ) {
+				$last_err = $image;
+				continue;
+			}
+
+			$bits = ! empty( $image['bits'] ) ? $image['bits'] : '';
+			if ( '' === $bits && ! empty( $image['url'] ) ) {
+				$bits = $client->download( $image['url'] );
+				if ( is_wp_error( $bits ) ) {
+					$last_err = $bits;
+					continue;
+				}
+			}
+			if ( '' === $bits ) {
+				continue;
+			}
+
+			$attach_id = AIPC_Post_Builder::upload_image( $bits, 'aipc-thumb-' . (int) $post_id . '-' . time() . '.png', $title );
+			if ( is_wp_error( $attach_id ) ) {
+				return $attach_id;
+			}
+			set_post_thumbnail( $post_id, (int) $attach_id );
+			return (int) $attach_id;
+		}
+
+		return $last_err ? $last_err : new WP_Error(
+			'aipc_image',
+			__( 'No image-capable connection is configured (or enabled).', 'wp-ai-post-creator' )
+		);
 	}
 
 	/**
@@ -1767,7 +2370,7 @@ final class AIPC_Agent {
 			'{{existing_content}}' => $existing,
 			'{{site_context}}'     => $site_context,
 			'{{sources}}'          => $this->source_context(),
-			'{{link_candidates}}'  => $this->link_candidates( $post->ID ),
+			'{{link_candidates}}'  => $this->link_candidates( $post->ID, 20, $post->post_title ),
 			'{{words}}'            => (string) $spec['words'],
 			'{{lang}}'             => $lang,
 		);
@@ -1977,6 +2580,30 @@ final class AIPC_Agent {
 	 * @throws Exception On failure.
 	 */
 	private function step_finalize( array &$job ) {
+		// Idempotency guard (1.19.0): when an overlapping runner already
+		// created this job's post (e.g. a cron re-arm during a hanging
+		// provider request), reuse it — never create the post twice.
+		$existing = AIPC_Post_Builder::post_for_job( $job['id'] );
+		if ( $existing && 'rewrite' !== $job['mode'] ) {
+			$job['post_id'] = (int) $existing;
+			$job['data']['result'] = array(
+				'post_id' => (int) $existing,
+				'title'   => get_the_title( $existing ),
+				'edit'    => admin_url( 'post.php?post=' . $existing . '&action=edit' ),
+				'view'    => (string) get_permalink( $existing ),
+				'words'   => self::count_words( AIPC_Post_Builder::build_content( $job ) ),
+				'status'  => (string) get_post_status( $existing ),
+			);
+			$this->log( $job, sprintf(
+				/* translators: %d: post id. */
+				__( 'This job already created post #%d — duplicate finalize skipped.', 'wp-ai-post-creator' ),
+				$existing
+			), 'warn' );
+			$job['status'] = 'done';
+			$this->advance( $job );
+			return;
+		}
+
 		$post_id = AIPC_Post_Builder::create( $job );
 		if ( is_wp_error( $post_id ) ) {
 			throw new Exception( $post_id->get_error_message() );

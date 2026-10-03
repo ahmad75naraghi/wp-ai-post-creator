@@ -495,6 +495,12 @@ final class AIPC_Scheduler {
 		$cfg['state'][ $due['id'] ] = wp_date( 'Y-m-d', $now );
 		self::persist( $cfg );
 
+		// Atomic per-day claim (1.19.0): when two cron ticks overlap they
+		// both read the old state above — only one may fire the entry.
+		if ( ! AIPC_Agent::claim( 'entry_' . $due['id'] . '_' . wp_date( 'Y-m-d', $now ), DAY_IN_SECONDS ) ) {
+			return;
+		}
+
 		$job = self::start_job_for_entry( $due['id'], 'cron' );
 		if ( is_wp_error( $job ) ) {
 			return;
@@ -532,9 +538,13 @@ final class AIPC_Scheduler {
 
 		$job = AIPC_Agent::instance()->create_job( $topic, $opts, $source );
 
-		// Consume the queued topic only when the run actually started.
+		// Consume the queued topic only when the run actually started —
+		// or when the duplicate guard rejected it (an article about it
+		// already exists), so the queue never stalls on that item.
 		if ( ! is_wp_error( $job ) && $queue_item ) {
 			AIPC_Topic_Queue::mark_used( $queue_item['id'], $job['id'] );
+		} elseif ( is_wp_error( $job ) && 'aipc_duplicate' === $job->get_error_code() && $queue_item ) {
+			AIPC_Topic_Queue::mark_used( $queue_item['id'], '' );
 		}
 
 		return $job;

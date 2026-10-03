@@ -22,7 +22,6 @@ $aipc_notices = array(
 	'schedule_settings_saved' => __( 'Schedule settings saved.', 'wp-ai-post-creator' ),
 	'run_started'      => __( 'The agent just started — the console page is now running it.', 'wp-ai-post-creator' ),
 	'run_failed'       => __( 'Could not start the agent. Check that a connection is configured.', 'wp-ai-post-creator' ),
-	'bale_saved'       => __( 'Bale notification settings saved.', 'wp-ai-post-creator' ),
 	'topics_added'     => __( 'Topics added to the queue.', 'wp-ai-post-creator' ),
 	'topic_removed'    => __( 'Topic removed.', 'wp-ai-post-creator' ),
 	'queue_cleared'    => __( 'Queue cleared.', 'wp-ai-post-creator' ),
@@ -30,15 +29,18 @@ $aipc_notices = array(
 ?>
 
 <div class="wrap aipc-wrap">
-	<h1><?php esc_html_e( 'AI Schedule & Notifications', 'wp-ai-post-creator' ); ?></h1>
+
+	<div class="aipc-header">
+		<div class="aipc-logo" aria-hidden="true">📅</div>
+		<div class="aipc-header-text">
+			<h1><?php esc_html_e( 'AI Schedule & Notifications', 'wp-ai-post-creator' ); ?></h1>
+			<p class="aipc-sub"><?php esc_html_e( 'Let the agent write posts automatically at fixed times — and get a Bale message (image + summary + link) after every post is created.', 'wp-ai-post-creator' ); ?></p>
+		</div>
+	</div>
 
 	<?php if ( isset( $aipc_notices[ $aipc_msg ] ) ) : ?>
 		<div class="notice notice-success is-dismissible"><p><?php echo esc_html( $aipc_notices[ $aipc_msg ] ); ?></p></div>
 	<?php endif; ?>
-
-	<p class="aipc-lead">
-		<?php esc_html_e( 'Let the agent write posts automatically at fixed times — and get a Bale message (image + summary + link) after every post is created.', 'wp-ai-post-creator' ); ?>
-	</p>
 
 	<?php if ( ! AIPC_Connections::get_default() ) : ?>
 		<div class="notice notice-error"><p>
@@ -129,14 +131,13 @@ $aipc_notices = array(
 			</table>
 		<?php endif; ?>
 
-		<form class="aipc-limit-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
-			style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-block-start:14px;">
+		<form class="aipc-limit-form aipc-inline-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<?php wp_nonce_field( 'aipc_save_schedule_settings' ); ?>
 			<input type="hidden" name="action" value="aipc_save_schedule_settings" />
-			<label for="aipc-daily-limit" style="font-weight:600;"><?php esc_html_e( 'Max scheduled posts per day', 'wp-ai-post-creator' ); ?></label>
+			<label for="aipc-daily-limit" class="aipc-inline-label"><?php esc_html_e( 'Max scheduled posts per day', 'wp-ai-post-creator' ); ?></label>
 			<?php aipc_help( 'sched-limit', __( 'Caps how many automatic posts may be created per calendar day (site timezone). 0 = unlimited. Today’s count is shown next to the field.', 'wp-ai-post-creator' ) ); ?>
 			<input type="number" id="aipc-daily-limit" class="aipc-input" name="daily_limit" min="0" max="50" step="1"
-				style="width:90px;" value="<?php echo esc_attr( AIPC_Scheduler::daily_limit() ); ?>" />
+				class="aipc-input-xs" value="<?php echo esc_attr( AIPC_Scheduler::daily_limit() ); ?>" />
 			<span class="description"><?php esc_html_e( '0 = unlimited', 'wp-ai-post-creator' ); ?></span>
 			<button type="submit" class="button"><?php esc_html_e( 'Save', 'wp-ai-post-creator' ); ?></button>
 			<span class="description">
@@ -294,7 +295,7 @@ $aipc_notices = array(
 			<?php endif; ?>
 		<?php endif; ?>
 
-		<form class="aipc-conn-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-block-start:14px;">
+		<form class="aipc-conn-form aipc-form-gap" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<?php wp_nonce_field( 'aipc_add_topics' ); ?>
 			<input type="hidden" name="action" value="aipc_add_topics" />
 			<div class="aipc-field">
@@ -317,74 +318,18 @@ $aipc_notices = array(
 	</div>
 
 	<div class="aipc-card">
-<div class="aipc-heading">
-					<h2><?php esc_html_e( 'Bale notifications', 'wp-ai-post-creator' ); ?></h2>
-			<?php aipc_help( 'sched-bale', __( 'Bale is an Iranian messenger. The bot token comes from @Bot_Father; each chat ID receives the post’s featured image, summary and link when a run finishes (and a periodic report, if enabled). Delivery results are recorded in the job log.', 'wp-ai-post-creator' ) ); ?>
+		<div class="aipc-heading">
+			<h2><?php esc_html_e( 'Bale / Telegram Bot', 'wp-ai-post-creator' ); ?></h2>
 		</div>
-		<p class="description"><?php esc_html_e( 'After every generated post the agent can message a Bale chat with the featured image, the summary and the link to the article. Create a bot with @Bot_Father in Bale, paste its token here, and enter the chat ID of the person (or channel) that should receive the messages.', 'wp-ai-post-creator' ); ?></p>
-
-		<form class="aipc-conn-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<?php wp_nonce_field( 'aipc_save_bale' ); ?>
-			<input type="hidden" name="action" value="aipc_save_bale" />
-
-			<div class="aipc-grid">
-				<div class="aipc-field">
-					<label><?php esc_html_e( 'Bot token', 'wp-ai-post-creator' ); ?></label>
-					<input type="password" class="aipc-input code" name="token" autocomplete="new-password"
-						placeholder="<?php echo '' !== $aipc_bale['token'] ? esc_attr__( '••••• (saved — leave empty to keep)', 'wp-ai-post-creator' ) : '123456:ABC-DEF…'; ?>"
-						value="" />
-				</div>
-				<div class="aipc-field">
-					<label><?php esc_html_e( 'Chat IDs (one per line)', 'wp-ai-post-creator' ); ?></label>
-					<textarea class="aipc-input code" name="chat_ids" id="aipc-bale-chats" rows="3"
-						placeholder="123456789&#10;@mychannel"><?php echo esc_textarea( implode( "\n", AIPC_Bale::recipients( $aipc_bale ) ) ); ?></textarea>
-					<p class="description"><?php esc_html_e( 'One chat ID per line — a person’s numeric ID or a @channel username. Send any message to your bot, then use the button below to detect it automatically.', 'wp-ai-post-creator' ); ?></p>
-				</div>
-				<div class="aipc-field">
-					<label><?php esc_html_e( 'Periodic report', 'wp-ai-post-creator' ); ?></label>
-					<select class="aipc-input" name="report">
-						<option value="" <?php selected( $aipc_bale['report'], '' ); ?>><?php esc_html_e( 'Off', 'wp-ai-post-creator' ); ?></option>
-						<option value="daily" <?php selected( $aipc_bale['report'], 'daily' ); ?>><?php esc_html_e( 'Daily', 'wp-ai-post-creator' ); ?></option>
-						<option value="weekly" <?php selected( $aipc_bale['report'], 'weekly' ); ?>><?php esc_html_e( 'Weekly', 'wp-ai-post-creator' ); ?></option>
-					</select>
-					<p class="description"><?php esc_html_e( 'Reports are sent once per day/week at this time, after it has passed.', 'wp-ai-post-creator' ); ?></p>
-				</div>
-				<div class="aipc-field">
-					<label><?php esc_html_e( 'Report time', 'wp-ai-post-creator' ); ?></label>
-					<input type="time" class="aipc-input" name="report_time" value="<?php echo esc_attr( $aipc_bale['report_time'] ); ?>" />
-				</div>
-				<div class="aipc-field">
-					<label><?php esc_html_e( 'Report day (weekly reports)', 'wp-ai-post-creator' ); ?></label>
-					<select class="aipc-input" name="report_day">
-						<?php foreach ( AIPC_Scheduler::day_labels() as $aipc_num => $aipc_label ) : ?>
-							<option value="<?php echo esc_attr( $aipc_num ); ?>" <?php selected( (int) $aipc_bale['report_day'], $aipc_num ); ?>><?php echo esc_html( $aipc_label ); ?></option>
-						<?php endforeach; ?>
-					</select>
-				</div>
-			</div>
-
-			<div class="aipc-checks">
-				<label class="aipc-check"><input type="checkbox" name="enabled" value="1" <?php checked( ! empty( $aipc_bale['enabled'] ) ); ?> /> <?php esc_html_e( 'Send a Bale message after every generated post', 'wp-ai-post-creator' ); ?></label>
-			</div>
-
-			<div class="aipc-card aipc-card-inner">
-				<div class="aipc-heading">
-					<h3><?php esc_html_e( 'Two-way commands', 'wp-ai-post-creator' ); ?></h3>
-					<?php aipc_help( 'bale-two-way', __( 'The bot checks for new messages every ~5 minutes (via WP-Cron) and only obeys the chat IDs listed above. Anyone in those chats can: send «نوشتن: a topic» to start a draft, «وضعیت» for today’s runs, «آخرین» for the newest draft, «انتشار» to publish it, «صف» for the topic queue, and «راهنما» for the full list. Up to 20 posts per day can be started from Bale.', 'wp-ai-post-creator' ) ); ?>
-				</div>
-				<div class="aipc-checks">
-					<label class="aipc-check"><input type="checkbox" name="two_way" value="1" <?php checked( ! empty( $aipc_bale['two_way'] ) ); ?> /> <?php esc_html_e( 'Accept commands from Bale chats', 'wp-ai-post-creator' ); ?></label>
-				</div>
-				<p class="description"><?php esc_html_e( 'Commands: نوشتن: <topic> · وضعیت · آخرین · انتشار · صف · راهنما', 'wp-ai-post-creator' ); ?></p>
-			</div>
-
-			<p>
-				<button type="submit" class="button button-primary"><?php esc_html_e( 'Save settings', 'wp-ai-post-creator' ); ?></button>
-				<button type="button" class="button aipc-btn-bale-test"><?php esc_html_e( 'Send test message', 'wp-ai-post-creator' ); ?></button>
-				<button type="button" class="button aipc-btn-bale-chatid"><?php esc_html_e( 'Detect chat ID', 'wp-ai-post-creator' ); ?></button>
-				<span class="aipc-inline-status" id="aipc-bale-status"></span>
-			</p>
-		</form>
+		<p class="description"><?php esc_html_e( 'Bot notifications & chat commands have moved to their own page, with a full step-by-step setup guide.', 'wp-ai-post-creator' ); ?></p>
+		<p>
+			<a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=aipc-bot' ) ); ?>"><?php esc_html_e( 'Open the Bale / Telegram page', 'wp-ai-post-creator' ); ?></a>
+			<?php if ( ! empty( $aipc_bale['enabled'] ) ) : ?>
+				<span class="aipc-badge aipc-badge-ok"><?php esc_html_e( 'Notifications: on', 'wp-ai-post-creator' ); ?></span>
+			<?php else : ?>
+				<span class="aipc-badge"><?php esc_html_e( 'Notifications: off', 'wp-ai-post-creator' ); ?></span>
+			<?php endif; ?>
+		</p>
 	</div>
 
 	<div class="aipc-card">

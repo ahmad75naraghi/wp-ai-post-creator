@@ -40,6 +40,7 @@ final class AIPC_REST {
 					'image'           => array( 'type' => 'boolean' ),
 					'faq'             => array( 'type' => 'boolean' ),
 					'toc'             => array( 'type' => 'boolean' ),
+					'force'           => array( 'type' => 'boolean', 'default' => false ),
 				),
 			)
 		);
@@ -161,6 +162,18 @@ final class AIPC_REST {
 				'args'                => array(
 					'token' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
 				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/bot-webhook/(?P<secret>[A-Za-z0-9]{16,64})',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'bot_webhook' ),
+				// Public by design: the long random path secret is the
+				// credential (validated with hash_equals below).
+				'permission_callback' => '__return_true',
 			)
 		);
 
@@ -371,6 +384,45 @@ final class AIPC_REST {
 	 * @param WP_REST_Request $request Request.
 	 * @return array|WP_Error
 	 */
+	/**
+	 * Instant-mode webhook: Bale/Telegram POSTs every update here the
+	 * moment it happens (message or button press). The long random path
+	 * secret authenticates the platform; unauthorized chats are filtered
+	 * inside process_update() exactly like the poll.
+	 *
+	 * @param WP_REST_Request $request Request (JSON body = one update).
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function bot_webhook( $request ) {
+		$cfg    = AIPC_Bale::all();
+		$secret = (string) $request['secret'];
+
+		if ( ! AIPC_Bale::webhook_active( $cfg )
+			|| ! hash_equals( (string) $cfg['webhook_secret'], $secret ) ) {
+			return new WP_Error(
+				'aipc_forbidden',
+				__( 'Invalid webhook secret.', 'wp-ai-post-creator' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$update = json_decode( (string) $request->get_body(), true );
+		if ( is_array( $update ) ) {
+			AIPC_Bale_Commands::process_update( $update, $cfg );
+
+			// Track the id so a later switch back to polling does not
+			// replay already-handled updates.
+			$uid = isset( $update['update_id'] ) ? (int) $update['update_id'] : 0;
+			if ( $uid > (int) $cfg['last_update_id'] ) {
+				$fresh = AIPC_Bale::all();
+				$fresh['last_update_id'] = $uid;
+				AIPC_Bale::save( $fresh );
+			}
+		}
+
+		return rest_ensure_response( array( 'ok' => true ) );
+	}
+
 	public static function bale_chat_id( $request ) {
 		$cfg = AIPC_Bale::all();
 
@@ -456,6 +508,7 @@ final class AIPC_REST {
 			'toc'             => $request->get_param( 'toc' ),
 			'mode'            => $request->get_param( 'mode' ),
 			'post_id'         => $request->get_param( 'post_id' ),
+			'force'           => $request->get_param( 'force' ) ? 1 : 0,
 		);
 
 		// Auto-publishing from the console requires the publish capability.

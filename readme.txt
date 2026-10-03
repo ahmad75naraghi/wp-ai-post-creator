@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.20.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,126 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.20.1 =
+* Fix: cancelling a job on Jobs & Cron now kills it at the root — previously a background runner that was mid-step saved its stale copy back a few seconds later and the job resurrected and kept building
+* Fix: the cancel action fences the runner lock so the in-flight runner discards its work, and a cancelled status can never be overwritten by a stale "running" copy
+
+= 1.20.0 =
+* New: search-intent analysis — the plan step classifies what the searcher actually wants (tutorial / comparison / troubleshooting / buying guide / definition …) and the outline must mirror that structure
+* New: evidence plan — every section declares the one concrete element it will deliver (real example, steps, configuration, common mistake + fix, comparison, table); the writer treats the word target as a ceiling: no padding, no generic filler
+* New: Expert Editorial Rewrite — the copywriting pass now removes machine clichés and stock AI phrasing, varies sentence/paragraph lengths, forbids identical section openings, writes natural transitions, de-stuffs keywords, turns explanation-hiding bullet lists into prose and strips unsupported statistics/benchmarks/case studies
+* New: honest keywords — the model must never present search-volume or difficulty numbers (it has no real SERP data); fabricated benchmarks/case studies/prices are forbidden at system-prompt level
+* Improved: internal-link candidates are relevance-ranked over up to 100 recent posts instead of just "the 20 newest" (filter aipc_link_candidate_pool)
+* Improved: headings may use technical terms only when necessary to answer the query
+
+= 1.19.1 =
+* Fix: one article could get its featured image regenerated and its notification repeated (and even end up image-less) when a background runner outlived its lock — the runner lock now carries an owner token and a heartbeat that refreshes it before every outbound request, and a runner that truly lost its lock discards its changes instead of rewinding the job
+
+= 1.19.0 =
+* New: duplicate-request guard — the same article can never be written twice: every start path (console, REST, chat bot, scheduler) first checks that the topic isn't already being written by a running job, wasn't the subject of an article created in the last 30 days (filter aipc_duplicate_window), and isn't still waiting in the topic queue; topics are compared in a canonical form (half-spaces, Arabic letters, digit styles, case and extra spaces unified)
+* New: "Allow duplicate topic" toggle on the new-post console deliberately overrides the guard
+* Fix: double-published posts — a hanging provider request could let a second background runner re-run the final step and create + publish the same article twice; the finalize step is now idempotent, the runner lock outlives the longest request, and done-notifications are sent exactly once
+* Fix: overlapping cron ticks can no longer fire the same schedule entry twice on the same day, and a queued topic that's already been written no longer stalls the queue
+
+= 1.18.0 =
+* New: image rescue ladder — posts need never go out without a featured image: a rejected image model id is automatically swapped for one the gateway actually offers (via its /models list, cached a day); if all AI generation fails, an optional Openverse stock-photo fallback fetches a free CC-licensed photo matching the article (no API key, attribution saved on the attachment); and a new "Default featured image" setting (media ID or URL) is the guaranteed last resort
+* Improved: the image-prompt step also produces English stock-search keywords
+
+= 1.17.1 =
+* Fix: a hanging image gateway can no longer pin jobs at "running" for an hour — image requests cap their timeout at 180 seconds (filter aipc_image_timeout), skip the automatic timeout-retry, and a 15-minute circuit breaker fails fast after the chat-image fallback times out once
+
+= 1.17.0 =
+* New: one-step scheduling from chat — the «زمان‌بندی» button now offers one-tap times (tonight 21:00, tomorrow 09:00 / 18:00, in two days 09:00); sending a bare date («فردا 18:30») schedules the newest draft directly; replying to a draft notification with a date schedules exactly that post
+* New: "Jobs & Cron" admin page — see every unfinished job, pending delayed publish, scheduled post and recurring plugin cron event, and stop any of them with one click
+* Improved: already-published posts can no longer be rescheduled from chat
+
+= 1.16.0 =
+* New: instant replies via webhook — enable "Instant replies (webhook)" on the Bale / Telegram page and button presses («انتشار همین حالا» / «زمان‌بندی») and chat commands are answered within seconds; the platform pushes every update straight to a secret REST endpoint instead of waiting for the cron poll
+* Improved: the polling fallback now runs every minute instead of every 5 (existing schedules are migrated automatically); polling pauses while the webhook is active
+* The troubleshooting section explains the delay and the fix
+
+= 1.15.0 =
+* New: dedicated "Bale / Telegram" admin page with a six-step setup guide, the bot settings (moved from the Schedule page, which now links there), a capabilities overview and a troubleshooting reference
+* New: Telegram support — the bot settings have a Platform selector (Bale or Telegram); both speak the same bot API, so notifications, commands, buttons and scheduling all work on either
+* Fix: AIPC_Bale::recipients() no longer warns when given a partial settings array
+
+= 1.14.0 =
+* New: interactive Bale menu — send «منو» (or /menu, or just press a button under /start and راهنما): ✍️ new topic (the bot asks for it in chat), 📋 topic queue with a button per topic that starts writing it right away, 📑 latest drafts with per-draft action cards (publish now / schedule), 📊 status and ❓ help
+* Unknown messages now reply with a hint plus the tappable menu, queue topics started from a button are marked used, and «لغو» cancels any open question
+
+= 1.13.0 =
+* New: Bale draft notifications now carry two inline buttons — "🚀 Publish now" publishes immediately with the current date, "⏰ Schedule" asks for a date in the chat (Jalali 1404/07/20 18:30, Gregorian 2026-10-12 18:30, Persian digits, or «فردا 18:30» / «امروز 22:00») and schedules the post natively; WordPress publishes it on time and the bot sends the usual 🎉 notice
+* Buttons require two-way commands to be enabled (they arrive through the same poll); «لغو» cancels a pending schedule request
+
+= 1.12.1 =
+* New: custom image size — pick "Custom…" in Settings → Featured images and enter any width×height (e.g. 800x600); providers that reject the size automatically fall back to a size-less request
+* Verified: a new 10-stage forensic test proves the Persian half-space survives every stage inside the plugin and WordPress (provider JSON both escaped and raw, kses, DB save/read, front-end filters, editor-style re-save) — when half-spaces disappear, the provider output itself is the source, which the glued-word repair from 1.12.0 fixes
+
+= 1.12.0 =
+* New: "Source links" switch (Settings → Advanced) — choose whether articles may link to your research source sites; when off, the model never sees the URLs and any leftover source link is stripped from the final article
+* New: each internal link target is used at most ONCE per article — duplicate internal links are automatically unwrapped to plain text
+* Improved: Persian half-space repair now also fixes GLUED suffixes (providers that strip the ZWNJ entirely): «حرفهای»→«حرفه‌ای», «خانوادهها»→«خانواده‌ها», «علاقهمندان»→«علاقه‌مندان», «نوشیدنیهای»→«نوشیدنی‌های», «آمادهسازی»→«آماده‌سازی» — with an exception dictionary (تنها، بها، اشتها …) so real words are never broken
+
+= 1.11.0 =
+* New: full API trace log (Settings → Advanced) — records every AI request and response (prompts, model output, complete error bodies, HTTP status, timing) with the job, step, connection and attempt number, into a protected downloadable log file
+* API keys are redacted and base64 image data is collapsed automatically; the file rotates at 8 MB and can be downloaded or cleared with one click
+* Perfect for diagnosing why image generation fails on some providers — the exact error body of every failed attempt is captured
+
+= 1.10.0 =
+* New: Persian half-spaces (نیم‌فاصله) are preserved and repaired — the common patterns (می/نمی + verb, ها/های/هایی/تر/ترین suffixes) are fixed rule-based in titles, content, excerpts and SEO meta, and the character is stored as the &zwnj; entity in post content so no editor can strip it
+* New: "Default image prompt" setting — appended to every generated image prompt for a consistent visual style across all featured images
+* New: "Regenerate AI image" action in the posts list — builds a fresh AI featured image for any post with one click (uses the chat chain for the prompt and the image chain for the picture)
+
+= 1.9.3 =
+* New: connections can be disabled without deleting them — an "Enabled" checkbox in the connection form plus a one-click Enable/Disable action and a Status column in the connections list
+* Disabled connections are skipped everywhere: automatic purpose pools, explicit step fallback chains and the default-connection choice
+* Existing connections stay enabled after the update; the Prompts page marks disabled entries in the chain selector
+
+= 1.9.2 =
+* Changed: Bale post notifications use a clean channel-ready format — 🔻title, 🌱🌱summary🌱🌱, a "read the full article" line with 👇👇👇 and the link; the featured image is sent above as before
+* New: "Default notification image (URL)" in the Bale settings — sent above the message when a post has no featured image (leave empty for text-only)
+* The delayed-publish notification now uses the same format and can carry the image too
+
+= 1.9.1 =
+* Improved: every API request now sends the attribution headers recommended by OpenRouter (HTTP-Referer = site URL, X-Title = site name) — friendlier to WAFs that distrust anonymous datacenter traffic
+* New: aipc_api_headers filter to add custom headers (organization ids, proxy auth, WAF tokens) to all AI requests; the API key is never exposed to the filter
+
+= 1.9.0 =
+* New: second image-generation route — "Chat completions (Gemini/OpenRouter-style)". Gemini-style gateways don't serve /images/generations (errors like "No credentials for image provider: openai"); they return the picture as base64 inside a chat completion. The new per-connection "Image route" option supports that, and "Automatic" (default) tries the images endpoint first and falls back to the chat route by itself
+* The chat route parses OpenRouter message.images, multimodal content parts, Gemini inline_data and data: URI content — always decoded locally (base64), which pairs perfectly with the "Force base64" delivery mode
+
+= 1.8.2 =
+* Hardening pass: a failed download of a link-returned image now retries and fails over to the next image connection instead of silently skipping the featured image
+* Fixed: re-clicking "Load models" now rebinds the search filter to the fresh model list
+* Fixed: a missing default connection can no longer cause a PHP error when composing a job
+
+= 1.8.1 =
+* New: "Image delivery" option per connection — "Force base64" demands the image bytes inside the API response and decodes them locally, so image creation never depends on downloading temporary links; if the provider only returns a link the attempt fails over to the next image connection
+* Improved: base64 image payloads are decoded defensively in every mode (data: URIs, embedded whitespace), and data: URIs returned in the url field are decoded locally too
+
+= 1.8.0 =
+* New: every connection now has a Purpose (chat & images / chat only / images only) and a Priority number — featured images can be generated by a completely different server than the text
+* New: automatic priority failover — steps without an explicit connection chain use every matching connection in priority order (lower number first); when one fails 3 attempts in a row, the run switches to the next one automatically
+* Existing connections keep working unchanged (they count as "chat & images" with priority 10); explicit per-step chains on the Prompts page still win
+
+= 1.7.5 =
+* Improved: "Load models from the provider" now opens a visible, searchable model list under the Chat model field — type to filter, click to pick. Previously the models only fed the browser's invisible autocomplete, which looked like nothing happened
+
+= 1.7.4 =
+* Fixed: pasting a full endpoint URL as the base URL (e.g. .../v1/chat/completions) no longer breaks every request with errors like "Unknown API route: /v1/chat/completions/models" — well-known endpoint paths are stripped automatically and a successful connection test writes the corrected base URL back into the field
+
+= 1.7.3 =
+* Fixed: on non-English admins (e.g. Persian) none of the plugin's subpages loaded their styles or scripts — the Connections, Settings, Rewrite, Review, Prompts, Logs and Schedule pages appeared unstyled and buttons such as "Test connection" did nothing. Screen detection now keys off the stable page slug instead of the translated menu title
+* Fixed: the Update page never loaded the plugin stylesheet, in any language
+
+= 1.7.2 =
+* Easier connections to gateways and routers (OmniRoute, OpenRouter & co.): a base URL without a path gets /v1 appended automatically, the connection test probes the /v1 variant when the first attempt fails and corrects the field for you, and error messages now say clearly when an address returned a web page (HTML) instead of an API response
+* New setting "Allow private/LAN addresses" (Settings → Advanced) so a self-hosted gateway on another machine in your network works without code — localhost was always allowed, the SSRF guard stays on for everything else
+* Admin UI polish: consistent page headers (the Schedule page finally has one), unified field alignment inside and outside the Options boxes, restyled tables with proper header rows, day-of-week pills on the Schedule form, topic-queue and contextual-help elements aligned with the plugin design language, all inline styles removed, focus states for every input
+= 1.7.1 =
+* Documentation refresh: architecture reference brought up to the current code (bootstrap flow, 9 admin pages, topic-queue and Bale-command data/hooks, full admin-post handler list), REST reference now documents the /topics/suggest and /topics/add endpoints, roadmap and agent notes reflect the shipped v1.7.0 state, README and user guides corrected (background execution and 1.7 features filed under the right versions)
+* No functional changes
 
 = 1.7.0 =
 * Topic queue: a FIFO bank of topics on the Schedule page — schedule entries with "Take the topic from the queue" consume the oldest pending topic on every run (falling back to their fixed topic or the site prompt when the queue is empty), so automated runs never repeat themselves

@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.7.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
+**Version:** 1.20.1 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
 
 ---
 
@@ -31,6 +31,28 @@
 
 ابتدا **پرامپت سایت** (سایت چیست، درباره چیست، هدف و مخاطبانش کدامند — در تنظیمات) و **دسته‌بندی‌های موجود نوشته‌ها** را می‌خواند، یکی از دسته‌بندی‌ها را انتخاب می‌کند و موضوع را بر اساس پرامپت سایت می‌سازد (یا از پیشنهاد شما استفاده می‌کند). بعد محتوا را می‌نویسد، یک **پاس کپی‌رایتینگ و سئو** روی کل متن اجرا می‌کند، **خلاصه سئو برای Rank Math** می‌سازد، از روی موضوع و خلاصه **تصویر شاخص** تولید می‌کند و نتیجه را همیشه به‌صورت **پیش‌نویس** ذخیره می‌کند — تمام مراحل به‌صورت زنده در یک **کنسول ایجنت** نمایش داده می‌شوند و در هر مرحله در صورت خطا، به‌طور خودکار تا سه بار دوباره تلاش می‌شود.
 
+### 🆕 جدید در نسخهٔ ۱.۹.۰ — ساخت تصویر به سبک Gemini
+- گزینهٔ **«مسیر تولید تصویر»** برای هر اتصال: مسیر دوم «گفتگو (Chat completions)» برای گیت‌وی‌هایی که تصویر را به‌صورت Base64 داخل پاسخ گفتگو برمی‌گردانند (OpenRouter، Antigravity و…). حالت «خودکار» اول اندپوینت تصویر را امتحان می‌کند و در صورت شکست خودش سراغ مسیر گفتگو می‌رود.
+
+### 🆕 جدید در نسخهٔ ۱.۸.۱ — تصویر قطعی با Base64
+- گزینهٔ **«دریافت تصویر»** برای هر اتصال: حالت «اجباری Base64» بایت‌های تصویر را داخل خودِ پاسخ API می‌گیرد و به‌صورت محلی تبدیل می‌کند — بدون وابستگی به لینک‌های موقتی؛ اگر سرویس‌دهنده فقط لینک بدهد، خودکار سراغ اتصال تصویر بعدی می‌رود.
+
+### 🆕 جدید در نسخهٔ ۱.۸.۰ — سرور جدا برای تصویر + جایگزینی اولویت‌دار
+- **کاربرد اتصال:** هر اتصال حالا «گفتگو و تصویر»، «فقط گفتگو» یا «فقط تصویر» است — تصویر شاخص می‌تواند از سروری کاملاً جدا از متن ساخته شود.
+- **اولویت عددی و جایگزینی خودکار:** اتصال‌های هم‌کاربرد به‌ترتیب اولویت (عدد کوچک‌تر = اول) امتحان می‌شوند؛ هر اتصال بعد از ۳ خطای پیاپی کنار می‌رود و بعدی جایش را می‌گیرد.
+- اتصال‌های قدیمی بدون هیچ تغییری کار می‌کنند و زنجیره‌های دستیِ صفحهٔ پرامپت‌ها همچنان مقدم‌اند.
+
+### 🆕 جدید در نسخهٔ ۱.۷.۲ — اتصال آسان‌تر و پنل مرتب‌تر
+
+- 🔌 **اتصال آسان به گیت‌وی‌ها و روترها (OmniRoute و…)**: اگر نشانی پایه /v1 نداشته باشد خودکار اضافه می‌شود، دکمهٔ «تست اتصال» در صورت شکست حالت /v1 را امتحان و فیلد را اصلاح می‌کند، و اگر نشانی به‌جای API یک صفحهٔ وب برگرداند، پیام خطا دقیقاً همین را می‌گوید.
+- 🖧 **گزینهٔ «اجازه به نشانی‌های خصوصی/شبکهٔ محلی»** در تنظیمات ← پیشرفته: گیت‌وی سلف‌هاست روی دستگاه دیگری در شبکه، بدون نوشتن کد کار می‌کند (localhost همیشه مجاز بود).
+- 🎨 **مرتب‌سازی ظاهر پنل**: سرصفحهٔ یکسان برای همهٔ صفحه‌ها (زمان‌بندی هم صاحب سرصفحه شد)، هم‌ترازی یکنواخت فیلدها، جدول‌های یکدست، انتخاب روزهای هفته به‌صورت دکمه‌های قرصی، و حذف همهٔ استایل‌های داخل‌خطی.
+
+### 🆕 جدید در نسخهٔ ۱.۷.۰ — صف موضوع‌ها و فرمان دوطرفه از بله
+
+- 📋 **صف موضوع‌ها**: انباری از موضوع‌ها که زمان‌بندی‌ها یکی‌یکی از آن می‌کشند — دستی پرش کنید یا با یک کلیک، پیشنهاد تازه از منابع خبری خودتان بگیرید (بدون تکرار؛ موضوع‌های استفاده‌شده هرگز دوباره پیشنهاد نمی‌شوند).
+- 💬 **فرمان از داخل بله**: افزونه فقط اطلاع‌رسان نیست؛ از داخل بله بنویسید «نوشتن: موضوع X» تا پیش‌نویس در پس‌زمینه ساخته شود، «وضعیت»، «آخرین»، «انتشار» و «صف» هم کار می‌کنند — فقط برای گفتگوهای مجاز و حداکثر ۲۰ اجرا در روز.
+
 ### 🆕 جدید در نسخهٔ ۱.۶.۰ — اجرای پس‌زمینه، جدول کارها، امنیت شبکه و صندوق بازبینی
 
 - 🚀 **اجرای پس‌زمینهٔ واقعی**: هر کار روی سرور با یک رویداد کرون خودادامه‌دار اجرا می‌شود — بستن تب مرورگر کار را متوقف نمی‌کند و کنسول فقط تماشا می‌کند (اندپوینت فقط-خواندنی `/state`).
@@ -38,8 +60,6 @@
 - 🛡 **گارد شبکهٔ خروجی (SSRF)**: نشانی‌های خصوصی/رزروشده مسدود می‌شوند؛ لوکال‌هاست برای Ollama و LM Studio باز است و با فیلترها قابل تنظیم است. به‌علاوه **محدودیت نرخ REST** برای هر کاربر در دقیقه.
 - 📥 **صندوق بازبینی پیش‌نویس‌ها**: همهٔ پیش‌نویس‌های هوش مصنوعی در یک صفحه — ویرایش، پیش‌نمایش، انتشار یک‌کلیکی و بازنویسی مجدد.
 - ❓ **راهنمای درون‌صفحه‌ای**: کنار هر بخش از صفحه‌های مدیریت یک آیکون «؟» است که با کلیک، توضیح کوتاه همان بخش را باز می‌کند.
-- 📋 **صف موضوع‌ها**: انباری از موضوع‌ها که زمان‌بندی‌ها یکی‌یکی از آن می‌کشند — دستی پرش کنید یا با یک کلیک، پیشنهاد تازه از منابع خبری خودتان بگیرید (بدون تکرار).
-- 💬 **فرمان از داخل بله**: افزونه فقط اطلاع‌رسان نیست؛ از داخل بله بنویسید «نوشتن: موضوع X» تا پیش‌نویس ساخته شود، «وضعیت»، «آخرین»، «انتشار» و «صف» هم کار می‌کنند — فقط برای گفتگوهای مجاز.
 - ✅ **CI با GitHub Actions**: لینت، بررسی ترجمه‌ها و کل مجموعهٔ تست e2e روی هر push و PR اجرا می‌شود.
 
 ### 🆕 جدید در نسخهٔ ۱.۵.۲ — اتصال گیت قابل تنظیم (مخزن، برنچ، توکن)
@@ -100,6 +120,20 @@
 ## English — Overview
 
 AI Post Creator turns the WordPress admin into an AI content agent. Set a **site prompt** once (what your site is about), and the agent picks one of your **existing post categories**, invents a topic that fits, writes the article, runs a **copywriting + SEO revision pass**, builds the **Rank Math summary**, generates a **featured image from the topic + summary**, and saves everything as a **draft** — with every step visible live and auto-retried until it passes.
+
+**New in 1.9.0 — Gemini-style image generation:** a per-connection **Image route** option adds a second generation path — *Chat completions* — for gateways that return pictures as base64 inside a chat response (OpenRouter, Antigravity …). *Automatic* tries the images endpoint first and falls back by itself.
+
+**New in 1.8.1 — deterministic base64 images:** each connection has an **Image delivery** option; *Force base64* receives the image bytes inside the API response and decodes them locally — no temporary links involved, and link-only responses fail over to the next image connection.
+
+**New in 1.8.0 — separate image servers + priority failover:**
+- Every connection has a **Purpose** — *chat & images*, *chat only* or *images only* — so featured images can come from a completely different server than the text.
+- Every connection has a **Priority** number: matching connections are tried lowest-number-first, and after 3 consecutive failures the run automatically switches to the next one. Explicit per-step chains (Prompts page) still win.
+
+**New in 1.7.2 — easier connections + admin UI polish:**
+
+* **Gateway-friendly connections** — a base URL without `/v1` gets it appended automatically, the connection test probes the `/v1` variant and corrects the field for you (OmniRoute, OpenRouter & co.), and "that address returned a web page, not an API" errors are finally said in plain words
+* **Allow private/LAN addresses** — new toggle under Settings → Advanced for self-hosted gateways on another machine in your network (the SSRF guard stays on for everything else)
+* **Cleaner admin panel** — consistent page headers, unified field alignment, restyled tables, day-of-week pills, no more inline styles
 
 **New in 1.7.0 — topic queue + two-way Bale commands:**
 
