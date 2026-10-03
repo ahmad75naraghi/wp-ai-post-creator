@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.17.0)
+# AI Post Creator — Complete User Guide (v1.18.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -90,6 +90,16 @@ Path: **AI Post Creator → Settings**
 | Default tone / length | Tone (professional, friendly, …) and length (short ~600 / medium ~1,200 / long ~2,200 words) |
 | Image / TOC / FAQ | Per-run defaults — the image size offers presets plus a free “Custom…” width×height (new in 1.12.1) |
 | Default image prompt *(new in 1.10)* | Appended to every generated image prompt — use it for a consistent style (palette, art direction) across all featured images |
+| Stock photo fallback *(new in 1.18)* | When every AI image connection fails, fetch a free CC-licensed photo from Openverse matching the article subject — no API key; the photo credit is saved in the attachment caption |
+| Default featured image *(new in 1.18)* | Media-library ID or URL used as the guaranteed last resort so **every post gets an image**; an external URL is imported once and reused |
+
+> 🪜 **The image rescue ladder (new in 1.18):** ① if the gateway says the
+> configured image model doesn't exist, the plugin reads the gateway's own
+> model list, picks an image-capable one and retries (cached a day);
+> ② the other image connections and the chat-image route are tried;
+> ③ the Openverse stock fallback (if enabled); ④ the default featured
+> image. Only when all four rungs are empty does a post go out without a
+> picture.
 | Source links *(new in 1.12)* | Whether articles may link to the research source sites — off = sources are used for facts only, links stripped |
 
 > 🔗 Since 1.12 every internal link target is used at most once per article —

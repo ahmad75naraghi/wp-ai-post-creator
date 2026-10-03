@@ -683,6 +683,14 @@ final class AIPC_Agent {
 		$job['timings'][ $step['id'] ] = (int) round( ( microtime( true ) - $t0 ) * 1000 );
 
 		if ( ! $passed && 'image' === $step['id'] ) {
+			// Rescue ladder (1.18.0): stock photo → default image. Only
+			// when both are unavailable is the step skipped.
+			if ( $this->image_fallback( $job ) ) {
+				$this->advance( $job );
+				$this->save_job( $job );
+				delete_transient( $lock_key );
+				return $this->client_state( $job, $since );
+			}
 			// The featured image is optional — skip gracefully when every
 			// connection in the chain failed to generate one.
 			$this->log( $job, __( 'Image generation failed on every connection — continuing without a featured image.', 'wp-ai-post-creator' ), 'warn' );
@@ -1700,6 +1708,19 @@ final class AIPC_Agent {
 		}
 		$data    = $ip_data;
 		$iprompt = ! empty( $data['prompt'] ) ? (string) $data['prompt'] : $plan['title'];
+
+		// Stock-photo search seed (1.18.0): prefer the model's explicit
+		// keywords; otherwise the first words of the raw English prompt
+		// (before the user's style suffix is appended).
+		$kw = '';
+		if ( ! empty( $data['keywords'] ) ) {
+			$kw = is_array( $data['keywords'] ) ? implode( ' ', array_map( 'strval', $data['keywords'] ) ) : (string) $data['keywords'];
+		}
+		if ( '' === trim( $kw ) ) {
+			$kw = implode( ' ', array_slice( preg_split( '/\s+/', $iprompt ), 0, 8 ) );
+		}
+		$job['data']['image_query'] = mb_substr( trim( $kw ), 0, 160 );
+
 		$iprompt = self::apply_image_prompt_default( $iprompt );
 
 		$this->log( $job, sprintf(
@@ -1762,6 +1783,127 @@ final class AIPC_Agent {
 			$attach_id
 		), 'success' );
 		$this->advance( $job );
+	}
+
+	/**
+	 * Image rescue ladder (1.18.0): when every AI connection failed, try a
+	 * stock photo (Openverse, opt-in), then the site's default featured
+	 * image. Fills $job['data']['image'] and returns true on success.
+	 * Public for testability.
+	 *
+	 * @param array $job Job (by reference).
+	 * @return bool Whether an image was attached.
+	 */
+	public function image_fallback( array &$job ) {
+		$title = isset( $job['data']['plan']['title'] ) ? (string) $job['data']['plan']['title'] : '';
+
+		// 1) Openverse stock photo — relevant, CC-licensed, no API key.
+		if ( AIPC_Settings::get( 'image_fallback_stock' ) ) {
+			$query = isset( $job['data']['image_query'] ) ? trim( (string) $job['data']['image_query'] ) : '';
+			if ( '' === $query ) {
+				$query = $title;
+			}
+			$stock = AIPC_Stock::fetch( $query );
+			if ( ! is_wp_error( $stock ) ) {
+				$filename  = 'aipc-stock-' . sanitize_key( str_replace( 'job_', '', $job['id'] ) ) . '.jpg';
+				$attach_id = AIPC_Post_Builder::upload_image( $stock['bits'], $filename, '' !== $title ? $title : $query );
+				if ( ! is_wp_error( $attach_id ) ) {
+					wp_update_post( array(
+						'ID'           => (int) $attach_id,
+						'post_excerpt' => $stock['attribution'],
+					) );
+					update_post_meta( (int) $attach_id, '_aipc_stock_attribution', $stock['attribution'] );
+					if ( ! empty( $stock['meta']['source'] ) ) {
+						update_post_meta( (int) $attach_id, '_aipc_stock_source', esc_url_raw( $stock['meta']['source'] ) );
+					}
+					$job['data']['image'] = array(
+						'attachment_id' => (int) $attach_id,
+						'prompt'        => 'stock: ' . $query,
+					);
+					$this->log( $job, sprintf(
+						/* translators: %d: attachment id. */
+						__( 'AI image generation failed — attached a CC-licensed stock photo from Openverse instead (#%d, attribution saved on the attachment).', 'wp-ai-post-creator' ),
+						$attach_id
+					), 'warn' );
+					return true;
+				}
+			} else {
+				$this->log( $job, sprintf(
+					/* translators: %s: error message. */
+					__( 'Stock photo fallback failed: %s', 'wp-ai-post-creator' ),
+					$stock->get_error_message()
+				), 'warn' );
+			}
+		}
+
+		// 2) The site's default featured image — the guaranteed last resort.
+		$fallback = trim( (string) AIPC_Settings::get( 'image_fallback' ) );
+		if ( '' !== $fallback ) {
+			$attach_id = $this->resolve_fallback_attachment( $fallback );
+			if ( $attach_id ) {
+				$job['data']['image'] = array(
+					'attachment_id' => (int) $attach_id,
+					'prompt'        => 'default',
+				);
+				$this->log( $job, sprintf(
+					/* translators: %d: attachment id. */
+					__( 'AI image generation failed — using the default featured image (#%d).', 'wp-ai-post-creator' ),
+					$attach_id
+				), 'warn' );
+				return true;
+			}
+			$this->log( $job, __( 'The default featured image setting could not be resolved to an image.', 'wp-ai-post-creator' ), 'warn' );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Resolve the "default featured image" setting to an attachment id.
+	 *
+	 * Accepts a media-library attachment ID, a media-library URL, or an
+	 * external image URL (imported once and cached for reuse).
+	 *
+	 * @param string $value Setting value.
+	 * @return int Attachment id, or 0.
+	 */
+	private function resolve_fallback_attachment( $value ) {
+		if ( ctype_digit( $value ) ) {
+			$id = (int) $value;
+			return wp_attachment_is_image( $id ) ? $id : 0;
+		}
+
+		$id = (int) attachment_url_to_postid( $value );
+		if ( $id && wp_attachment_is_image( $id ) ) {
+			return $id;
+		}
+
+		// External URL: import once, remember the attachment for reuse.
+		$cache = get_option( 'aipc_image_fallback_cache', array() );
+		$cache = is_array( $cache ) ? $cache : array();
+		$key   = md5( $value );
+		if ( isset( $cache[ $key ] ) && wp_attachment_is_image( (int) $cache[ $key ] ) ) {
+			return (int) $cache[ $key ];
+		}
+		if ( ! AIPC_Network::is_safe_url( $value ) ) {
+			return 0;
+		}
+		$res = wp_remote_get( $value, array( 'timeout' => 30, 'redirection' => 3 ) );
+		if ( is_wp_error( $res ) || 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
+			return 0;
+		}
+		$type = (string) wp_remote_retrieve_header( $res, 'content-type' );
+		$bits = (string) wp_remote_retrieve_body( $res );
+		if ( strlen( $bits ) < 100 || ( '' !== $type && 0 !== strpos( $type, 'image/' ) ) ) {
+			return 0;
+		}
+		$attach = AIPC_Post_Builder::upload_image( $bits, 'aipc-default-' . substr( $key, 0, 8 ) . '.jpg', __( 'Default featured image', 'wp-ai-post-creator' ) );
+		if ( is_wp_error( $attach ) ) {
+			return 0;
+		}
+		$cache[ $key ] = (int) $attach;
+		update_option( 'aipc_image_fallback_cache', $cache, false );
+		return (int) $attach;
 	}
 
 	/**

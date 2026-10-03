@@ -263,7 +263,7 @@ Return ONLY this JSON object:
 				'label' => __( 'Image prompt', 'wp-ai-post-creator' ),
 				'kind'  => 'chat_json',
 				'desc'  => __( 'Turns the topic + Rank Math summary into an image-generation prompt.', 'wp-ai-post-creator' ),
-				'prompt' => 'Create a JSON object with one key "prompt": a detailed image-generation prompt (max 60 words) for a professional featured/hero blog image.
+				'prompt' => 'Create a JSON object with one key "prompt": a detailed image-generation prompt (max 60 words) for a professional featured/hero blog image. Also include a key "keywords": 2-4 short English stock-photo search words naming the main visible subject.
 Article title: "{{title}}".
 Article summary: "{{summary}}".
 Style: modern, editorial, visually striking, high quality.

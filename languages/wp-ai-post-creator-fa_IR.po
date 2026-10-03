@@ -2220,10 +2220,6 @@ msgstr "الگوهای آمادهٔ نشانی برای سرویس‌های پر
 msgid "The console is a live viewer: the job runs on the server, so you can close this tab and it keeps going. Steps, logs and progress update automatically while the agent works — and if a step fails after all retries, the Retry button re-runs only that step."
 msgstr "کنسول یک نمایشگر زنده است: کار روی سرور اجرا می‌شود، پس می‌توانید این برگه را ببندید و کار ادامه پیدا می‌کند. مراحل، لاگ‌ها و پیشرفت هنگام کار ایجنت خودکار به‌روز می‌شوند — و اگر مرحله‌ای بعد از همهٔ تلاش‌ها شکست بخورد، دکمهٔ «تلاش دوباره» فقط همان مرحله را اجرا می‌کند."
 
-#: admin/views/settings.php
-msgid "The global switch and size for AI featured images. The image model is set per connection; if image generation fails on every provider, the post is still saved — just without an image."
-msgstr "کلید سراسری و اندازهٔ تصاویر شاخص هوش مصنوعی. مدل تصویر برای هر اتصال جداگانه تنظیم می‌شود؛ اگر تولید تصویر در همهٔ سرویس‌ها شکست بخورد، نوشته بدون تصویر ذخیره می‌شود."
-
 #: admin/views/log-detail.php
 msgid "The human-readable diary of the run, exactly as it was shown live in the console."
 msgstr "دفترچهٔ خوانای این اجرا، درست همان‌طور که زنده در کنسول دیده می‌شد."
@@ -3211,3 +3207,75 @@ msgstr "⚡ سریع‌ترین راه: به پیامِ پیش‌نویس فقط
 #: includes/class-aipc-bale-commands.php
 msgid "🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — “Schedule” offers one-tap times, or send a date yourself."
 msgstr "🔘 زیر هر پیامِ پیش‌نویس دکمه‌های «انتشار فوری» و «زمان‌بندی» هست — «زمان‌بندی» زمان‌های یک‌لمسی پیشنهاد می‌دهد، یا خودتان تاریخ بفرستید."
+
+#: includes/class-aipc-agent.php
+msgid "AI image generation failed — attached a CC-licensed stock photo from Openverse instead (#%d, attribution saved on the attachment)."
+msgstr "ساخت تصویر با هوش مصنوعی شکست خورد — به‌جایش یک عکس استوک با مجوز CC از Openverse پیوست شد (#%d، منبع روی خود پیوست ذخیره شد)."
+
+#: includes/class-aipc-agent.php
+msgid "AI image generation failed — using the default featured image (#%d)."
+msgstr "ساخت تصویر با هوش مصنوعی شکست خورد — از تصویر شاخص پیش‌فرض استفاده شد (#%d)."
+
+#: includes/class-aipc-stock.php
+msgid "Could not download any of the stock photo candidates."
+msgstr "هیچ‌کدام از گزینه‌های عکس استوک دانلود نشد."
+
+#: admin/views/settings.php includes/class-aipc-agent.php
+msgid "Default featured image"
+msgstr "تصویر شاخص پیش‌فرض"
+
+#: includes/class-aipc-stock.php
+msgid "Empty stock photo query."
+msgstr "عبارت جست‌وجوی عکس استوک خالی است."
+
+#: admin/views/settings.php
+msgid "If every AI image connection fails, fetch a free CC-licensed photo from Openverse that matches the article subject"
+msgstr "اگر همهٔ اتصال‌های تصویرِ هوش مصنوعی شکست خوردند، یک عکس رایگان با مجوز CC از Openverse متناسب با موضوع مقاله گرفته شود"
+
+#: admin/views/settings.php
+msgid "Openverse (a WordPress project) needs no API key. The photo credit is saved in the attachment caption, as Creative Commons licenses require."
+msgstr "Openverse (از پروژه‌های وردپرس) به کلید API نیاز ندارد. اعتبار عکاس — طبق الزام مجوزهای کریتیو کامنز — در توضیح پیوست ذخیره می‌شود."
+
+#: includes/class-aipc-stock.php
+msgid "Openverse returned no results (HTTP %d)."
+msgstr "Openverse نتیجه‌ای برنگرداند (HTTP %d)."
+
+#: includes/class-aipc-stock.php
+msgid "Openverse returned no usable photo candidates."
+msgstr "Openverse هیچ گزینهٔ عکس قابل استفاده‌ای برنگرداند."
+
+#: includes/class-aipc-stock.php
+msgid "Photo: %1$s — via Openverse (%2$s)"
+msgstr "عکس: %1$s — از Openverse (%2$s)"
+
+#: includes/class-aipc-stock.php
+msgid "Stock photo download failed (HTTP %d)."
+msgstr "دانلود عکس استوک شکست خورد (HTTP %d)."
+
+#: admin/views/settings.php
+msgid "Stock photo fallback"
+msgstr "عکس استوک جایگزین"
+
+#: includes/class-aipc-agent.php
+msgid "Stock photo fallback failed: %s"
+msgstr "جایگزین عکس استوک شکست خورد: %s"
+
+#: includes/class-aipc-agent.php
+msgid "The default featured image setting could not be resolved to an image."
+msgstr "مقدار «تصویر شاخص پیش‌فرض» به یک تصویر معتبر نرسید."
+
+#: admin/views/settings.php
+msgid "The global switch and size for AI featured images. The image model is set per connection. When generation fails on every provider, the rescue ladder kicks in: a rejected model id is swapped for one the gateway actually offers, then the Openverse stock fallback (if enabled), then the default featured image — so posts need never go out without a picture."
+msgstr "کلید کلی و اندازهٔ تصاویر شاخص هوش مصنوعی. مدل تصویر برای هر اتصال جداگانه تنظیم می‌شود. وقتی ساخت تصویر روی همهٔ سرویس‌دهنده‌ها شکست بخورد، نردبان نجات وارد می‌شود: مدلِ ردشده با مدلی که دروازه واقعاً دارد عوض می‌شود، بعد عکس استوک Openverse (اگر فعال باشد)، بعد تصویر شاخص پیش‌فرض — تا هیچ پستی بدون عکس نماند."
+
+#: admin/views/settings.php
+msgid "The guaranteed last resort: used when AI generation and the stock fallback both fail, so every post still gets a featured image. Paste a media-library image ID or URL (an external URL is imported once and reused). Leave empty to allow posts without an image."
+msgstr "آخرین راه تضمینی: وقتی هم ساخت با هوش مصنوعی و هم عکس استوک شکست بخورند استفاده می‌شود تا هر پست باز هم تصویر شاخص داشته باشد. شناسهٔ (ID) یا آدرس تصویری از کتابخانهٔ رسانه را بچسبانید (آدرس خارجی یک‌بار وارد و بعد بازاستفاده می‌شود). خالی بگذارید تا پست بدون عکس مجاز باشد."
+
+#: includes/class-aipc-stock.php
+msgid "Unknown author"
+msgstr "پدیدآور ناشناس"
+
+#: includes/class-aipc-stock.php
+msgid "Unsafe stock photo URL blocked."
+msgstr "آدرس ناامن عکس استوک مسدود شد."

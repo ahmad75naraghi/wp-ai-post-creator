@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.17.1
+Stable tag: 1.18.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.18.0 =
+* New: image rescue ladder — posts need never go out without a featured image: a rejected image model id is automatically swapped for one the gateway actually offers (via its /models list, cached a day); if all AI generation fails, an optional Openverse stock-photo fallback fetches a free CC-licensed photo matching the article (no API key, attribution saved on the attachment); and a new "Default featured image" setting (media ID or URL) is the guaranteed last resort
+* Improved: the image-prompt step also produces English stock-search keywords
 
 = 1.17.1 =
 * Fix: a hanging image gateway can no longer pin jobs at "running" for an hour — image requests cap their timeout at 180 seconds (filter aipc_image_timeout), skip the automatic timeout-retry, and a 15-minute circuit breaker fails fast after the chat-image fallback times out once

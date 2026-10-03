@@ -124,6 +124,14 @@ msgstr ""
 msgid "AI connections chain (fallback order)"
 msgstr ""
 
+#: includes/class-aipc-agent.php
+msgid "AI image generation failed — attached a CC-licensed stock photo from Openverse instead (#%d, attribution saved on the attachment)."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "AI image generation failed — using the default featured image (#%d)."
+msgstr ""
+
 #: admin/views/log-detail.php
 msgid "AI time (sum of steps)"
 msgstr ""
@@ -688,6 +696,10 @@ msgstr ""
 msgid "Could not create the backup folder."
 msgstr ""
 
+#: includes/class-aipc-stock.php
+msgid "Could not download any of the stock photo candidates."
+msgstr ""
+
 #: includes/class-aipc-api-client.php
 msgid "Could not download the generated image."
 msgstr ""
@@ -802,6 +814,10 @@ msgstr ""
 
 #: admin/views/prompts.php
 msgid "Default connection: %s"
+msgstr ""
+
+#: admin/views/settings.php includes/class-aipc-agent.php
+msgid "Default featured image"
 msgstr ""
 
 #: admin/views/settings.php
@@ -994,6 +1010,10 @@ msgstr ""
 
 #: includes/class-aipc-post-builder.php
 msgid "Empty image data."
+msgstr ""
+
+#: includes/class-aipc-stock.php
+msgid "Empty stock photo query."
 msgstr ""
 
 #: admin/views/connections.php
@@ -1222,6 +1242,10 @@ msgstr ""
 
 #: includes/class-aipc-bale-commands.php
 msgid "I did not understand that command. Send «راهنما» (or help) for the list of commands."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "If every AI image connection fails, fetch a free CC-licensed photo from Openverse that matches the article subject"
 msgstr ""
 
 #: admin/views/connections.php
@@ -1621,6 +1645,18 @@ msgid "Opening of the finished introduction"
 msgstr ""
 
 #: admin/views/settings.php
+msgid "Openverse (a WordPress project) needs no API key. The photo credit is saved in the attachment caption, as Creative Commons licenses require."
+msgstr ""
+
+#: includes/class-aipc-stock.php
+msgid "Openverse returned no results (HTTP %d)."
+msgstr ""
+
+#: includes/class-aipc-stock.php
+msgid "Openverse returned no usable photo candidates."
+msgstr ""
+
+#: admin/views/settings.php
 msgid "Optional: one URL per line (max 8). The agent reads each site’s RSS feed while planning and grounds the topic and facts in their latest articles."
 msgstr ""
 
@@ -1684,6 +1720,10 @@ msgstr ""
 
 #: includes/class-aipc-settings.php
 msgid "Persuasive"
+msgstr ""
+
+#: includes/class-aipc-stock.php
+msgid "Photo: %1$s — via Openverse (%2$s)"
 msgstr ""
 
 #: includes/class-aipc-assets.php
@@ -2260,6 +2300,18 @@ msgstr ""
 msgid "Steps"
 msgstr ""
 
+#: includes/class-aipc-stock.php
+msgid "Stock photo download failed (HTTP %d)."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Stock photo fallback"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Stock photo fallback failed: %s"
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Storytelling"
 msgstr ""
@@ -2420,6 +2472,10 @@ msgstr ""
 msgid "The current content of the post being rewritten"
 msgstr ""
 
+#: includes/class-aipc-agent.php
+msgid "The default featured image setting could not be resolved to an image."
+msgstr ""
+
 #: includes/class-aipc-updater.php
 msgid "The download from GitHub failed (HTTP %d or invalid archive)."
 msgstr ""
@@ -2437,7 +2493,11 @@ msgid "The full assembled draft HTML"
 msgstr ""
 
 #: admin/views/settings.php
-msgid "The global switch and size for AI featured images. The image model is set per connection; if image generation fails on every provider, the post is still saved — just without an image."
+msgid "The global switch and size for AI featured images. The image model is set per connection. When generation fails on every provider, the rescue ladder kicks in: a rejected model id is swapped for one the gateway actually offers, then the Openverse stock fallback (if enabled), then the default featured image — so posts need never go out without a picture."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "The guaranteed last resort: used when AI generation and the stock fallback both fail, so every post still gets a featured image. Paste a media-library image ID or URL (an external URL is imported once and reused). Leave empty to allow posts without an image."
 msgstr ""
 
 #: admin/views/log-detail.php
@@ -2788,8 +2848,16 @@ msgstr ""
 msgid "Unique angle from the plan step"
 msgstr ""
 
+#: includes/class-aipc-stock.php
+msgid "Unknown author"
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "Unknown connection"
+msgstr ""
+
+#: includes/class-aipc-stock.php
+msgid "Unsafe stock photo URL blocked."
 msgstr ""
 
 #: admin/views/update.php

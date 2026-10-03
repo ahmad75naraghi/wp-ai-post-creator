@@ -424,6 +424,19 @@ final class AIPC_API_Client {
 
 		$result = $this->image_via_endpoint( $prompt, $model, $force_b64, $opts );
 
+		// Auto-rescue (1.18.0): the gateway rejected the configured image
+		// model ("Invalid image model …") — discover a model that actually
+		// exists in its /models list and retry once. Cached for a day.
+		if ( is_wp_error( $result ) && self::looks_like_bad_model( $result->get_error_message() ) ) {
+			$alt = $this->discover_image_model( $model );
+			if ( '' !== $alt && $alt !== $model ) {
+				$retry = $this->image_via_endpoint( $prompt, $alt, $force_b64, $opts );
+				if ( ! is_wp_error( $retry ) ) {
+					return $retry;
+				}
+			}
+		}
+
 		// Automatic fallback: when the images endpoint cannot deliver
 		// (missing route, "no credentials for provider", refused link …),
 		// try the chat-completions image route before giving up.
@@ -445,6 +458,76 @@ final class AIPC_API_Client {
 			return $result; // The endpoint error is usually the more informative one.
 		}
 		return $result;
+	}
+
+	/**
+	 * Does this provider error mean "that image model does not exist here"?
+	 *
+	 * @param string $msg Error message.
+	 * @return bool
+	 */
+	public static function looks_like_bad_model( $msg ) {
+		return (bool) preg_match( '/invalid (image )?model|model[^.]*not (found|exist|available|supported)|unknown model|no such model|does not exist/i', (string) $msg );
+	}
+
+	/**
+	 * Ask the gateway's /models list for an image-capable model (1.18.0).
+	 *
+	 * @param string $bad_model The configured model the gateway rejected.
+	 * @return string Alternative model id, or '' when none was found.
+	 */
+	private function discover_image_model( $bad_model ) {
+		$key    = 'aipc_img_model_' . md5( $this->base_url() );
+		$cached = get_transient( $key );
+		if ( is_string( $cached ) && '' !== $cached ) {
+			return $cached === $bad_model ? '' : $cached;
+		}
+
+		$json = $this->request( '/models', null, 30, 0, false );
+		if ( is_wp_error( $json ) || empty( $json['data'] ) || ! is_array( $json['data'] ) ) {
+			return '';
+		}
+		$ids = array();
+		foreach ( $json['data'] as $m ) {
+			if ( isset( $m['id'] ) && is_string( $m['id'] ) ) {
+				$ids[] = $m['id'];
+			}
+		}
+		$alt = self::pick_image_model( $ids, $bad_model );
+		if ( '' !== $alt ) {
+			set_transient( $key, $alt, DAY_IN_SECONDS );
+		}
+		return $alt;
+	}
+
+	/**
+	 * Pick the most likely image model from a /models id list.
+	 *
+	 * @param string[] $ids     Model ids.
+	 * @param string   $exclude Id to skip (the one that just failed).
+	 * @return string Model id, or '' when nothing looks image-capable.
+	 */
+	public static function pick_image_model( $ids, $exclude = '' ) {
+		$patterns = array(
+			'/gpt-image/i',
+			'/dall-?e/i',
+			'/flux/i',
+			'/imagen/i',
+			'/stable-?diffusion|sdxl|sd3/i',
+			'/image/i',
+		);
+		foreach ( $patterns as $pattern ) {
+			foreach ( (array) $ids as $id ) {
+				$id = (string) $id;
+				if ( '' === $id || $id === $exclude ) {
+					continue;
+				}
+				if ( preg_match( $pattern, $id ) && ! preg_match( '/embed|whisper|tts|audio|moderation/i', $id ) ) {
+					return $id;
+				}
+			}
+		}
+		return '';
 	}
 
 	/**

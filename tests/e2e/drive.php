@@ -2127,6 +2127,10 @@ $aipc_it_client = new AIPC_API_Client( array(
 	'request_timeout' => 600,
 ) );
 
+// Pin the 1.18.0 model-autodiscovery cache to the failing model itself so
+// discovery is a no-op here — this group tests the timeout behaviour only.
+set_transient( 'aipc_img_model_' . md5( 'https://imgslow.invalid/v1' ), 'bad/model', 300 );
+
 // First image() call: fast 400 on the endpoint, ONE hanging chat fallback.
 $aipc_it_res1   = $aipc_it_client->image( 'an image prompt' );
 $aipc_it_phase1 = $aipc_it_reqs;
@@ -2171,6 +2175,194 @@ $out['image_timeouts'] = array(
 
 remove_filter( 'pre_http_request', $aipc_it_mock, 4 );
 delete_transient( $aipc_it_cb_key );
+delete_transient( 'aipc_img_model_' . md5( 'https://imgslow.invalid/v1' ) );
+
+/* ------------------------------------------------------------------ *
+ * v1.18.0 — image rescue ladder: model autodiscovery, Openverse stock
+ * fallback, default featured image
+ * ------------------------------------------------------------------ */
+$aipc_ir_png  = base64_decode( $aipc_png_b64 );
+$aipc_ir_reqs = array();
+$aipc_ir_mock = function ( $pre, $args, $url ) use ( &$aipc_ir_reqs, $aipc_png_b64, $aipc_ir_png ) {
+	$aipc_ir_body = isset( $args['body'] ) ? (string) $args['body'] : '';
+	if ( false !== strpos( $url, 'imgresc.invalid' ) ) {
+		$aipc_ir_reqs[] = array( 'url' => $url, 'body' => $aipc_ir_body );
+		if ( false !== strpos( $url, '/images/generations' ) ) {
+			$aipc_ir_req = json_decode( $aipc_ir_body, true );
+			if ( isset( $aipc_ir_req['model'] ) && 'dall-e-3' === $aipc_ir_req['model'] ) {
+				return array(
+					'headers' => array(), 'cookies' => array(),
+					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'body' => '{"data":[{"b64_json":"' . $aipc_png_b64 . '"}]}',
+				);
+			}
+			return array(
+				'headers' => array(), 'cookies' => array(),
+				'response' => array( 'code' => 400, 'message' => 'Bad Request' ),
+				'body' => '{"error":{"message":"Invalid image model: bad/model. Use format: provider/model"}}',
+			);
+		}
+		if ( false !== strpos( $url, '/models' ) ) {
+			return array(
+				'headers' => array(), 'cookies' => array(),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'body' => '{"data":[{"id":"chat-pro"},{"id":"text-embedding-3"},{"id":"dall-e-3"}]}',
+			);
+		}
+		// Default-image URL download.
+		if ( false !== strpos( $url, '/default.png' ) ) {
+			return array(
+				'headers' => array( 'content-type' => 'image/png' ), 'cookies' => array(),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'body' => str_repeat( $aipc_ir_png, 10 ),
+			);
+		}
+	}
+	if ( false !== strpos( $url, 'api.openverse.org' ) ) {
+		$aipc_ir_reqs[] = array( 'url' => $url, 'body' => '' );
+		return array(
+			'headers' => array(), 'cookies' => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body' => wp_json_encode( array( 'results' => array(
+				array( 'url' => 'https://photos.invalid/broken.jpg', 'title' => 'Broken', 'creator' => 'Nobody', 'license' => 'by', 'license_version' => '4.0', 'foreign_landing_url' => 'https://openverse.org/x' ),
+				array( 'url' => 'https://photos.invalid/good.jpg', 'title' => 'Family', 'creator' => 'Ali Photographer', 'license' => 'by-sa', 'license_version' => '4.0', 'foreign_landing_url' => 'https://openverse.org/y' ),
+			) ) ),
+		);
+	}
+	if ( false !== strpos( $url, 'photos.invalid' ) ) {
+		$aipc_ir_reqs[] = array( 'url' => $url, 'body' => '' );
+		if ( false !== strpos( $url, 'broken.jpg' ) ) {
+			return array(
+				'headers' => array(), 'cookies' => array(),
+				'response' => array( 'code' => 404, 'message' => 'Not Found' ),
+				'body' => 'nope',
+			);
+		}
+		return array(
+			'headers' => array( 'content-type' => 'image/jpeg' ), 'cookies' => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body' => str_repeat( $aipc_ir_png, 20 ),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_ir_mock, 4, 3 );
+
+// --- 1) Model autodiscovery -----------------------------------------
+$aipc_ir_pick = AIPC_API_Client::pick_image_model( array( 'gpt-4o', 'text-embedding-3', 'prov/flux-pro-image', 'dall-e-3' ) );
+$aipc_ir_bad  = AIPC_API_Client::looks_like_bad_model( 'API error 400: Invalid image model: x. Use format: provider/model' );
+$aipc_ir_good = AIPC_API_Client::looks_like_bad_model( 'API error 500: upstream exploded' );
+
+$aipc_ir_client = new AIPC_API_Client( array(
+	'base_url'        => 'https://imgresc.invalid/v1',
+	'api_key'         => 'k',
+	'chat_model'      => 'chat-pro',
+	'image_model'     => 'bad/model',
+	'request_timeout' => 120,
+) );
+$aipc_ir_img = $aipc_ir_client->image( 'a hero image' );
+$aipc_ir_second_model = '';
+foreach ( $aipc_ir_reqs as $aipc_ir_r ) {
+	if ( false !== strpos( $aipc_ir_r['url'], '/images/generations' ) && '' !== $aipc_ir_r['body'] ) {
+		$aipc_ir_dec = json_decode( $aipc_ir_r['body'], true );
+		if ( isset( $aipc_ir_dec['model'] ) ) {
+			$aipc_ir_second_model = $aipc_ir_dec['model']; // last images call wins
+		}
+	}
+}
+$aipc_ir_cached = get_transient( 'aipc_img_model_' . md5( 'https://imgresc.invalid/v1' ) );
+
+// --- 2) Openverse stock search + fetch -------------------------------
+$aipc_ir_stock = AIPC_Stock::fetch( 'iranian family playing' );
+
+// --- 3) Agent fallback: stock path ------------------------------------
+$aipc_ir_old_settings = get_option( AIPC_Settings::OPTION, array() );
+update_option( AIPC_Settings::OPTION, array_merge( is_array( $aipc_ir_old_settings ) ? $aipc_ir_old_settings : array(), array(
+	'image_fallback_stock' => 1,
+	'image_fallback'       => '',
+) ), false );
+
+$aipc_ir_job = array(
+	'id'    => 'job_imgresc1',
+	'data'  => array(
+		'plan'        => array( 'title' => 'تربیت فرزند در عصر دیجیتال' ),
+		'image_query' => 'parent child tablet home',
+	),
+	'log'   => array(),
+	'usage' => array( 'prompt' => 0, 'completion' => 0, 'calls' => 0 ),
+);
+$aipc_ir_fb1   = AIPC_Agent::instance()->image_fallback( $aipc_ir_job );
+$aipc_ir_att1  = isset( $aipc_ir_job['data']['image']['attachment_id'] ) ? (int) $aipc_ir_job['data']['image']['attachment_id'] : 0;
+$aipc_ir_att1_post = $aipc_ir_att1 ? get_post( $aipc_ir_att1 ) : null;
+$aipc_ir_attr  = $aipc_ir_att1 ? (string) get_post_meta( $aipc_ir_att1, '_aipc_stock_attribution', true ) : '';
+
+// --- 4) Agent fallback: default image (media ID) ----------------------
+update_option( AIPC_Settings::OPTION, array_merge( get_option( AIPC_Settings::OPTION, array() ), array(
+	'image_fallback_stock' => 0,
+	'image_fallback'       => (string) $aipc_ir_att1,
+) ), false );
+$aipc_ir_job2 = array(
+	'id'   => 'job_imgresc2',
+	'data' => array( 'plan' => array( 'title' => 'x' ) ),
+	'log'  => array(),
+);
+$aipc_ir_fb2  = AIPC_Agent::instance()->image_fallback( $aipc_ir_job2 );
+$aipc_ir_att2 = isset( $aipc_ir_job2['data']['image']['attachment_id'] ) ? (int) $aipc_ir_job2['data']['image']['attachment_id'] : 0;
+
+// --- 5) Agent fallback: default image (external URL, imported once) ---
+update_option( AIPC_Settings::OPTION, array_merge( get_option( AIPC_Settings::OPTION, array() ), array(
+	'image_fallback' => 'https://imgresc.invalid/media/default.png',
+) ), false );
+$aipc_ir_job3 = array( 'id' => 'job_imgresc3', 'data' => array( 'plan' => array( 'title' => 'y' ) ), 'log' => array() );
+$aipc_ir_job4 = array( 'id' => 'job_imgresc4', 'data' => array( 'plan' => array( 'title' => 'z' ) ), 'log' => array() );
+$aipc_ir_fb3  = AIPC_Agent::instance()->image_fallback( $aipc_ir_job3 );
+$aipc_ir_fb4  = AIPC_Agent::instance()->image_fallback( $aipc_ir_job4 );
+$aipc_ir_att3 = isset( $aipc_ir_job3['data']['image']['attachment_id'] ) ? (int) $aipc_ir_job3['data']['image']['attachment_id'] : 0;
+$aipc_ir_att4 = isset( $aipc_ir_job4['data']['image']['attachment_id'] ) ? (int) $aipc_ir_job4['data']['image']['attachment_id'] : 0;
+
+// --- 6) Nothing configured → false ------------------------------------
+update_option( AIPC_Settings::OPTION, array_merge( get_option( AIPC_Settings::OPTION, array() ), array(
+	'image_fallback_stock' => 0,
+	'image_fallback'       => '',
+) ), false );
+$aipc_ir_job5 = array( 'id' => 'job_imgresc5', 'data' => array( 'plan' => array( 'title' => 'w' ) ), 'log' => array() );
+$aipc_ir_fb5  = AIPC_Agent::instance()->image_fallback( $aipc_ir_job5 );
+
+// --- 7) Settings sanitize ---------------------------------------------
+$aipc_ir_san = AIPC_Settings::sanitize( array( 'image_fallback_stock' => '1', 'image_fallback' => '123' ) );
+$aipc_ir_san2 = AIPC_Settings::sanitize( array( 'image_fallback' => 'https://example.com/img.png' ) );
+
+$out['image_rescue'] = array(
+	'pick_model'       => 'dall-e-3' === $aipc_ir_pick
+		&& '' === AIPC_API_Client::pick_image_model( array( 'text-embedding-3', 'whisper-1' ) ),
+	'bad_model_regex'  => $aipc_ir_bad && ! $aipc_ir_good,
+	'autodiscovery'    => is_array( $aipc_ir_img ) && ! empty( $aipc_ir_img['bits'] )
+		&& 'dall-e-3' === $aipc_ir_second_model,
+	'discovery_cached' => 'dall-e-3' === $aipc_ir_cached,
+	'stock_fetch'      => is_array( $aipc_ir_stock ) && ! empty( $aipc_ir_stock['bits'] )
+		&& false !== strpos( $aipc_ir_stock['attribution'], 'Ali Photographer' )
+		&& false !== strpos( $aipc_ir_stock['attribution'], 'CC BY-SA 4.0' ),
+	'stock_fallback'   => true === $aipc_ir_fb1 && $aipc_ir_att1 > 0
+		&& $aipc_ir_att1_post && false !== strpos( (string) $aipc_ir_att1_post->post_excerpt, 'Openverse' )
+		&& false !== strpos( $aipc_ir_attr, 'Ali Photographer' ),
+	'default_by_id'    => true === $aipc_ir_fb2 && $aipc_ir_att2 === $aipc_ir_att1,
+	'default_by_url'   => true === $aipc_ir_fb3 && $aipc_ir_att3 > 0
+		&& true === $aipc_ir_fb4 && $aipc_ir_att4 === $aipc_ir_att3,
+	'nothing_set'      => false === $aipc_ir_fb5,
+	'sanitize_keys'    => 1 === $aipc_ir_san['image_fallback_stock'] && '123' === $aipc_ir_san['image_fallback']
+		&& 'https://example.com/img.png' === $aipc_ir_san2['image_fallback'],
+);
+
+remove_filter( 'pre_http_request', $aipc_ir_mock, 4 );
+delete_transient( 'aipc_img_model_' . md5( 'https://imgresc.invalid/v1' ) );
+delete_option( 'aipc_image_fallback_cache' );
+foreach ( array_unique( array( $aipc_ir_att1, $aipc_ir_att3 ) ) as $aipc_ir_del ) {
+	if ( $aipc_ir_del ) {
+		wp_delete_attachment( $aipc_ir_del, true );
+	}
+}
+update_option( AIPC_Settings::OPTION, $aipc_ir_old_settings, false );
+
 
 
 

@@ -31,6 +31,8 @@ final class AIPC_Settings {
 			'image_enabled'       => 1,
 			'image_size'          => '1792x1024',
 			'image_prompt_default' => '',
+			'image_fallback_stock' => 0,  // Openverse stock photo when AI fails (1.18.0).
+			'image_fallback'      => '',  // Default featured image: media ID or URL (1.18.0).
 			'add_toc'             => 1,
 			'add_faq'             => 1,
 			'system_prompt_extra' => '',
@@ -248,7 +250,7 @@ final class AIPC_Settings {
 			$out['image_size'] = $old['image_size'];
 		}
 
-				$bools = array( 'image_enabled', 'add_toc', 'add_faq', 'allow_private_hosts', 'delete_on_uninstall', 'debug_log', 'source_links' );
+				$bools = array( 'image_enabled', 'add_toc', 'add_faq', 'allow_private_hosts', 'delete_on_uninstall', 'debug_log', 'source_links', 'image_fallback_stock' );
 		foreach ( $bools as $bool ) {
 			$out[ $bool ] = empty( $in[ $bool ] ) ? 0 : 1;
 		}
@@ -258,6 +260,13 @@ final class AIPC_Settings {
 
 		$img_default = isset( $in['image_prompt_default'] ) ? sanitize_textarea_field( $in['image_prompt_default'] ) : $old['image_prompt_default'];
 		$out['image_prompt_default'] = mb_substr( $img_default, 0, 600 );
+
+		// Default featured image: a media-library attachment ID or an image URL.
+		$fb = isset( $in['image_fallback'] ) ? trim( sanitize_text_field( $in['image_fallback'] ) ) : (string) $old['image_fallback'];
+		if ( '' !== $fb && ! ctype_digit( $fb ) ) {
+			$fb = esc_url_raw( $fb );
+		}
+		$out['image_fallback'] = $fb;
 
 		return $out;
 	}

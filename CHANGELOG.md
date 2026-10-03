@@ -3,6 +3,39 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.18.0] — 2026-10-03
+
+### Added
+- **Image rescue ladder — posts need never go out without a featured
+  image.** Driven by a field trace (gateway 400 "Invalid image model" +
+  a hanging chat-image route), the agent now climbs four rungs:
+  1. **Model autodiscovery** — when the gateway rejects the configured
+     image model id, the plugin reads its `/models` list, picks an
+     image-capable model (`gpt-image` → `dall-e` → `flux` → `imagen` →
+     `stable-diffusion` → `*image*`) and retries once; the discovery is
+     cached per gateway for a day (`aipc_img_model_<md5>`).
+  2. The existing connection chain + chat-image fallback (with the
+     1.17.1 timeout guards).
+  3. **Openverse stock photos** (new opt-in setting) — no API key
+     needed; searches CC-licensed photos by the article's subject
+     (the image-prompt step now also returns English `keywords`),
+     downloads the first working candidate and stores the required
+     attribution in the attachment caption +
+     `_aipc_stock_attribution` / `_aipc_stock_source` meta.
+     New `AIPC_Stock` class.
+  4. **Default featured image** (new setting) — a media-library ID or
+     URL used as the guaranteed last resort; an external URL is
+     imported once and reused (`aipc_image_fallback_cache`).
+- Settings → Content & images gained "Stock photo fallback" and
+  "Default featured image"; 18 new strings translated (814 msgids).
+
+### Tests
+- New `image_rescue` group (10): model picking + bad-model detection,
+  end-to-end autodiscovery with caching, Openverse search/fetch with a
+  broken first candidate, agent stock fallback with attribution,
+  default image by ID and by URL (imported once, reused), nothing-set
+  behaviour, settings sanitize — **68 groups / 523 assertions total**.
+
 ## [1.17.1] — 2026-10-03
 
 ### Fixed

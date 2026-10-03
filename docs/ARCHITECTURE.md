@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.17.1**. Audience: contributors and
+Technical reference for AI Post Creator **v1.18.0**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -49,6 +49,7 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 | `AIPC_Admin` (`class-aipc-admin.php`) | ~760 | Menu (9 pages), `admin_post_*` form handlers, view rendering |
 | `AIPC_Rest` (`class-aipc-rest.php`) | ~600 | REST endpoints, permissions & rate limits |
 | `AIPC_Post_Builder` (`class-aipc-post-builder.php`) | ~370 | Assembles the final post: `create()` (new) and `update()` (rewrite), TOC/FAQ HTML, SEO meta, tags, featured image upload |
+| `AIPC_Stock` (`class-aipc-stock.php`) | ~160 | Openverse stock-photo fallback (1.18.0): keyless CC-licensed photo search (`license_type=commercial,modification`), candidate download with content checks, attribution line builder |
 | `AIPC_Connections` (`class-aipc-connections.php`) | ~420 | Connection CRUD + sanitizing, default connection, write-only keys, purpose (chat/image/both) + priority, `for_purpose()` priority-ordered pools |
 | `AIPC_Updater` (`class-aipc-updater.php`) | ~600 | Git self-update: repo/branch/token config, version check, connection test, zipball download (codeload or authenticated api.github.com), verification, backup + atomic swap with rollback |
 | `AIPC_Settings` (`class-aipc-settings.php`) | ~250 | Settings (site prompt, source sites, defaults) + option lists (tones, lengths, languages, image sizes) |
@@ -58,7 +59,7 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 
 | Option | Structure |
 |---|---|
-| `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `image_enabled`, `image_size`, `add_toc`, `add_faq`, `system_prompt_extra`, `allow_private_hosts` (SSRF-guard opt-in for LAN gateways, default 0), `delete_on_uninstall` |
+| `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `image_enabled`, `image_size`, `image_fallback_stock` (Openverse stock fallback, 1.18.0), `image_fallback` (default featured image: media ID or URL, 1.18.0), `add_toc`, `add_faq`, `system_prompt_extra`, `allow_private_hosts` (SSRF-guard opt-in for LAN gateways, default 0), `delete_on_uninstall` |
 | `aipc_connections` | array of `{id (c_*), name, base_url, api_key, chat_model, image_model, temperature (0–2, default 0.7), max_tokens (≤16000), request_timeout (≥15), is_default}` — keys never leave the server |
 | `aipc_steps` | `{step_id: {connections: [conn_id,…] (ordered fallback chain), prompt: '' = default}}` — reads also accept legacy `connection` (string) |
 | `aipc_schema_version` | jobs-table schema version (`AIPC_Job_Store::SCHEMA_VERSION`); bump + migration routine on upgrade |
@@ -128,6 +129,15 @@ automatic timeout-retry, and a 15-minute transient circuit breaker
 (`aipc_imgchat_to_<md5(base_url|model)>`) skips the chat fallback after it
 times out once — a hanging gateway can no longer pin the runner for
 `timeout × 2 × attempts`.
+**Image rescue ladder (1.18.0):** a gateway "Invalid image model" reply
+triggers `/models` autodiscovery (image-capable id picked by pattern,
+cached a day in `aipc_img_model_<md5(base_url)>`, one retry); when the
+whole connection chain still fails, `AIPC_Agent::image_fallback()` tries
+an Openverse stock photo (opt-in, query = the image-prompt step's English
+`keywords`, attribution stored on the attachment) and finally the
+site-wide default featured image (`image_fallback` setting; external URLs
+are imported once and reused via the `aipc_image_fallback_cache` option)
+before the step is skipped.
 A transient lock (`aipc_lock_<job>`, 600 s) prevents concurrent execution.
 When a job reaches `done`, `aipc_post_created` fires **once** (`notified` flag).
 
@@ -286,7 +296,7 @@ events read-only. admin-post actions: `aipc_cancel_job`,
 
 ## 10. Internationalization
 
-797 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+814 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals
@@ -298,8 +308,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 67 result
-groups / 513 assertions green at v1.17.1, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 68 result
+groups / 523 assertions green at v1.18.0, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference
