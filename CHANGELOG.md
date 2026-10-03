@@ -30,7 +30,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the 
   URL, the `setWebhook` call, paused polling, 403 on a wrong secret,
   instant message + instant button-press publishing through the real
   REST dispatcher, `last_update_id` tracking, and the 1-minute
-  interval — 64 groups / 489 assertions total.
+  interval — 64 groups / 488 assertions total.
 
 ## [1.15.0] — 2026-10-03
 
