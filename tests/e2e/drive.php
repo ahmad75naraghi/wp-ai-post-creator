@@ -1493,6 +1493,108 @@ $out['image_size_custom'] = array(
 );
 
 /* ------------------------------------------------------------------ *
+ * Bale interactive menu (v1.14.0): main menu keyboard, new-topic
+ * conversation, queue buttons that start a draft, drafts list and
+ * per-draft action cards.
+ * ------------------------------------------------------------------ */
+$aipc_bm_old_cfg   = get_option( AIPC_Bale::OPTION, array() );
+$aipc_bm_old_queue = get_option( AIPC_Topic_Queue::OPTION, array() );
+update_option( AIPC_Bale::OPTION, array(
+	'enabled'  => 1,
+	'token'    => 'test-token',
+	'chat_ids' => array( '88' ),
+	'two_way'  => 1,
+), false );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+
+$aipc_bm_mock2 = function ( $pre, $args, $url ) {
+	if ( false !== strpos( $url, 'tapi.bale.ai' ) ) {
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '{"ok":true,"result":{}}',
+			'cookies'  => array(),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_bm_mock2, 4, 3 );
+
+// Menu command → text + keyboard with every section.
+$aipc_bm_menu    = AIPC_Bale_Commands::handle( '88', 'منو' );
+$aipc_bm_menu_kb = is_array( $aipc_bm_menu ) && isset( $aipc_bm_menu['markup'] ) ? wp_json_encode( $aipc_bm_menu['markup'] ) : '';
+
+// Unknown input falls back to a hint + the same menu.
+$aipc_bm_unknown    = AIPC_Bale_Commands::handle( '88', 'xyzzy nonsense' );
+$aipc_bm_unknown_kb = is_array( $aipc_bm_unknown ) && isset( $aipc_bm_unknown['markup'] ) ? wp_json_encode( $aipc_bm_unknown['markup'] ) : '';
+
+// "New topic" button → conversation → background job.
+$aipc_bm_jobs0     = AIPC_Job_Store::count_since( 'bale', time() - 300 );
+$aipc_bm_ask       = AIPC_Bale_Commands::handle_callback( '88', 'aipc:new' );
+$aipc_bm_started   = AIPC_Bale_Commands::handle( '88', 'موضوع آزمایشی از منوی بله' );
+$aipc_bm_jobs1     = AIPC_Job_Store::count_since( 'bale', time() - 300 );
+
+// Cancel flow: ask again, then «لغو», then a normal command works.
+AIPC_Bale_Commands::handle_callback( '88', 'aipc:new' );
+$aipc_bm_cancel = AIPC_Bale_Commands::handle( '88', 'لغو' );
+$aipc_bm_status = AIPC_Bale_Commands::handle( '88', 'وضعیت' );
+
+// Queue buttons: add a topic, list it, run it from the button.
+$aipc_bm_item     = AIPC_Topic_Queue::add( 'تست اجرای صف از ربات بله' );
+$aipc_bm_qid      = is_array( $aipc_bm_item ) ? $aipc_bm_item['id'] : '';
+$aipc_bm_queue    = AIPC_Bale_Commands::handle( '88', 'صف' );
+$aipc_bm_queue_kb = is_array( $aipc_bm_queue ) && isset( $aipc_bm_queue['markup'] ) ? wp_json_encode( $aipc_bm_queue['markup'] ) : '';
+$aipc_bm_jobs2    = AIPC_Job_Store::count_since( 'bale', time() - 300 );
+$aipc_bm_qrun     = AIPC_Bale_Commands::handle_callback( '88', 'aipc:qrun:' . $aipc_bm_qid );
+$aipc_bm_jobs3    = AIPC_Job_Store::count_since( 'bale', time() - 300 );
+$aipc_bm_qgone    = true;
+foreach ( AIPC_Topic_Queue::pending() as $aipc_bm_it ) {
+	if ( isset( $aipc_bm_it['id'] ) && $aipc_bm_it['id'] === $aipc_bm_qid ) {
+		$aipc_bm_qgone = false;
+	}
+}
+$aipc_bm_qmiss = AIPC_Bale_Commands::handle_callback( '88', 'aipc:qrun:tq_nonexist1' );
+
+// Drafts list + per-draft action card.
+$aipc_bm_p = wp_insert_post( array( 'post_title' => 'منوی بله پیش‌نویس تست', 'post_content' => '<p>z</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_bm_p, '_aipc_generated', time() );
+$aipc_bm_drafts    = AIPC_Bale_Commands::handle( '88', 'drafts' );
+$aipc_bm_drafts_kb = is_array( $aipc_bm_drafts ) && isset( $aipc_bm_drafts['markup'] ) ? wp_json_encode( $aipc_bm_drafts['markup'] ) : '';
+$aipc_bm_card      = AIPC_Bale_Commands::handle_callback( '88', 'aipc:post:' . $aipc_bm_p );
+$aipc_bm_card_kb   = is_array( $aipc_bm_card ) && isset( $aipc_bm_card['markup'] ) ? wp_json_encode( $aipc_bm_card['markup'] ) : '';
+$aipc_bm_help      = AIPC_Bale_Commands::handle( '88', '/start' );
+
+$out['bale_menu'] = array(
+	'menu_has_all_sections' => '' !== $aipc_bm_menu_kb
+		&& false !== strpos( $aipc_bm_menu_kb, 'aipc:new' )
+		&& false !== strpos( $aipc_bm_menu_kb, 'aipc:queue' )
+		&& false !== strpos( $aipc_bm_menu_kb, 'aipc:drafts' )
+		&& false !== strpos( $aipc_bm_menu_kb, 'aipc:status' )
+		&& false !== strpos( $aipc_bm_menu_kb, 'aipc:help' ),
+	'unknown_shows_menu'    => '' !== $aipc_bm_unknown_kb && false !== strpos( $aipc_bm_unknown_kb, 'aipc:new' ),
+	'new_asks_for_topic'    => false !== strpos( (string) $aipc_bm_ask, '✍️' ),
+	'topic_starts_job'      => false !== strpos( (string) $aipc_bm_started, '✍️' ) && $aipc_bm_jobs1 === $aipc_bm_jobs0 + 1,
+	'cancel_then_commands'  => is_string( $aipc_bm_cancel ) && '' !== $aipc_bm_cancel
+		&& is_string( $aipc_bm_status ) && false !== strpos( $aipc_bm_status, '📊' ),
+	'queue_has_buttons'     => '' !== $aipc_bm_queue_kb && false !== strpos( $aipc_bm_queue_kb, 'aipc:qrun:' . $aipc_bm_qid ),
+	'qrun_starts_job'       => false !== strpos( (string) $aipc_bm_qrun, '✍️' ) && $aipc_bm_jobs3 === $aipc_bm_jobs2 + 1,
+	'qrun_marks_used'       => $aipc_bm_qgone,
+	'qrun_missing_is_safe'  => is_string( $aipc_bm_qmiss ) && '' !== $aipc_bm_qmiss && false === strpos( (string) $aipc_bm_qmiss, '✍️' ),
+	'drafts_have_buttons'   => '' !== $aipc_bm_drafts_kb && false !== strpos( $aipc_bm_drafts_kb, 'aipc:post:' . $aipc_bm_p ),
+	'card_has_actions'      => is_array( $aipc_bm_card ) && false !== strpos( (string) $aipc_bm_card['text'], '📄' )
+		&& false !== strpos( $aipc_bm_card_kb, 'aipc:pub:' . $aipc_bm_p )
+		&& false !== strpos( $aipc_bm_card_kb, 'aipc:sch:' . $aipc_bm_p ),
+	'card_missing_is_safe'  => is_string( AIPC_Bale_Commands::handle_callback( '88', 'aipc:post:999999' ) ),
+	'help_carries_menu'     => is_array( $aipc_bm_help ) && isset( $aipc_bm_help['markup']['inline_keyboard'] ),
+);
+
+remove_filter( 'pre_http_request', $aipc_bm_mock2, 4 );
+wp_delete_post( $aipc_bm_p, true );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+update_option( AIPC_Topic_Queue::OPTION, $aipc_bm_old_queue, false );
+update_option( AIPC_Bale::OPTION, $aipc_bm_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
  * Bale inline buttons (v1.13.0): publish-now / schedule keyboard,
  * callback handling, Jalali+Gregorian date parsing, native future
  * scheduling.

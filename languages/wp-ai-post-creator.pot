@@ -844,6 +844,10 @@ msgstr ""
 msgid "Draft published."
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Drafts"
+msgstr ""
+
 #: includes/class-aipc-bale.php
 msgid "Drafts created: %d"
 msgstr ""
@@ -1084,6 +1088,10 @@ msgstr ""
 msgid "GitHub returned HTTP %d while testing the connection."
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Help"
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Hindi"
 msgstr ""
@@ -1208,6 +1216,10 @@ msgstr ""
 msgid "Last backup of the previous version: %s"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Latest drafts — tap one for actions:"
+msgstr ""
+
 #: admin/views/new-post.php
 msgid "Leave empty and the agent will invent a topic from the site prompt — or write your own idea here…"
 msgstr ""
@@ -1304,6 +1316,10 @@ msgstr ""
 msgid "New featured image"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "New topic"
+msgstr ""
+
 #: includes/class-aipc-assets.php
 msgid "No AI connection configured"
 msgstr ""
@@ -1390,6 +1406,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Off"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Okay, cancelled."
 msgstr ""
 
 #: admin/views/update.php
@@ -1896,6 +1916,10 @@ msgstr ""
 msgid "Send the publish date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Send «لغو» to cancel."
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Send the topic as your next message — I’ll start writing right away. Send «لغو» to cancel."
+msgstr ""
+
 #: includes/class-aipc-assets.php
 msgid "Sending test message…"
 msgstr ""
@@ -1944,8 +1968,12 @@ msgstr ""
 msgid "Starting the agent…"
 msgstr ""
 
-#: admin/views/connections.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php includes/class-aipc-bale-commands.php
 msgid "Status"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: draft — choose an action below."
 msgstr ""
 
 #: includes/class-aipc-bale-commands.php
@@ -1954,6 +1982,10 @@ msgstr ""
 
 #: includes/class-aipc-bale-commands.php
 msgid "Status: published"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: scheduled for %s."
 msgstr ""
 
 #: admin/views/log-detail.php
@@ -1996,6 +2028,10 @@ msgstr ""
 msgid "Take the topic from the queue"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Tap a topic to start writing it right away."
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "Target audience"
 msgstr ""
@@ -2034,6 +2070,10 @@ msgstr ""
 
 #: includes/class-aipc-bale-commands.php
 msgid "That time is already in the past — send a future date and time."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "That topic is no longer in the queue — send «صف» for the current list."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -2392,7 +2432,7 @@ msgstr ""
 msgid "Topic brief from the plan step"
 msgstr ""
 
-#: admin/views/schedule.php
+#: admin/views/schedule.php includes/class-aipc-bale-commands.php
 msgid "Topic queue"
 msgstr ""
 
@@ -2534,6 +2574,10 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "What this section must cover"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "What would you like to do?"
 msgstr ""
 
 #: admin/views/settings.php
@@ -2784,12 +2828,20 @@ msgstr ""
 msgid "📋 صف — pending topics in the queue"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "📑 پیش‌نویس‌ها — the latest drafts, each with action buttons"
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "📝 Draft"
 msgstr ""
 
 #: admin/views/new-post.php
 msgid "📝 Keep as draft"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "📱 منو — the tappable button menu (easiest way!)"
 msgstr ""
 
 #: includes/class-aipc-bale-commands.php

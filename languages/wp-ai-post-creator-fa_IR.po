@@ -166,7 +166,7 @@ msgstr "نمای کلی"
 msgid "Topic"
 msgstr "موضوع"
 
-#: admin/views/connections.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php
+#: admin/views/connections.php admin/views/log-detail.php admin/views/logs.php admin/views/review.php admin/views/schedule.php includes/class-aipc-bale-commands.php
 msgid "Status"
 msgstr "وضعیت"
 
@@ -2444,7 +2444,7 @@ msgstr "این موضوع از قبل در صف است: %s"
 msgid "Today’s status"
 msgstr "وضعیت امروز"
 
-#: admin/views/schedule.php
+#: admin/views/schedule.php includes/class-aipc-bale-commands.php
 msgid "Topic queue"
 msgstr "صف موضوع‌ها"
 
@@ -2811,3 +2811,55 @@ msgstr "⏰ زمان‌بندی شد: «%1$s» در %2$s منتشر می‌شو�
 #: includes/class-aipc-bale-commands.php
 msgid "🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — press “Schedule” and send the date as the next message."
 msgstr "🔘 زیر هر اعلان پیش‌نویس دکمه‌های «انتشار همین حالا» و «زمان‌بندی» هست — «زمان‌بندی» را بزنید و تاریخ را در پیام بعدی بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Drafts"
+msgstr "پیش‌نویس‌ها"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Help"
+msgstr "راهنما"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Latest drafts — tap one for actions:"
+msgstr "آخرین پیش‌نویس‌ها — روی یکی بزنید تا گزینه‌هایش بیاید:"
+
+#: includes/class-aipc-bale-commands.php
+msgid "New topic"
+msgstr "موضوع جدید"
+
+#: includes/class-aipc-bale-commands.php
+msgid "Okay, cancelled."
+msgstr "باشه، لغو شد."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Send the topic as your next message — I’ll start writing right away. Send «لغو» to cancel."
+msgstr "موضوع را در پیام بعدی بفرستید — همان لحظه شروع به نوشتن می‌کنم. برای انصراف «لغو» را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: draft — choose an action below."
+msgstr "وضعیت: پیش‌نویس — از دکمه‌های زیر انتخاب کنید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Status: scheduled for %s."
+msgstr "وضعیت: زمان‌بندی‌شده برای %s."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Tap a topic to start writing it right away."
+msgstr "روی هر موضوع بزنید تا همان لحظه نوشتنش شروع شود."
+
+#: includes/class-aipc-bale-commands.php
+msgid "That topic is no longer in the queue — send «صف» for the current list."
+msgstr "این موضوع دیگر در صف نیست — برای فهرست فعلی «صف» را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "What would you like to do?"
+msgstr "چه کاری برایتان انجام بدهم؟"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📑 پیش‌نویس‌ها — the latest drafts, each with action buttons"
+msgstr "📑 پیش‌نویس‌ها — آخرین پیش‌نویس‌ها، هرکدام با دکمه‌های اقدام"
+
+#: includes/class-aipc-bale-commands.php
+msgid "📱 منو — the tappable button menu (easiest way!)"
+msgstr "📱 منو — منوی دکمه‌ای لمسی (ساده‌ترین راه!)"

@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.13.0)
+# AI Post Creator — Complete User Guide (v1.14.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -299,6 +299,22 @@ buttons under it:
   time off means 09:00. The post is scheduled like a normal WordPress
   scheduled post and the bot sends the 🎉 notice when it goes live.
   Send `لغو` to cancel (the request also expires after 30 minutes).
+
+### 📱 Interactive menu (new in 1.14)
+
+Send `منو` (or `/menu`) — or simply tap the buttons that now come with
+`/start` and `راهنما`:
+
+| Button | What it does |
+|---|---|
+| ✍️ New topic | The bot asks for the topic; your next message starts the draft |
+| 📋 Topic queue | Lists pending topics — tap one to start writing it right away |
+| 📑 Drafts | The 5 newest AI drafts — tap one for its action card (publish now / schedule) |
+| 📊 Status | Today's runs, drafts and queue |
+| ❓ Help | The command list |
+
+Anything the bot doesn't understand gets a hint plus this menu, so you
+can always tap your way out.
 
 ---
 

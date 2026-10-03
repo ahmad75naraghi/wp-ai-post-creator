@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.13.0
+Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.14.0 =
+* New: interactive Bale menu — send «منو» (or /menu, or just press a button under /start and راهنما): ✍️ new topic (the bot asks for it in chat), 📋 topic queue with a button per topic that starts writing it right away, 📑 latest drafts with per-draft action cards (publish now / schedule), 📊 status and ❓ help
+* Unknown messages now reply with a hint plus the tappable menu, queue topics started from a button are marked used, and «لغو» cancels any open question
 
 = 1.13.0 =
 * New: Bale draft notifications now carry two inline buttons — "🚀 Publish now" publishes immediately with the current date, "⏰ Schedule" asks for a date in the chat (Jalali 1404/07/20 18:30, Gregorian 2026-10-12 18:30, Persian digits, or «فردا 18:30» / «امروز 22:00») and schedules the post natively; WordPress publishes it on time and the bot sends the usual 🎉 notice

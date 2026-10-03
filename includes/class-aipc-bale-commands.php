@@ -18,6 +18,11 @@
  * waits for the next message in that chat to be the publish date
  * (Jalali or Gregorian, e.g. «1404/07/20 18:30»).
  *
+ * «منو» (or /menu) opens an interactive button menu: start a draft about
+ * a free topic (the bot asks for it), pick a topic straight from the
+ * topic queue, browse the latest drafts and open per-draft action cards,
+ * or check today's status — everything tappable, no commands to remember.
+ *
  * Unknown commands from authorized chats get a short hint. Messages from
  * other chats are silently ignored.
  *
@@ -146,8 +151,9 @@ final class AIPC_Bale_Commands {
 						AIPC_Bale::answer_callback( $cfg['token'], (string) $cb['id'] );
 					}
 					$reply = self::handle_callback( $chat_id, $data );
-					if ( is_string( $reply ) && '' !== $reply ) {
-						AIPC_Bale::send_message( $cfg['token'], $chat_id, $reply );
+					list( $r_text, $r_markup ) = self::reply_parts( $reply );
+					if ( '' !== $r_text ) {
+						AIPC_Bale::send_message( $cfg['token'], $chat_id, $r_text, $r_markup );
 					}
 				}
 				continue;
@@ -176,8 +182,9 @@ final class AIPC_Bale_Commands {
 			}
 
 			$reply = self::handle( $chat_id, $text );
-			if ( is_string( $reply ) && '' !== $reply ) {
-				AIPC_Bale::send_message( $cfg['token'], $chat_id, $reply );
+			list( $r_text, $r_markup ) = self::reply_parts( $reply );
+			if ( '' !== $r_text ) {
+				AIPC_Bale::send_message( $cfg['token'], $chat_id, $r_text, $r_markup );
 			}
 		}
 
@@ -205,13 +212,20 @@ final class AIPC_Bale_Commands {
 			return null;
 		}
 
-		// A "Schedule" button was pressed earlier in this chat: the next
-		// message is expected to be the publish date (or «لغو»).
-		$pending = self::get_pending( $chat_id );
-		if ( $pending ) {
+		// A button pressed earlier in this chat is waiting for an answer:
+		// either the publish date ("Schedule") or a topic ("New topic").
+		$entry = self::get_pending_entry( $chat_id );
+		if ( $entry ) {
 			if ( in_array( $cmd, array( 'لغو', 'cancel', '/cancel' ), true ) ) {
 				self::clear_pending( $chat_id );
-				return __( 'Scheduling cancelled — the post stays as it is.', 'wp-ai-post-creator' );
+				return 'topic' === $entry['mode']
+					? __( 'Okay, cancelled.', 'wp-ai-post-creator' )
+					: __( 'Scheduling cancelled — the post stays as it is.', 'wp-ai-post-creator' );
+			}
+			if ( 'topic' === $entry['mode'] ) {
+				// The raw message (not the lowercased normalization) is the topic.
+				self::clear_pending( $chat_id );
+				return self::cmd_new( trim( wp_strip_all_tags( (string) $text ) ) );
 			}
 			$ts = self::parse_datetime( $cmd );
 			if ( $ts ) {
@@ -219,7 +233,7 @@ final class AIPC_Bale_Commands {
 					return __( 'That time is already in the past — send a future date and time.', 'wp-ai-post-creator' );
 				}
 				self::clear_pending( $chat_id );
-				return self::schedule_post( $pending, $ts );
+				return self::schedule_post( (int) $entry['post'], $ts );
 			}
 			return __( 'I could not read that date — send it like «1404/07/20 18:30» or «2026-10-12 18:30», or «لغو» to cancel.', 'wp-ai-post-creator' );
 		}
@@ -247,6 +261,9 @@ final class AIPC_Bale_Commands {
 		}
 
 		// Simple commands.
+		if ( in_array( $cmd, array( 'منو', '/menu', 'menu' ), true ) ) {
+			return self::cmd_menu();
+		}
 		if ( in_array( $cmd, array( 'وضعیت', '/status', 'status' ), true ) ) {
 			return self::cmd_status();
 		}
@@ -256,8 +273,15 @@ final class AIPC_Bale_Commands {
 		if ( in_array( $cmd, array( 'صف', '/queue', 'queue' ), true ) ) {
 			return self::cmd_queue();
 		}
+		if ( in_array( $cmd, array( 'پیش‌نویس‌ها', 'پیشنویسها', 'پیش نویس ها', '/drafts', 'drafts', 'لیست' ), true ) ) {
+			return self::cmd_drafts();
+		}
 
-		return __( 'I did not understand that command. Send «راهنما» (or help) for the list of commands.', 'wp-ai-post-creator' );
+		// Unknown input: hint + the tappable menu, so nobody is ever stuck.
+		return array(
+			'text'   => __( 'I did not understand that command. Send «راهنما» (or help) for the list of commands.', 'wp-ai-post-creator' ),
+			'markup' => self::menu_keyboard(),
+		);
 	}
 
 	/**
@@ -274,12 +298,19 @@ final class AIPC_Bale_Commands {
 		$lines[] = __( '📄 آخرین — the newest AI draft', 'wp-ai-post-creator' );
 		$lines[] = __( '🚀 انتشار [number] — publish the newest (or n-th) draft', 'wp-ai-post-creator' );
 		$lines[] = __( '📋 صف — pending topics in the queue', 'wp-ai-post-creator' );
+		$lines[] = __( '📑 پیش‌نویس‌ها — the latest drafts, each with action buttons', 'wp-ai-post-creator' );
+		$lines[] = __( '📱 منو — the tappable button menu (easiest way!)', 'wp-ai-post-creator' );
 		$lines[] = __( '❓ راهنما — this list', 'wp-ai-post-creator' );
 		$lines[] = '';
 		$lines[] = __( '🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — press “Schedule” and send the date as the next message.', 'wp-ai-post-creator' );
 		$lines[] = '';
 		$lines[] = __( 'Only chats listed in the plugin settings can use commands.', 'wp-ai-post-creator' );
-		return implode( "\n", $lines );
+
+		// /start and راهنما double as the menu: buttons right away.
+		return array(
+			'text'   => implode( "\n", $lines ),
+			'markup' => self::menu_keyboard(),
+		);
 	}
 
 	/**
@@ -289,30 +320,54 @@ final class AIPC_Bale_Commands {
 	 * @return string
 	 */
 	private static function cmd_new( $topic ) {
+		$res = self::start_draft( $topic );
+		return $res['reply'];
+	}
+
+	/**
+	 * Start a background draft run (shared by «نوشتن», the "New topic"
+	 * button and the queue buttons): length check, daily cap, job.
+	 *
+	 * @param string $topic Topic text.
+	 * @return array {reply: string, job_id: string ('' on failure)}
+	 */
+	private static function start_draft( $topic ) {
 		$topic = trim( $topic );
 		if ( mb_strlen( $topic ) < 3 ) {
-			return __( 'The topic is too short — send e.g. «نوشتن: balcony gardening».', 'wp-ai-post-creator' );
+			return array(
+				'reply'  => __( 'The topic is too short — send e.g. «نوشتن: balcony gardening».', 'wp-ai-post-creator' ),
+				'job_id' => '',
+			);
 		}
 
 		// Daily cap on chat-started runs (cost guard).
 		$midnight = strtotime( 'today', current_time( 'timestamp' ) );
 		if ( AIPC_Job_Store::count_since( 'bale', $midnight ) >= self::MAX_DAILY_JOBS ) {
-			return sprintf(
-				/* translators: %d: daily limit. */
-				__( 'Daily limit reached: at most %d posts per day can be started from Bale. Try again tomorrow.', 'wp-ai-post-creator' ),
-				self::MAX_DAILY_JOBS
+			return array(
+				'reply'  => sprintf(
+					/* translators: %d: daily limit. */
+					__( 'Daily limit reached: at most %d posts per day can be started from Bale. Try again tomorrow.', 'wp-ai-post-creator' ),
+					self::MAX_DAILY_JOBS
+				),
+				'job_id' => '',
 			);
 		}
 
 		$job = AIPC_Agent::instance()->create_job( $topic, array( 'publish_mode' => 'draft' ), 'bale' );
 		if ( is_wp_error( $job ) ) {
-			return $job->get_error_message();
+			return array(
+				'reply'  => $job->get_error_message(),
+				'job_id' => '',
+			);
 		}
 
-		return sprintf(
-			/* translators: %s: topic text. */
-			__( '✍️ Got it — I’m writing a draft about “%s” now. I’ll message you here as soon as it’s ready.', 'wp-ai-post-creator' ),
-			wp_html_excerpt( $topic, 80, '…' )
+		return array(
+			'reply'  => sprintf(
+				/* translators: %s: topic text. */
+				__( '✍️ Got it — I’m writing a draft about “%s” now. I’ll message you here as soon as it’s ready.', 'wp-ai-post-creator' ),
+				wp_html_excerpt( $topic, 80, '…' )
+			),
+			'job_id' => isset( $job['id'] ) ? (string) $job['id'] : '',
 		);
 	}
 
@@ -478,8 +533,17 @@ final class AIPC_Bale_Commands {
 			__( '📋 Pending topics (%d):', 'wp-ai-post-creator' ),
 			count( $pending )
 		);
+		$rows = array();
 		foreach ( array_slice( $pending, 0, 5 ) as $i => $item ) {
 			$lines[] = sprintf( '%d. %s', $i + 1, wp_html_excerpt( $item['text'], 80, '…' ) );
+			if ( isset( $item['id'] ) ) {
+				$rows[] = array(
+					array(
+						'text'          => '✍️ ' . ( $i + 1 ) . '. ' . wp_html_excerpt( $item['text'], 26, '…' ),
+						'callback_data' => 'aipc:qrun:' . $item['id'],
+					),
+				);
+			}
 		}
 		if ( count( $pending ) > 5 ) {
 			$lines[] = sprintf(
@@ -488,7 +552,12 @@ final class AIPC_Bale_Commands {
 				count( $pending ) - 5
 			);
 		}
-		return implode( "\n", $lines );
+		$lines[] = __( 'Tap a topic to start writing it right away.', 'wp-ai-post-creator' );
+
+		return array(
+			'text'   => implode( "\n", $lines ),
+			'markup' => empty( $rows ) ? null : array( 'inline_keyboard' => $rows ),
+		);
 	}
 
 	/* ---------------------------------------------------------------------
@@ -496,14 +565,43 @@ final class AIPC_Bale_Commands {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Handle a button press from a post notification.
+	 * Handle a button press (post notifications and the interactive menu).
 	 *
 	 * @param string $chat_id Authorized chat id.
-	 * @param string $data    callback_data (aipc:pub:<id> | aipc:sch:<id>).
-	 * @return string|null Reply text (null = stay silent).
+	 * @param string $data    callback_data (aipc:…).
+	 * @return array|string|null Reply text or {text, markup} (null = silent).
 	 */
 	public static function handle_callback( $chat_id, $data ) {
-		if ( ! preg_match( '/^aipc:(pub|sch):(\d+)$/', (string) $data, $m ) ) {
+		$data = (string) $data;
+
+		// Menu actions.
+		if ( 'aipc:menu' === $data ) {
+			return self::cmd_menu();
+		}
+		if ( 'aipc:help' === $data ) {
+			return self::cmd_help();
+		}
+		if ( 'aipc:status' === $data ) {
+			return self::cmd_status();
+		}
+		if ( 'aipc:queue' === $data ) {
+			return self::cmd_queue();
+		}
+		if ( 'aipc:drafts' === $data ) {
+			return self::cmd_drafts();
+		}
+		if ( 'aipc:new' === $data ) {
+			self::set_pending( $chat_id, 'topic' );
+			return '✍️ ' . __( 'Send the topic as your next message — I’ll start writing right away. Send «لغو» to cancel.', 'wp-ai-post-creator' );
+		}
+		if ( preg_match( '/^aipc:qrun:([a-z0-9_]{1,40})$/', $data, $m ) ) {
+			return self::cmd_queue_run( $m[1] );
+		}
+		if ( preg_match( '/^aipc:post:(\d+)$/', $data, $m ) ) {
+			return self::cmd_post_card( (int) $m[1] );
+		}
+
+		if ( ! preg_match( '/^aipc:(pub|sch):(\d+)$/', $data, $m ) ) {
 			return null;
 		}
 
@@ -520,8 +618,174 @@ final class AIPC_Bale_Commands {
 			return self::publish_now( $post_id );
 		}
 
-		self::set_pending( $chat_id, $post_id );
+		self::set_pending( $chat_id, 'date', $post_id );
 		return '⏰ ' . __( 'Send the publish date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Send «لغو» to cancel.', 'wp-ai-post-creator' );
+	}
+
+	/**
+	 * The interactive main menu.
+	 *
+	 * @return array {text, markup}
+	 */
+	private static function cmd_menu() {
+		return array(
+			'text'   => '🤖 ' . __( 'What would you like to do?', 'wp-ai-post-creator' ),
+			'markup' => self::menu_keyboard(),
+		);
+	}
+
+	/**
+	 * The main-menu inline keyboard (also attached to unknown input).
+	 *
+	 * @return array reply_markup array.
+	 */
+	public static function menu_keyboard() {
+		return array(
+			'inline_keyboard' => array(
+				array(
+					array(
+						'text'          => '✍️ ' . __( 'New topic', 'wp-ai-post-creator' ),
+						'callback_data' => 'aipc:new',
+					),
+					array(
+						'text'          => '📋 ' . __( 'Topic queue', 'wp-ai-post-creator' ),
+						'callback_data' => 'aipc:queue',
+					),
+				),
+				array(
+					array(
+						'text'          => '📑 ' . __( 'Drafts', 'wp-ai-post-creator' ),
+						'callback_data' => 'aipc:drafts',
+					),
+					array(
+						'text'          => '📊 ' . __( 'Status', 'wp-ai-post-creator' ),
+						'callback_data' => 'aipc:status',
+					),
+				),
+				array(
+					array(
+						'text'          => '❓ ' . __( 'Help', 'wp-ai-post-creator' ),
+						'callback_data' => 'aipc:help',
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Start writing a topic straight from the queue (queue button press).
+	 *
+	 * @param string $id Queue item id (tq_…).
+	 * @return string Reply text.
+	 */
+	private static function cmd_queue_run( $id ) {
+		$topic = '';
+		foreach ( AIPC_Topic_Queue::pending() as $item ) {
+			if ( isset( $item['id'] ) && $id === $item['id'] ) {
+				$topic = (string) $item['text'];
+				break;
+			}
+		}
+		if ( '' === $topic ) {
+			return __( 'That topic is no longer in the queue — send «صف» for the current list.', 'wp-ai-post-creator' );
+		}
+
+		$res = self::start_draft( $topic );
+		if ( '' !== $res['job_id'] ) {
+			AIPC_Topic_Queue::mark_used( $id, $res['job_id'] );
+		}
+		return $res['reply'];
+	}
+
+	/**
+	 * The latest AI drafts, each with a button that opens its action card.
+	 *
+	 * @return array|string {text, markup}, or plain text when empty.
+	 */
+	private static function cmd_drafts() {
+		$posts = get_posts( array(
+			'post_type'        => 'post',
+			'post_status'      => 'draft',
+			'numberposts'      => 5,
+			'meta_key'         => '_aipc_generated',
+			'suppress_filters' => true,
+		) );
+		if ( empty( $posts ) ) {
+			return __( 'No AI drafts yet — start one with «نوشتن: <topic>».', 'wp-ai-post-creator' );
+		}
+
+		$lines   = array();
+		$lines[] = '📑 ' . __( 'Latest drafts — tap one for actions:', 'wp-ai-post-creator' );
+		$rows    = array();
+		foreach ( $posts as $i => $post ) {
+			$lines[] = sprintf(
+				'%d. %s (%s)',
+				$i + 1,
+				get_the_title( $post ),
+				wp_date( get_option( 'date_format' ), get_post_timestamp( $post ) )
+			);
+			$rows[] = array(
+				array(
+					'text'          => ( $i + 1 ) . '. ' . wp_html_excerpt( get_the_title( $post ), 28, '…' ),
+					'callback_data' => 'aipc:post:' . (int) $post->ID,
+				),
+			);
+		}
+
+		return array(
+			'text'   => implode( "\n", $lines ),
+			'markup' => array( 'inline_keyboard' => $rows ),
+		);
+	}
+
+	/**
+	 * One draft's action card: title, date, link + publish/schedule buttons.
+	 *
+	 * @param int $post_id Post id.
+	 * @return array|string {text, markup}, or plain text.
+	 */
+	private static function cmd_post_card( $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post || '' === (string) get_post_meta( $post_id, '_aipc_generated', true ) ) {
+			return __( 'Post not found — it may have been deleted.', 'wp-ai-post-creator' );
+		}
+
+		$lines   = array();
+		$lines[] = '📄 ' . get_the_title( $post );
+		$lines[] = '📅 ' . wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), get_post_timestamp( $post ) );
+		$lines[] = '🔗 ' . get_permalink( $post );
+		if ( 'publish' === $post->post_status ) {
+			$lines[] = __( 'Status: published', 'wp-ai-post-creator' );
+		} elseif ( 'future' === $post->post_status ) {
+			$lines[] = sprintf(
+				/* translators: %s: date/time. */
+				__( 'Status: scheduled for %s.', 'wp-ai-post-creator' ),
+				wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), get_post_timestamp( $post ) )
+			);
+		} else {
+			$lines[] = __( 'Status: draft — choose an action below.', 'wp-ai-post-creator' );
+		}
+
+		return array(
+			'text'   => implode( "\n", $lines ),
+			'markup' => AIPC_Bale::post_keyboard( $post_id ),
+		);
+	}
+
+	/**
+	 * Split a handler reply into text + optional reply_markup.
+	 *
+	 * @param array|string|null $reply Handler return value.
+	 * @return array {string, array|null}
+	 */
+	private static function reply_parts( $reply ) {
+		if ( is_array( $reply ) ) {
+			return array(
+				isset( $reply['text'] ) ? (string) $reply['text'] : '',
+				isset( $reply['markup'] ) && is_array( $reply['markup'] ) ? $reply['markup'] : null,
+			);
+		}
+		return array( is_string( $reply ) ? $reply : '', null );
 	}
 
 	/**
@@ -725,19 +989,41 @@ final class AIPC_Bale_Commands {
 	}
 
 	/**
-	 * Remember that this chat owes us a publish date for a post.
+	 * Remember that this chat owes us an answer: a publish date for a
+	 * post (mode `date`) or a topic for a new draft (mode `topic`).
 	 *
 	 * @param string $chat_id Chat id.
-	 * @param int    $post_id Post id.
+	 * @param string $mode    date|topic.
+	 * @param int    $post_id Post id (mode `date` only).
 	 * @return void
 	 */
-	private static function set_pending( $chat_id, $post_id ) {
+	private static function set_pending( $chat_id, $mode, $post_id = 0 ) {
 		$p = self::pending_all();
 		$p[ (string) $chat_id ] = array(
+			'mode'  => 'topic' === $mode ? 'topic' : 'date',
 			'post'  => (int) $post_id,
 			'until' => time() + self::PENDING_TTL,
 		);
 		update_option( self::PENDING_OPTION, $p, false );
+	}
+
+	/**
+	 * The open question for this chat (null = none / expired).
+	 *
+	 * @param string $chat_id Chat id.
+	 * @return array|null {mode, post, until}
+	 */
+	public static function get_pending_entry( $chat_id ) {
+		$p = self::pending_all();
+		$k = (string) $chat_id;
+		if ( empty( $p[ $k ] ) || ! is_array( $p[ $k ] ) ) {
+			return null;
+		}
+		if ( time() > (int) $p[ $k ]['until'] ) {
+			self::clear_pending( $chat_id );
+			return null;
+		}
+		return wp_parse_args( $p[ $k ], array( 'mode' => 'date', 'post' => 0 ) );
 	}
 
 	/**
@@ -747,16 +1033,8 @@ final class AIPC_Bale_Commands {
 	 * @return int
 	 */
 	public static function get_pending( $chat_id ) {
-		$p = self::pending_all();
-		$k = (string) $chat_id;
-		if ( empty( $p[ $k ]['post'] ) ) {
-			return 0;
-		}
-		if ( time() > (int) $p[ $k ]['until'] ) {
-			self::clear_pending( $chat_id );
-			return 0;
-		}
-		return (int) $p[ $k ]['post'];
+		$entry = self::get_pending_entry( $chat_id );
+		return ( $entry && 'date' === $entry['mode'] ) ? (int) $entry['post'] : 0;
 	}
 
 	/**

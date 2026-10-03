@@ -3,6 +3,32 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.14.0] — 2026-10-03
+
+### Added
+- **Interactive Bale menu.** «منو» / `/menu` — and the buttons now
+  attached to `/start` and «راهنما» — open a tappable menu:
+  - **✍️ New topic** — the bot asks for the topic in chat; the next
+    message starts a background draft run («لغو» cancels).
+  - **📋 Topic queue** — the pending topics, each with its own button
+    that starts writing it immediately and marks it used in the queue.
+  - **📑 Drafts** — the 5 newest AI drafts, each opening an action
+    card (title, date, link, status) with the publish-now / schedule
+    buttons from 1.13.0.
+  - **📊 Status** and **❓ Help** as buttons.
+- Unknown input replies with the hint *plus* the menu, so nobody is
+  ever stuck. Replies can now carry inline keyboards everywhere
+  (`reply_parts` in the poll loop). The pending-question store
+  handles both modes (publish date / topic). 13 new strings
+  translated (710 msgids).
+
+### Tests
+- New `bale_menu` group (13 assertions): menu composition, unknown
+  fallback, the full new-topic conversation (job really created),
+  queue buttons → job + marked used, missing-topic safety, drafts
+  list buttons, action card wiring, and menu-on-help — 62 groups /
+  464 assertions total.
+
 ## [1.13.0] — 2026-10-03
 
 ### Added

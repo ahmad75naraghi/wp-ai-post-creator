@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.13.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.14.0**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -37,7 +37,7 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 |---|---|---|
 | `AIPC_Agent` (`class-aipc-agent.php`) | ~2100 | The heart: job facade over `AIPC_Job_Store`, step manifests, the chain-retry execution loop, every `step_*()` implementation, context helpers (recent posts, link candidates, RSS sources), stats |
 | `AIPC_Bale` (`class-aipc-bale.php`) | ~630 | Bale Bot API client: per-post notify (sendPhoto/sendMessage), publish notify, inline publish/schedule keyboard on draft notifications, periodic reports, chat-ID detection, `getUpdates` with offset |
-| `AIPC_Bale_Commands` (`class-aipc-bale-commands.php`) | ~470 | Two-way Bale: 5-min poll (safety net on the scheduler tick), command parsing (نوشتن/وضعیت/آخرین/انتشار/صف/راهنما), callback-button handling (publish now / schedule with Jalali+Gregorian date parsing), authorized-chats-only, daily cap, `last_update_id` persistence |
+| `AIPC_Bale_Commands` (`class-aipc-bale-commands.php`) | ~470 | Two-way Bale: 5-min poll (safety net on the scheduler tick), command parsing (نوشتن/وضعیت/آخرین/انتشار/صف/راهنما), callback-button handling (publish now / schedule with Jalali+Gregorian date parsing; interactive menu: new-topic conversation, queue-run buttons, drafts list + action cards), authorized-chats-only, daily cap, `last_update_id` persistence |
 | `AIPC_Topic_Queue` (`class-aipc-topic-queue.php`) | ~370 | FIFO topic bank (option-backed, pending/used with dedup memory), RSS suggestions (cleaned headlines, deduped vs queue + recent posts) |
 | `AIPC_Scheduler` (`class-aipc-scheduler.php`) | ~620 | Cron tick, entries (incl. `use_queue`), daily limit, catch-up state, `aipc_publish_post` handler, **background runner** (`aipc_run_job`) |
 | `AIPC_Job_Store` (`class-aipc-job-store.php`) | ~550 | Jobs storage: `{$wpdb->prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
@@ -262,7 +262,7 @@ a stable emoji (✍️📊📄🚀📋🤖) so tests can match it across transla
 
 ## 10. Internationalization
 
-697 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+710 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals

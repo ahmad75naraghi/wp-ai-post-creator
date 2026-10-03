@@ -43,6 +43,19 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Drafts': 'پیش\u200cنویس\u200cها',
+    'Help': 'راهنما',
+    'Latest drafts — tap one for actions:': 'آخرین پیش\u200cنویس\u200cها — روی یکی بزنید تا گزینه\u200cهایش بیاید:',
+    'New topic': 'موضوع جدید',
+    'Okay, cancelled.': 'باشه، لغو شد.',
+    'Send the topic as your next message — I’ll start writing right away. Send «لغو» to cancel.': 'موضوع را در پیام بعدی بفرستید — همان لحظه شروع به نوشتن می\u200cکنم. برای انصراف «لغو» را بفرستید.',
+    'Status: draft — choose an action below.': 'وضعیت: پیش\u200cنویس — از دکمه\u200cهای زیر انتخاب کنید.',
+    'Status: scheduled for %s.': 'وضعیت: زمان\u200cبندی\u200cشده برای %s.',
+    'Tap a topic to start writing it right away.': 'روی هر موضوع بزنید تا همان لحظه نوشتنش شروع شود.',
+    'That topic is no longer in the queue — send «صف» for the current list.': 'این موضوع دیگر در صف نیست — برای فهرست فعلی «صف» را بفرستید.',
+    'What would you like to do?': 'چه کاری برایتان انجام بدهم؟',
+    '📑 پیش\u200cنویس\u200cها — the latest drafts, each with action buttons': '📑 پیش\u200cنویس\u200cها — آخرین پیش\u200cنویس\u200cها، هرکدام با دکمه\u200cهای اقدام',
+    '📱 منو — the tappable button menu (easiest way!)': '📱 منو — منوی دکمه\u200cای لمسی (ساده\u200cترین راه!)',
     'Could not schedule: %s': 'زمان\u200cبندی ممکن نشد: %s',
     'I could not read that date — send it like «1404/07/20 18:30» or «2026-10-12 18:30», or «لغو» to cancel.': 'این تاریخ را متوجه نشدم — به این شکل بفرستید: «1404/07/20 18:30» یا «2026-10-12 18:30»، یا برای انصراف «لغو».',
     'Post not found — it may have been deleted.': 'پست پیدا نشد — شاید حذف شده باشد.',
