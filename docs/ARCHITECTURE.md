@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.17.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.17.1**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -121,6 +121,13 @@ else if still failing: job.status = error (manual retry available)
 
 Each agent attempt may internally double (the API client retries once on
 429/5xx), so an always-failing provider logs **2× attempts** HTTP calls.
+Exception — **image routes (1.17.1)**: `/images/generations` and the
+chat-image fallback cap their timeout at 180 s (filter
+`aipc_image_timeout`, never above the connection timeout), get **no**
+automatic timeout-retry, and a 15-minute transient circuit breaker
+(`aipc_imgchat_to_<md5(base_url|model)>`) skips the chat fallback after it
+times out once — a hanging gateway can no longer pin the runner for
+`timeout × 2 × attempts`.
 A transient lock (`aipc_lock_<job>`, 600 s) prevents concurrent execution.
 When a job reaches `done`, `aipc_post_created` fires **once** (`notified` flag).
 
@@ -291,8 +298,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 66 result
-groups / 507 assertions green at v1.17.0, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 67 result
+groups / 513 assertions green at v1.17.1, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference

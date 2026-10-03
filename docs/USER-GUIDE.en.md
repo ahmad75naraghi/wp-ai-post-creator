@@ -415,6 +415,8 @@ buttons so nothing piles up:
 | 401 / Unauthorized | Wrong API key or Base URL; the base usually ends with `/v1` |
 | Timeout errors on steps | Raise the connection's request timeout; pick a lighter model |
 | No featured image | Check the connection's image model; if the whole chain fails the post still completes without an image |
+| "Invalid image model" in the trace | That model id doesn't exist at your gateway — open Connections and pick an image model from the model list (loaded live from the provider) |
+| Jobs stuck at "running" on the image step | Usually a hanging image gateway. Since 1.17.1 image calls are capped at 180 s and fail fast after one timeout; also lower the connection's request timeout and fix the image model. Stop stuck jobs on the Jobs & Cron page |
 | Schedules never fire | Check that wp-cron is active (Tools → Site Health); low-traffic sites should add a real cron hitting `wp-cron.php` every minute |
 | Delayed publish didn't happen | Same wp-cron condition — the event fires when cron wakes up |
 | Output came out in English | Set "Content language" (global setting or per-run option) |

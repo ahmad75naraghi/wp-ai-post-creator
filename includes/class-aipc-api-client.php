@@ -108,13 +108,17 @@ final class AIPC_API_Client {
 	/**
 	 * Perform an HTTP request against the provider.
 	 *
-	 * @param string      $path    API path, e.g. "/chat/completions".
-	 * @param array|null  $body    JSON body (null = GET).
-	 * @param int|null    $timeout Optional timeout override.
-	 * @param int         $attempt Internal retry counter.
+	 * @param string      $path           API path, e.g. "/chat/completions".
+	 * @param array|null  $body           JSON body (null = GET).
+	 * @param int|null    $timeout        Optional timeout override.
+	 * @param int         $attempt        Internal retry counter.
+	 * @param bool        $retry_timeouts Whether a transport timeout earns one
+	 *                                    automatic retry (image routes disable
+	 *                                    this — a hanging gateway would double
+	 *                                    the stall, 1.17.1).
 	 * @return array|WP_Error Decoded JSON body or error.
 	 */
-	private function request( $path, $body = null, $timeout = null, $attempt = 0 ) {
+	private function request( $path, $body = null, $timeout = null, $attempt = 0, $retry_timeouts = true ) {
 		$url  = $this->base_url() . $path;
 		$headers = array(
 			'Content-Type' => 'application/json',
@@ -173,7 +177,7 @@ final class AIPC_API_Client {
 
 		if ( is_wp_error( $response ) ) {
 			$message = $response->get_error_message();
-			if ( 0 === $attempt && false !== stripos( $message, 'timed out' ) ) {
+			if ( 0 === $attempt && $retry_timeouts && false !== stripos( $message, 'timed out' ) ) {
 				return $this->request_after_delay( $path, $body, $timeout, $attempt, $message );
 			}
 			return new WP_Error( 'aipc_http', sprintf(
@@ -424,13 +428,43 @@ final class AIPC_API_Client {
 		// (missing route, "no credentials for provider", refused link …),
 		// try the chat-completions image route before giving up.
 		if ( 'auto' === $route && is_wp_error( $result ) ) {
+			// Circuit breaker (1.17.1): when this gateway's chat-image route
+			// recently hung until the timeout, don't hang on it again on
+			// every retry — fail fast for 15 minutes instead.
+			$cb_key = 'aipc_imgchat_to_' . md5( $this->base_url() . '|' . $model );
+			if ( get_transient( $cb_key ) ) {
+				return $result;
+			}
 			$via_chat = $this->image_via_chat( $prompt, $model, $force_b64 );
 			if ( ! is_wp_error( $via_chat ) ) {
 				return $via_chat;
 			}
+			if ( false !== stripos( $via_chat->get_error_message(), 'timed out' ) ) {
+				set_transient( $cb_key, 1, 15 * MINUTE_IN_SECONDS );
+			}
 			return $result; // The endpoint error is usually the more informative one.
 		}
 		return $result;
+	}
+
+	/**
+	 * Timeout for image-generation calls: the connection timeout, capped.
+	 *
+	 * Image routes must not inherit a huge chat timeout (users set 600 s for
+	 * slow text models) — a hanging image gateway would pin the job runner
+	 * for that long on every attempt (1.17.1).
+	 *
+	 * @return int Seconds.
+	 */
+	private function image_timeout() {
+		/**
+		 * Filter the maximum timeout for image-generation requests.
+		 *
+		 * @param int   $cap  Cap in seconds (default 180).
+		 * @param array $conn Connection data (never the raw key).
+		 */
+		$cap = (int) apply_filters( 'aipc_image_timeout', 180, array_diff_key( $this->conn, array( 'api_key' => 1 ) ) );
+		return max( 15, min( max( 15, $cap ), max( 15, (int) $this->conn['request_timeout'] ) ) );
 	}
 
 	/**
@@ -458,17 +492,17 @@ final class AIPC_API_Client {
 			$body['response_format'] = 'b64_json';
 		}
 
-		$json = $this->request( '/images/generations', $body );
+		$json = $this->request( '/images/generations', $body, $this->image_timeout(), 0, false );
 
 		if ( is_wp_error( $json ) ) {
 			$msg = $json->get_error_message();
 			// Compatibility retries for providers with different parameter rules.
 			if ( false !== stripos( $msg, 'response_format' ) ) {
 				unset( $body['response_format'] );
-				$json = $this->request( '/images/generations', $body );
+				$json = $this->request( '/images/generations', $body, $this->image_timeout(), 0, false );
 			} elseif ( false !== stripos( $msg, 'size' ) && isset( $body['size'] ) ) {
 				unset( $body['size'] );
-				$json = $this->request( '/images/generations', $body );
+				$json = $this->request( '/images/generations', $body, $this->image_timeout(), 0, false );
 			}
 			if ( is_wp_error( $json ) ) {
 				return $json;
@@ -524,12 +558,12 @@ final class AIPC_API_Client {
 			'modalities' => array( 'image', 'text' ),
 		);
 
-		$json = $this->request( '/chat/completions', $body );
+		$json = $this->request( '/chat/completions', $body, $this->image_timeout(), 0, false );
 		if ( is_wp_error( $json ) ) {
 			// Some providers reject the modalities parameter — retry without.
 			if ( false !== stripos( $json->get_error_message(), 'modalities' ) ) {
 				unset( $body['modalities'] );
-				$json = $this->request( '/chat/completions', $body );
+				$json = $this->request( '/chat/completions', $body, $this->image_timeout(), 0, false );
 			}
 			if ( is_wp_error( $json ) ) {
 				return $json;

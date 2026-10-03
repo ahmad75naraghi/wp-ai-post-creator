@@ -2098,6 +2098,81 @@ AIPC_Agent::instance()->delete_job( 'job_qc_1' );
 wp_delete_post( $aipc_jc_pub, true );
 wp_delete_post( $aipc_jc_fut, true );
 
+/* ------------------------------------------------------------------ *
+ * v1.17.1 — image routes: capped timeout, no timeout-retry, breaker
+ * ------------------------------------------------------------------ */
+$aipc_it_reqs = array();
+$aipc_it_mock = function ( $pre, $args, $url ) use ( &$aipc_it_reqs ) {
+	if ( false === strpos( $url, 'imgslow.invalid' ) ) {
+		return $pre;
+	}
+	$aipc_it_reqs[] = array( 'url' => $url, 'timeout' => isset( $args['timeout'] ) ? (int) $args['timeout'] : 0 );
+	if ( false !== strpos( $url, '/images/generations' ) ) {
+		return array(
+			'headers'  => array(),
+			'cookies'  => array(),
+			'response' => array( 'code' => 400, 'message' => 'Bad Request' ),
+			'body'     => '{"error":{"message":"Invalid image model: bad/model. Use format: provider/model","type":"invalid_request_error"}}',
+		);
+	}
+	return new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out after 180001 milliseconds with 0 bytes received' );
+};
+add_filter( 'pre_http_request', $aipc_it_mock, 4, 3 );
+
+$aipc_it_client = new AIPC_API_Client( array(
+	'base_url'        => 'https://imgslow.invalid/v1',
+	'api_key'         => 'k',
+	'chat_model'      => 'chat-x',
+	'image_model'     => 'bad/model',
+	'request_timeout' => 600,
+) );
+
+// First image() call: fast 400 on the endpoint, ONE hanging chat fallback.
+$aipc_it_res1   = $aipc_it_client->image( 'an image prompt' );
+$aipc_it_phase1 = $aipc_it_reqs;
+$aipc_it_cb_key = 'aipc_imgchat_to_' . md5( 'https://imgslow.invalid/v1|bad/model' );
+$aipc_it_cb_set = false !== get_transient( $aipc_it_cb_key );
+
+// Second image() call: the circuit breaker must skip the chat fallback.
+$aipc_it_reqs  = array();
+$aipc_it_res2  = $aipc_it_client->image( 'an image prompt' );
+$aipc_it_phase2 = $aipc_it_reqs;
+
+// Plain chat keeps the full user timeout AND the one timeout-retry.
+$aipc_it_reqs = array();
+$aipc_it_chat = $aipc_it_client->chat( array( array( 'role' => 'user', 'content' => 'hi' ) ) );
+$aipc_it_phase3 = $aipc_it_reqs;
+
+$aipc_it_img_calls  = 0;
+$aipc_it_chat_calls = 0;
+$aipc_it_img_to_ok  = true;
+foreach ( $aipc_it_phase1 as $aipc_it_r ) {
+	if ( false !== strpos( $aipc_it_r['url'], '/images/generations' ) ) {
+		$aipc_it_img_calls++;
+	} else {
+		$aipc_it_chat_calls++;
+	}
+	if ( 180 !== $aipc_it_r['timeout'] ) {
+		$aipc_it_img_to_ok = false;
+	}
+}
+
+$out['image_timeouts'] = array(
+	'endpoint_err'    => is_wp_error( $aipc_it_res1 )
+		&& false !== strpos( $aipc_it_res1->get_error_message(), 'Invalid image model' ),
+	'capped_timeout'  => $aipc_it_img_to_ok && count( $aipc_it_phase1 ) >= 2,
+	'no_timeout_retry'=> 1 === $aipc_it_img_calls && 1 === $aipc_it_chat_calls,
+	'breaker_set'     => $aipc_it_cb_set,
+	'breaker_skips'   => is_wp_error( $aipc_it_res2 ) && 1 === count( $aipc_it_phase2 )
+		&& false !== strpos( $aipc_it_phase2[0]['url'], '/images/generations' ),
+	'chat_unaffected' => is_wp_error( $aipc_it_chat ) && 2 === count( $aipc_it_phase3 )
+		&& 600 === $aipc_it_phase3[0]['timeout'] && 600 === $aipc_it_phase3[1]['timeout'],
+);
+
+remove_filter( 'pre_http_request', $aipc_it_mock, 4 );
+delete_transient( $aipc_it_cb_key );
+
+
 
 /* ------------------------------------------------------------------ *
  * v1.6 — outbound network guard (SSRF protection)

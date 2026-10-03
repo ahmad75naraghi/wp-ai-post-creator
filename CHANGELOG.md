@@ -3,6 +3,31 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.17.1] — 2026-10-03
+
+### Fixed
+- **Jobs no longer hang for an hour on a broken image gateway.** Field
+  report: an image connection with a 600 s timeout against a gateway
+  whose `/images/generations` rejected the model (400) while its
+  chat-completions image route hung until the timeout — every attempt
+  burned 600 s × 2 (automatic timeout-retry), × 3 step attempts, so
+  jobs sat at "running 12/14" for an hour. Three defenses:
+  - image-generation requests cap their timeout at **180 s**
+    (filter `aipc_image_timeout`) instead of inheriting huge chat
+    timeouts;
+  - image routes no longer earn the automatic timeout-retry (a
+    hanging gateway would just double the stall — the step-level
+    connection chain still retries);
+  - a 15-minute **circuit breaker** per gateway+model skips the
+    chat-image fallback after it times out once, so follow-up
+    attempts fail fast instead of hanging again.
+
+### Tests
+- New `image_timeouts` group (6): endpoint error surfaced, 180 s cap,
+  exactly one call per route (no timeout-retry), breaker transient
+  set, breaker skipping the chat fallback, plain chat keeping the
+  full user timeout + retry — **67 groups / 513 assertions total**.
+
 ## [1.17.0] — 2026-10-03
 
 ### Added

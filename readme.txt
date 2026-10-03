@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.17.0
+Stable tag: 1.17.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,9 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.17.1 =
+* Fix: a hanging image gateway can no longer pin jobs at "running" for an hour — image requests cap their timeout at 180 seconds (filter aipc_image_timeout), skip the automatic timeout-retry, and a 15-minute circuit breaker fails fast after the chat-image fallback times out once
 
 = 1.17.0 =
 * New: one-step scheduling from chat — the «زمان‌بندی» button now offers one-tap times (tonight 21:00, tomorrow 09:00 / 18:00, in two days 09:00); sending a bare date («فردا 18:30») schedules the newest draft directly; replying to a draft notification with a date schedules exactly that post
