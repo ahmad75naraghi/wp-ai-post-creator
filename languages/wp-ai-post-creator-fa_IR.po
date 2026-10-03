@@ -846,7 +846,7 @@ msgstr "پست جدید با هوش مصنوعی"
 msgid "AI Schedule"
 msgstr "زمان‌بندی هوش مصنوعی"
 
-#: includes/class-aipc-admin.php wp-ai-post-creator.php
+#: includes/class-aipc-admin.php includes/class-aipc-bale.php wp-ai-post-creator.php
 msgid "Schedule"
 msgstr "زمان‌بندی"
 
@@ -2763,3 +2763,51 @@ msgstr "سفارشی…"
 #: admin/views/settings.php
 msgid "Pick “Custom…” and type width×height (e.g. 800x600) for any other size — if the provider rejects it, the request is automatically retried without a size."
 msgstr "برای هر اندازهٔ دیگر «سفارشی…» را انتخاب و عرض×ارتفاع را بنویسید (مثلاً 800x600) — اگر ارائه‌دهنده آن را نپذیرد، درخواست خودکار بدون اندازه تکرار می‌شود."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Could not schedule: %s"
+msgstr "زمان‌بندی ممکن نشد: %s"
+
+#: includes/class-aipc-bale-commands.php
+msgid "I could not read that date — send it like «1404/07/20 18:30» or «2026-10-12 18:30», or «لغو» to cancel."
+msgstr "این تاریخ را متوجه نشدم — به این شکل بفرستید: «1404/07/20 18:30» یا «2026-10-12 18:30»، یا برای انصراف «لغو»."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Post not found — it may have been deleted."
+msgstr "پست پیدا نشد — شاید حذف شده باشد."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Post scheduled from Bale for %s."
+msgstr "پست از بله برای %s زمان‌بندی شد."
+
+#: includes/class-aipc-bale.php
+msgid "Publish now"
+msgstr "انتشار همین حالا"
+
+#: includes/class-aipc-bale.php
+msgid "Scheduled post published."
+msgstr "پست زمان‌بندی‌شده منتشر شد."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Scheduling cancelled — the post stays as it is."
+msgstr "زمان‌بندی لغو شد — پست همان‌طور که بود می‌ماند."
+
+#: includes/class-aipc-bale-commands.php
+msgid "Send the publish date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Send «لغو» to cancel."
+msgstr "تاریخ و ساعت انتشار را در یک پیام بفرستید — شمسی «1404/07/20 18:30» یا میلادی «2026-10-12 18:30»؛ «فردا 18:30» و «امروز 22:00» هم کار می‌کند. برای انصراف «لغو» را بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "That time is already in the past — send a future date and time."
+msgstr "این زمان گذشته است — یک تاریخ و ساعت آینده بفرستید."
+
+#: includes/class-aipc-bale-commands.php
+msgid "This post is already published."
+msgstr "این پست قبلاً منتشر شده است."
+
+#: includes/class-aipc-bale-commands.php
+msgid "⏰ Scheduled: “%1$s” will be published on %2$s."
+msgstr "⏰ زمان‌بندی شد: «%1$s» در %2$s منتشر می‌شود."
+
+#: includes/class-aipc-bale-commands.php
+msgid "🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — press “Schedule” and send the date as the next message."
+msgstr "🔘 زیر هر اعلان پیش‌نویس دکمه‌های «انتشار همین حالا» و «زمان‌بندی» هست — «زمان‌بندی» را بزنید و تاریخ را در پیام بعدی بفرستید."

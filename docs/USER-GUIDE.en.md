@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.12.1)
+# AI Post Creator — Complete User Guide (v1.13.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -286,6 +286,19 @@ silently.
   `انتشار` also fires the 🎉 published notification.
 - English aliases work too: `/new <topic>`, `status`, `latest`, `publish`,
   `queue`, `help`.
+
+### 🔘 Publish / Schedule buttons (new in 1.13)
+
+When two-way commands are on, every draft notification arrives with two
+buttons under it:
+
+- **🚀 Publish now** — publishes the post immediately, dated right now.
+- **⏰ Schedule** — the bot asks for the date; reply with one message:
+  `1404/07/20 18:30` (Jalali), `2026-10-12 18:30` (Gregorian),
+  `فردا 18:30` or `امروز 22:00` — Persian digits work, and leaving the
+  time off means 09:00. The post is scheduled like a normal WordPress
+  scheduled post and the bot sends the 🎉 notice when it goes live.
+  Send `لغو` to cancel (the request also expires after 30 minutes).
 
 ---
 

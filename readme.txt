@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.12.1
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.13.0 =
+* New: Bale draft notifications now carry two inline buttons — "🚀 Publish now" publishes immediately with the current date, "⏰ Schedule" asks for a date in the chat (Jalali 1404/07/20 18:30, Gregorian 2026-10-12 18:30, Persian digits, or «فردا 18:30» / «امروز 22:00») and schedules the post natively; WordPress publishes it on time and the bot sends the usual 🎉 notice
+* Buttons require two-way commands to be enabled (they arrive through the same poll); «لغو» cancels a pending schedule request
 
 = 1.12.1 =
 * New: custom image size — pick "Custom…" in Settings → Featured images and enter any width×height (e.g. 800x600); providers that reject the size automatically fall back to a size-less request

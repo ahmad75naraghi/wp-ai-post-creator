@@ -26,6 +26,9 @@ final class AIPC_Bale {
 	public static function register() {
 		add_action( 'aipc_post_created', array( __CLASS__, 'notify' ), 10, 2 );
 		add_action( 'aipc_post_published', array( __CLASS__, 'notify_published' ), 10, 2 );
+		// Posts scheduled from a Bale chat announce themselves when WP
+		// publishes them at the chosen time.
+		add_action( 'future_to_publish', array( __CLASS__, 'on_future_publish' ) );
 	}
 
 	/**
@@ -218,31 +221,37 @@ final class AIPC_Bale {
 	/**
 	 * Send a text message.
 	 *
-	 * @param string $token   Bot token.
-	 * @param string $chat_id Chat id.
-	 * @param string $text    Message text.
+	 * @param string     $token   Bot token.
+	 * @param string     $chat_id Chat id.
+	 * @param string     $text    Message text.
+	 * @param array|null $markup  Optional reply_markup (inline keyboard).
 	 * @return array|WP_Error
 	 */
-	public static function send_message( $token, $chat_id, $text ) {
+	public static function send_message( $token, $chat_id, $text, $markup = null ) {
 		if ( '' === (string) $chat_id ) {
 			return new WP_Error( 'aipc_bale', __( 'Bale chat ID is not configured.', 'wp-ai-post-creator' ) );
 		}
-		return self::api( $token, 'sendMessage', array(
+		$body = array(
 			'chat_id' => $chat_id,
 			'text'    => $text,
-		) );
+		);
+		if ( is_array( $markup ) && ! empty( $markup ) ) {
+			$body['reply_markup'] = $markup;
+		}
+		return self::api( $token, 'sendMessage', $body );
 	}
 
 	/**
 	 * Send a photo with a caption.
 	 *
-	 * @param string $token   Bot token.
-	 * @param string $chat_id Chat id.
-	 * @param string $photo   Photo URL.
-	 * @param string $caption Caption.
+	 * @param string     $token   Bot token.
+	 * @param string     $chat_id Chat id.
+	 * @param string     $photo   Photo URL.
+	 * @param string     $caption Caption.
+	 * @param array|null $markup  Optional reply_markup (inline keyboard).
 	 * @return array|WP_Error
 	 */
-	public static function send_photo( $token, $chat_id, $photo, $caption = '' ) {
+	public static function send_photo( $token, $chat_id, $photo, $caption = '', $markup = null ) {
 		$body = array(
 			'chat_id' => $chat_id,
 			'photo'   => $photo,
@@ -250,7 +259,24 @@ final class AIPC_Bale {
 		if ( '' !== $caption ) {
 			$body['caption'] = $caption;
 		}
+		if ( is_array( $markup ) && ! empty( $markup ) ) {
+			$body['reply_markup'] = $markup;
+		}
 		return self::api( $token, 'sendPhoto', $body );
+	}
+
+	/**
+	 * Acknowledge an inline-keyboard button press (dismisses the loading
+	 * state on the button). Errors are irrelevant to the caller.
+	 *
+	 * @param string $token       Bot token.
+	 * @param string $callback_id Callback query id.
+	 * @return array|WP_Error
+	 */
+	public static function answer_callback( $token, $callback_id ) {
+		return self::api( $token, 'answerCallbackQuery', array(
+			'callback_query_id' => $callback_id,
+		) );
 	}
 
 	/**
@@ -338,8 +364,9 @@ final class AIPC_Bale {
 			return;
 		}
 
-		$text  = self::post_message( $post_id );
-		$photo = self::photo_for( $post_id, $cfg );
+		$text   = self::post_message( $post_id );
+		$photo  = self::photo_for( $post_id, $cfg );
+		$markup = self::post_keyboard( $post_id, $cfg );
 
 		$sent        = 0;
 		$first_error = null;
@@ -347,7 +374,7 @@ final class AIPC_Bale {
 		foreach ( $recipients as $chat_id ) {
 			$done = false;
 			if ( '' !== $photo ) {
-				$res = self::send_photo( $cfg['token'], $chat_id, $photo, $text );
+				$res = self::send_photo( $cfg['token'], $chat_id, $photo, $text, $markup );
 				if ( ! is_wp_error( $res ) ) {
 					$done = true;
 				} elseif ( null === $first_error ) {
@@ -355,7 +382,7 @@ final class AIPC_Bale {
 				}
 			}
 			if ( ! $done ) {
-				$res = self::send_message( $cfg['token'], $chat_id, $text );
+				$res = self::send_message( $cfg['token'], $chat_id, $text, $markup );
 				if ( ! is_wp_error( $res ) ) {
 					$done = true;
 				} elseif ( null === $first_error ) {
@@ -462,6 +489,67 @@ final class AIPC_Bale {
 			. '🌱🌱' . $summary . '🌱🌱' . "\n"
 			. __( 'Read the full article at the link below', 'wp-ai-post-creator' ) . '👇👇👇' . "\n"
 			. get_permalink( $post_id );
+	}
+
+	/**
+	 * The inline keyboard under a draft notification: a "Publish now" and
+	 * a "Schedule" button. Only unpublished posts get buttons, and only
+	 * when two-way commands are on — pressing a button arrives as a
+	 * callback_query through the same getUpdates poll, so without the
+	 * poller the buttons would be dead.
+	 *
+	 * @param int        $post_id Post id.
+	 * @param array|null $cfg     Bale settings (default: stored).
+	 * @return array|null reply_markup array, or null for no buttons.
+	 */
+	public static function post_keyboard( $post_id, $cfg = null ) {
+		$cfg = null === $cfg ? self::all() : $cfg;
+		if ( ! class_exists( 'AIPC_Bale_Commands' ) || ! AIPC_Bale_Commands::is_enabled( $cfg ) ) {
+			return null;
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post || ! in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) {
+			return null;
+		}
+
+		return array(
+			'inline_keyboard' => array(
+				array(
+					array(
+						'text'          => '🚀 ' . __( 'Publish now', 'wp-ai-post-creator' ),
+						'callback_data' => 'aipc:pub:' . (int) $post_id,
+					),
+					array(
+						'text'          => '⏰ ' . __( 'Schedule', 'wp-ai-post-creator' ),
+						'callback_data' => 'aipc:sch:' . (int) $post_id,
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * When WordPress publishes a post that was scheduled from a Bale chat,
+	 * announce it with the same 🎉 notification as other publishes.
+	 *
+	 * @param WP_Post $post The post that just went future → publish.
+	 * @return void
+	 */
+	public static function on_future_publish( $post ) {
+		$post_id = is_object( $post ) ? (int) $post->ID : (int) $post;
+		if ( ! $post_id || '' === (string) get_post_meta( $post_id, '_aipc_bale_scheduled', true ) ) {
+			return;
+		}
+		delete_post_meta( $post_id, '_aipc_bale_scheduled' );
+
+		$job_id = (string) get_post_meta( $post_id, '_aipc_job', true );
+		if ( '' !== $job_id ) {
+			AIPC_Agent::instance()->append_log( $job_id, __( 'Scheduled post published.', 'wp-ai-post-creator' ), 'success' );
+		}
+
+		/** This action is documented in includes/class-aipc-bale-commands.php */
+		do_action( 'aipc_post_published', $post_id, $job_id );
 	}
 
 	/**

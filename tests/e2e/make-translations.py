@@ -43,6 +43,18 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Could not schedule: %s': 'زمان\u200cبندی ممکن نشد: %s',
+    'I could not read that date — send it like «1404/07/20 18:30» or «2026-10-12 18:30», or «لغو» to cancel.': 'این تاریخ را متوجه نشدم — به این شکل بفرستید: «1404/07/20 18:30» یا «2026-10-12 18:30»، یا برای انصراف «لغو».',
+    'Post not found — it may have been deleted.': 'پست پیدا نشد — شاید حذف شده باشد.',
+    'Post scheduled from Bale for %s.': 'پست از بله برای %s زمان\u200cبندی شد.',
+    'Publish now': 'انتشار همین حالا',
+    'Scheduled post published.': 'پست زمان\u200cبندی\u200cشده منتشر شد.',
+    'Scheduling cancelled — the post stays as it is.': 'زمان\u200cبندی لغو شد — پست همان\u200cطور که بود می\u200cماند.',
+    'Send the publish date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Send «لغو» to cancel.': 'تاریخ و ساعت انتشار را در یک پیام بفرستید — شمسی «1404/07/20 18:30» یا میلادی «2026-10-12 18:30»؛ «فردا 18:30» و «امروز 22:00» هم کار می\u200cکند. برای انصراف «لغو» را بفرستید.',
+    'That time is already in the past — send a future date and time.': 'این زمان گذشته است — یک تاریخ و ساعت آینده بفرستید.',
+    'This post is already published.': 'این پست قبلاً منتشر شده است.',
+    '⏰ Scheduled: “%1$s” will be published on %2$s.': '⏰ زمان\u200cبندی شد: «%1$s» در %2$s منتشر می\u200cشود.',
+    '🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — press “Schedule” and send the date as the next message.': '🔘 زیر هر اعلان پیش\u200cنویس دکمه\u200cهای «انتشار همین حالا» و «زمان\u200cبندی» هست — «زمان\u200cبندی» را بزنید و تاریخ را در پیام بعدی بفرستید.',
     'Custom…': 'سفارشی…',
     'Pick “Custom…” and type width×height (e.g. 800x600) for any other size — if the provider rejects it, the request is automatically retried without a size.': 'برای هر اندازهٔ دیگر «سفارشی…» را انتخاب و عرض×ارتفاع را بنویسید (مثلاً 800x600) — اگر ارائه\u200cدهنده آن را نپذیرد، درخواست خودکار بدون اندازه تکرار می\u200cشود.',
     'Allow linking to the research source sites inside articles': 'اجازهٔ لینک\u200cدادن به سایت\u200cهای منبع پژوهش داخل مقاله\u200cها',

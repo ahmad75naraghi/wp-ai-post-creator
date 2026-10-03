@@ -3,6 +3,33 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.13.0] — 2026-10-03
+
+### Added
+- **Publish-now / Schedule buttons in Bale.** Every draft notification
+  now carries an inline keyboard (when two-way commands are on):
+  - **🚀 Publish now** — publishes immediately, stamped with the
+    current date/time, and sends the 🎉 notice.
+  - **⏰ Schedule** — the bot asks for a date in the chat; the next
+    message is parsed as Jalali (`1404/07/20 18:30`), Gregorian
+    (`2026-10-12 18:30`), Persian digits, or «فردا 18:30» /
+    «امروز 22:00» (time optional, defaults to 09:00). The post is
+    scheduled with WordPress's native `future` status, published on
+    time by WP itself, and announced via `future_to_publish` →
+    `aipc_post_published`. «لغو» cancels; requests expire after 30
+    minutes; past dates are rejected.
+- `callback_query` handling in the Bale poll (authorized chats only,
+  with `answerCallbackQuery`); pending date requests live in the
+  `aipc_bale_pending` option. 12 new strings translated (697 msgids).
+
+### Tests
+- New `bale_buttons` group (17 assertions): date parsing (Jalali ↔
+  Gregorian conversion, Persian digits, relative days, invalid input),
+  keyboard construction and gating, notification body carrying
+  `reply_markup`, publish-now date stamping, the full schedule
+  conversation (past rejected, bad format hint, cancel), and the
+  future-publish hook — 61 groups / 451 assertions total.
+
 ## [1.12.1] — 2026-10-01
 
 ### Added

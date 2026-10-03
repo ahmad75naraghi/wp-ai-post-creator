@@ -1493,6 +1493,115 @@ $out['image_size_custom'] = array(
 );
 
 /* ------------------------------------------------------------------ *
+ * Bale inline buttons (v1.13.0): publish-now / schedule keyboard,
+ * callback handling, Jalali+Gregorian date parsing, native future
+ * scheduling.
+ * ------------------------------------------------------------------ */
+$aipc_bb_old_cfg = get_option( AIPC_Bale::OPTION, array() );
+update_option( AIPC_Bale::OPTION, array(
+	'enabled'  => 1,
+	'token'    => 'test-token',
+	'chat_ids' => array( '99' ),
+	'two_way'  => 1,
+), false );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+
+// Capture every Bale API request instead of hitting the network.
+$aipc_bb_reqs = array();
+$aipc_bb_mock = function ( $pre, $args, $url ) use ( &$aipc_bb_reqs ) {
+	if ( false !== strpos( $url, 'tapi.bale.ai' ) ) {
+		$aipc_bb_reqs[] = array( 'url' => $url, 'body' => isset( $args['body'] ) ? (string) $args['body'] : '' );
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '{"ok":true,"result":{}}',
+			'cookies'  => array(),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_bb_mock, 4, 3 );
+
+$aipc_bb_tz  = wp_timezone();
+$aipc_bb_exp = ( new DateTimeImmutable( '2026-10-12 18:30', $aipc_bb_tz ) )->getTimestamp();
+$aipc_bb_tom = ( new DateTimeImmutable( 'now', $aipc_bb_tz ) )->modify( '+1 day' )->setTime( 10, 0, 0 )->getTimestamp();
+
+// Two draft posts "created by the agent".
+$aipc_bb_p1 = wp_insert_post( array( 'post_title' => 'Bale button post one', 'post_content' => '<p>x</p>', 'post_status' => 'draft' ) );
+$aipc_bb_p2 = wp_insert_post( array( 'post_title' => 'Bale button post two', 'post_content' => '<p>y</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_bb_p1, '_aipc_generated', time() );
+update_post_meta( $aipc_bb_p2, '_aipc_generated', time() );
+
+$aipc_bb_kb = AIPC_Bale::post_keyboard( $aipc_bb_p1 );
+$aipc_bb_kb_json = wp_json_encode( $aipc_bb_kb );
+
+// Notification body carries the keyboard.
+$aipc_bb_reqs = array();
+AIPC_Bale::notify( $aipc_bb_p1, 'no-such-job' );
+$aipc_bb_notify_body = ! empty( $aipc_bb_reqs ) ? $aipc_bb_reqs[0]['body'] : '';
+
+// Publish-now button.
+$aipc_bb_pub_reply = AIPC_Bale_Commands::handle_callback( '99', 'aipc:pub:' . $aipc_bb_p1 );
+$aipc_bb_pub_post  = get_post( $aipc_bb_p1 );
+$aipc_bb_again     = AIPC_Bale_Commands::handle_callback( '99', 'aipc:pub:' . $aipc_bb_p1 );
+
+// Schedule button → pending → date reply.
+$aipc_bb_sch_reply = AIPC_Bale_Commands::handle_callback( '99', 'aipc:sch:' . $aipc_bb_p2 );
+$aipc_bb_pending   = AIPC_Bale_Commands::get_pending( '99' );
+$aipc_bb_past      = AIPC_Bale_Commands::handle( '99', '2020-01-01 10:00' );
+$aipc_bb_past_keep = AIPC_Bale_Commands::get_pending( '99' ) === $aipc_bb_p2;
+$aipc_bb_badfmt    = AIPC_Bale_Commands::handle( '99', 'بلبل' );
+$aipc_bb_sched     = AIPC_Bale_Commands::handle( '99', '۱۴۰۵/۰۷/۲۰ ۱۸:۳۰' );
+$aipc_bb_sch_post  = get_post( $aipc_bb_p2 );
+
+// Cancel flow on a fresh pending.
+AIPC_Bale_Commands::handle_callback( '99', 'aipc:sch:' . $aipc_bb_p2 );
+$aipc_bb_cancel  = AIPC_Bale_Commands::handle( '99', 'لغو' );
+$aipc_bb_cleared = AIPC_Bale_Commands::get_pending( '99' );
+
+// WP publishes the scheduled post → Bale 🎉 hook fires once.
+$aipc_bb_reqs = array();
+AIPC_Bale::on_future_publish( get_post( $aipc_bb_p2 ) );
+$aipc_bb_hook_sent = count( $aipc_bb_reqs ) > 0;
+$aipc_bb_meta_gone = '' === (string) get_post_meta( $aipc_bb_p2, '_aipc_bale_scheduled', true );
+
+$out['bale_buttons'] = array(
+	'parse_gregorian'    => AIPC_Bale_Commands::parse_datetime( '2026-10-12 18:30' ) === $aipc_bb_exp,
+	'parse_jalali'       => AIPC_Bale_Commands::parse_datetime( '1405/07/20 18:30' ) === $aipc_bb_exp,
+	'parse_fa_digits'    => AIPC_Bale_Commands::parse_datetime( '۱۴۰۵/۰۷/۲۰ ۱۸:۳۰' ) === $aipc_bb_exp,
+	'parse_tomorrow'     => AIPC_Bale_Commands::parse_datetime( 'فردا 10:00' ) === $aipc_bb_tom,
+	'parse_default_time' => AIPC_Bale_Commands::parse_datetime( '2026-10-12' ) === $aipc_bb_exp - ( 9 * HOUR_IN_SECONDS + 30 * MINUTE_IN_SECONDS ),
+	'parse_invalid'      => 0 === AIPC_Bale_Commands::parse_datetime( 'بلبل' ) && 0 === AIPC_Bale_Commands::parse_datetime( '2026-13-01 10:00' ),
+	'keyboard_draft'     => is_array( $aipc_bb_kb )
+		&& false !== strpos( $aipc_bb_kb_json, 'aipc:pub:' . $aipc_bb_p1 )
+		&& false !== strpos( $aipc_bb_kb_json, 'aipc:sch:' . $aipc_bb_p1 ),
+	'notify_has_buttons' => false !== strpos( $aipc_bb_notify_body, 'reply_markup' )
+		&& false !== strpos( $aipc_bb_notify_body, 'aipc:pub:' . $aipc_bb_p1 ),
+	'pub_publishes_now'  => 'publish' === $aipc_bb_pub_post->post_status
+		&& abs( strtotime( $aipc_bb_pub_post->post_date_gmt . ' +0000' ) - time() ) < 120
+		&& false !== strpos( (string) $aipc_bb_pub_reply, '🚀' ),
+	'pub_idempotent'     => false !== strpos( (string) $aipc_bb_again, '🔗' )
+		&& 'publish' === get_post( $aipc_bb_p1 )->post_status,
+	'keyboard_published' => null === AIPC_Bale::post_keyboard( $aipc_bb_p1 ),
+	'sch_asks_for_date'  => false !== strpos( (string) $aipc_bb_sch_reply, '⏰' ) && $aipc_bb_pending === $aipc_bb_p2,
+	'past_rejected'      => is_string( $aipc_bb_past ) && '' !== $aipc_bb_past
+		&& false === strpos( $aipc_bb_past, '⏰' ) && $aipc_bb_past_keep,
+	'badfmt_hint'        => false !== strpos( (string) $aipc_bb_badfmt, '18:30' ),
+	'date_schedules'     => 'future' === $aipc_bb_sch_post->post_status
+		&& '2026-10-12 18:30:00' === wp_date( 'Y-m-d H:i:s', strtotime( $aipc_bb_sch_post->post_date_gmt . ' +0000' ) )
+		&& false !== strpos( (string) $aipc_bb_sched, '⏰' )
+		&& 0 === AIPC_Bale_Commands::get_pending( '99' ),
+	'cancel_clears'      => is_string( $aipc_bb_cancel ) && '' !== $aipc_bb_cancel && 0 === $aipc_bb_cleared,
+	'future_hook_fires'  => $aipc_bb_hook_sent && $aipc_bb_meta_gone,
+);
+
+remove_filter( 'pre_http_request', $aipc_bb_mock, 4 );
+wp_delete_post( $aipc_bb_p1, true );
+wp_delete_post( $aipc_bb_p2, true );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+update_option( AIPC_Bale::OPTION, $aipc_bb_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
  * v1.6 — outbound network guard (SSRF protection)
  * ------------------------------------------------------------------ */
 $aipc_is_safe = function ( $url ) {

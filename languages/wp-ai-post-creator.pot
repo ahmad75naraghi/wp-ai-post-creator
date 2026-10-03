@@ -664,6 +664,10 @@ msgstr ""
 msgid "Could not save the image to the media library (%s) — continuing without one."
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Could not schedule: %s"
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "Could not start the agent. Check that a connection is configured."
 msgstr ""
@@ -1097,6 +1101,10 @@ msgid "Humorous"
 msgstr ""
 
 #: includes/class-aipc-bale-commands.php
+msgid "I could not read that date — send it like «1404/07/20 18:30» or «2026-10-12 18:30», or «لغو» to cancel."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
 msgid "I did not understand that command. Send «راهنما» (or help) for the list of commands."
 msgstr ""
 
@@ -1502,6 +1510,10 @@ msgstr ""
 msgid "Portuguese"
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "Post not found — it may have been deleted."
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "Post not found."
 msgstr ""
@@ -1516,6 +1528,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Post published: #%d"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Post scheduled from Bale for %s."
 msgstr ""
 
 #: admin/views/rewrite.php
@@ -1584,6 +1600,10 @@ msgstr ""
 
 #: admin/views/review.php admin/views/schedule.php
 msgid "Publish"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Publish now"
 msgstr ""
 
 #: admin/views/review.php
@@ -1792,7 +1812,7 @@ msgstr ""
 msgid "Save settings"
 msgstr ""
 
-#: includes/class-aipc-admin.php wp-ai-post-creator.php
+#: includes/class-aipc-admin.php includes/class-aipc-bale.php wp-ai-post-creator.php
 msgid "Schedule"
 msgstr ""
 
@@ -1816,12 +1836,20 @@ msgstr ""
 msgid "Scheduled"
 msgstr ""
 
+#: includes/class-aipc-bale.php
+msgid "Scheduled post published."
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "Scheduled posts today: %1$d of %2$s"
 msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Scheduled to publish at %s."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Scheduling cancelled — the post stays as it is."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -1862,6 +1890,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Send test message"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "Send the publish date and time in one message — Jalali «1404/07/20 18:30» or Gregorian «2026-10-12 18:30»; «فردا 18:30» and «امروز 22:00» work too. Send «لغو» to cancel."
 msgstr ""
 
 #: includes/class-aipc-assets.php
@@ -1998,6 +2030,10 @@ msgstr ""
 
 #: includes/class-aipc-assets.php
 msgid "Testing connection…"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "That time is already in the past — send a future date and time."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -2270,6 +2306,10 @@ msgstr ""
 
 #: includes/class-aipc-rest.php
 msgid "This base URL is blocked by the outbound network guard (private or reserved address)."
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "This post is already published."
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -2704,6 +2744,10 @@ msgstr ""
 msgid "…and %d more in the queue."
 msgstr ""
 
+#: includes/class-aipc-bale-commands.php
+msgid "⏰ Scheduled: “%1$s” will be published on %2$s."
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "⏱ +%d min"
 msgstr ""
@@ -2746,6 +2790,10 @@ msgstr ""
 
 #: admin/views/new-post.php
 msgid "📝 Keep as draft"
+msgstr ""
+
+#: includes/class-aipc-bale-commands.php
+msgid "🔘 Every draft notification has “Publish now” and “Schedule” buttons under it — press “Schedule” and send the date as the next message."
 msgstr ""
 
 #: admin/views/schedule.php
