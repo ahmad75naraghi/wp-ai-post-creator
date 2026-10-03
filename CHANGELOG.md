@@ -3,6 +3,29 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.20.1] — 2026-10-03
+
+### Fixed
+- **Cancel now kills the job at the root.** Cancelling a job on *Jobs &
+  Cron* while a background runner was mid-step only removed it for a few
+  seconds: when the in-flight step finished, the runner saved its stale
+  in-memory copy (`status: running`) back over the cancellation and its
+  step loop kept building the article. Two guards close this:
+  - `cancel_job()` **fences the runner lock** first (overwrites the
+    `aipc_lock_<job>` transient with a token no process owns), so the
+    in-flight runner fails its 1.19.1 ownership check at every save
+    point, discards its stale copy and stops as soon as it reloads the
+    fresh (cancelled) job.
+  - `save_job()` treats cancellation as **terminal**: a `running` copy
+    can never overwrite a stored `cancelled` status, closing the last
+    race window.
+
+### Tests
+- New e2e group `cancel_root` (5 assertions): snapshot of a mid-step
+  runner copy, cancel, fence present, stale save blocked, runner cron
+  event gone, scheduler keeps the job dead — 72 groups / 550 assertions
+  green.
+
 ## [1.20.0] — 2026-10-03
 
 Editorial-depth package, driven by an external content-quality review

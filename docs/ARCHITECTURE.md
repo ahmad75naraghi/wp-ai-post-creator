@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.20.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.20.1**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -171,6 +171,11 @@ freeze beyond the TTL) **discards every local change** — it neither saves the
 stale job copy (which would rewind the cursor and re-run finished steps:
 regenerated images, repeated notifications) nor deletes the new owner's lock;
 mid-step retry-log saves are ownership-checked too.
+**Cancellation is terminal (1.20.1):** `cancel_job()` first *fences* the lock
+(overwrites the transient with a `cancelled-…` token no process owns) so an
+in-flight runner fails its ownership check and discards its stale copy, and
+`save_job()` refuses to overwrite a stored `cancelled` status with a
+`running` copy — a cancelled job can never resurrect itself seconds later.
 When a job reaches `done`, `aipc_post_created` fires **once** (`notified` flag
 guarded by the atomic claim `notify_<job>` since 1.19.0).
 
@@ -370,8 +375,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 71 result
-groups / 545 assertions green at v1.20.0, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 72 result
+groups / 550 assertions green at v1.20.1, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference

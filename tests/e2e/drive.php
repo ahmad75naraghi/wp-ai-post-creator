@@ -2660,6 +2660,38 @@ foreach ( array( $aipc_ed_rel, $aipc_ed_ir1, $aipc_ed_ir2 ) as $aipc_ed_del ) {
 	wp_delete_post( $aipc_ed_del, true );
 }
 
+/* ------------------------------------------------------------------ *
+ * v1.20.1 — cancel kills the job at the root: an in-flight runner may
+ * never resurrect a cancelled job by saving its stale 'running' copy.
+ * ------------------------------------------------------------------ */
+$aipc_cx_job = AIPC_Agent::instance()->create_job( 'موضوع تست لغو ریشه‌ای', array( 'length' => 'short', 'language' => 'fa', 'force' => 1 ) );
+AIPC_Agent::instance()->execute_step( $aipc_cx_job['id'], 0 ); // plan step runs → still 'running'.
+
+// Snapshot what a runner that is mid-step right now holds in memory.
+$aipc_cx_stale = AIPC_Agent::instance()->get_job( $aipc_cx_job['id'] );
+$aipc_cx_was_running = is_array( $aipc_cx_stale ) && 'running' === $aipc_cx_stale['status'];
+
+// User clicks انصراف while that runner is still working.
+AIPC_Agent::instance()->cancel_job( $aipc_cx_job['id'] );
+$aipc_cx_fence = get_transient( 'aipc_lock_' . $aipc_cx_job['id'] );
+
+// The stale runner finishes its step and tries to save its old copy.
+AIPC_Agent::instance()->save_job( $aipc_cx_stale );
+$aipc_cx_after_save = AIPC_Agent::instance()->get_job( $aipc_cx_job['id'] );
+
+// The background scheduler must treat the job as finished business.
+AIPC_Scheduler::run_job( $aipc_cx_job['id'] );
+$aipc_cx_after_cron = AIPC_Agent::instance()->get_job( $aipc_cx_job['id'] );
+
+$out['cancel_root'] = array(
+	'was_running'        => $aipc_cx_was_running,
+	'lock_fenced'        => is_string( $aipc_cx_fence ) && 0 === strpos( $aipc_cx_fence, 'cancelled-' ),
+	'stale_save_blocked' => is_array( $aipc_cx_after_save ) && 'cancelled' === $aipc_cx_after_save['status'],
+	'runner_unscheduled' => false === wp_next_scheduled( 'aipc_run_job', array( (string) $aipc_cx_job['id'] ) ),
+	'cron_keeps_dead'    => is_array( $aipc_cx_after_cron ) && 'cancelled' === $aipc_cx_after_cron['status'],
+);
+delete_transient( 'aipc_lock_' . $aipc_cx_job['id'] );
+
 
 
 

@@ -272,6 +272,16 @@ final class AIPC_Agent {
 		if ( ! is_array( $job ) || empty( $job['id'] ) ) {
 			return;
 		}
+		// Cancellation is terminal (1.20.1): a runner that was mid-step
+		// when the user cancelled still holds a 'running' copy in memory
+		// and would resurrect the job seconds later by saving it. Never
+		// let a 'running' copy overwrite a job the user already cancelled.
+		if ( isset( $job['status'] ) && 'running' === $job['status'] ) {
+			$stored = AIPC_Job_Store::get( (string) $job['id'] );
+			if ( $stored && 'cancelled' === $stored['status'] ) {
+				return;
+			}
+		}
 		$job['updated'] = time();
 		AIPC_Job_Store::save( $job );
 	}
@@ -703,6 +713,13 @@ final class AIPC_Agent {
 			return new WP_Error( 'aipc_job', __( 'Job not found or already cleaned up.', 'wp-ai-post-creator' ) );
 		}
 		if ( 'running' === $job['status'] || 'error' === $job['status'] ) {
+			// Fence the in-flight runner FIRST (1.20.1): overwrite the
+			// runner lock with a token no process owns. A runner that is
+			// mid-step right now fails its ownership check at every save
+			// point and discards its stale copy instead of overwriting
+			// this cancellation — and its step loop stops because the
+			// fresh copy it reloads says 'cancelled'.
+			set_transient( 'aipc_lock_' . $job['id'], 'cancelled-' . uniqid( '', true ), self::LOCK_TTL );
 			$job['status'] = 'cancelled';
 			$this->log( $job, __( 'Agent cancelled by user.', 'wp-ai-post-creator' ), 'warn' );
 			$this->record_stats( $job );

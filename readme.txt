@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.20.0
+Stable tag: 1.20.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.20.1 =
+* Fix: cancelling a job on Jobs & Cron now kills it at the root — previously a background runner that was mid-step saved its stale copy back a few seconds later and the job resurrected and kept building
+* Fix: the cancel action fences the runner lock so the in-flight runner discards its work, and a cancelled status can never be overwritten by a stale "running" copy
 
 = 1.20.0 =
 * New: search-intent analysis — the plan step classifies what the searcher actually wants (tutorial / comparison / troubleshooting / buying guide / definition …) and the outline must mirror that structure
