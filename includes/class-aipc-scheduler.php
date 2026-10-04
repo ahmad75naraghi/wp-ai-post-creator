@@ -558,6 +558,9 @@ final class AIPC_Scheduler {
 			$queue_item = AIPC_Topic_Queue::peek();
 			if ( $queue_item ) {
 				$topic = $queue_item['text'];
+				// Queue topics are a SUBJECT, not a fixed headline
+				// (1.23.0): the plan step crafts its own SEO title.
+				$opts['topic_hint_only'] = 1;
 			}
 		}
 

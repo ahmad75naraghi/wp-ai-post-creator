@@ -2976,6 +2976,145 @@ $out['report_rich'] = array(
 	'health_line'  => false !== strpos( $aipc_rr_txt, '⚠️' ) && false !== strpos( $aipc_rr_txt, 'Health Test' ),
 );
 
+/* ------------------------------------------------------------------ *
+ * v1.23.0 — professional feed discovery: common paths, Atom, HTML
+ * autodiscovery, per-source report, round-robin mixing, cache.
+ * ------------------------------------------------------------------ */
+update_option( 'aipc_settings', array_merge( AIPC_Settings::all(), array(
+	'source_sites' => "https://news.invalid\nhttps://rssdeep.invalid\nhttps://atomsite.invalid\nhttps://nofeed.invalid",
+) ), false );
+delete_option( 'aipc_feed_cache' );
+
+$aipc_fd = AIPC_Topic_Queue::suggest( 20 );
+$aipc_fd_hosts = array();
+$aipc_fd_texts = array();
+foreach ( $aipc_fd['suggestions'] as $aipc_fd_s ) {
+	$aipc_fd_hosts[ $aipc_fd_s['source'] ] = 1;
+	$aipc_fd_texts[] = $aipc_fd_s['text'];
+}
+$aipc_fd_src = array();
+foreach ( $aipc_fd['sources'] as $aipc_fd_s ) {
+	$aipc_fd_src[ $aipc_fd_s['host'] ] = $aipc_fd_s['status'];
+}
+$aipc_fd_joined = implode( ' | ', $aipc_fd_texts );
+
+// Round-robin: with two 2-item feeds both hosts must appear in the
+// first 4 suggestions instead of one site crowding the list.
+$aipc_fd_first4 = array();
+foreach ( array_slice( $aipc_fd['suggestions'], 0, 4 ) as $aipc_fd_s ) {
+	$aipc_fd_first4[ $aipc_fd_s['source'] ] = 1;
+}
+
+// Cache: every source got a discovery verdict; found feeds remembered.
+$aipc_fd_cache = get_option( 'aipc_feed_cache', array() );
+$aipc_fd_cached_ok = 0;
+foreach ( (array) $aipc_fd_cache as $aipc_fd_row ) {
+	if ( ! empty( $aipc_fd_row['feed'] ) ) {
+		$aipc_fd_cached_ok++;
+	}
+}
+
+$out['feed_discovery'] = array(
+	'autodiscovery_html' => isset( $aipc_fd_src['rssdeep.invalid'] ) && 'ok' === $aipc_fd_src['rssdeep.invalid'] && false !== strpos( $aipc_fd_joined, 'قارچ صدفی' ),
+	'atom_candidate'     => isset( $aipc_fd_src['atomsite.invalid'] ) && 'ok' === $aipc_fd_src['atomsite.invalid'] && false !== strpos( $aipc_fd_joined, 'آبیاری قطره' ),
+	'wordpress_feed'     => isset( $aipc_fd_src['news.invalid'] ) && 'ok' === $aipc_fd_src['news.invalid'],
+	'no_feed_reported'   => isset( $aipc_fd_src['nofeed.invalid'] ) && 'no_feed' === $aipc_fd_src['nofeed.invalid'],
+	'round_robin_mix'    => isset( $aipc_fd_first4['rssdeep.invalid'], $aipc_fd_first4['atomsite.invalid'] ),
+	'cache_written'      => count( (array) $aipc_fd_cache ) >= 4 && $aipc_fd_cached_ok >= 3,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.23.0 — dismissible suggestions ("never show again") + the
+ * exclude list that powers the "Show more" button.
+ * ------------------------------------------------------------------ */
+$aipc_v123_queue_snapshot = get_option( AIPC_Topic_Queue::OPTION ); // Restored after the topic_hint group.
+$aipc_ds_target = '';
+foreach ( $aipc_fd['suggestions'] as $aipc_ds_s ) {
+	if ( 'rssdeep.invalid' === $aipc_ds_s['source'] ) {
+		$aipc_ds_target = $aipc_ds_s['text'];
+		break;
+	}
+}
+
+// REST dismiss (admin) + anonymous rejection.
+$aipc_ds_req = new WP_REST_Request( 'POST', '/aipc/v1/topics/dismiss' );
+$aipc_ds_req->set_param( 'text', $aipc_ds_target );
+$aipc_ds_res = rest_do_request( $aipc_ds_req );
+wp_set_current_user( 0 );
+$aipc_ds_anon_req = new WP_REST_Request( 'POST', '/aipc/v1/topics/dismiss' );
+$aipc_ds_anon_req->set_param( 'text', 'هر چیزی' );
+$aipc_ds_anon = rest_do_request( $aipc_ds_anon_req );
+wp_set_current_user( 1 );
+
+// Dismissed headlines never come back.
+$aipc_ds_again = AIPC_Topic_Queue::suggest( 20 );
+$aipc_ds_texts2 = array();
+foreach ( $aipc_ds_again['suggestions'] as $aipc_ds_s ) {
+	$aipc_ds_texts2[] = $aipc_ds_s['text'];
+}
+
+// The dismissed memory survives ordinary queue writes (add/remove).
+AIPC_Topic_Queue::add( 'موضوع موقتی برای آزمون حافظهٔ حذف', 'manual' );
+$aipc_ds_mem = AIPC_Topic_Queue::dismissed();
+$aipc_ds_norm = AIPC_Topic_Queue::normalize_key( AIPC_Topic_Queue::normalize_text( $aipc_ds_target ) );
+
+// "Show more": excluding the on-screen batch returns only new items.
+$aipc_ds_more = AIPC_Topic_Queue::suggest( 20, $aipc_ds_texts2 );
+$aipc_ds_overlap = 0;
+foreach ( $aipc_ds_more['suggestions'] as $aipc_ds_s ) {
+	if ( in_array( $aipc_ds_s['text'], $aipc_ds_texts2, true ) ) {
+		$aipc_ds_overlap++;
+	}
+}
+
+$out['suggest_dismiss'] = array(
+	'rest_dismissed'  => 200 === $aipc_ds_res->get_status() && ! empty( $aipc_ds_res->get_data()['dismissed'] ),
+	'anon_rejected'   => 401 === $aipc_ds_anon->get_status() || 403 === $aipc_ds_anon->get_status(),
+	'never_again'     => '' !== $aipc_ds_target && ! in_array( $aipc_ds_target, $aipc_ds_texts2, true ),
+	'memory_survives' => isset( $aipc_ds_mem[ $aipc_ds_norm ] ),
+	'exclude_works'   => 0 === $aipc_ds_overlap,
+	'ui_more_button'  => false !== strpos( (string) file_get_contents( AIPC_PLUGIN_DIR . 'admin/views/schedule.php' ), 'aipc-tq-more-btn' ),
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.23.0 — queue topics are a SUBJECT hint, not the final headline.
+ * ------------------------------------------------------------------ */
+AIPC_Topic_Queue::clear_pending(); // The entry below must consume OUR topic.
+AIPC_Topic_Queue::add( 'سوژهٔ آزمایشی برای تیتر آزاد', 'manual' );
+$aipc_th_entry = AIPC_Scheduler::save_entry( array( 'time' => '12:00', 'use_queue' => 1, 'opts' => array( 'image' => 0 ) ) );
+$aipc_th_job   = AIPC_Scheduler::start_job_for_entry( $aipc_th_entry['id'], 'cron' );
+$aipc_th_flag  = ! is_wp_error( $aipc_th_job ) && ! empty( $aipc_th_job['args']['topic_hint_only'] );
+if ( ! is_wp_error( $aipc_th_job ) ) {
+	AIPC_Agent::instance()->cancel_job( $aipc_th_job['id'] );
+	AIPC_Scheduler::unschedule_runner( $aipc_th_job['id'] );
+}
+AIPC_Scheduler::delete_entry( $aipc_th_entry['id'] );
+
+// A manual run keeps the strict behaviour (flag off by default).
+$aipc_th_manual = AIPC_Agent::instance()->create_job( 'موضوع دستی با تیتر دقیق', array( 'image' => 0, 'force' => 1 ) );
+$aipc_th_manual_off = ! is_wp_error( $aipc_th_manual ) && empty( $aipc_th_manual['args']['topic_hint_only'] );
+if ( ! is_wp_error( $aipc_th_manual ) ) {
+	AIPC_Agent::instance()->cancel_job( $aipc_th_manual['id'] );
+}
+
+$out['topic_hint'] = array(
+	'queue_sets_flag' => $aipc_th_flag,
+	'queue_topic'     => ! is_wp_error( $aipc_th_job ) && 'سوژهٔ آزمایشی برای تیتر آزاد' === $aipc_th_job['topic'],
+	'manual_strict'   => $aipc_th_manual_off,
+	'ui_explains'     => false !== strpos( (string) file_get_contents( AIPC_PLUGIN_DIR . 'admin/views/schedule.php' ), 'not a fixed headline' ),
+);
+
+// Restore the queue and the single mock source for the later groups
+// (the historical topic_queue group expects an empty pending queue).
+if ( false === $aipc_v123_queue_snapshot ) {
+	delete_option( AIPC_Topic_Queue::OPTION );
+} else {
+	update_option( AIPC_Topic_Queue::OPTION, $aipc_v123_queue_snapshot, false );
+}
+update_option( 'aipc_settings', array_merge( AIPC_Settings::all(), array(
+	'source_sites' => 'https://news.invalid',
+) ), false );
+
 
 
 

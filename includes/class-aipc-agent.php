@@ -445,6 +445,7 @@ final class AIPC_Agent {
 				: (int) ! empty( $s['force_image'] ),
 			'faq'             => empty( $args['faq'] ) ? 0 : 1,
 			'toc'             => empty( $args['toc'] ) ? 0 : 1,
+			'topic_hint_only' => empty( $args['topic_hint_only'] ) ? 0 : 1,
 			'mode'            => $mode,
 			'post_id'         => isset( $args['post_id'] ) ? absint( $args['post_id'] ) : 0,
 			'publish_mode'    => $publish_mode,
@@ -1660,13 +1661,22 @@ final class AIPC_Agent {
 			? $site
 			: __( '(No site prompt configured — write for a general audience.)', 'wp-ai-post-creator' );
 
-		$topic_hint = ( '' !== $job['topic'] )
-			? sprintf(
+		if ( '' === $job['topic'] ) {
+			$topic_hint = __( 'No topic given — invent the single best topic yourself. It must fit the site context AND the chosen category.', 'wp-ai-post-creator' );
+		} elseif ( ! empty( $job['args']['topic_hint_only'] ) ) {
+			// Queue topics are a subject hint, not a headline (1.23.0).
+			$topic_hint = sprintf(
+				/* translators: %s: queued subject. */
+				__( 'Write about this SUBJECT: "%s". It is only a theme from the ideas queue — NOT the final headline. Decide the best angle for this site\'s audience and craft your own sharper, search-friendly title; do not copy the subject text verbatim.', 'wp-ai-post-creator' ),
+				$job['topic']
+			);
+		} else {
+			$topic_hint = sprintf(
 				/* translators: %s: user topic. */
 				__( 'The user suggests this topic: "%s" — build the article around it, adapted to the site context.', 'wp-ai-post-creator' ),
 				$job['topic']
-			)
-			: __( 'No topic given — invent the single best topic yourself. It must fit the site context AND the chosen category.', 'wp-ai-post-creator' );
+			);
+		}
 
 		$args = array(
 			'{{site_context}}'    => $site_context,

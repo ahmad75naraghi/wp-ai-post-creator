@@ -43,6 +43,14 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    # --- v1.23.0: feed discovery + suggestions UX --------------------
+    'Show more': 'بیشتر',
+    'Never suggest this again': 'دیگر این را پیشنهاد نکن',
+    'Dismissed — it will not be suggested again.': 'حذف شد — دیگر پیشنهاد نخواهد شد.',
+    'Could not dismiss the suggestion:': 'حذف پیشنهاد ممکن نشد:',
+    'no feed found': 'فیدی پیدا نشد',
+    'Queue topics are a subject, not a fixed headline: they tell the agent what to write about, and it crafts its own sharper SEO title for the article.': 'موضوع\u200cهای صف «سوژه\u200cاند» نه تیتر قطعی: فقط می\u200cگویند مقاله درباره چه باشد و عامل خودش تیتر سئوشدهٔ بهتری برای آن می\u200cسازد.',
+    'Write about this SUBJECT: "%s". It is only a theme from the ideas queue — NOT the final headline. Decide the best angle for this site\'s audience and craft your own sharper, search-friendly title; do not copy the subject text verbatim.': 'دربارهٔ این سوژه بنویس: «%s». این فقط یک موضوع از صف ایده\u200cهاست — نه تیتر نهایی. بهترین زاویه را برای مخاطب این سایت انتخاب کن و خودت تیتری تیزتر و جست\u200cوجوپسند بساز؛ متن سوژه را عیناً کپی نکن.',
     # --- v1.22.0: quality gate -------------------------------------
     'Very short article (%d words)': 'مقالهٔ خیلی کوتاه (%d واژه)',
     'Empty section heading': 'تیتر بخشِ خالی',

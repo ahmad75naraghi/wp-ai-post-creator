@@ -221,6 +221,10 @@ final class AIPC_Assets {
 				'adding'     => __( 'Adding…', 'wp-ai-post-creator' ),
 				'added'      => __( 'Added! Reloading…', 'wp-ai-post-creator' ),
 				'addFail'    => __( 'Could not add the topics:', 'wp-ai-post-creator' ),
+				'dismissTitle' => __( 'Never suggest this again', 'wp-ai-post-creator' ),
+				'dismissed'  => __( 'Dismissed — it will not be suggested again.', 'wp-ai-post-creator' ),
+				'dismissFail'=> __( 'Could not dismiss the suggestion:', 'wp-ai-post-creator' ),
+				'noFeed'     => __( 'no feed found', 'wp-ai-post-creator' ),
 			),
 		);
 	}

@@ -163,16 +163,35 @@ Calls `getUpdates` on the stored bot and returns the newest detected chat id:
 ### POST `/aipc/v1/topics/suggest`
 
 Pulls fresh headline suggestions from the configured research sources
-(`source_sites` setting → RSS), cleans them (source-name suffixes stripped)
-and drops duplicates against the queue (pending **and** used) and recent
-post titles.
+(`source_sites` setting). Since 1.23.0 the feed of each source is found
+automatically — the URL itself when it already looks like a feed, the
+common locations (`/feed/`, `/rss`, `/rss.xml`, `/feed.xml`, `/atom.xml`,
+`/index.xml`, `/?feed=rss2`) and finally the page's own
+`<link rel="alternate">` declaration (RSS and Atom). Headlines are
+cleaned (source-name suffixes stripped), deduped against the queue
+(pending **and** used), recent post titles, the dismissed memory and the
+`exclude` list, and mixed round-robin across sources.
 
 | Param | Type | Notes |
 |---|---|---|
 | `limit` | int | max suggestions to return (default 12) |
+| `exclude` | array of strings | headlines already on screen — powers the "Show more" button (1.23.0) |
 
-**Response:** `{ "suggestions": [ "…", … ], "count": 3, "has_sources": true }`
-— `has_sources` is `false` when no research sources are configured.
+**Response:** `{ "suggestions": [ {"text","source","url"}, … ], "count": 3,
+"sources": [ {"host":"news.example","status":"ok","found":12}, … ],
+"has_sources": true }` — `has_sources` is `false` when no research sources
+are configured; `status` is `ok` or `no_feed`.
+
+### POST `/aipc/v1/topics/dismiss`
+
+Never suggest this headline again (1.23.0). The normalized text goes into
+the queue option's `dismissed` map (capped at 500, oldest dropped).
+
+| Param | Type | Notes |
+|---|---|---|
+| `text` | string | the suggestion to dismiss |
+
+**Response:** `{ "dismissed": true }`.
 
 ### POST `/aipc/v1/topics/add`
 

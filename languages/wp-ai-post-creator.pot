@@ -740,6 +740,10 @@ msgstr ""
 msgid "Could not create the backup folder."
 msgstr ""
 
+#: includes/class-aipc-assets.php
+msgid "Could not dismiss the suggestion:"
+msgstr ""
+
 #: includes/class-aipc-stock.php
 msgid "Could not download any of the stock photo candidates."
 msgstr ""
@@ -958,6 +962,10 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "Disabled"
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "Dismissed — it will not be suggested again."
 msgstr ""
 
 #: admin/views/logs.php
@@ -1564,6 +1572,10 @@ msgstr ""
 msgid "Never finish a post without a featured image (default for all new runs)"
 msgstr ""
 
+#: includes/class-aipc-assets.php
+msgid "Never suggest this again"
+msgstr ""
+
 #: admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
 msgid "New AI Post"
 msgstr ""
@@ -2018,6 +2030,10 @@ msgstr ""
 msgid "Queue cleared."
 msgstr ""
 
+#: admin/views/schedule.php
+msgid "Queue topics are a subject, not a fixed headline: they tell the agent what to write about, and it crafts its own sharper SEO title for the article."
+msgstr ""
+
 #: admin/views/cron.php
 msgid "Queued"
 msgstr ""
@@ -2394,6 +2410,10 @@ msgstr ""
 
 #: includes/class-aipc-settings.php
 msgid "Short — ~600 words"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Show more"
 msgstr ""
 
 #: admin/views/settings.php
@@ -3188,6 +3208,10 @@ msgstr ""
 msgid "Write a new post"
 msgstr ""
 
+#: includes/class-aipc-agent.php
+msgid "Write about this SUBJECT: \"%s\". It is only a theme from the ideas queue — NOT the final headline. Decide the best angle for this site's audience and craft your own sharper, search-friendly title; do not copy the subject text verbatim."
+msgstr ""
+
 #: admin/views/settings.php
 msgid "Writes every prompt, model reply, error body, HTTP status and timing — with the job, step, connection and attempt — to a protected log file, so you can see exactly why a step or the image generation fails. API keys are removed and base64 image data is collapsed. Turn it off again after debugging to keep the file small."
 msgstr ""
@@ -3290,6 +3314,10 @@ msgstr ""
 
 #: admin/views/update.php
 msgid "main for stable releases, or a development branch."
+msgstr ""
+
+#: includes/class-aipc-assets.php
+msgid "no feed found"
 msgstr ""
 
 #: admin/views/update.php

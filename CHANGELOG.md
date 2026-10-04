@@ -3,6 +3,40 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.23.0] — 2026-10-04
+
+Research sources that actually deliver, and a queue that behaves like an
+ideas bank.
+
+### Added
+- **Professional feed discovery** (`AIPC_Topic_Queue::discover_feed()`):
+  a research source no longer needs its feed at `/feed/`. The agent now
+  tries the URL itself (when it already looks like a feed), the common
+  locations (`/feed/`, `/rss`, `/rss.xml`, `/feed.xml`, `/atom.xml`,
+  `/index.xml`, `/?feed=rss2`) and finally the page's own
+  `<link rel="alternate" type="application/rss+xml">` declaration —
+  Atom and RSS alike. The verdict is cached per site in the
+  `aipc_feed_cache` option (1 week for hits, 6 hours for misses).
+- **Fair source mixing**: suggestions are now collected from *every*
+  configured source (up to 20 headlines each) and interleaved
+  round-robin, so one busy news site no longer crowds out the others;
+  the status line reports each source (`host: 12 · other: no feed
+  found`) so dead sources are visible at a glance.
+- **Dismissible suggestions**: every suggestion row has a ✕ — dismissed
+  headlines are remembered (up to 500) and never suggested again. New
+  REST endpoint `POST /topics/dismiss`.
+- **"Show more" button**: fetches the next batch of fresh headlines,
+  excluding everything already on screen.
+- **Queue topics are a subject, not a headline**: a topic consumed from
+  the queue is passed to the plan step as a *theme* — the agent decides
+  the angle and crafts its own sharper, search-friendly title instead
+  of copying the queued text verbatim. Manually typed topics keep the
+  strict behaviour.
+
+### Tests
+- 3 new e2e groups (`feed_discovery` with autodiscovery/Atom/no-feed
+  fixtures, `suggest_dismiss`, `topic_hint`).
+
 ## [1.22.0] — 2026-10-04
 
 Five autonomy features: image repair, quality gate, connection health,

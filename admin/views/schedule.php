@@ -278,6 +278,7 @@ $aipc_notices = array(
 				<?php aipc_help( 'sched-queue', __( 'A FIFO bank of topics for the schedules above: an entry with “Take the topic from the queue” consumes the oldest pending topic each time it fires, then the queue moves on — so every run writes about something new. Fill it by hand, or pull fresh ideas from your research sources with the suggest button.', 'wp-ai-post-creator' ) ); ?>
 		</div>
 		<p class="description"><?php esc_html_e( 'Pending topics are used one by one (oldest first). Nothing is wasted: used topics are remembered so they are never suggested again.', 'wp-ai-post-creator' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Queue topics are a subject, not a fixed headline: they tell the agent what to write about, and it crafts its own sharper SEO title for the article.', 'wp-ai-post-creator' ); ?></p>
 
 		<?php $aipc_pending = AIPC_Topic_Queue::pending(); ?>
 		<p>
@@ -326,6 +327,7 @@ $aipc_notices = array(
 			<div id="aipc-tq-suggest-list" class="aipc-tq-list" hidden></div>
 			<p id="aipc-tq-suggest-actions" hidden>
 				<button type="button" class="button button-primary" id="aipc-tq-add-selected"><?php esc_html_e( 'Add selected to queue', 'wp-ai-post-creator' ); ?></button>
+				<button type="button" class="button" id="aipc-tq-more-btn"><?php esc_html_e( 'Show more', 'wp-ai-post-creator' ); ?></button>
 			</p>
 		</div>
 	</div>

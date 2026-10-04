@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.22.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.23.0**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -72,7 +72,8 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 | `aipc_git` (autoload off) | Git self-update configuration: `repo` (`owner/name`, default `ahmad75naraghi/wp-ai-post-creator`), `branch` (default `main`), `token` (write-only PAT — an empty field keeps the stored token) |
 | `aipc_bale` | `enabled`, `token` (write-only), `chat_ids[]`, `report` (''/daily/weekly), `report_time`, `report_day` (weekday for weekly, default 6), `last_report` (Y-m-d), `two_way` (accept commands, 1.7.0), `last_update_id` (getUpdates offset) |
 | `aipc_bale_msgmap` (autoload off) | `{"<chat_id>:<message_id>": post_id}` — sent draft-notification ids captured by `AIPC_Bale::notify()`, capped at 100; lets a Reply containing a date schedule exactly that post (1.17.0) |
-| `aipc_topic_queue` | `items[]` (`{id (tq_*), text (≤400), norm (dedup key), source (manual/rss), added, status (pending/used), job_id, used_at}`) — FIFO bank consumed by schedule entries with `use_queue`; used items are kept as dedup memory and pruned by `AIPC_Topic_Queue::prune()` |
+| `aipc_topic_queue` | `items[]` (`{id (tq_*), text (≤400), norm (dedup key), source (manual/rss), added, status (pending/used), job_id, used_at}`) — FIFO bank consumed by schedule entries with `use_queue`; used items are kept as dedup memory and pruned by `AIPC_Topic_Queue::prune()`. Since 1.23.0 also `dismissed{norm: time}` (≤500): headlines the admin ✕-ed in the suggestion list, never suggested again. A consumed queue topic sets the job arg `topic_hint_only=1` — the plan step treats it as a *subject* and crafts its own title |
+| `aipc_feed_cache` (autoload off, 1.23.0) | `{md5(source_url): {url, feed, checked}}` — result of `AIPC_Topic_Queue::discover_feed()` (common paths `/feed/`, `/rss`, `/rss.xml`, `/feed.xml`, `/atom.xml`, `/index.xml`, `/?feed=rss2`, then HTML `<link rel="alternate">` autodiscovery); hits cached 1 week, misses 6 hours, capped at 50 rows |
 | `aipc_claim_<md5>` (autoload off, 1.19.0) | atomic one-winner locks (`AIPC_Agent::claim()`): value = claim timestamp; keys `topic_<norm>` (10 min), `notify_<job>` / `entry_<id>_<date>` (1 day); long-expired rows pruned opportunistically |
 
 Post meta written by the builder: `_aipc_generated`, `_aipc_job`,
@@ -287,7 +288,8 @@ rewrite preserves status/author/slug/categories and appends tags). Then:
 | `/connection/models` | POST | `manage_options` | lists chat + image models |
 | `/bale/test` | POST | `manage_options` | `token`/`chat_ids` (or stored config) → tests every recipient |
 | `/bale/chat-id` | POST | `manage_options` | `getUpdates` → latest chat id |
-| `/topics/suggest` | POST | `manage_options` | RSS headline suggestions from `source_sites` (`limit`, default 12; cleaned + deduped vs queue and recent posts) |
+| `/topics/suggest` | POST | `manage_options` | feed headline suggestions from `source_sites` (`limit` default 12, `exclude[]` = headlines already on screen for the "Show more" button; cleaned + deduped vs queue, recent posts and dismissed memory; feeds found via `discover_feed()`, sources mixed round-robin; response includes a per-source `sources[]` report) |
+| `/topics/dismiss` | POST | `manage_options` | never suggest this headline again (`text`); stored in the queue option's `dismissed` map (1.23.0) |
 | `/topics/add` | POST | `manage_options` | adds `texts[]` to the topic queue (`source` manual/rss); returns added/skipped/pending counts |
 
 `client_state()` returns the job's public projection: status, progress, steps,
@@ -346,7 +348,9 @@ controls.
 - Entries with `use_queue` take the oldest **pending** topic from
   `AIPC_Topic_Queue::peek()` (marked used with the job id afterwards) and
   fall back to the entry's fixed topic — or the site prompt — when the
-  queue is empty.
+  queue is empty. A consumed queue topic is passed as a *subject hint*
+  (`topic_hint_only=1`, 1.23.0): the plan step decides the angle and
+  crafts its own title instead of copying the queued text.
 - Entries with `kind = refresh` (1.22.0) ignore the topic fields:
   `pick_refresh_target()` returns the oldest published post whose
   `post_modified_gmt` **and** `_aipc_refreshed` meta are both older than
@@ -411,8 +415,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 78 result
-groups / 587 assertions green at v1.22.0, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 81 result
+groups / 603 assertions green at v1.23.0, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference

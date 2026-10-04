@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.22.0
+Stable tag: 1.23.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,12 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.23.0 =
+* New: research-source feeds are discovered professionally — common feed paths (/feed/, /rss, /rss.xml, /atom.xml, …), Atom support and HTML link-tag autodiscovery, with a per-site cache; every configured source is read (not just the first five) and headlines are mixed fairly across sources
+* New: the suggestion list reports each source's status (how many fresh headlines, or "no feed found") so dead sources are visible
+* New: suggestions can be dismissed with one click and are never suggested again; a "Show more" button fetches the next batch
+* Change: topics taken from the queue are treated as a subject hint — the agent crafts its own sharper SEO title instead of using the queued text as the headline
 
 = 1.22.0 =
 * New: "Repair missing images" tool on the Jobs & Cron page — scans posts without a featured image and quietly generates and attaches one per post, never touching the content

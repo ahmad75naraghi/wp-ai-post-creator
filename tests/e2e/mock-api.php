@@ -124,6 +124,79 @@ add_filter( 'pre_http_request', function ( $preempt, $args, $url ) {
 		);
 	}
 
+	// ---- Feed discovery fixtures (1.23.0) ----
+	// rssdeep.invalid: the feed lives at a NON-standard path and is only
+	// reachable through <link rel="alternate"> autodiscovery on the page.
+	if ( 'rssdeep.invalid' === $host ) {
+		aipc_mock_log( array( 'host' => 'rssdeep', 'method' => isset( $args['method'] ) ? $args['method'] : 'GET', 'url' => $url ) );
+		if ( false !== strpos( $aipc_path, 'custom-feed' ) ) {
+			$aipc_deep = '<?xml version="1.0" encoding="UTF-8"?>'
+				. '<rss version="2.0"><channel><title>فید عمیق</title><link>https://rssdeep.invalid</link><description>فید در مسیر غیراستاندارد</description>'
+				. '<item><title>فید عمیق: پرورش قارچ صدفی در زیرزمین</title><link>https://rssdeep.invalid/deep-1</link></item>'
+				. '<item><title>فید عمیق: ساخت کمپوست خانگی بدون بو</title><link>https://rssdeep.invalid/deep-2</link></item>'
+				. '</channel></rss>';
+			return array(
+				'body'     => $aipc_deep,
+				'headers'  => array( 'content-type' => 'application/rss+xml; charset=UTF-8' ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}
+		if ( ( '' === $aipc_path || '/' === $aipc_path ) && '' === (string) wp_parse_url( $url, PHP_URL_QUERY ) ) {
+			return array(
+				'body'     => '<!doctype html><html><head><title>Deep</title>'
+					. '<link rel="alternate" type="application/rss+xml" title="Deep feed" href="/custom-feed.xml">'
+					. '</head><body>no obvious feed here</body></html>',
+				'headers'  => array( 'content-type' => 'text/html; charset=UTF-8' ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}
+		return array(
+			'body'     => 'not found',
+			'headers'  => array( 'content-type' => 'text/html' ),
+			'response' => array( 'code' => 404, 'message' => 'Not Found' ),
+		);
+	}
+
+	// atomsite.invalid: no /feed/, but a classic /atom.xml.
+	if ( 'atomsite.invalid' === $host ) {
+		aipc_mock_log( array( 'host' => 'atomsite', 'method' => isset( $args['method'] ) ? $args['method'] : 'GET', 'url' => $url ) );
+		if ( '/atom.xml' === $aipc_path ) {
+			$aipc_atom = '<?xml version="1.0" encoding="utf-8"?>'
+				. '<feed xmlns="http://www.w3.org/2005/Atom"><title>اتم آزمایشی</title><id>tag:atomsite.invalid,2026:feed</id><updated>2026-01-01T00:00:00Z</updated>'
+				. '<entry><title>اتم: آبیاری قطره‌ای برای گلدان‌های بالکن</title><link href="https://atomsite.invalid/a-1"/><id>tag:atomsite.invalid,2026:a1</id><updated>2026-01-01T00:00:00Z</updated></entry>'
+				. '<entry><title>اتم: نور مصنوعی برای گیاهان آپارتمانی</title><link href="https://atomsite.invalid/a-2"/><id>tag:atomsite.invalid,2026:a2</id><updated>2026-01-01T00:00:00Z</updated></entry>'
+				. '</feed>';
+			return array(
+				'body'     => $aipc_atom,
+				'headers'  => array( 'content-type' => 'application/atom+xml; charset=UTF-8' ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}
+		return array(
+			'body'     => 'not found',
+			'headers'  => array( 'content-type' => 'text/html' ),
+			'response' => array( 'code' => 404, 'message' => 'Not Found' ),
+		);
+	}
+
+	// nofeed.invalid: a site with no feed anywhere (discovery must fail
+	// cleanly and report it).
+	if ( 'nofeed.invalid' === $host ) {
+		aipc_mock_log( array( 'host' => 'nofeed', 'method' => isset( $args['method'] ) ? $args['method'] : 'GET', 'url' => $url ) );
+		if ( '' === $aipc_path || '/' === $aipc_path ) {
+			return array(
+				'body'     => '<!doctype html><html><head><title>Plain</title></head><body>plain site</body></html>',
+				'headers'  => array( 'content-type' => 'text/html; charset=UTF-8' ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}
+		return array(
+			'body'     => 'not found',
+			'headers'  => array( 'content-type' => 'text/html' ),
+			'response' => array( 'code' => 404, 'message' => 'Not Found' ),
+		);
+	}
+
 	// ---- Git self-updater mocks ----
 	$aipc_git_auth = '';
 	if ( isset( $args['headers']['Authorization'] ) ) {

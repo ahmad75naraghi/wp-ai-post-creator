@@ -186,7 +186,24 @@ final class AIPC_REST {
 				'callback'            => array( __CLASS__, 'topics_suggest' ),
 				'permission_callback' => array( __CLASS__, 'can_manage' ),
 				'args'                => array(
-					'limit' => array( 'type' => 'integer', 'sanitize_callback' => 'absint' ),
+					'limit'   => array( 'type' => 'integer', 'sanitize_callback' => 'absint' ),
+					'exclude' => array(
+						'type'              => 'array',
+						'sanitize_callback' => array( __CLASS__, 'sanitize_exclude_texts' ),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/topics/dismiss',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'topics_dismiss' ),
+				'permission_callback' => array( __CLASS__, 'can_manage' ),
+				'args'                => array(
+					'text' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
 				),
 			)
 		);
@@ -224,6 +241,24 @@ final class AIPC_REST {
 			}
 		}
 		return array_slice( $out, 0, 30 );
+	}
+
+	/**
+	 * Sanitize the already-on-screen suggestion list (REST arg, 1.23.0).
+	 * Larger cap than topics/add: several "show more" rounds add up.
+	 *
+	 * @param array $texts Raw list.
+	 * @return array
+	 */
+	public static function sanitize_exclude_texts( $texts ) {
+		$out = array();
+		foreach ( (array) $texts as $text ) {
+			$text = sanitize_text_field( (string) $text );
+			if ( '' !== $text ) {
+				$out[] = $text;
+			}
+		}
+		return array_slice( $out, 0, 100 );
 	}
 
 	/**
@@ -613,11 +648,27 @@ final class AIPC_REST {
 	 * @return WP_REST_Response
 	 */
 	public static function topics_suggest( $request ) {
-		$suggestions = AIPC_Topic_Queue::suggest( (int) $request->get_param( 'limit' ) ? (int) $request->get_param( 'limit' ) : 12 );
+		$limit   = (int) $request->get_param( 'limit' ) ? (int) $request->get_param( 'limit' ) : 12;
+		$exclude = (array) $request->get_param( 'exclude' );
+		$result  = AIPC_Topic_Queue::suggest( $limit, $exclude );
 		return rest_ensure_response( array(
-			'suggestions' => $suggestions,
-			'count'       => count( $suggestions ),
+			'suggestions' => $result['suggestions'],
+			'count'       => count( $result['suggestions'] ),
+			'sources'     => $result['sources'],
 			'has_sources' => '' !== trim( (string) AIPC_Settings::get( 'source_sites' ) ),
+		) );
+	}
+
+	/**
+	 * Never show a suggestion again (1.23.0).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function topics_dismiss( $request ) {
+		$ok = AIPC_Topic_Queue::dismiss( (string) $request->get_param( 'text' ) );
+		return rest_ensure_response( array(
+			'dismissed' => (bool) $ok,
 		) );
 	}
 

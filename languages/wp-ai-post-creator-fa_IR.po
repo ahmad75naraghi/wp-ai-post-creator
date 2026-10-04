@@ -3487,3 +3487,31 @@ msgstr "پیش‌نویسِ دروازهٔ کیفیت"
 #: admin/views/logs.php
 msgid "rescue images"
 msgstr "تصاویر نجات"
+
+#: includes/class-aipc-assets.php
+msgid "Could not dismiss the suggestion:"
+msgstr "حذف پیشنهاد ممکن نشد:"
+
+#: includes/class-aipc-assets.php
+msgid "Dismissed — it will not be suggested again."
+msgstr "حذف شد — دیگر پیشنهاد نخواهد شد."
+
+#: includes/class-aipc-assets.php
+msgid "Never suggest this again"
+msgstr "دیگر این را پیشنهاد نکن"
+
+#: admin/views/schedule.php
+msgid "Queue topics are a subject, not a fixed headline: they tell the agent what to write about, and it crafts its own sharper SEO title for the article."
+msgstr "موضوع‌های صف «سوژه‌اند» نه تیتر قطعی: فقط می‌گویند مقاله درباره چه باشد و عامل خودش تیتر سئوشدهٔ بهتری برای آن می‌سازد."
+
+#: admin/views/schedule.php
+msgid "Show more"
+msgstr "بیشتر"
+
+#: includes/class-aipc-agent.php
+msgid "Write about this SUBJECT: \"%s\". It is only a theme from the ideas queue — NOT the final headline. Decide the best angle for this site's audience and craft your own sharper, search-friendly title; do not copy the subject text verbatim."
+msgstr "دربارهٔ این سوژه بنویس: «%s». این فقط یک موضوع از صف ایده‌هاست — نه تیتر نهایی. بهترین زاویه را برای مخاطب این سایت انتخاب کن و خودت تیتری تیزتر و جست‌وجوپسند بساز؛ متن سوژه را عیناً کپی نکن."
+
+#: includes/class-aipc-assets.php
+msgid "no feed found"
+msgstr "فیدی پیدا نشد"
