@@ -150,6 +150,16 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 					</td>
 				</tr>
 				<tr>
+					<th scope="row"><?php esc_html_e( 'Force image generation', 'wp-ai-post-creator' ); ?></th>
+					<td>
+						<label class="aipc-check">
+							<input type="checkbox" name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[force_image]" value="1" <?php checked( $aipc['force_image'] ); ?> />
+							<?php esc_html_e( 'Never finish a post without a featured image (default for all new runs)', 'wp-ai-post-creator' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'The post is only saved, published and announced on Bale after a featured image really exists. When generation fails, the agent retries every image connection at growing intervals (1 minute up to 1 hour) for up to 24 hours; only then are the stock/default rescue images used as the final resort. Each manual run and schedule entry can override this.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
+				<tr>
 					<th scope="row"><?php esc_html_e( 'Stock photo fallback', 'wp-ai-post-creator' ); ?></th>
 					<td>
 						<label class="aipc-check">

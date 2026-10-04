@@ -3319,3 +3319,27 @@ msgstr "ساختار پیشنهادی از مرحلهٔ برنامه‌ریزی"
 #: includes/class-aipc-steps.php
 msgid "Search-intent token from the plan step"
 msgstr "نشانهٔ هدف جست‌وجو از مرحلهٔ برنامه‌ریزی"
+
+#: includes/class-aipc-agent.php
+msgid "A featured image is required (force mode) — round %1$d failed on every connection (%3$s). Next attempt in %2$s; the post will only be finished once the image exists."
+msgstr "تصویر شاخص الزامی است (حالت اجباری) — دور %1$d روی همهٔ اتصال‌ها ناموفق بود (%3$s). تلاش بعدی تا %2$s دیگر؛ پست فقط پس از ساخته‌شدن عکس تمام می‌شود."
+
+#: admin/views/new-post.php admin/views/schedule.php admin/views/settings.php
+msgid "Force image generation"
+msgstr "تولید اجباری عکس"
+
+#: includes/class-aipc-agent.php
+msgid "Image retry window exhausted — using the rescue images (stock/default) as the last resort."
+msgstr "بازهٔ تلاش برای عکس به پایان رسید — تصاویر نجات (استوک/پیش‌فرض) به‌عنوان آخرین راه استفاده می‌شوند."
+
+#: admin/views/settings.php
+msgid "Never finish a post without a featured image (default for all new runs)"
+msgstr "هیچ پستی بدون تصویر شاخص تمام نشود (پیش‌فرض همهٔ اجراهای جدید)"
+
+#: admin/views/settings.php
+msgid "The post is only saved, published and announced on Bale after a featured image really exists. When generation fails, the agent retries every image connection at growing intervals (1 minute up to 1 hour) for up to 24 hours; only then are the stock/default rescue images used as the final resort. Each manual run and schedule entry can override this."
+msgstr "پست فقط زمانی ذخیره، منتشر و در بله اعلام می‌شود که تصویر شاخص واقعاً وجود داشته باشد. اگر تولید شکست بخورد، عامل تا ۲۴ ساعت همهٔ اتصال‌های تصویر را با فاصله‌های افزایشی (از ۱ دقیقه تا ۱ ساعت) دوباره امتحان می‌کند؛ تنها پس از آن تصاویر نجات (استوک/پیش‌فرض) به‌عنوان آخرین راه استفاده می‌شوند. هر اجرای دستی و هر ردیف زمان‌بندی می‌تواند این پیش‌فرض را تغییر دهد."
+
+#: admin/views/new-post.php
+msgid "retry until the image exists — never finish without it"
+msgstr "تا ساخته‌شدن عکس تلاش می‌کند — هرگز بدون عکس تمام نمی‌شود"

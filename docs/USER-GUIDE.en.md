@@ -1,4 +1,4 @@
-# AI Post Creator — Complete User Guide (v1.20.1)
+# AI Post Creator — Complete User Guide (v1.21.0)
 
 From installation to fully automated AI content — step by step.
 Persian edition: [USER-GUIDE.fa.md](USER-GUIDE.fa.md)
@@ -149,6 +149,17 @@ WP-Cron is not running on your site).
 **Internal linking:** while planning, the agent looks at your existing related
 posts and weaves up to 4 internal links naturally into the content — no action
 needed from you.
+
+**🖼🔒 Force image generation (new in 1.21):** tick it on the manual run
+form, on any schedule entry, or as a global default in Settings → featured
+image (also covering Bale and every other path) and the post **never
+finishes without a featured image**: a failed image step retries every
+image connection at growing intervals (1 minute up to 1 hour) for up to 24
+hours instead of falling back or skipping. Because the image step runs
+before the final save, nothing is saved, published or announced on Bale
+until the image exists. After 24 hours the stock/default rescue images are
+the last resort; without them the job stops with a retryable error — an
+image-less post is never saved, and a generated image is never replaced.
 
 **✍️ Depth & human-like writing (new in 1.20):** the content pipeline was
 redesigned so articles stop reading like AI: the real **search intent** is

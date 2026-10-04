@@ -131,6 +131,12 @@ final class AIPC_Scheduler {
 			return;
 		}
 		if ( isset( $state['status'] ) && 'running' === $state['status'] ) {
+			if ( ! empty( $state['retry_at'] ) ) {
+				// Force-image wait (1.21.0): wake up exactly when the
+				// next image attempt is due instead of spinning.
+				self::schedule_runner( $job_id, max( 30, (int) $state['retry_at'] - time() ) );
+				return;
+			}
 			self::schedule_runner( $job_id, 30 ); // Budget exhausted — continue.
 			return;
 		}
@@ -568,6 +574,9 @@ final class AIPC_Scheduler {
 			}
 			if ( ! isset( $state['status'] ) || 'running' !== $state['status'] ) {
 				return $state;
+			}
+			if ( ! empty( $state['retry_at'] ) ) {
+				return $state; // Force-image wait — re-armed for that exact time.
 			}
 			if ( ! empty( $state['busy'] ) ) {
 				sleep( 2 );

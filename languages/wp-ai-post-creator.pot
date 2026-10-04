@@ -76,6 +76,10 @@ msgstr ""
 msgid "A connection is one AI service: base URL, API key and the models to use. One connection is the default; steps without their own assignment use it. Use Test after saving to verify the setup."
 msgstr ""
 
+#: includes/class-aipc-agent.php
+msgid "A featured image is required (force mode) — round %1$d failed on every connection (%3$s). Next attempt in %2$s; the post will only be finished once the image exists."
+msgstr ""
+
 #: includes/class-aipc-admin.php
 msgid "A new AI featured image was generated and set for the post."
 msgstr ""
@@ -1192,6 +1196,10 @@ msgstr ""
 msgid "Force base64 (decode locally — most reliable)"
 msgstr ""
 
+#: admin/views/new-post.php admin/views/schedule.php admin/views/settings.php
+msgid "Force image generation"
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "French"
 msgstr ""
@@ -1286,6 +1294,10 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "Image prompt"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Image retry window exhausted — using the rescue images (stock/default) as the last resort."
 msgstr ""
 
 #: admin/views/connections.php
@@ -1494,6 +1506,10 @@ msgstr ""
 
 #: includes/class-aipc-settings.php
 msgid "Neutral"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Never finish a post without a featured image (default for all new runs)"
 msgstr ""
 
 #: admin/views/review.php admin/views/rewrite.php includes/class-aipc-admin.php wp-ai-post-creator.php
@@ -2596,6 +2612,10 @@ msgstr ""
 msgid "The post is always saved as a draft for your review."
 msgstr ""
 
+#: admin/views/settings.php
+msgid "The post is only saved, published and announced on Bale after a featured image really exists. When generation fails, the agent retries every image connection at growing intervals (1 minute up to 1 hour) for up to 24 hours; only then are the stock/default rescue images used as the final resort. Each manual run and schedule entry can override this."
+msgstr ""
+
 #: admin/views/rewrite.php
 msgid "The post is updated in place — its status, author, address and category stay untouched."
 msgstr ""
@@ -3150,6 +3170,10 @@ msgstr ""
 
 #: admin/views/prompts.php
 msgid "restore the default prompt on save"
+msgstr ""
+
+#: admin/views/new-post.php
+msgid "retry until the image exists — never finish without it"
 msgstr ""
 
 #: includes/class-aipc-assets.php

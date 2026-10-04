@@ -419,6 +419,9 @@ final class AIPC_Agent {
 			'language'        => $language,
 			'language_custom' => isset( $args['language_custom'] ) ? mb_substr( sanitize_text_field( $args['language_custom'] ), 0, 40 ) : '',
 			'image'           => empty( $args['image'] ) ? 0 : 1,
+			'force_image'     => isset( $args['force_image'] )
+				? ( empty( $args['force_image'] ) ? 0 : 1 )
+				: (int) ! empty( $s['force_image'] ),
 			'faq'             => empty( $args['faq'] ) ? 0 : 1,
 			'toc'             => empty( $args['toc'] ) ? 0 : 1,
 			'mode'            => $mode,
@@ -875,6 +878,16 @@ final class AIPC_Agent {
 
 		$logical = ( 0 === strpos( $step['id'], 'section_' ) ) ? 'section' : $step['id'];
 
+		// Force-image wait gate (1.21.0): between two scheduled attempts
+		// of a forced image step no provider is called at all — the
+		// runner just reports that it is waiting for the next round.
+		if ( 'image' === $step['id'] && ! empty( $job['args']['force_image'] )
+			&& ! empty( $job['data']['image_retry']['next'] )
+			&& time() < (int) $job['data']['image_retry']['next'] ) {
+			$this->lock_release();
+			return $this->client_state( $job, $since );
+		}
+
 		$max_attempts = (int) apply_filters( 'aipc_step_attempts', 3, $job, $step['id'] );
 		$chain        = $this->resolve_connections( $logical );
 		$attempt      = 0;
@@ -951,6 +964,23 @@ final class AIPC_Agent {
 		$job['timings'][ $step['id'] ] = (int) round( ( microtime( true ) - $t0 ) * 1000 );
 
 		if ( ! $passed && 'image' === $step['id'] ) {
+			// Force-image mode (1.21.0): the user demanded a generated
+			// image — the post may not be finished, published or
+			// announced without one. Keep the job alive and retry the
+			// whole connection chain at growing intervals (1 min → 1 h,
+			// driven by the background runner) for up to a day.
+			if ( ! empty( $job['args']['force_image'] ) ) {
+				$retry_at = $this->image_force_defer( $job, (string) $last_error );
+				if ( $retry_at > 0 ) {
+					$this->save_job( $job );
+					$this->lock_release();
+					AIPC_Scheduler::schedule_runner( $job['id'], max( 30, $retry_at - time() ) );
+					return $this->client_state( $job, $since );
+				}
+				// Retry window exhausted — the rescue ladder below is the
+				// agreed last resort; when even that fails the job errors
+				// out instead of finishing without an image.
+			}
 			// Rescue ladder (1.18.0): stock photo → default image. Only
 			// when both are unavailable is the step skipped.
 			if ( $this->image_fallback( $job ) ) {
@@ -959,13 +989,17 @@ final class AIPC_Agent {
 				$this->lock_release();
 				return $this->client_state( $job, $since );
 			}
-			// The featured image is optional — skip gracefully when every
-			// connection in the chain failed to generate one.
-			$this->log( $job, __( 'Image generation failed on every connection — continuing without a featured image.', 'wp-ai-post-creator' ), 'warn' );
-			$this->advance( $job, 'skipped' );
-			$this->save_job( $job );
-			$this->lock_release();
-			return $this->client_state( $job, $since );
+			if ( empty( $job['args']['force_image'] ) ) {
+				// The featured image is optional — skip gracefully when every
+				// connection in the chain failed to generate one.
+				$this->log( $job, __( 'Image generation failed on every connection — continuing without a featured image.', 'wp-ai-post-creator' ), 'warn' );
+				$this->advance( $job, 'skipped' );
+				$this->save_job( $job );
+				$this->lock_release();
+				return $this->client_state( $job, $since );
+			}
+			// force_image + exhausted window + no rescue image → fall
+			// through to the hard-error path; a retry re-runs the step.
 		}
 
 		if ( ! $passed ) {
@@ -991,6 +1025,12 @@ final class AIPC_Agent {
 			self::release( 'topic_' . self::topic_norm( $job['topic'] ) );
 			$this->lock_release();
 			return $this->client_state( $job, $since );
+		}
+
+		if ( 'image' === $step['id'] && isset( $job['data']['image_retry'] ) ) {
+			// The image finally exists — stop the force-retry machinery
+			// for good so nothing ever replaces or re-runs it.
+			unset( $job['data']['image_retry'] );
 		}
 
 		$this->save_job( $job );
@@ -2122,7 +2162,61 @@ final class AIPC_Agent {
 	 * @param array $job Job (by reference).
 	 * @return bool Whether an image was attached.
 	 */
+	/**
+	 * Force-image mode: plan the next retry of the image step instead of
+	 * falling back or skipping (1.21.0).
+	 *
+	 * @param array  $job   Job (by ref).
+	 * @param string $error Last provider error.
+	 * @return int Next-attempt timestamp, or 0 when the retry window is
+	 *             exhausted (→ rescue ladder, then hard error).
+	 */
+	private function image_force_defer( array &$job, $error ) {
+		$r = isset( $job['data']['image_retry'] ) && is_array( $job['data']['image_retry'] )
+			? $job['data']['image_retry']
+			: array( 'count' => 0, 'since' => time() );
+
+		/**
+		 * Filter the total window (seconds) force-image mode keeps
+		 * retrying before the rescue ladder becomes the last resort.
+		 *
+		 * @param int   $window Seconds (default one day).
+		 * @param array $job    Job.
+		 */
+		$window = (int) apply_filters( 'aipc_force_image_window', DAY_IN_SECONDS, $job );
+		if ( time() - (int) $r['since'] >= $window ) {
+			$this->log( $job, __( 'Image retry window exhausted — using the rescue images (stock/default) as the last resort.', 'wp-ai-post-creator' ), 'warn' );
+			return 0;
+		}
+
+		$r['count']++;
+		$delays    = array( 60, 120, 300, 600, 900, 1800, 3600 );
+		$delay     = $delays[ min( $r['count'] - 1, count( $delays ) - 1 ) ];
+		$r['next'] = time() + $delay;
+
+		$job['data']['image_retry'] = $r;
+		if ( isset( $job['steps'][ $job['cursor'] ] ) ) {
+			$job['steps'][ $job['cursor'] ]['status'] = 'pending'; // Not failed — waiting for the next round.
+		}
+		$this->log( $job, sprintf(
+			/* translators: 1: attempt round, 2: human-readable wait, 3: error message. */
+			__( 'A featured image is required (force mode) — round %1$d failed on every connection (%3$s). Next attempt in %2$s; the post will only be finished once the image exists.', 'wp-ai-post-creator' ),
+			(int) $r['count'],
+			human_time_diff( time(), $r['next'] ),
+			mb_substr( (string) $error, 0, 160 )
+		), 'warn' );
+
+		return (int) $r['next'];
+	}
+
 	public function image_fallback( array &$job ) {
+		// Idempotency guard (1.21.0): when an image is already attached
+		// (e.g. generated moments ago by this very job) nothing may
+		// replace it — the rescue ladder only fills a real gap.
+		if ( ! empty( $job['data']['image']['attachment_id'] ) ) {
+			return true;
+		}
+
 		$title = isset( $job['data']['plan']['title'] ) ? (string) $job['data']['plan']['title'] : '';
 
 		// 1) Openverse stock photo — relevant, CC-licensed, no API key.
@@ -2696,7 +2790,7 @@ final class AIPC_Agent {
 		$planned  = ! empty( $job['data']['outline'] );
 		$progress = $planned && $total > 0 ? (int) round( $done / $total * 100 ) : null;
 
-		return array(
+		$state = array(
 			'id'       => $job['id'],
 			'status'   => $job['status'],
 			'topic'    => $job['topic'],
@@ -2708,5 +2802,15 @@ final class AIPC_Agent {
 			'result'   => isset( $job['data']['result'] ) ? $job['data']['result'] : null,
 			'error'    => $job['error'],
 		);
+
+		// Force-image wait (1.21.0): tell every consumer (background
+		// runner, console) when the next image attempt is scheduled.
+		if ( 'running' === $job['status'] && ! empty( $job['args']['force_image'] )
+			&& ! empty( $job['data']['image_retry']['next'] )
+			&& (int) $job['data']['image_retry']['next'] > time() ) {
+			$state['retry_at'] = (int) $job['data']['image_retry']['next'];
+		}
+
+		return $state;
 	}
 }

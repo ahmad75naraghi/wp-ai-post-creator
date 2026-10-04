@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.20.1
+Stable tag: 1.21.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.21.0 =
+* New: "Force image generation" option on the manual run form, on every schedule entry and as a global default in settings — the post is only saved, published and announced on Bale after a featured image really exists
+* New: failed image steps retry every image connection at growing intervals (1 minute up to 1 hour) for up to 24 hours before the stock/default rescue images are used as the last resort; with no rescue image available the job errors out instead of finishing without an image
+* Fix: a generated image can never be replaced afterwards — the rescue ladder only fills a real gap
 
 = 1.20.1 =
 * Fix: cancelling a job on Jobs & Cron now kills it at the root — previously a background runner that was mid-step saved its stale copy back a few seconds later and the job resurrected and kept building

@@ -3,6 +3,36 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.21.0] — 2026-10-04
+
+### Added
+- **Force image generation** (`force_image`): a checkbox on the manual
+  run form, on every schedule entry, and as a global default in
+  Settings → featured image (inherited by Bale and every other path).
+  When enabled, the post may never finish without a generated featured
+  image:
+  - a failed image step no longer falls back or skips — the job stays
+    alive and retries the **whole image-connection chain** at growing
+    intervals (1 min → 2 → 5 → 10 → 15 → 30 → 60 min) for up to 24
+    hours (`aipc_force_image_window` filter), driven by exact-time
+    background-runner events (no polling, no wasted provider calls: a
+    wait gate returns immediately between rounds);
+  - since the image step runs before `finalize`, the post is only
+    saved, published and announced on Bale after the image exists;
+  - after the window the stock/default rescue images are the agreed
+    last resort; if even those are unavailable the job becomes an
+    error (retryable) instead of saving an image-less post;
+  - once an image exists the retry machinery is dismantled and
+    `image_fallback()` is idempotent — nothing ever replaces a
+    generated image.
+
+### Tests
+- New e2e group `force_image` (8 assertions): waiting state instead of
+  skip, image step kept pending, zero provider calls through the wait
+  gate, runner re-armed for the exact retry time, recovery finishes the
+  job with a real thumbnail, retry state cleared, exhausted window +
+  no rescue image → hard error.
+
 ## [1.20.1] — 2026-10-03
 
 ### Fixed

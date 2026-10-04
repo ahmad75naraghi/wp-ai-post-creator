@@ -123,6 +123,11 @@ $aipc_conn_links = admin_url( 'admin.php?page=aipc-connections' );
 						<em><?php esc_html_e( 'generate & attach a hero image', 'wp-ai-post-creator' ); ?></em>
 					</label>
 					<label class="aipc-toggle">
+						<input type="checkbox" id="aipc-opt-force-image" />
+						<span><?php esc_html_e( 'Force image generation', 'wp-ai-post-creator' ); ?></span>
+						<em><?php esc_html_e( 'retry until the image exists — never finish without it', 'wp-ai-post-creator' ); ?></em>
+					</label>
+					<label class="aipc-toggle">
 						<input type="checkbox" id="aipc-opt-faq" />
 						<span><?php esc_html_e( 'FAQ block', 'wp-ai-post-creator' ); ?></span>
 						<em><?php esc_html_e( 'answers + Google rich-results schema', 'wp-ai-post-creator' ); ?></em>

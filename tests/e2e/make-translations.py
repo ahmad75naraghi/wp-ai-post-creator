@@ -43,6 +43,12 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    'Force image generation': 'تولید اجباری عکس',
+    'Never finish a post without a featured image (default for all new runs)': 'هیچ پستی بدون تصویر شاخص تمام نشود (پیش\u200cفرض همهٔ اجراهای جدید)',
+    'The post is only saved, published and announced on Bale after a featured image really exists. When generation fails, the agent retries every image connection at growing intervals (1 minute up to 1 hour) for up to 24 hours; only then are the stock/default rescue images used as the final resort. Each manual run and schedule entry can override this.': 'پست فقط زمانی ذخیره، منتشر و در بله اعلام می\u200cشود که تصویر شاخص واقعاً وجود داشته باشد. اگر تولید شکست بخورد، عامل تا ۲۴ ساعت همهٔ اتصال\u200cهای تصویر را با فاصله\u200cهای افزایشی (از ۱ دقیقه تا ۱ ساعت) دوباره امتحان می\u200cکند؛ تنها پس از آن تصاویر نجات (استوک/پیش\u200cفرض) به\u200cعنوان آخرین راه استفاده می\u200cشوند. هر اجرای دستی و هر ردیف زمان\u200cبندی می\u200cتواند این پیش\u200cفرض را تغییر دهد.',
+    'retry until the image exists — never finish without it': 'تا ساخته\u200cشدن عکس تلاش می\u200cکند — هرگز بدون عکس تمام نمی\u200cشود',
+    'Image retry window exhausted — using the rescue images (stock/default) as the last resort.': 'بازهٔ تلاش برای عکس به پایان رسید — تصاویر نجات (استوک/پیش\u200cفرض) به\u200cعنوان آخرین راه استفاده می\u200cشوند.',
+    'A featured image is required (force mode) — round %1$d failed on every connection (%3$s). Next attempt in %2$s; the post will only be finished once the image exists.': 'تصویر شاخص الزامی است (حالت اجباری) — دور %1$d روی همهٔ اتصال\u200cها ناموفق بود (%3$s). تلاش بعدی تا %2$s دیگر؛ پست فقط پس از ساخته\u200cشدن عکس تمام می\u200cشود.',
     'Search-intent token from the plan step': 'نشانهٔ هدف جست\u200cوجو از مرحلهٔ برنامه\u200cریزی',
     'Recommended structure from the plan step': 'ساختار پیشنهادی از مرحلهٔ برنامه\u200cریزی',
     'Concrete element planned for this section in the outline (or a generic fallback)': 'عنصر مشخصی که در طرح کلی برای این بخش برنامه\u200cریزی شده (یا جایگزین عمومی)',

@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.20.1**. Audience: contributors and
+Technical reference for AI Post Creator **v1.21.0**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -160,6 +160,18 @@ an Openverse stock photo (opt-in, query = the image-prompt step's English
 site-wide default featured image (`image_fallback` setting; external URLs
 are imported once and reused via the `aipc_image_fallback_cache` option)
 before the step is skipped.
+**Force-image mode (1.21.0, `args.force_image`, global default
+`settings.force_image`):** the job may never finish without a generated
+featured image. On failure the step neither falls back nor skips — the job
+stays `running` with `data.image_retry` `{count, since, next}`, the whole
+connection chain is retried on a growing schedule (60 s → 1 h, exact-time
+runner events; a wait gate makes interim `execute_step` calls free and
+`client_state` exposes `retry_at`) for up to `aipc_force_image_window`
+(default one day). Only then does the rescue ladder run as the last resort;
+if even that fails the job errors out instead of saving an image-less post.
+Since `image` precedes `finalize`, nothing is saved/published/announced
+while waiting. On success `image_retry` is cleared and `image_fallback()`
+is idempotent (an attached image is never replaced).
 An **owner-token lock** (`aipc_lock_<job>`, 1.19.1) prevents concurrent
 execution: the transient stores a token unique to the running process and a
 **heartbeat** refreshes it (TTL 900 s, `AIPC_Agent::LOCK_TTL`) before every
@@ -363,7 +375,7 @@ events read-only. admin-post actions: `aipc_cancel_job`,
 
 ## 10. Internationalization
 
-824 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+830 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals
@@ -375,8 +387,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 72 result
-groups / 550 assertions green at v1.20.1, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 73 result
+groups / 558 assertions green at v1.21.0, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference
@@ -396,4 +408,5 @@ runs on GitHub Actions (`.github/workflows/ci.yml`).
 `aipc_job_retention_days($days)` · `aipc_jobs_table_enabled($bool)` ·
 `aipc_image_timeout($seconds)` (default 180, 1.17.1) ·
 `aipc_duplicate_window($days)` (default 30, duplicate-topic guard, 1.19.0) ·
-`aipc_link_candidate_pool($count)` (default 100, internal-link relevance pool, 1.20.0)
+`aipc_link_candidate_pool($count)` (default 100, internal-link relevance pool, 1.20.0) ·
+`aipc_force_image_window($seconds)` (default DAY_IN_SECONDS, force-image retry window, 1.21.0)

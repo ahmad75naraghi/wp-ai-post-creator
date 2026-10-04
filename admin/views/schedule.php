@@ -82,7 +82,7 @@ $aipc_notices = array(
 							$aipc_entry['opts']['length'],
 							$aipc_entry['opts']['language'],
 						);
-						if ( ! empty( $aipc_entry['opts']['image'] ) ) { $aipc_opt_summary[] = '🖼'; }
+						if ( ! empty( $aipc_entry['opts']['image'] ) ) { $aipc_opt_summary[] = empty( $aipc_entry['opts']['force_image'] ) ? '🖼' : '🖼🔒'; }
 						if ( ! empty( $aipc_entry['opts']['faq'] ) ) { $aipc_opt_summary[] = 'FAQ'; }
 						if ( ! empty( $aipc_entry['opts']['toc'] ) ) { $aipc_opt_summary[] = 'TOC'; }
 						?>
@@ -153,7 +153,7 @@ $aipc_notices = array(
 		</form>
 
 		<?php
-		$aipc_e      = $aipc_editing ? $aipc_editing : array( 'time' => '09:00', 'days' => array( 0, 1, 2, 3, 4, 5, 6 ), 'enabled' => 1, 'use_queue' => 0, 'topic' => '', 'publish' => 'draft', 'publish_delay' => 60, 'opts' => array( 'tone' => $aipc_s['default_tone'], 'length' => $aipc_s['default_length'], 'language' => $aipc_s['content_language'], 'image' => (int) $aipc_s['image_enabled'], 'faq' => (int) $aipc_s['add_faq'], 'toc' => (int) $aipc_s['add_toc'] ) );
+		$aipc_e      = $aipc_editing ? $aipc_editing : array( 'time' => '09:00', 'days' => array( 0, 1, 2, 3, 4, 5, 6 ), 'enabled' => 1, 'use_queue' => 0, 'topic' => '', 'publish' => 'draft', 'publish_delay' => 60, 'opts' => array( 'tone' => $aipc_s['default_tone'], 'length' => $aipc_s['default_length'], 'language' => $aipc_s['content_language'], 'image' => (int) $aipc_s['image_enabled'], 'force_image' => (int) $aipc_s['force_image'], 'faq' => (int) $aipc_s['add_faq'], 'toc' => (int) $aipc_s['add_toc'] ) );
 		$aipc_opts   = $aipc_e['opts'];
 		$aipc_pub    = isset( $aipc_e['publish'] ) ? $aipc_e['publish'] : 'draft';
 		$aipc_pub_dl = isset( $aipc_e['publish_delay'] ) ? (int) $aipc_e['publish_delay'] : 60;
@@ -244,6 +244,7 @@ $aipc_notices = array(
 				<div class="aipc-checks">
 					<label class="aipc-check"><input type="checkbox" name="use_queue" value="1" <?php checked( ! empty( $aipc_e['use_queue'] ) ); ?> /> <?php esc_html_e( 'Take the topic from the queue', 'wp-ai-post-creator' ); ?><?php aipc_help( 'sched-use-queue', __( 'When this entry fires, it takes the oldest pending topic from the topic queue (box above). If the queue is empty it falls back to the fixed topic field — or to the site prompt when that is empty too.', 'wp-ai-post-creator' ) ); ?></label>
 					<label class="aipc-check"><input type="checkbox" name="image" value="1" <?php checked( ! empty( $aipc_opts['image'] ) ); ?> /> <?php esc_html_e( 'Featured image', 'wp-ai-post-creator' ); ?></label>
+					<label class="aipc-check"><input type="checkbox" name="force_image" value="1" <?php checked( ! empty( $aipc_opts['force_image'] ) ); ?> /> <?php esc_html_e( 'Force image generation', 'wp-ai-post-creator' ); ?></label>
 					<label class="aipc-check"><input type="checkbox" name="faq" value="1" <?php checked( ! empty( $aipc_opts['faq'] ) ); ?> /> <?php esc_html_e( 'FAQ block', 'wp-ai-post-creator' ); ?></label>
 					<label class="aipc-check"><input type="checkbox" name="toc" value="1" <?php checked( ! empty( $aipc_opts['toc'] ) ); ?> /> <?php esc_html_e( 'Table of contents', 'wp-ai-post-creator' ); ?></label>
 					<label class="aipc-check"><input type="checkbox" name="enabled" value="1" <?php checked( ! empty( $aipc_e['enabled'] ) ); ?> /> <?php esc_html_e( 'Active', 'wp-ai-post-creator' ); ?></label>

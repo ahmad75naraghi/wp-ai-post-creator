@@ -26,6 +26,7 @@
 		languageCustomField: document.getElementById('aipc-language-custom-field'),
 		languageCustom: document.getElementById('aipc-language-custom'),
 		optImage: document.getElementById('aipc-opt-image'),
+		optForceImage: document.getElementById('aipc-opt-force-image'),
 		optFaq: document.getElementById('aipc-opt-faq'),
 		optToc: document.getElementById('aipc-opt-toc'),
 		optForce: document.getElementById('aipc-opt-force'),
@@ -196,6 +197,12 @@
 			}
 			applyState(st);
 
+			if (st.retry_at) {
+				// Force-image wait: the server retries on its own schedule —
+				// this is not a stall.
+				state.stalled = 0;
+			}
+
 			var sig = progressSignature(st);
 			if (sig === state.lastSig) {
 				state.stalled = (state.stalled || 0) + 1;
@@ -274,6 +281,7 @@
 			language: el.language ? el.language.value : '',
 			language_custom: el.languageCustom ? el.languageCustom.value.trim() : '',
 			image: !!(el.optImage && el.optImage.checked),
+			force_image: !!(el.optForceImage && el.optForceImage.checked),
 			faq: !!(el.optFaq && el.optFaq.checked),
 			toc: !!(el.optToc && el.optToc.checked),
 			force: (el.optForce && el.optForce.checked) ? 1 : 0
@@ -414,6 +422,7 @@
 		fill(el.length, CFG.lengths, d.length);
 		fill(el.language, CFG.languages, d.language);
 		if (el.optImage) { el.optImage.checked = d.image !== false; }
+		if (el.optForceImage) { el.optForceImage.checked = !!d.force_image; }
 		if (el.optFaq) { el.optFaq.checked = d.faq !== false; }
 		if (el.optToc) { el.optToc.checked = d.toc !== false; }
 	}

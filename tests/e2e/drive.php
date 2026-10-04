@@ -2692,6 +2692,89 @@ $out['cancel_root'] = array(
 );
 delete_transient( 'aipc_lock_' . $aipc_cx_job['id'] );
 
+/* ------------------------------------------------------------------ *
+ * v1.21.0 — force image generation: the post may never finish without
+ * a generated featured image; failed image steps retry on a growing
+ * schedule instead of falling back or skipping.
+ * ------------------------------------------------------------------ */
+update_option( 'aipc_settings', array_merge( get_option( 'aipc_settings', array() ), array(
+	'image_enabled'        => 1,
+	'image_fallback_stock' => 0,
+	'image_fallback'       => '',
+	'force_image'          => 0,
+) ), false );
+
+$GLOBALS['aipc_fi_fail'] = false;
+$GLOBALS['aipc_fi_hits'] = 0;
+add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
+	if ( ! empty( $GLOBALS['aipc_fi_fail'] ) && false !== strpos( $url, 'images.invalid' ) ) {
+		$GLOBALS['aipc_fi_hits']++;
+		return array(
+			'body'     => json_encode( array( 'error' => array( 'message' => 'mock image provider down' ) ) ),
+			'response' => array( 'code' => 500, 'message' => 'Server Error' ),
+		);
+	}
+	return $pre;
+}, 4, 3 );
+
+$GLOBALS['aipc_fi_fail'] = true;
+$aipc_fi_job   = AIPC_Agent::instance()->create_job( 'موضوع تست عکس اجباری', array( 'length' => 'short', 'language' => 'fa', 'image' => 1, 'force_image' => 1, 'force' => 1 ) );
+$aipc_fi_state = null;
+for ( $aipc_fi_i = 0; $aipc_fi_i < 40; $aipc_fi_i++ ) {
+	$aipc_fi_state = AIPC_Agent::instance()->execute_step( $aipc_fi_job['id'], 0 );
+	if ( ! is_array( $aipc_fi_state ) || 'running' !== $aipc_fi_state['status'] || ! empty( $aipc_fi_state['retry_at'] ) ) {
+		break;
+	}
+}
+$aipc_fi_mid = AIPC_Agent::instance()->get_job( $aipc_fi_job['id'] );
+
+// The wait gate must not touch the provider while the next try is in the future.
+$aipc_fi_h0     = (int) $GLOBALS['aipc_fi_hits'];
+$aipc_fi_gate   = AIPC_Agent::instance()->execute_step( $aipc_fi_job['id'], 0 );
+$aipc_fi_gated  = ( (int) $GLOBALS['aipc_fi_hits'] === $aipc_fi_h0 ) && ! empty( $aipc_fi_gate['retry_at'] );
+$aipc_fi_runner = wp_next_scheduled( 'aipc_run_job', array( (string) $aipc_fi_job['id'] ) );
+
+// Provider recovers → the due retry generates the image and the job finishes.
+$GLOBALS['aipc_fi_fail'] = false;
+$aipc_fi_j = AIPC_Agent::instance()->get_job( $aipc_fi_job['id'] );
+$aipc_fi_j['data']['image_retry']['next'] = time() - 1;
+AIPC_Agent::instance()->save_job( $aipc_fi_j );
+for ( $aipc_fi_i = 0; $aipc_fi_i < 10; $aipc_fi_i++ ) {
+	$aipc_fi_state = AIPC_Agent::instance()->execute_step( $aipc_fi_job['id'], 0 );
+	if ( ! is_array( $aipc_fi_state ) || 'running' !== $aipc_fi_state['status'] ) {
+		break;
+	}
+}
+$aipc_fi_fin = AIPC_Agent::instance()->get_job( $aipc_fi_job['id'] );
+
+// Second job: retry window exhausted + no rescue image → hard error, never an image-less post.
+$GLOBALS['aipc_fi_fail'] = true;
+$aipc_fi_job2 = AIPC_Agent::instance()->create_job( 'موضوع تست عکس اجباری دوم', array( 'length' => 'short', 'language' => 'fa', 'image' => 1, 'force_image' => 1, 'force' => 1 ) );
+for ( $aipc_fi_i = 0; $aipc_fi_i < 40; $aipc_fi_i++ ) {
+	$aipc_fi_state = AIPC_Agent::instance()->execute_step( $aipc_fi_job2['id'], 0 );
+	if ( ! is_array( $aipc_fi_state ) || 'running' !== $aipc_fi_state['status'] || ! empty( $aipc_fi_state['retry_at'] ) ) {
+		break;
+	}
+}
+$aipc_fi_j2 = AIPC_Agent::instance()->get_job( $aipc_fi_job2['id'] );
+$aipc_fi_j2['data']['image_retry']['since'] = time() - DAY_IN_SECONDS - 10;
+$aipc_fi_j2['data']['image_retry']['next']  = time() - 1;
+AIPC_Agent::instance()->save_job( $aipc_fi_j2 );
+AIPC_Agent::instance()->execute_step( $aipc_fi_job2['id'], 0 );
+$aipc_fi_j2 = AIPC_Agent::instance()->get_job( $aipc_fi_job2['id'] );
+$GLOBALS['aipc_fi_fail'] = false;
+
+$out['force_image'] = array(
+	'args_saved'       => is_array( $aipc_fi_mid ) && 1 === (int) $aipc_fi_mid['args']['force_image'],
+	'waiting_not_skip' => is_array( $aipc_fi_mid ) && 'running' === $aipc_fi_mid['status'] && ! empty( $aipc_fi_mid['data']['image_retry']['next'] ) && empty( $aipc_fi_mid['post_id'] ),
+	'step_kept'        => is_array( $aipc_fi_mid ) && isset( $aipc_fi_mid['steps'][ $aipc_fi_mid['cursor'] ] ) && 'image' === $aipc_fi_mid['steps'][ $aipc_fi_mid['cursor'] ]['id'] && 'pending' === $aipc_fi_mid['steps'][ $aipc_fi_mid['cursor'] ]['status'],
+	'gate_no_call'     => $aipc_fi_gated,
+	'runner_rearmed'   => false !== $aipc_fi_runner && $aipc_fi_runner > time() + 20,
+	'done_with_image'  => is_array( $aipc_fi_fin ) && 'done' === $aipc_fi_fin['status'] && $aipc_fi_fin['post_id'] > 0 && has_post_thumbnail( (int) $aipc_fi_fin['post_id'] ),
+	'retry_cleared'    => is_array( $aipc_fi_fin ) && ! isset( $aipc_fi_fin['data']['image_retry'] ),
+	'exhausted_error'  => is_array( $aipc_fi_j2 ) && 'error' === $aipc_fi_j2['status'] && empty( $aipc_fi_j2['post_id'] ),
+);
+
 
 
 
