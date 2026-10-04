@@ -271,6 +271,7 @@ final class AIPC_Scheduler {
 				'length'   => $length,
 				'language' => $language,
 				'image'    => empty( $opts['image'] ) ? 0 : 1,
+				'force_image' => empty( $opts['force_image'] ) ? 0 : 1,
 				'faq'      => empty( $opts['faq'] ) ? 0 : 1,
 				'toc'      => empty( $opts['toc'] ) ? 0 : 1,
 			),

@@ -3,6 +3,27 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.21.1] — 2026-10-04
+
+Full-pipeline bug audit of the force-image feature.
+
+### Fixed
+- **Schedule entries silently lost the force-image option**: the entry
+  sanitizer whitelists the run options and did not keep `force_image`,
+  so the checkbox on a schedule row never reached the saved entry (the
+  global default still applied). The sanitizer now preserves it.
+- **A retry after the exhausted 24-hour window errored out instantly**:
+  the spent retry window stayed in the job data, so "Retry" (manual or
+  the cron auto-retry) hit the exhausted check on the first failure
+  instead of retrying for a fresh window. The window is now dropped on
+  exhaustion and cleared again by `retry_job()`.
+
+### Tests
+- 3 new assertions in the `force_image` group: the schedule-entry
+  sanitizer keeps `force_image`, the spent window is dropped on
+  exhaustion, and a retry starts fresh — 73 groups / 561 assertions
+  green.
+
 ## [1.21.0] — 2026-10-04
 
 ### Added

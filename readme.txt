@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.21.0
+Stable tag: 1.21.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.21.1 =
+* Fix: the "Force image generation" checkbox on schedule entries was silently dropped by the entry sanitizer and never saved
+* Fix: retrying a job whose 24-hour image window was exhausted errored out instantly instead of starting a fresh retry window
 
 = 1.21.0 =
 * New: "Force image generation" option on the manual run form, on every schedule entry and as a global default in settings — the post is only saved, published and announced on Bale after a featured image really exists

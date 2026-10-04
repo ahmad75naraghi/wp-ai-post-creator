@@ -2764,6 +2764,16 @@ AIPC_Agent::instance()->execute_step( $aipc_fi_job2['id'], 0 );
 $aipc_fi_j2 = AIPC_Agent::instance()->get_job( $aipc_fi_job2['id'] );
 $GLOBALS['aipc_fi_fail'] = false;
 
+// Bug guard: the schedule-entry sanitizer must keep the force_image opt.
+$aipc_fi_entry = AIPC_Scheduler::save_entry( array( 'time' => '10:30', 'opts' => array( 'image' => 1, 'force_image' => 1 ) ) );
+$aipc_fi_entry_ok = ! empty( $aipc_fi_entry['opts']['force_image'] );
+AIPC_Scheduler::delete_entry( $aipc_fi_entry['id'] );
+
+// Bug guard: a retry after the exhausted window starts a FRESH window.
+$aipc_fi_rt = AIPC_Agent::instance()->retry_job( $aipc_fi_job2['id'] );
+$aipc_fi_rt_fresh = is_array( $aipc_fi_rt ) && 'running' === $aipc_fi_rt['status'] && ! isset( $aipc_fi_rt['data']['image_retry'] );
+AIPC_Agent::instance()->cancel_job( $aipc_fi_job2['id'] );
+
 $out['force_image'] = array(
 	'args_saved'       => is_array( $aipc_fi_mid ) && 1 === (int) $aipc_fi_mid['args']['force_image'],
 	'waiting_not_skip' => is_array( $aipc_fi_mid ) && 'running' === $aipc_fi_mid['status'] && ! empty( $aipc_fi_mid['data']['image_retry']['next'] ) && empty( $aipc_fi_mid['post_id'] ),
@@ -2773,6 +2783,9 @@ $out['force_image'] = array(
 	'done_with_image'  => is_array( $aipc_fi_fin ) && 'done' === $aipc_fi_fin['status'] && $aipc_fi_fin['post_id'] > 0 && has_post_thumbnail( (int) $aipc_fi_fin['post_id'] ),
 	'retry_cleared'    => is_array( $aipc_fi_fin ) && ! isset( $aipc_fi_fin['data']['image_retry'] ),
 	'exhausted_error'  => is_array( $aipc_fi_j2 ) && 'error' === $aipc_fi_j2['status'] && empty( $aipc_fi_j2['post_id'] ),
+	'window_dropped'   => is_array( $aipc_fi_j2 ) && ! isset( $aipc_fi_j2['data']['image_retry'] ),
+	'entry_keeps_force' => $aipc_fi_entry_ok,
+	'retry_fresh_window' => $aipc_fi_rt_fresh,
 );
 
 

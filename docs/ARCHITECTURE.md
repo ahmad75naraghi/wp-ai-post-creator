@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.21.0**. Audience: contributors and
+Technical reference for AI Post Creator **v1.21.1**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -388,7 +388,7 @@ See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
 mock Bale Bot API, mock RSS feeds and an always-failing provider. 73 result
-groups / 558 assertions green at v1.21.0, zero PHP warnings. The same suite
+groups / 561 assertions green at v1.21.1, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference

@@ -753,6 +753,9 @@ final class AIPC_Agent {
 		}
 		$job['status'] = 'running';
 		$job['error']  = null;
+		// Force-image mode: a retry restarts the whole retry window —
+		// otherwise an exhausted window would error out again instantly.
+		unset( $job['data']['image_retry'] );
 		$this->log( $job, __( 'Retrying failed step…', 'wp-ai-post-creator' ), 'info' );
 		$this->save_job( $job );
 		AIPC_Scheduler::schedule_runner( $id );
@@ -979,7 +982,9 @@ final class AIPC_Agent {
 				}
 				// Retry window exhausted — the rescue ladder below is the
 				// agreed last resort; when even that fails the job errors
-				// out instead of finishing without an image.
+				// out instead of finishing without an image. Drop the
+				// spent window so a later retry starts a fresh one.
+				unset( $job['data']['image_retry'] );
 			}
 			// Rescue ladder (1.18.0): stock photo → default image. Only
 			// when both are unavailable is the step skipped.
