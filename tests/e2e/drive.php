@@ -21,6 +21,14 @@ require $root . '/wp-load.php';
 
 $out = array();
 
+// Neutralise the connection circuit breaker for the legacy groups: they
+// produce long failure streaks on purpose and must keep their original
+// chain order. The conn_health group restores the real threshold locally.
+add_filter( 'aipc_health_streak', 'aipc_e2e_health_streak_off' );
+function aipc_e2e_health_streak_off() {
+	return 100000;
+}
+
 /* ------------------------------------------------------------------ *
  * Unit checks: JSON extraction
  * ------------------------------------------------------------------ */
@@ -2786,6 +2794,186 @@ $out['force_image'] = array(
 	'window_dropped'   => is_array( $aipc_fi_j2 ) && ! isset( $aipc_fi_j2['data']['image_retry'] ),
 	'entry_keeps_force' => $aipc_fi_entry_ok,
 	'retry_fresh_window' => $aipc_fi_rt_fresh,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.22.0 — image repair: scan posts without a featured image and run
+ * quiet image-only jobs that never touch the content.
+ * ------------------------------------------------------------------ */
+$aipc_ix_post = wp_insert_post( array(
+	'post_title'   => 'پست بدون عکس برای ترمیم',
+	'post_content' => '<p>محتوای دست‌نخوردنی این پست.</p>',
+	'post_status'  => 'publish',
+	'post_type'    => 'post',
+) );
+$aipc_ix_before = get_post_field( 'post_content', $aipc_ix_post );
+
+$aipc_ix_n = AIPC_Agent::instance()->repair_missing_images();
+
+// Find OUR repair job among the created batch.
+$aipc_ix_job = null;
+foreach ( AIPC_Agent::instance()->get_all_jobs() as $aipc_ix_row ) {
+	if ( 'image_fix' === $aipc_ix_row['mode'] && (int) $aipc_ix_row['post_id'] === (int) $aipc_ix_post ) {
+		$aipc_ix_job = AIPC_Agent::instance()->get_job( $aipc_ix_row['id'] );
+		break;
+	}
+}
+if ( $aipc_ix_job ) {
+	for ( $aipc_ix_i = 0; $aipc_ix_i < 10; $aipc_ix_i++ ) {
+		$aipc_ix_state = AIPC_Agent::instance()->execute_step( $aipc_ix_job['id'], 0 );
+		if ( ! is_array( $aipc_ix_state ) || 'running' !== $aipc_ix_state['status'] ) {
+			break;
+		}
+	}
+	$aipc_ix_job = AIPC_Agent::instance()->get_job( $aipc_ix_job['id'] );
+}
+
+// A second scan must never start a duplicate repair for the same post.
+AIPC_Agent::instance()->repair_missing_images();
+$aipc_ix_count = 0;
+foreach ( AIPC_Agent::instance()->get_all_jobs() as $aipc_ix_row ) {
+	if ( 'image_fix' === $aipc_ix_row['mode'] && (int) $aipc_ix_row['post_id'] === (int) $aipc_ix_post ) {
+		$aipc_ix_count++;
+	}
+}
+
+$out['image_fix'] = array(
+	'scanner_started'   => $aipc_ix_n >= 1,
+	'job_found'         => is_array( $aipc_ix_job ),
+	'done_with_thumb'   => is_array( $aipc_ix_job ) && 'done' === $aipc_ix_job['status'] && has_post_thumbnail( (int) $aipc_ix_post ),
+	'content_untouched' => get_post_field( 'post_content', $aipc_ix_post ) === $aipc_ix_before,
+	'quiet_no_bale'     => is_array( $aipc_ix_job ) && ! empty( $aipc_ix_job['notified'] ),
+	'no_duplicate_scan' => 1 === $aipc_ix_count,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.22.0 — quality gate: zero-cost pre-publish checks; a low score
+ * cancels auto-publishing and the post stays a draft.
+ * ------------------------------------------------------------------ */
+$aipc_qg_bad  = AIPC_Quality::check(
+	'<h2>عنوان تکراری</h2><p>در دنیای امروز متن کوتاه تست تست تست تست تست تست تست تست.</p><h2>عنوان تکراری</h2><h2></h2>',
+	array( 'data' => array( 'plan' => array( 'title' => '', 'primary_keyword' => 'تست' ) ), 'args' => array( 'image' => 0 ) )
+);
+$aipc_qg_good_body = '<h2>بخش نخست</h2><p>' . implode( ' ', array_fill( 0, 220, 'واژه' ) ) . '</p><h2>بخش دوم</h2><p>' . implode( ' ', array_fill( 0, 220, 'نوشتار' ) ) . ' موضوع اصلی مقاله همین است.</p>';
+$aipc_qg_good = AIPC_Quality::check(
+	$aipc_qg_good_body,
+	array( 'data' => array( 'plan' => array( 'title' => 'عنوانی که وجود ندارد ' . wp_rand(), 'primary_keyword' => 'موضوع اصلی' ) ), 'args' => array( 'image' => 0 ) )
+);
+
+// Integration: an impossible threshold blocks auto-publish for review.
+$aipc_qg_thr = function () { return 101; };
+add_filter( 'aipc_quality_threshold', $aipc_qg_thr );
+$aipc_qg_job = AIPC_Agent::instance()->create_job( 'موضوع تست دروازه کیفیت', array( 'length' => 'short', 'language' => 'fa', 'image' => 0, 'publish_mode' => 'now', 'force' => 1 ) );
+for ( $aipc_qg_i = 0; $aipc_qg_i < 40; $aipc_qg_i++ ) {
+	$aipc_qg_state = AIPC_Agent::instance()->execute_step( $aipc_qg_job['id'], 0 );
+	if ( ! is_array( $aipc_qg_state ) || 'running' !== $aipc_qg_state['status'] ) {
+		break;
+	}
+}
+remove_filter( 'aipc_quality_threshold', $aipc_qg_thr );
+$aipc_qg_fin   = AIPC_Agent::instance()->get_job( $aipc_qg_job['id'] );
+$aipc_qg_stats = AIPC_Agent::stats();
+
+$out['quality_gate'] = array(
+	'bad_scored_low'   => $aipc_qg_bad['score'] < 60 && count( $aipc_qg_bad['issues'] ) >= 3,
+	'good_scored_high' => $aipc_qg_good['score'] >= 90,
+	'blocked_is_draft' => is_array( $aipc_qg_fin ) && 'done' === $aipc_qg_fin['status'] && 'draft' === get_post_status( (int) $aipc_qg_fin['post_id'] ),
+	'blocked_flagged'  => is_array( $aipc_qg_fin ) && ! empty( $aipc_qg_fin['data']['quality']['blocked'] ) && isset( $aipc_qg_fin['data']['quality']['score'] ),
+	'stats_counted'    => (int) $aipc_qg_stats['quality_blocked'] >= 1,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.22.0 — connection health / circuit breaker.
+ * ------------------------------------------------------------------ */
+delete_option( 'aipc_conn_health' );
+remove_filter( 'aipc_health_streak', 'aipc_e2e_health_streak_off' ); // Real default (5) applies here.
+$aipc_hc_bad  = array( 'id' => 'hc_bad', 'name' => 'Health Test' );
+$aipc_hc_good = array( 'id' => 'hc_good', 'name' => 'Healthy One' );
+for ( $aipc_hc_i = 0; $aipc_hc_i < 5; $aipc_hc_i++ ) {
+	AIPC_Health::record( $aipc_hc_bad, false );
+}
+$aipc_hc_down    = AIPC_Health::on_cooldown( $aipc_hc_bad ) && 'down' === AIPC_Health::status( $aipc_hc_bad );
+$aipc_hc_ordered = AIPC_Health::order( array( $aipc_hc_bad, $aipc_hc_good ) );
+$aipc_hc_demoted = isset( $aipc_hc_ordered[0]['id'], $aipc_hc_ordered[1]['id'] )
+	&& 'hc_good' === $aipc_hc_ordered[0]['id'] && 'hc_bad' === $aipc_hc_ordered[1]['id'];
+$aipc_hc_trouble = AIPC_Health::trouble_today();
+$aipc_hc_listed  = false;
+foreach ( $aipc_hc_trouble as $aipc_hc_t ) {
+	if ( 'Health Test' === $aipc_hc_t['name'] && 5 === (int) $aipc_hc_t['fail'] ) {
+		$aipc_hc_listed = true;
+	}
+}
+AIPC_Health::record( $aipc_hc_bad, true ); // One success heals the breaker.
+$aipc_hc_all = AIPC_Health::all();
+add_filter( 'aipc_health_streak', 'aipc_e2e_health_streak_off' );
+
+$out['conn_health'] = array(
+	'streak_cooldown' => $aipc_hc_down,
+	'order_demotes'   => $aipc_hc_demoted,
+	'trouble_listed'  => $aipc_hc_listed,
+	'success_heals'   => ! AIPC_Health::on_cooldown( $aipc_hc_bad ) && 'warn' === AIPC_Health::status( $aipc_hc_bad ),
+	'daily_counts'    => isset( $aipc_hc_all['hc_bad'] ) && 5 === (int) $aipc_hc_all['hc_bad']['fail'] && 1 === (int) $aipc_hc_all['hc_bad']['ok'],
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.22.0 — automatic content refresh: a schedule entry of kind
+ * "refresh" rewrites the most outdated published post.
+ * ------------------------------------------------------------------ */
+$aipc_rf_post = wp_insert_post( array(
+	'post_title'   => 'مقالهٔ قدیمی برای تازه‌سازی خودکار',
+	'post_content' => '<h2>بخش قدیمی</h2><p>' . implode( ' ', array_fill( 0, 150, 'متن' ) ) . '</p>',
+	'post_status'  => 'publish',
+	'post_type'    => 'post',
+) );
+$aipc_rf_old = gmdate( 'Y-m-d H:i:s', time() - 200 * DAY_IN_SECONDS );
+$GLOBALS['wpdb']->update(
+	$GLOBALS['wpdb']->posts,
+	array( 'post_date' => $aipc_rf_old, 'post_date_gmt' => $aipc_rf_old, 'post_modified' => $aipc_rf_old, 'post_modified_gmt' => $aipc_rf_old ),
+	array( 'ID' => $aipc_rf_post )
+);
+clean_post_cache( $aipc_rf_post );
+
+$aipc_rf_target = AIPC_Scheduler::pick_refresh_target();
+$aipc_rf_entry  = AIPC_Scheduler::save_entry( array( 'time' => '11:00', 'kind' => 'refresh', 'opts' => array( 'image' => 0 ) ) );
+$aipc_rf_job    = AIPC_Scheduler::start_job_for_entry( $aipc_rf_entry['id'], 'cron' );
+if ( ! is_wp_error( $aipc_rf_job ) ) {
+	for ( $aipc_rf_i = 0; $aipc_rf_i < 40; $aipc_rf_i++ ) {
+		$aipc_rf_state = AIPC_Agent::instance()->execute_step( $aipc_rf_job['id'], 0 );
+		if ( ! is_array( $aipc_rf_state ) || 'running' !== $aipc_rf_state['status'] ) {
+			break;
+		}
+	}
+	$aipc_rf_job = AIPC_Agent::instance()->get_job( $aipc_rf_job['id'] );
+}
+$aipc_rf_next = AIPC_Scheduler::pick_refresh_target();
+AIPC_Scheduler::delete_entry( $aipc_rf_entry['id'] );
+
+$out['refresh_cycle'] = array(
+	'target_picked'  => $aipc_rf_target instanceof WP_Post && (int) $aipc_rf_target->ID === (int) $aipc_rf_post,
+	'entry_kind'     => isset( $aipc_rf_entry['kind'] ) && 'refresh' === $aipc_rf_entry['kind'],
+	'job_is_rewrite' => is_array( $aipc_rf_job ) && 'rewrite' === $aipc_rf_job['mode'] && (int) $aipc_rf_job['post_id'] === (int) $aipc_rf_post,
+	'job_done'       => is_array( $aipc_rf_job ) && 'done' === $aipc_rf_job['status'],
+	'meta_stamped'   => (int) get_post_meta( $aipc_rf_post, '_aipc_refreshed', true ) > 0,
+	'rotation_moves' => ! ( $aipc_rf_next instanceof WP_Post ) || (int) $aipc_rf_next->ID !== (int) $aipc_rf_post,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.22.0 — enriched Bale report: rescue images, quality gate and
+ * connection-health lines.
+ * ------------------------------------------------------------------ */
+$aipc_rr_job = AIPC_Agent::instance()->get_job( $aipc_qg_job['id'] );
+$aipc_rr_job['data']['image'] = array( 'attachment_id' => 1, 'prompt' => 'stock: تست گزارش' );
+AIPC_Agent::instance()->save_job( $aipc_rr_job );
+
+$aipc_rr_rm = new ReflectionMethod( 'AIPC_Bale', 'build_report' );
+$aipc_rr_rm->setAccessible( true );
+$aipc_rr_txt = (string) $aipc_rr_rm->invoke( null, 'daily', current_time( 'timestamp' ) );
+
+$out['report_rich'] = array(
+	'report_built' => false !== strpos( $aipc_rr_txt, '🧾' ),
+	'rescue_line'  => false !== strpos( $aipc_rr_txt, '🛟' ),
+	'quality_line' => false !== strpos( $aipc_rr_txt, '🚦' ),
+	'health_line'  => false !== strpos( $aipc_rr_txt, '⚠️' ) && false !== strpos( $aipc_rr_txt, 'Health Test' ),
 );
 
 

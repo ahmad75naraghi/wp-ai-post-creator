@@ -490,6 +490,20 @@ final class AIPC_Bale {
 		}
 
 		$text   = self::post_message( $post_id );
+
+		// Quality gate (1.22.0): tell the editor why auto-publish was
+		// cancelled right in the notification.
+		$aipc_qjob = AIPC_Agent::instance()->get_job( $job_id );
+		if ( $aipc_qjob && ! empty( $aipc_qjob['data']['quality']['blocked'] ) ) {
+			$aipc_qd = $aipc_qjob['data']['quality'];
+			$text   .= "\n\n" . '🚦 ' . sprintf(
+				/* translators: 1: score, 2: issue list. */
+				__( 'Quality gate: score %1$d/100 — auto-publish was cancelled, the post stays a draft. Issues: %2$s', 'wp-ai-post-creator' ),
+				(int) $aipc_qd['score'],
+				implode( ' · ', (array) $aipc_qd['issues'] )
+			);
+		}
+
 		$photo  = self::photo_for( $post_id, $cfg );
 		$markup = self::post_keyboard( $post_id, $cfg );
 
@@ -779,6 +793,8 @@ final class AIPC_Bale {
 		$prompt     = 0;
 		$completion = 0;
 		$calls      = 0;
+		$rescued    = 0;
+		$qblocked   = 0;
 		$by_conn    = array();
 
 		foreach ( AIPC_Agent::instance()->get_jobs_since( $since ) as $job ) {
@@ -794,6 +810,14 @@ final class AIPC_Bale {
 			}
 			$prompt     += (int) $job['usage']['prompt'];
 			$completion += (int) $job['usage']['completion'];
+
+			$img_src = isset( $job['data']['image']['prompt'] ) ? (string) $job['data']['image']['prompt'] : '';
+			if ( 0 === strpos( $img_src, 'stock:' ) || 'default' === $img_src ) {
+				$rescued++;
+			}
+			if ( ! empty( $job['data']['quality']['blocked'] ) ) {
+				$qblocked++;
+			}
 
 			foreach ( (array) $job['calls'] as $call ) {
 				$calls++;
@@ -840,6 +864,20 @@ final class AIPC_Bale {
 				__( '%d API calls', 'wp-ai-post-creator' ),
 				$calls
 			);
+			if ( $rescued > 0 ) {
+				$lines[] = '🛟 ' . sprintf(
+					/* translators: %d: count. */
+					__( 'Rescue images used (stock/default): %d', 'wp-ai-post-creator' ),
+					$rescued
+				);
+			}
+			if ( $qblocked > 0 ) {
+				$lines[] = '🚦 ' . sprintf(
+					/* translators: %d: count. */
+					__( 'Quality gate kept %d post(s) as draft', 'wp-ai-post-creator' ),
+					$qblocked
+				);
+			}
 
 			if ( ! empty( $by_conn ) ) {
 				$lines[] = '';
@@ -853,6 +891,20 @@ final class AIPC_Bale {
 						number_format_i18n( $usage['tokens'] )
 					);
 				}
+			}
+		}
+
+		// Connection health (1.22.0): flag providers that failed today.
+		$trouble = AIPC_Health::trouble_today();
+		if ( ! empty( $trouble ) ) {
+			$lines[] = '';
+			foreach ( $trouble as $t ) {
+				$lines[] = '⚠️ ' . sprintf(
+					/* translators: 1: connection name, 2: failure count. */
+					__( '%1$s — %2$d failed calls today', 'wp-ai-post-creator' ),
+					$t['name'],
+					$t['fail']
+				);
 			}
 		}
 

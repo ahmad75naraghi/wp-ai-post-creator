@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.21.1**. Audience: contributors and
+Technical reference for AI Post Creator **v1.22.0**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -53,6 +53,8 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 | `AIPC_Connections` (`class-aipc-connections.php`) | ~420 | Connection CRUD + sanitizing, default connection, write-only keys, purpose (chat/image/both) + priority, `for_purpose()` priority-ordered pools |
 | `AIPC_Updater` (`class-aipc-updater.php`) | ~600 | Git self-update: repo/branch/token config, version check, connection test, zipball download (codeload or authenticated api.github.com), verification, backup + atomic swap with rollback |
 | `AIPC_Settings` (`class-aipc-settings.php`) | ~250 | Settings (site prompt, source sites, defaults) + option lists (tones, lengths, languages, image sizes) |
+| `AIPC_Quality` (`class-aipc-quality.php`) | ~180 | Quality gate (1.22.0): zero-cost local checks on the finished HTML (thin content, empty/duplicate H2s, keyword stuffing/absence, machine clichés, broken internal links, duplicate titles, missing promised image) → 0–100 score; below `aipc_quality_threshold` (60) auto-publish downgrades to draft |
+| `AIPC_Health` (`class-aipc-health.php`) | ~190 | Connection circuit breaker (1.22.0): per-connection daily ok/fail counters + failure streaks; a streak of `aipc_health_streak` (5) starts an `aipc_health_cooldown` (30 min) during which `order()` moves the connection to the end of every chain — never removed |
 | `AIPC_Assets` (`class-aipc-assets.php`) | ~260 | Locale-proof screen detection (`screen_for_hook()` parses the page slug after `_page_` — the hook prefix is the *translated* menu title), enqueue, inline config for the console JS |
 
 ## 3. Data model (wp_options)
@@ -64,8 +66,9 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 | `aipc_steps` | `{step_id: {connections: [conn_id,…] (ordered fallback chain), prompt: '' = default}}` — reads also accept legacy `connection` (string) |
 | `aipc_schema_version` | jobs-table schema version (`AIPC_Job_Store::SCHEMA_VERSION`); bump + migration routine on upgrade |
 | **table `{$wpdb->prefix}aipc_jobs`** | one row per job: `id VARCHAR(40)` PK, `created`/`updated` BIGINT, `status`, `mode`, `source`, `post_id`, `steps_total`, `steps_done`, `calls`, `prompt_tokens`, `completion_tokens` INT, `topic`, `payload` LONGTEXT (full job JSON — the source of truth: `steps[]`, `log[]`, `calls[]`, `timings`, `usage`, `args`, `data`, `notified`); KEY `status`/`created`/`source`. Retention pruning via `aipc_job_retention_days` (default 90, 0 = forever). The legacy `aipc_jobs` option (≤30 jobs / 24 h) is migrated automatically and remains as a fallback when the table is unavailable or `aipc_jobs_table_enabled` returns false |
-| `aipc_stats` (autoload off) | aggregate: jobs, done, calls, tokens, drafts, `by_connection{name: {calls, ok, tokens}}` |
-| `aipc_schedule` | `entries[]` (`{id (sch_*), time HH:MM, days[0–6 Sun=0], enabled, topic, publish (draft/now/delay), publish_delay (15–10080), opts{tone,length,language,image,faq,toc}}`), `state{entry_id: Y-m-d fired}`, `settings{daily_limit}` |
+| `aipc_stats` (autoload off) | aggregate: jobs, done, calls, tokens, drafts, `rescued_images` + `quality_blocked` (1.22.0), `by_connection{name: {calls, ok, tokens}}` |
+| `aipc_schedule` | `entries[]` (`{id (sch_*), kind (new/refresh, 1.22.0), time HH:MM, days[0–6 Sun=0], enabled, topic, publish (draft/now/delay), publish_delay (15–10080), opts{tone,length,language,image,faq,toc}}`), `state{entry_id: Y-m-d fired}`, `settings{daily_limit}` |
+| `aipc_conn_health` (autoload off, 1.22.0) | `{conn_id: {name, day (Y-m-d, daily reset), ok, fail, streak, cooldown_until}}` — written by `AIPC_Health::record()` from the chain-retry loop; feeds the connections-page health light, chain reordering and the Bale report |
 | `aipc_git` (autoload off) | Git self-update configuration: `repo` (`owner/name`, default `ahmad75naraghi/wp-ai-post-creator`), `branch` (default `main`), `token` (write-only PAT — an empty field keeps the stored token) |
 | `aipc_bale` | `enabled`, `token` (write-only), `chat_ids[]`, `report` (''/daily/weekly), `report_time`, `report_day` (weekday for weekly, default 6), `last_report` (Y-m-d), `two_way` (accept commands, 1.7.0), `last_update_id` (getUpdates offset) |
 | `aipc_bale_msgmap` (autoload off) | `{"<chat_id>:<message_id>": post_id}` — sent draft-notification ids captured by `AIPC_Bale::notify()`, capped at 100; lets a Reply containing a date schedule exactly that post (1.17.0) |
@@ -73,6 +76,8 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 | `aipc_claim_<md5>` (autoload off, 1.19.0) | atomic one-winner locks (`AIPC_Agent::claim()`): value = claim timestamp; keys `topic_<norm>` (10 min), `notify_<job>` / `entry_<id>_<date>` (1 day); long-expired rows pruned opportunistically |
 
 Post meta written by the builder: `_aipc_generated`, `_aipc_job`,
+`_aipc_refreshed` (unix time of the last rewrite — rotates the automatic
+content-refresh picks, 1.22.0),
 `_aipc_topic_norm` (canonical topic for the duplicate guard, 1.19.0),
 `_aipc_faq_schema` (FAQPage JSON-LD), `_aipc_meta_title`,
 `_aipc_meta_description` (mirrored to Yoast `_yoast_wpseo_*` and Rank Math
@@ -247,7 +252,17 @@ Every job is driven **server-side** by a self-rescheduling single cron event on
 - `sanitize_internal_links()` (≤ 4, esc_url_raw) and `internal_links_block()`
   (the "weave these in" instruction for writing prompts)
 
-### 5.4 Finalization & publish modes (`finalize` / `rw_finalize`)
+### 5.4 Finalization & publish modes (`finalize` / `rw_finalize` / `img_finalize`)
+
+Before `finalize` creates a new post, the quality gate (1.22.0) scores the
+built HTML with `AIPC_Quality::check()`; below `aipc_quality_threshold`
+(60) a `now`/`delay` publish mode is downgraded to `draft`, the verdict is
+stored at `data.quality` (`blocked = 1`) and the Bale notification appends
+a 🚦 line with the issues. `rw_finalize` additionally stamps
+`_aipc_refreshed` for the content-refresh rotation. The `image_fix` job
+mode (repair tool, §8) uses a 2-step manifest (`image` → `img_finalize`)
+that only attaches the generated attachment as the featured image and sets
+`notified = 1` so no "post created" Bale message is sent.
 
 `AIPC_Post_Builder::create()`/`update()` saves the post (draft by default;
 rewrite preserves status/author/slug/categories and appends tags). Then:
@@ -332,6 +347,15 @@ controls.
   `AIPC_Topic_Queue::peek()` (marked used with the job id afterwards) and
   fall back to the entry's fixed topic — or the site prompt — when the
   queue is empty.
+- Entries with `kind = refresh` (1.22.0) ignore the topic fields:
+  `pick_refresh_target()` returns the oldest published post whose
+  `post_modified_gmt` **and** `_aipc_refreshed` meta are both older than
+  `aipc_refresh_min_age` (90 days) and the entry fires a `rewrite` job on
+  it (same title/URL, fresh copy + SEO).
+- The image-repair tool (`AIPC_Agent::repair_missing_images()`, Jobs & Cron
+  page, 1.22.0) scans posts without `_thumbnail_id`, claims
+  `imgfix_<post_id>` for 1 hour and starts up to `aipc_image_repair_batch`
+  (10) staggered `image_fix` jobs through the background runner.
 - Daily limit counts cron-source jobs created today (0 = unlimited)
   (`AIPC_Job_Store::count_since`).
 - The tick also re-arms lost `aipc_run_job` events for every `running` job
@@ -387,8 +411,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 73 result
-groups / 561 assertions green at v1.21.1, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 78 result
+groups / 587 assertions green at v1.22.0, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference
@@ -409,4 +433,8 @@ runs on GitHub Actions (`.github/workflows/ci.yml`).
 `aipc_image_timeout($seconds)` (default 180, 1.17.1) ·
 `aipc_duplicate_window($days)` (default 30, duplicate-topic guard, 1.19.0) ·
 `aipc_link_candidate_pool($count)` (default 100, internal-link relevance pool, 1.20.0) ·
-`aipc_force_image_window($seconds)` (default DAY_IN_SECONDS, force-image retry window, 1.21.0)
+`aipc_force_image_window($seconds)` (default DAY_IN_SECONDS, force-image retry window, 1.21.0) ·
+`aipc_quality_threshold($score, $job)` (default 60, quality gate, 1.22.0) ·
+`aipc_health_streak($n, $conn)` / `aipc_health_cooldown($seconds, $conn)` (defaults 5 / 30 min, circuit breaker, 1.22.0) ·
+`aipc_refresh_min_age($seconds)` (default 90 days, content refresh, 1.22.0) ·
+`aipc_image_repair_batch($n)` (default 10, image-repair scan size, 1.22.0)

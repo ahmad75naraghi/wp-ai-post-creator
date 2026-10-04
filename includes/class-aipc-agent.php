@@ -104,6 +104,10 @@ final class AIPC_Agent {
 			}
 		}
 
+		// Circuit breaker (1.22.0): connections on cooldown move to the
+		// end of the chain so healthy ones are tried first.
+		$chain = AIPC_Health::order( $chain );
+
 		/**
 		 * Filter the ordered connection chain used by a step.
 		 *
@@ -323,6 +327,8 @@ final class AIPC_Agent {
 			'calls'             => 0,
 			'prompt_tokens'     => 0,
 			'completion_tokens' => 0,
+			'rescued_images'    => 0,
+			'quality_blocked'   => 0,
 			'by_connection'     => array(),
 		);
 		return wp_parse_args( is_array( $stats ) ? $stats : array(), $defaults );
@@ -348,6 +354,21 @@ final class AIPC_Agent {
 		$stats['calls']             += (int) $job['usage']['calls'];
 		$stats['prompt_tokens']     += (int) $job['usage']['prompt'];
 		$stats['completion_tokens'] += (int) $job['usage']['completion'];
+
+		// 1.22.0 counters for the dashboard + Bale report.
+		if ( ! isset( $stats['rescued_images'] ) ) {
+			$stats['rescued_images'] = 0;
+		}
+		if ( ! isset( $stats['quality_blocked'] ) ) {
+			$stats['quality_blocked'] = 0;
+		}
+		$aipc_img_src = isset( $job['data']['image']['prompt'] ) ? (string) $job['data']['image']['prompt'] : '';
+		if ( 0 === strpos( $aipc_img_src, 'stock:' ) || 'default' === $aipc_img_src ) {
+			$stats['rescued_images']++;
+		}
+		if ( ! empty( $job['data']['quality']['blocked'] ) ) {
+			$stats['quality_blocked']++;
+		}
 
 		foreach ( (array) $job['calls'] as $call ) {
 			$name = isset( $call['conn'] ) && '' !== $call['conn'] ? $call['conn'] : __( 'Unknown connection', 'wp-ai-post-creator' );
@@ -396,7 +417,7 @@ final class AIPC_Agent {
 		}
 
 		$mode = isset( $args['mode'] ) ? sanitize_key( $args['mode'] ) : 'new';
-		if ( ! in_array( $mode, array( 'new', 'rewrite' ), true ) ) {
+		if ( ! in_array( $mode, array( 'new', 'rewrite', 'image_fix' ), true ) ) {
 			$mode = 'new';
 		}
 
@@ -596,7 +617,7 @@ final class AIPC_Agent {
 		// — not while another job is writing it, not when an article about
 		// it was created recently, and not when two identical requests race
 		// each other. `force` (admin opt-in) bypasses everything.
-		$req_mode = isset( $args['mode'] ) && 'rewrite' === $args['mode'] ? 'rewrite' : 'new';
+		$req_mode = isset( $args['mode'] ) && in_array( $args['mode'], array( 'rewrite', 'image_fix' ), true ) ? $args['mode'] : 'new';
 		$force    = ! empty( $args['force'] );
 		if ( 'new' === $req_mode && '' !== $topic && ! $force ) {
 			$dup = self::duplicate_of( $topic, $source, ! empty( $args['from_queue'] ) );
@@ -646,12 +667,35 @@ final class AIPC_Agent {
 			$job['mode']     = 'rewrite';
 			$job['post_id']  = (int) $rewrite_post->ID;
 			$job['topic']    = '' !== $topic ? $topic : $rewrite_post->post_title;
+		} elseif ( 'image_fix' === $job['args']['mode'] ) {
+			// Image-repair mode (1.22.0): generate ONLY a featured image
+			// for an existing post that has none — the content is never
+			// touched.
+			if ( ! AIPC_Settings::get( 'image_enabled' ) ) {
+				return new WP_Error( 'aipc_imgfix', __( 'Featured images are disabled in the settings.', 'wp-ai-post-creator' ) );
+			}
+			$fix_post = get_post( (int) $job['args']['post_id'] );
+			if ( ! $fix_post || 'post' !== $fix_post->post_type ) {
+				return new WP_Error( 'aipc_imgfix', __( 'The post to repair was not found.', 'wp-ai-post-creator' ) );
+			}
+			if ( is_user_logged_in() && ! current_user_can( 'edit_post', $fix_post->ID ) ) {
+				return new WP_Error( 'aipc_imgfix', __( 'You are not allowed to edit this post.', 'wp-ai-post-creator' ) );
+			}
+			$job['mode']           = 'image_fix';
+			$job['post_id']        = (int) $fix_post->ID;
+			$job['topic']          = $fix_post->post_title;
+			$job['args']['image']  = 1;
+			$job['data']['plan']   = array( 'title' => $fix_post->post_title, 'primary_keyword' => '' );
+			$job['data']['seo']    = array( 'meta_description' => mb_substr( wp_strip_all_tags( get_the_excerpt( $fix_post ) ), 0, 200 ) );
 		} else {
 			$job['mode'] = 'new';
 		}
 
 		$reg = AIPC_Steps::registry();
-		if ( 'rewrite' === $job['mode'] ) {
+		if ( 'image_fix' === $job['mode'] ) {
+			$job['steps'][] = array( 'id' => 'image', 'label' => $reg['image']['label'], 'status' => 'pending' );
+			$job['steps'][] = array( 'id' => 'img_finalize', 'label' => __( 'Attach image', 'wp-ai-post-creator' ), 'status' => 'pending' );
+		} elseif ( 'rewrite' === $job['mode'] ) {
 			$job['steps'][] = array( 'id' => 'rw_analyze', 'label' => $reg['rw_analyze']['label'], 'status' => 'pending' );
 			$job['steps'][] = array( 'id' => 'rw_rewrite', 'label' => $reg['rw_rewrite']['label'], 'status' => 'pending' );
 			if ( $job['args']['faq'] ) {
@@ -731,6 +775,57 @@ final class AIPC_Agent {
 			self::release( 'topic_' . self::topic_norm( $job['topic'] ) );
 		}
 		return $job;
+	}
+
+	/**
+	 * Scan for posts without a featured image and start one quiet
+	 * image-repair job per post (1.22.0).
+	 *
+	 * @param int $limit Max repairs per scan.
+	 * @return int Number of repair jobs started.
+	 */
+	public function repair_missing_images( $limit = 10 ) {
+		/**
+		 * Filter the maximum number of repair jobs per scan.
+		 *
+		 * @param int $limit Default 10.
+		 */
+		$limit = max( 1, (int) apply_filters( 'aipc_image_repair_batch', $limit ) );
+
+		$posts = get_posts( array(
+			'post_type'      => 'post',
+			'post_status'    => array( 'publish', 'draft', 'future' ),
+			'posts_per_page' => $limit * 2,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+			'meta_query'     => array(
+				array(
+					'key'     => '_thumbnail_id',
+					'compare' => 'NOT EXISTS',
+				),
+			),
+		) );
+
+		$created = 0;
+		foreach ( $posts as $aipc_rp ) {
+			if ( $created >= $limit ) {
+				break;
+			}
+			// One repair attempt per post per hour — never a pile-up.
+			if ( ! self::claim( 'imgfix_' . $aipc_rp->ID, HOUR_IN_SECONDS ) ) {
+				continue;
+			}
+			$job = $this->create_job( $aipc_rp->post_title, array(
+				'mode'    => 'image_fix',
+				'post_id' => $aipc_rp->ID,
+				'image'   => 1,
+			), 'manual' );
+			if ( ! is_wp_error( $job ) ) {
+				$created++;
+				AIPC_Scheduler::schedule_runner( $job['id'], 5 + $created * 10 );
+			}
+		}
+		return $created;
 	}
 
 	/**
@@ -913,8 +1008,10 @@ final class AIPC_Agent {
 				try {
 					$this->run_step( $job, $step['id'], $conn );
 					$passed = true;
+					AIPC_Health::record( $conn, true );
 				} catch ( Exception $e ) {
 					$last_error = $e->getMessage();
+					AIPC_Health::record( $conn, false );
 					if ( $attempt < $max_attempts ) {
 						$this->log( $job, sprintf(
 							/* translators: 1: attempt number, 2: total attempts, 3: connection name, 4: error message. */
@@ -1111,6 +1208,9 @@ final class AIPC_Agent {
 				break;
 			case 'rw_finalize':
 				$this->step_rw_finalize( $job );
+				break;
+			case 'img_finalize':
+				$this->step_img_finalize( $job );
 				break;
 			case 'finalize':
 				$this->step_finalize( $job );
@@ -2624,6 +2724,43 @@ final class AIPC_Agent {
 	 * @return void
 	 * @throws Exception On failure.
 	 */
+	/**
+	 * Image-repair mode (1.22.0): attach the generated image to the
+	 * existing post. The content is never touched.
+	 *
+	 * @param array $job Job (by ref).
+	 * @return void
+	 */
+	private function step_img_finalize( array &$job ) {
+		$post_id = (int) $job['post_id'];
+		$att     = isset( $job['data']['image']['attachment_id'] ) ? (int) $job['data']['image']['attachment_id'] : 0;
+
+		if ( $att > 0 ) {
+			set_post_thumbnail( $post_id, $att );
+			$this->log( $job, sprintf(
+				/* translators: 1: post title, 2: post id. */
+				__( 'Featured image repaired for “%1$s” (#%2$d).', 'wp-ai-post-creator' ),
+				get_the_title( $post_id ),
+				$post_id
+			), 'success' );
+		} else {
+			$this->log( $job, __( 'No image could be generated — the post keeps no featured image for now.', 'wp-ai-post-creator' ), 'warn' );
+		}
+
+		$job['data']['result'] = array(
+			'post_id' => $post_id,
+			'title'   => get_the_title( $post_id ),
+			'edit'    => admin_url( 'post.php?post=' . $post_id . '&action=edit' ),
+			'view'    => (string) get_permalink( $post_id ),
+			'words'   => 0,
+			'status'  => (string) get_post_status( $post_id ),
+		);
+		$job['status']   = 'done';
+		$job['notified'] = 1; // Repairs stay quiet — no "post created" Bale message.
+		$this->record_stats( $job );
+		$this->advance( $job );
+	}
+
 	private function step_rw_finalize( array &$job ) {
 		$post_id = AIPC_Post_Builder::update( $job );
 		if ( is_wp_error( $post_id ) ) {
@@ -2665,6 +2802,10 @@ final class AIPC_Agent {
 
 		$this->record_stats( $job );
 
+		// Content-refresh bookkeeping (1.22.0): remember when this post
+		// was last rewritten so the refresh scheduler can rotate fairly.
+		update_post_meta( (int) $post_id, '_aipc_refreshed', time() );
+
 		// The aipc_post_created notification (Bale etc.) is fired by
 		// execute_step() when the finished job state is saved.
 
@@ -2701,6 +2842,36 @@ final class AIPC_Agent {
 			$job['status'] = 'done';
 			$this->advance( $job );
 			return;
+		}
+
+		// Quality gate (1.22.0): zero-cost checks on the finished HTML.
+		// A low score cancels auto-publishing — the post stays a draft.
+		$aipc_q = AIPC_Quality::check( AIPC_Post_Builder::build_content( $job ), $job );
+		$job['data']['quality'] = $aipc_q;
+
+		/**
+		 * Filter the minimum quality score required for auto-publishing.
+		 *
+		 * @param int   $threshold Default 60.
+		 * @param array $job       Job.
+		 */
+		$aipc_thr = (int) apply_filters( 'aipc_quality_threshold', 60, $job );
+		if ( $aipc_q['score'] < $aipc_thr && in_array( $job['args']['publish_mode'], array( 'now', 'delay' ), true ) ) {
+			$job['data']['quality']['blocked'] = 1;
+			$job['args']['publish_mode']       = 'draft';
+			$this->log( $job, sprintf(
+				/* translators: 1: score, 2: threshold, 3: issue list. */
+				__( 'Quality gate: score %1$d/100 is below %2$d — auto-publish cancelled, the post stays a draft for review. Issues: %3$s', 'wp-ai-post-creator' ),
+				$aipc_q['score'],
+				$aipc_thr,
+				implode( ' · ', $aipc_q['issues'] )
+			), 'warn' );
+		} else {
+			$this->log( $job, sprintf(
+				/* translators: %d: quality score. */
+				__( 'Quality score: %d/100.', 'wp-ai-post-creator' ),
+				$aipc_q['score']
+			), $aipc_q['score'] < $aipc_thr ? 'warn' : 'info' );
 		}
 
 		$post_id = AIPC_Post_Builder::create( $job );

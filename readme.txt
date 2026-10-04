@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.21.1
+Stable tag: 1.22.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,13 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.22.0 =
+* New: "Repair missing images" tool on the Jobs & Cron page — scans posts without a featured image and quietly generates and attaches one per post, never touching the content
+* New: quality gate — every finished article gets a local 0–100 quality score (thin content, duplicate headings, keyword stuffing, AI-sounding clichés, broken internal links, duplicate titles); low scores cancel auto-publishing and keep the post as a draft for review
+* New: connection health circuit breaker — providers that fail repeatedly are put on a short cooldown and moved to the end of every fallback chain; the connections list shows a per-connection health light
+* New: schedule entries can refresh old content — a "Refresh an old post" entry rewrites the oldest published post untouched for 90+ days, keeping its title and URL
+* New: the Bale report counts rescue images and quality-gated drafts and flags connections with failures today; two new stat cards on the Logs page
 
 = 1.21.1 =
 * Fix: the "Force image generation" checkbox on schedule entries was silently dropped by the entry sanitizer and never saved

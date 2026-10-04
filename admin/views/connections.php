@@ -215,7 +215,20 @@ endif;
 							?>
 						</td>
 						<td><?php echo esc_html( isset( $aipc_conn['priority'] ) ? (int) $aipc_conn['priority'] : 10 ); ?></td>
-						<td><?php echo ! empty( $aipc_conn['enabled'] ) ? '🟢 ' . esc_html__( 'Active', 'wp-ai-post-creator' ) : '⏸ ' . esc_html__( 'Disabled', 'wp-ai-post-creator' ); ?></td>
+						<td><?php
+							if ( empty( $aipc_conn['enabled'] ) ) {
+								echo '⏸ ' . esc_html__( 'Disabled', 'wp-ai-post-creator' );
+							} else {
+								$aipc_health = AIPC_Health::status( $aipc_conn );
+								if ( 'down' === $aipc_health ) {
+									echo '🔴 <span title="' . esc_attr__( 'On cooldown after repeated failures — temporarily moved to the end of every chain.', 'wp-ai-post-creator' ) . '">' . esc_html__( 'Cooling down', 'wp-ai-post-creator' ) . '</span>';
+								} elseif ( 'warn' === $aipc_health ) {
+									echo '🟡 <span title="' . esc_attr__( 'Some calls failed today.', 'wp-ai-post-creator' ) . '">' . esc_html__( 'Unstable today', 'wp-ai-post-creator' ) . '</span>';
+								} else {
+									echo '🟢 ' . esc_html__( 'Active', 'wp-ai-post-creator' );
+								}
+							}
+						?></td>
 						<td><?php echo ! empty( $aipc_conn['is_default'] ) ? '⭐ ' . esc_html__( 'Yes', 'wp-ai-post-creator' ) : '—'; ?></td>
 						<td>
 							<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_toggle_connection&id=' . $aipc_conn['id'] ), 'aipc_toggle_connection' ) ); ?>"><?php echo ! empty( $aipc_conn['enabled'] ) ? esc_html__( 'Disable', 'wp-ai-post-creator' ) : esc_html__( 'Enable', 'wp-ai-post-creator' ); ?></a> ·

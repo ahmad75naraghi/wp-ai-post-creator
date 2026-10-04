@@ -3343,3 +3343,147 @@ msgstr "پست فقط زمانی ذخیره، منتشر و در بله اعلا
 #: admin/views/new-post.php
 msgid "retry until the image exists — never finish without it"
 msgstr "تا ساخته‌شدن عکس تلاش می‌کند — هرگز بدون عکس تمام نمی‌شود"
+
+#: includes/class-aipc-quality.php
+msgid "%1$d machine-cliché phrase(s), e.g. “%2$s”"
+msgstr "%1$d عبارت کلیشه‌ای ماشینی، مثلاً «%2$s»"
+
+#: includes/class-aipc-bale.php
+msgid "%1$s — %2$d failed calls today"
+msgstr "%1$s — %2$d تماس ناموفق امروز"
+
+#: admin/views/cron.php
+msgid "%d image-repair job(s) started — the images are generated in the background and attached as soon as they are ready."
+msgstr "%d کار ترمیم عکس شروع شد — عکس‌ها در پس‌زمینه ساخته و به‌محض آماده‌شدن پیوست می‌شوند."
+
+#: includes/class-aipc-quality.php
+msgid "%d internal link(s) do not resolve to a post"
+msgstr "%d پیوند داخلی به هیچ نوشته‌ای نمی‌رسد"
+
+#: includes/class-aipc-quality.php
+msgid "A post with the exact same title already exists (#%d)"
+msgstr "نوشته‌ای با همین عنوانِ دقیق از قبل وجود دارد (#%d)"
+
+#: includes/class-aipc-agent.php
+msgid "Attach image"
+msgstr "پیوست عکس"
+
+#: admin/views/connections.php
+msgid "Cooling down"
+msgstr "در حال استراحت"
+
+#: includes/class-aipc-quality.php
+msgid "Duplicated section headings"
+msgstr "تیترهای بخش تکراری"
+
+#: includes/class-aipc-quality.php
+msgid "Empty section heading"
+msgstr "تیتر بخشِ خالی"
+
+#: admin/views/schedule.php
+msgid "Entry type"
+msgstr "نوع ردیف"
+
+#: includes/class-aipc-agent.php
+msgid "Featured image repaired for “%1$s” (#%2$d)."
+msgstr "تصویر شاخص «%1$s» ترمیم شد (#%2$d)."
+
+#: includes/class-aipc-agent.php
+msgid "Featured images are disabled in the settings."
+msgstr "تصویر شاخص در تنظیمات غیرفعال است."
+
+#: includes/class-aipc-quality.php
+msgid "Keyword stuffing: “%s” is repeated far too often"
+msgstr "انباشت کلیدواژه: «%s» بیش از حد تکرار شده است"
+
+#: includes/class-aipc-quality.php
+msgid "No featured image was generated"
+msgstr "هیچ تصویر شاخصی ساخته نشد"
+
+#: includes/class-aipc-agent.php
+msgid "No image could be generated — the post keeps no featured image for now."
+msgstr "هیچ عکسی ساخته نشد — نوشته فعلاً بدون تصویر شاخص می‌ماند."
+
+#: includes/class-aipc-scheduler.php
+msgid "No post is old enough to need refreshing right now."
+msgstr "فعلاً هیچ نوشته‌ای آن‌قدر قدیمی نیست که به تازه‌سازی نیاز داشته باشد."
+
+#: admin/views/cron.php
+msgid "Nothing to repair — every post already has a featured image (or a repair was started within the last hour)."
+msgstr "چیزی برای ترمیم نیست — همهٔ نوشته‌ها تصویر شاخص دارند (یا در یک ساعت گذشته ترمیمی شروع شده است)."
+
+#: admin/views/connections.php
+msgid "On cooldown after repeated failures — temporarily moved to the end of every chain."
+msgstr "به‌دلیل خطاهای پیاپی در حالت استراحت است — موقتاً به انتهای همهٔ زنجیره‌ها منتقل شده."
+
+#: includes/class-aipc-bale.php
+msgid "Quality gate kept %d post(s) as draft"
+msgstr "دروازهٔ کیفیت %d نوشته را پیش‌نویس نگه داشت"
+
+#: includes/class-aipc-agent.php
+msgid "Quality gate: score %1$d/100 is below %2$d — auto-publish cancelled, the post stays a draft for review. Issues: %3$s"
+msgstr "دروازهٔ کیفیت: امتیاز %1$d از ۱۰۰ کمتر از %2$d است — انتشار خودکار لغو شد و نوشته برای بازبینی پیش‌نویس می‌ماند. ایرادها: %3$s"
+
+#: includes/class-aipc-bale.php
+msgid "Quality gate: score %1$d/100 — auto-publish was cancelled, the post stays a draft. Issues: %2$s"
+msgstr "دروازهٔ کیفیت: امتیاز %1$d از ۱۰۰ — انتشار خودکار لغو شد و نوشته پیش‌نویس می‌ماند. ایرادها: %2$s"
+
+#: includes/class-aipc-agent.php
+msgid "Quality score: %d/100."
+msgstr "امتیاز کیفیت: %d از ۱۰۰."
+
+#: admin/views/schedule.php
+msgid "Refresh an old post (auto-pick)"
+msgstr "تازه‌سازی یک پست قدیمی (انتخاب خودکار)"
+
+#: admin/views/schedule.php
+msgid "Refresh old posts"
+msgstr "تازه‌سازی پست‌های قدیمی"
+
+#: admin/views/schedule.php
+msgid "Refresh: the oldest published post not touched for 90+ days is rewritten — same title and URL, fresh copy and SEO. The topic/queue fields are ignored."
+msgstr "تازه‌سازی: قدیمی‌ترین پست منتشرشده‌ای که بیش از ۹۰ روز دست‌نخورده مانده بازنویسی می‌شود — با همان عنوان و نشانی، با متن و سئوی تازه. فیلدهای موضوع/صف نادیده گرفته می‌شوند."
+
+#: admin/views/cron.php
+msgid "Repair missing images"
+msgstr "ترمیم عکس‌های جاافتاده"
+
+#: includes/class-aipc-bale.php
+msgid "Rescue images used (stock/default): %d"
+msgstr "تصاویر نجات استفاده‌شده (استوک/پیش‌فرض): %d"
+
+#: admin/views/cron.php
+msgid "Scans your posts for missing featured images and starts a quiet image-only job per post (max 10 per scan): the content is never touched, only the image is generated and attached — with the same retry logic as force-image mode."
+msgstr "نوشته‌ها را برای تصویر شاخصِ جاافتاده می‌کاود و برای هر نوشته یک کارِ بی‌سروصدای فقط‌عکس می‌سازد (حداکثر ۱۰ در هر پویش): به محتوا دست نمی‌خورد، فقط عکس ساخته و پیوست می‌شود — با همان منطق تلاش دوبارهٔ حالت عکس اجباری."
+
+#: admin/views/connections.php
+msgid "Some calls failed today."
+msgstr "بعضی تماس‌های امروز ناموفق بودند."
+
+#: includes/class-aipc-quality.php
+msgid "The focus keyword “%s” never appears in the text"
+msgstr "کلیدواژهٔ کانونی «%s» هیچ‌جا در متن نیامده است"
+
+#: includes/class-aipc-agent.php
+msgid "The post to repair was not found."
+msgstr "نوشته‌ای که باید ترمیم شود پیدا نشد."
+
+#: admin/views/connections.php
+msgid "Unstable today"
+msgstr "امروز ناپایدار"
+
+#: includes/class-aipc-quality.php
+msgid "Very short article (%d words)"
+msgstr "مقالهٔ خیلی کوتاه (%d واژه)"
+
+#: admin/views/schedule.php
+msgid "Write a new post"
+msgstr "نوشتن پست جدید"
+
+#: admin/views/logs.php
+msgid "quality-gated drafts"
+msgstr "پیش‌نویسِ دروازهٔ کیفیت"
+
+#: admin/views/logs.php
+msgid "rescue images"
+msgstr "تصاویر نجات"

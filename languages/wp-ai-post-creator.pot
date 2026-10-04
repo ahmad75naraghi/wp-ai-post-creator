@@ -14,6 +14,14 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Domain: wp-ai-post-creator\n"
 
+#: includes/class-aipc-quality.php
+msgid "%1$d machine-cliché phrase(s), e.g. “%2$s”"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "%1$s — %2$d failed calls today"
+msgstr ""
+
 #: admin/views/log-detail.php includes/class-aipc-bale.php
 msgid "%d API calls"
 msgstr ""
@@ -23,6 +31,14 @@ msgid "%d draft waiting"
 msgid_plural "%d drafts waiting"
 msgstr[0] ""
 msgstr[1] ""
+
+#: admin/views/cron.php
+msgid "%d image-repair job(s) started — the images are generated in the background and attached as soon as they are ready."
+msgstr ""
+
+#: includes/class-aipc-quality.php
+msgid "%d internal link(s) do not resolve to a post"
+msgstr ""
 
 #: includes/class-aipc-assets.php
 msgid "%d models loaded — pick one in the list."
@@ -82,6 +98,10 @@ msgstr ""
 
 #: includes/class-aipc-admin.php
 msgid "A new AI featured image was generated and set for the post."
+msgstr ""
+
+#: includes/class-aipc-quality.php
+msgid "A post with the exact same title already exists (#%d)"
 msgstr ""
 
 #: admin/views/prompts.php
@@ -326,6 +346,10 @@ msgstr ""
 
 #: admin/views/prompts.php
 msgid "Assign each pipeline step its own AI connection and edit its prompt template."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Attach image"
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -692,6 +716,10 @@ msgstr ""
 msgid "Content language name"
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Cooling down"
+msgstr ""
+
 #: includes/class-aipc-agent.php includes/class-aipc-steps.php
 msgid "Copywriting & SEO pass"
 msgstr ""
@@ -996,6 +1024,10 @@ msgstr ""
 msgid "Duplicate request blocked: “%s” is already waiting in the topic queue and will be written on schedule."
 msgstr ""
 
+#: includes/class-aipc-quality.php
+msgid "Duplicated section headings"
+msgstr ""
+
 #: admin/views/logs.php
 msgid "Duration"
 msgstr ""
@@ -1038,6 +1070,10 @@ msgstr ""
 
 #: includes/class-aipc-post-builder.php
 msgid "Empty image data."
+msgstr ""
+
+#: includes/class-aipc-quality.php
+msgid "Empty section heading"
 msgstr ""
 
 #: includes/class-aipc-stock.php
@@ -1086,6 +1122,10 @@ msgstr ""
 
 #: includes/class-aipc-assets.php
 msgid "Enter at least one chat ID."
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Entry type"
 msgstr ""
 
 #: admin/views/cron.php admin/views/logs.php
@@ -1177,11 +1217,19 @@ msgid "Featured image disabled in settings — skipped."
 msgstr ""
 
 #: includes/class-aipc-agent.php
+msgid "Featured image repaired for “%1$s” (#%2$d)."
+msgstr ""
+
+#: includes/class-aipc-agent.php
 msgid "Featured image saved to the media library (#%d)"
 msgstr ""
 
 #: admin/views/settings.php
 msgid "Featured images"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Featured images are disabled in the settings."
 msgstr ""
 
 #: includes/class-aipc-assets.php
@@ -1404,6 +1452,10 @@ msgstr ""
 msgid "Keep the token private — anyone who has it controls the bot, and two sites polling the same bot steal each other’s messages."
 msgstr ""
 
+#: includes/class-aipc-quality.php
+msgid "Keyword stuffing: “%s” is repeated far too often"
+msgstr ""
+
 #: admin/views/new-post.php admin/views/rewrite.php
 msgid "Language (write its English name)"
 msgstr ""
@@ -1572,6 +1624,14 @@ msgstr ""
 msgid "No draft found at that position — send «آخرین» to see the newest draft."
 msgstr ""
 
+#: includes/class-aipc-quality.php
+msgid "No featured image was generated"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "No image could be generated — the post keeps no featured image for now."
+msgstr ""
+
 #: includes/class-aipc-agent.php
 msgid "No image-capable connection is configured (or enabled)."
 msgstr ""
@@ -1598,6 +1658,10 @@ msgstr ""
 
 #: admin/views/cron.php
 msgid "No plugin cron events are registered right now."
+msgstr ""
+
+#: includes/class-aipc-scheduler.php
+msgid "No post is old enough to need refreshing right now."
 msgstr ""
 
 #: admin/views/rewrite.php
@@ -1628,6 +1692,10 @@ msgstr ""
 msgid "Nothing is running — all jobs are finished."
 msgstr ""
 
+#: admin/views/cron.php
+msgid "Nothing to repair — every post already has a featured image (or a repair was started within the last hour)."
+msgstr ""
+
 #: admin/views/review.php
 msgid "Nothing to review. The agent always saves new posts as drafts — they will appear here."
 msgstr ""
@@ -1650,6 +1718,10 @@ msgstr ""
 
 #: admin/views/update.php
 msgid "Older than the installed version"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "On cooldown after repeated failures — temporarily moved to the end of every chain."
 msgstr ""
 
 #: admin/views/bot.php
@@ -1922,6 +1994,22 @@ msgstr ""
 msgid "Purpose"
 msgstr ""
 
+#: includes/class-aipc-bale.php
+msgid "Quality gate kept %d post(s) as draft"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Quality gate: score %1$d/100 is below %2$d — auto-publish cancelled, the post stays a draft for review. Issues: %3$s"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Quality gate: score %1$d/100 — auto-publish was cancelled, the post stays a draft. Issues: %2$s"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Quality score: %d/100."
+msgstr ""
+
 #: admin/views/schedule.php
 msgid "Queue"
 msgstr ""
@@ -1962,6 +2050,18 @@ msgstr ""
 msgid "Recurring plugin events"
 msgstr ""
 
+#: admin/views/schedule.php
+msgid "Refresh an old post (auto-pick)"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Refresh old posts"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Refresh: the oldest published post not touched for 90+ days is rewritten — same title and URL, fresh copy and SEO. The topic/queue fields are ignored."
+msgstr ""
+
 #: includes/class-aipc-admin.php
 msgid "Regenerate AI image"
 msgstr ""
@@ -1980,6 +2080,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "Remove every pending topic from the queue?"
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Repair missing images"
 msgstr ""
 
 #: admin/views/cron.php
@@ -2008,6 +2112,10 @@ msgstr ""
 
 #: admin/views/update.php
 msgid "Repository branch"
+msgstr ""
+
+#: includes/class-aipc-bale.php
+msgid "Rescue images used (stock/default): %d"
 msgstr ""
 
 #: includes/class-aipc-steps.php
@@ -2146,6 +2254,10 @@ msgstr ""
 
 #: admin/views/bot.php
 msgid "Say hello to your bot — open it in the messenger and send it any message (bots can never write first)."
+msgstr ""
+
+#: admin/views/cron.php
+msgid "Scans your posts for missing featured images and starts a quiet image-only job per post (max 10 per scan): the content is never touched, only the image is generated and attached — with the same retry logic as force-image mode."
 msgstr ""
 
 #: includes/class-aipc-admin.php includes/class-aipc-bale.php wp-ai-post-creator.php
@@ -2298,6 +2410,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Slug: /%s/"
+msgstr ""
+
+#: admin/views/connections.php
+msgid "Some calls failed today."
 msgstr ""
 
 #: admin/views/cron.php
@@ -2536,6 +2652,10 @@ msgstr ""
 msgid "The downloaded package is not a valid plugin archive."
 msgstr ""
 
+#: includes/class-aipc-quality.php
+msgid "The focus keyword “%s” never appears in the text"
+msgstr ""
+
 #: includes/class-aipc-steps.php
 msgid "The full assembled draft HTML"
 msgstr ""
@@ -2618,6 +2738,10 @@ msgstr ""
 
 #: admin/views/rewrite.php
 msgid "The post is updated in place — its status, author, address and category stay untouched."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The post to repair was not found."
 msgstr ""
 
 #: includes/class-aipc-agent.php includes/class-aipc-post-builder.php
@@ -2916,6 +3040,10 @@ msgstr ""
 msgid "Unsafe stock photo URL blocked."
 msgstr ""
 
+#: admin/views/connections.php
+msgid "Unstable today"
+msgstr ""
+
 #: admin/views/update.php
 msgid "Up to date"
 msgstr ""
@@ -2966,6 +3094,10 @@ msgstr ""
 
 #: admin/views/update.php
 msgid "Versions"
+msgstr ""
+
+#: includes/class-aipc-quality.php
+msgid "Very short article (%d words)"
 msgstr ""
 
 #: admin/views/cron.php
@@ -3050,6 +3182,10 @@ msgstr ""
 
 #: includes/class-aipc-agent.php
 msgid "Working title: “%s”"
+msgstr ""
+
+#: admin/views/schedule.php
+msgid "Write a new post"
 msgstr ""
 
 #: admin/views/settings.php
@@ -3166,6 +3302,14 @@ msgstr ""
 
 #: admin/views/update.php
 msgid "owner/name — for example ahmad75naraghi/wp-ai-post-creator"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "quality-gated drafts"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "rescue images"
 msgstr ""
 
 #: admin/views/prompts.php

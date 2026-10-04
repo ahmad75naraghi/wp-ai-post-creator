@@ -257,8 +257,14 @@ final class AIPC_Scheduler {
 			$delay = 10080;
 		}
 
+		$kind = isset( $in['kind'] ) ? sanitize_key( $in['kind'] ) : 'new';
+		if ( ! in_array( $kind, array( 'new', 'refresh' ), true ) ) {
+			$kind = 'new';
+		}
+
 		return array(
 			'id'            => isset( $in['id'] ) ? sanitize_key( $in['id'] ) : '',
+			'kind'          => $kind,
 			'time'          => $time,
 			'days'          => $days,
 			'enabled'       => empty( $in['enabled'] ) ? 0 : 1,
@@ -532,6 +538,18 @@ final class AIPC_Scheduler {
 		$opts['publish_mode']  = isset( $entry['publish'] ) ? $entry['publish'] : 'draft';
 		$opts['publish_delay'] = isset( $entry['publish_delay'] ) ? $entry['publish_delay'] : 60;
 
+		// Content-refresh entry (1.22.0): instead of writing something
+		// new, pick the most outdated published post and rewrite it.
+		if ( isset( $entry['kind'] ) && 'refresh' === $entry['kind'] ) {
+			$target = self::pick_refresh_target();
+			if ( ! $target ) {
+				return new WP_Error( 'aipc_refresh', __( 'No post is old enough to need refreshing right now.', 'wp-ai-post-creator' ) );
+			}
+			$opts['mode']    = 'rewrite';
+			$opts['post_id'] = (int) $target->ID;
+			return AIPC_Agent::instance()->create_job( $target->post_title, $opts, $source );
+		}
+
 		// Take the topic from the queue when the entry wants that; the
 		// fixed topic (or the site prompt) stays the fallback.
 		$topic = isset( $entry['topic'] ) ? $entry['topic'] : '';
@@ -555,6 +573,47 @@ final class AIPC_Scheduler {
 		}
 
 		return $job;
+	}
+
+	/**
+	 * Pick the published post most in need of a refresh: not modified
+	 * and not refreshed within `aipc_refresh_min_age` (default 90 days),
+	 * oldest modification first (1.22.0).
+	 *
+	 * @return WP_Post|null
+	 */
+	public static function pick_refresh_target() {
+		/**
+		 * Filter the minimum age (seconds since last modification or
+		 * refresh) before a post qualifies for an automatic refresh.
+		 *
+		 * @param int $age Default 90 days.
+		 */
+		$age    = (int) apply_filters( 'aipc_refresh_min_age', 90 * DAY_IN_SECONDS );
+		$cutoff = time() - $age;
+
+		$posts = get_posts( array(
+			'post_type'      => 'post',
+			'post_status'    => 'publish',
+			'posts_per_page' => 10,
+			'orderby'        => 'modified',
+			'order'          => 'ASC',
+			'date_query'     => array(
+				array(
+					'column' => 'post_modified_gmt',
+					'before' => gmdate( 'Y-m-d H:i:s', $cutoff ),
+				),
+			),
+		) );
+
+		foreach ( $posts as $post ) {
+			$last = (int) get_post_meta( $post->ID, '_aipc_refreshed', true );
+			if ( $last >= $cutoff ) {
+				continue; // Refreshed recently — rotate to the next one.
+			}
+			return $post;
+		}
+		return null;
 	}
 
 	/**

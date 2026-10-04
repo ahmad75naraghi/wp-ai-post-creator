@@ -40,6 +40,17 @@ $aipc_hook_labels = array(
 		</div>
 	</div>
 
+	<?php if ( 'images_repairing' === $aipc_msg ) : ?>
+		<div class="aipc-card aipc-alert"><p>🩹 <?php
+			$aipc_count = isset( $_GET['aipc_count'] ) ? absint( $_GET['aipc_count'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( $aipc_count > 0 ) {
+				/* translators: %d: repair job count. */
+				echo esc_html( sprintf( __( '%d image-repair job(s) started — the images are generated in the background and attached as soon as they are ready.', 'wp-ai-post-creator' ), $aipc_count ) );
+			} else {
+				esc_html_e( 'Nothing to repair — every post already has a featured image (or a repair was started within the last hour).', 'wp-ai-post-creator' );
+			}
+		?></p></div>
+	<?php endif; ?>
 	<?php if ( 'job_cancelled' === $aipc_msg ) : ?>
 		<div class="aipc-card aipc-alert"><p>🛑 <?php esc_html_e( 'Job cancelled.', 'wp-ai-post-creator' ); ?></p></div>
 	<?php elseif ( 'jobs_cancelled' === $aipc_msg ) : ?>
@@ -56,9 +67,13 @@ $aipc_hook_labels = array(
 				<h2>🔄 <?php esc_html_e( 'Unfinished jobs', 'wp-ai-post-creator' ); ?> <span class="aipc-hint">(<?php echo esc_html( number_format_i18n( count( $aipc_jobs ) ) ); ?>)</span></h2>
 				<?php aipc_help( 'cron-jobs', __( 'Agent runs that are still running, queued, or stopped on an error. Cancelling marks the job as cancelled and removes its runner cron event, so it will never resume on its own.', 'wp-ai-post-creator' ) ); ?>
 			</div>
-			<?php if ( ! empty( $aipc_jobs ) ) : ?>
-				<a class="button aipc-danger" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_cancel_all_jobs' ), 'aipc_cancel_all_jobs' ) ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Cancel every unfinished job?', 'wp-ai-post-creator' ) ); ?>');">🛑 <?php esc_html_e( 'Cancel all', 'wp-ai-post-creator' ); ?></a>
-			<?php endif; ?>
+			<div>
+				<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_repair_images' ), 'aipc_repair_images' ) ); ?>">🩹 <?php esc_html_e( 'Repair missing images', 'wp-ai-post-creator' ); ?></a>
+				<?php aipc_help( 'cron-repair', __( 'Scans your posts for missing featured images and starts a quiet image-only job per post (max 10 per scan): the content is never touched, only the image is generated and attached — with the same retry logic as force-image mode.', 'wp-ai-post-creator' ) ); ?>
+				<?php if ( ! empty( $aipc_jobs ) ) : ?>
+					<a class="button aipc-danger" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_cancel_all_jobs' ), 'aipc_cancel_all_jobs' ) ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Cancel every unfinished job?', 'wp-ai-post-creator' ) ); ?>');">🛑 <?php esc_html_e( 'Cancel all', 'wp-ai-post-creator' ); ?></a>
+				<?php endif; ?>
+			</div>
 		</div>
 
 		<?php if ( empty( $aipc_jobs ) ) : ?>

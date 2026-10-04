@@ -35,6 +35,7 @@ final class AIPC_Admin {
 		add_action( 'admin_post_aipc_delete_job', array( __CLASS__, 'handle_delete_job' ) );
 		add_action( 'admin_post_aipc_cancel_job', array( __CLASS__, 'handle_cancel_job' ) );
 		add_action( 'admin_post_aipc_cancel_all_jobs', array( __CLASS__, 'handle_cancel_all_jobs' ) );
+		add_action( 'admin_post_aipc_repair_images', array( __CLASS__, 'handle_repair_images' ) );
 		add_action( 'admin_post_aipc_unschedule_publish', array( __CLASS__, 'handle_unschedule_publish' ) );
 		add_action( 'admin_post_aipc_revert_future', array( __CLASS__, 'handle_revert_future' ) );
 		add_action( 'admin_post_aipc_save_schedule', array( __CLASS__, 'handle_save_schedule' ) );
@@ -727,6 +728,22 @@ final class AIPC_Admin {
 	}
 
 	/**
+	 * Scan for posts without a featured image and start quiet repair
+	 * jobs (Jobs & Cron page, 1.22.0).
+	 *
+	 * @return void
+	 */
+	public static function handle_repair_images() {
+		self::guard( 'aipc_repair_images' );
+		$count = AIPC_Agent::instance()->repair_missing_images();
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-cron', 'aipc_msg' => 'images_repairing', 'aipc_count' => (int) $count ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
 	 * Cancel every unfinished job at once (Jobs & Cron page).
 	 *
 	 * @return void
@@ -810,6 +827,7 @@ final class AIPC_Admin {
 			'topic'         => isset( $_POST['topic'] ) ? wp_unslash( $_POST['topic'] ) : '',
 			'publish'       => isset( $_POST['publish'] ) ? sanitize_key( wp_unslash( $_POST['publish'] ) ) : 'draft',
 			'publish_delay' => isset( $_POST['publish_delay'] ) ? absint( wp_unslash( $_POST['publish_delay'] ) ) : 60,
+			'kind'          => isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : 'new',
 			'opts'          => array(
 				'tone'     => isset( $_POST['tone'] ) ? sanitize_key( wp_unslash( $_POST['tone'] ) ) : '',
 				'length'   => isset( $_POST['length'] ) ? sanitize_key( wp_unslash( $_POST['length'] ) ) : '',

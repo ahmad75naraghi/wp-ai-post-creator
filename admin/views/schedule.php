@@ -90,10 +90,14 @@ $aipc_notices = array(
 							<td><strong><?php echo esc_html( $aipc_entry['time'] ); ?></strong></td>
 							<td><?php echo esc_html( implode( '، ', $aipc_day_names ) ); ?></td>
 							<td><?php
-								if ( ! empty( $aipc_entry['use_queue'] ) ) {
-									echo '<span class="aipc-badge aipc-badge-ok">' . esc_html__( 'Queue', 'wp-ai-post-creator' ) . '</span> ';
+								if ( isset( $aipc_entry['kind'] ) && 'refresh' === $aipc_entry['kind'] ) {
+									echo '<span class="aipc-badge">♻️ ' . esc_html__( 'Refresh old posts', 'wp-ai-post-creator' ) . '</span>';
+								} else {
+									if ( ! empty( $aipc_entry['use_queue'] ) ) {
+										echo '<span class="aipc-badge aipc-badge-ok">' . esc_html__( 'Queue', 'wp-ai-post-creator' ) . '</span> ';
+									}
+									echo '' !== $aipc_entry['topic'] ? esc_html( wp_trim_words( $aipc_entry['topic'], 8, '…' ) ) : '<em>' . esc_html__( 'Automatic (site prompt)', 'wp-ai-post-creator' ) . '</em>';
 								}
-								echo '' !== $aipc_entry['topic'] ? esc_html( wp_trim_words( $aipc_entry['topic'], 8, '…' ) ) : '<em>' . esc_html__( 'Automatic (site prompt)', 'wp-ai-post-creator' ) . '</em>';
 							?></td>
 							<td><?php echo esc_html( implode( ' · ', $aipc_opt_summary ) ); ?></td>
 							<td><?php
@@ -177,6 +181,14 @@ $aipc_notices = array(
 						<label><?php esc_html_e( 'Time', 'wp-ai-post-creator' ); ?></label>
 						<input type="time" class="aipc-input" name="time" required value="<?php echo esc_attr( $aipc_e['time'] ); ?>" />
 						<p class="description"><?php esc_html_e( 'Site timezone. The run starts within ~15 minutes of this time.', 'wp-ai-post-creator' ); ?></p>
+					</div>
+					<div class="aipc-field">
+						<label><?php esc_html_e( 'Entry type', 'wp-ai-post-creator' ); ?></label>
+						<select class="aipc-input" name="kind">
+							<option value="new" <?php selected( empty( $aipc_e['kind'] ) || 'new' === $aipc_e['kind'] ); ?>><?php esc_html_e( 'Write a new post', 'wp-ai-post-creator' ); ?></option>
+							<option value="refresh" <?php selected( isset( $aipc_e['kind'] ) && 'refresh' === $aipc_e['kind'] ); ?>><?php esc_html_e( 'Refresh an old post (auto-pick)', 'wp-ai-post-creator' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Refresh: the oldest published post not touched for 90+ days is rewritten — same title and URL, fresh copy and SEO. The topic/queue fields are ignored.', 'wp-ai-post-creator' ); ?></p>
 					</div>
 					<div class="aipc-field">
 						<label><?php esc_html_e( 'Topic (optional)', 'wp-ai-post-creator' ); ?></label>

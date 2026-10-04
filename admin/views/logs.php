@@ -64,6 +64,8 @@ endif;
 			<div class="aipc-stat aipc-stat-err"><strong><?php echo esc_html( number_format_i18n( $aipc_stats['error'] ) ); ?></strong><span><?php esc_html_e( 'failed', 'wp-ai-post-creator' ); ?></span></div>
 			<div class="aipc-stat"><strong><?php echo esc_html( number_format_i18n( $aipc_stats['calls'] ) ); ?></strong><span><?php esc_html_e( 'API calls', 'wp-ai-post-creator' ); ?></span></div>
 			<div class="aipc-stat"><strong><?php echo esc_html( number_format_i18n( $aipc_stats['prompt_tokens'] + $aipc_stats['completion_tokens'] ) ); ?></strong><span><?php esc_html_e( 'tokens used', 'wp-ai-post-creator' ); ?></span></div>
+			<div class="aipc-stat"><strong><?php echo esc_html( number_format_i18n( $aipc_stats['rescued_images'] ) ); ?></strong><span><?php esc_html_e( 'rescue images', 'wp-ai-post-creator' ); ?></span></div>
+			<div class="aipc-stat"><strong><?php echo esc_html( number_format_i18n( $aipc_stats['quality_blocked'] ) ); ?></strong><span><?php esc_html_e( 'quality-gated drafts', 'wp-ai-post-creator' ); ?></span></div>
 		</div>
 
 		<?php if ( ! empty( $aipc_stats['by_connection'] ) ) : ?>

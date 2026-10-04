@@ -3,6 +3,44 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.22.0] — 2026-10-04
+
+Five autonomy features: image repair, quality gate, connection health,
+automatic content refresh and a richer report/dashboard.
+
+### Added
+- **Image repair** (`image_fix` job mode): "Repair missing images" on
+  the Jobs & Cron page scans posts without a featured image (max 10 per
+  scan, `aipc_image_repair_batch` filter) and runs one quiet image-only
+  job per post — the content is never touched, no Bale "post created"
+  message is sent, and a 1-hour claim prevents duplicate repairs.
+- **Quality gate** (`AIPC_Quality`): zero-cost local checks on every
+  finished article (thin content, empty/duplicate H2s, keyword stuffing
+  or absence, machine-cliché phrases, broken internal links, duplicate
+  title, missing promised image) produce a 0–100 score stored on the
+  job. Below the threshold (`aipc_quality_threshold`, default 60)
+  auto-publishing is cancelled and the post stays a draft for review;
+  the Bale notification explains why.
+- **Connection health / circuit breaker** (`AIPC_Health`): every
+  provider attempt is recorded; 5 consecutive failures
+  (`aipc_health_streak`) put the connection on a 30-minute cooldown
+  (`aipc_health_cooldown`) during which it moves to the end of every
+  chain — never removed, healthy connections are just tried first. The
+  connections page shows a 🟢/🟡/🔴 health light per connection.
+- **Automatic content refresh**: schedule entries have a new type —
+  "Refresh an old post". When it fires, the oldest published post not
+  modified or refreshed for 90+ days (`aipc_refresh_min_age`) is
+  rewritten in place (same title and URL); `_aipc_refreshed` post meta
+  rotates the picks so the whole archive cycles over time.
+- **Richer report & dashboard**: the daily/weekly Bale report counts
+  rescue images (🛟), quality-gated drafts (🚦) and lists connections
+  with failed calls today (⚠️); the Logs page gains "rescue images" and
+  "quality-gated drafts" stat cards.
+
+### Tests
+- 5 new e2e groups (`image_fix`, `quality_gate`, `conn_health`,
+  `refresh_cycle`, `report_rich`).
+
 ## [1.21.1] — 2026-10-04
 
 Full-pipeline bug audit of the force-image feature.
