@@ -33,7 +33,7 @@ function aipc_connection_form( $conn ) {
 
 <div class="aipc-heading">
 					<h3><?php echo $editing ? esc_html__( 'Edit connection', 'wp-ai-post-creator' ) : esc_html__( 'Add a new connection', 'wp-ai-post-creator' ); ?></h3>
-			<?php aipc_help( 'conn-form', __( 'The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless allowlisted.', 'wp-ai-post-creator' ) ); ?>
+			<?php aipc_help( 'conn-form', __( 'The base URL must point to an OpenAI-compatible endpoint, usually ending in /v1 (e.g. https://api.openai.com/v1). A provider’s website address is not an API endpoint. Small mistakes are corrected automatically: a pasted full endpoint URL (e.g. …/v1/chat/completions) has its endpoint path stripped, and if the test finds the API under /v1 the field is fixed for you. The API key is write-only: leave the field empty to keep the stored key. Private or internal addresses are blocked by the outbound network guard unless you enable “Allow private/LAN addresses” in Settings → Advanced.', 'wp-ai-post-creator' ) ); ?>
 		</div>
 
 		<div class="aipc-grid">
@@ -60,11 +60,54 @@ function aipc_connection_form( $conn ) {
 				<input type="text" class="aipc-input code" name="chat_model" list="<?php echo esc_attr( 'aipc-models-' . ( $editing ? $conn['id'] : 'new' ) ); ?>"
 					value="<?php echo esc_attr( $editing ? $conn['chat_model'] : 'gpt-4o-mini' ); ?>" />
 				<datalist id="<?php echo esc_attr( 'aipc-models-' . ( $editing ? $conn['id'] : 'new' ) ); ?>"></datalist>
+				<div class="aipc-model-picker" hidden>
+					<input type="text" class="aipc-input aipc-model-filter" placeholder="<?php esc_attr_e( 'Type to filter the models…', 'wp-ai-post-creator' ); ?>" />
+					<div class="aipc-model-list" role="listbox"></div>
+				</div>
 			</div>
 			<div class="aipc-field">
 				<label><?php esc_html_e( 'Image model', 'wp-ai-post-creator' ); ?></label>
 				<input type="text" class="aipc-input code" name="image_model"
 					value="<?php echo esc_attr( $editing ? $conn['image_model'] : 'dall-e-3' ); ?>" />
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Image route', 'wp-ai-post-creator' ); ?>
+					<?php aipc_help( 'conn-image-api', __( 'Which API route generates images. OpenAI-style services use the images endpoint (/images/generations); Gemini-style gateways (OpenRouter, Antigravity …) return the picture as base64 inside a chat completion instead — pick "Chat completions" for those, with an image-capable model (e.g. gemini-2.5-flash-image) in the Image model field. "Automatic" tries the images endpoint first and falls back to the chat route by itself.', 'wp-ai-post-creator' ) ); ?>
+				</label>
+				<?php $aipc_img_api = $editing && isset( $conn['image_api'] ) ? $conn['image_api'] : 'auto'; ?>
+				<select class="aipc-input" name="image_api">
+					<option value="auto" <?php selected( $aipc_img_api, 'auto' ); ?>><?php esc_html_e( 'Automatic (images endpoint, then chat)', 'wp-ai-post-creator' ); ?></option>
+					<option value="images" <?php selected( $aipc_img_api, 'images' ); ?>><?php esc_html_e( 'Images endpoint (/images/generations)', 'wp-ai-post-creator' ); ?></option>
+					<option value="chat" <?php selected( $aipc_img_api, 'chat' ); ?>><?php esc_html_e( 'Chat completions (Gemini/OpenRouter-style)', 'wp-ai-post-creator' ); ?></option>
+				</select>
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Image delivery', 'wp-ai-post-creator' ); ?>
+					<?php aipc_help( 'conn-image-format', __( 'How generated images are received. "Force base64" demands the image bytes inside the API response itself and decodes them locally — nothing depends on downloading temporary links, which makes image creation deterministic. If the provider only returns a link in this mode, the attempt fails and the run retries / falls over to the next image connection.', 'wp-ai-post-creator' ) ); ?>
+				</label>
+				<?php $aipc_img_format = $editing && isset( $conn['image_format'] ) ? $conn['image_format'] : 'auto'; ?>
+				<select class="aipc-input" name="image_format">
+					<option value="auto" <?php selected( $aipc_img_format, 'auto' ); ?>><?php esc_html_e( 'Automatic (base64 or link)', 'wp-ai-post-creator' ); ?></option>
+					<option value="b64" <?php selected( $aipc_img_format, 'b64' ); ?>><?php esc_html_e( 'Force base64 (decode locally — most reliable)', 'wp-ai-post-creator' ); ?></option>
+				</select>
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Purpose', 'wp-ai-post-creator' ); ?>
+					<?php aipc_help( 'conn-routing', __( 'What this connection is used for. Steps without an explicit connection chain (Prompts page) automatically use every matching connection in priority order: text steps take the chat-capable connections, the featured-image step takes the image-capable ones. This is how you send images to a different server than the text.', 'wp-ai-post-creator' ) ); ?>
+				</label>
+				<?php $aipc_purpose = $editing && isset( $conn['purpose'] ) ? $conn['purpose'] : 'both'; ?>
+				<select class="aipc-input" name="purpose">
+					<option value="both" <?php selected( $aipc_purpose, 'both' ); ?>><?php esc_html_e( 'Chat & images', 'wp-ai-post-creator' ); ?></option>
+					<option value="chat" <?php selected( $aipc_purpose, 'chat' ); ?>><?php esc_html_e( 'Chat only', 'wp-ai-post-creator' ); ?></option>
+					<option value="image" <?php selected( $aipc_purpose, 'image' ); ?>><?php esc_html_e( 'Images only', 'wp-ai-post-creator' ); ?></option>
+				</select>
+			</div>
+			<div class="aipc-field">
+				<label><?php esc_html_e( 'Priority', 'wp-ai-post-creator' ); ?>
+					<?php aipc_help( 'conn-priority', __( 'Lower number = tried first (1 is the highest priority). When a connection fails 3 attempts in a row, the run automatically switches to the next connection of the same purpose in priority order.', 'wp-ai-post-creator' ) ); ?>
+				</label>
+				<input type="number" class="aipc-input" name="priority" min="1" max="999" step="1"
+					value="<?php echo esc_attr( $editing && isset( $conn['priority'] ) ? (int) $conn['priority'] : 10 ); ?>" />
 			</div>
 			<div class="aipc-field">
 				<label><?php esc_html_e( 'Temperature', 'wp-ai-post-creator' ); ?></label>
@@ -87,6 +130,15 @@ function aipc_connection_form( $conn ) {
 			<label class="aipc-check">
 				<input type="checkbox" name="is_default" value="1" <?php checked( $editing && ! empty( $conn['is_default'] ) ); ?> />
 				<?php esc_html_e( 'Use as the default connection', 'wp-ai-post-creator' ); ?>
+			</label>
+		</p>
+
+		<p>
+			<input type="hidden" name="enabled" value="0" />
+			<label class="aipc-check">
+				<input type="checkbox" name="enabled" value="1" <?php checked( ! $editing || ! empty( $conn['enabled'] ) ); ?> />
+				<?php esc_html_e( 'Enabled (participates in runs)', 'wp-ai-post-creator' ); ?>
+				<?php aipc_help( 'conn-enabled', __( 'Turn off to keep this connection saved but exclude it from every run: automatic pools, fallback chains and the default choice all skip disabled connections.', 'wp-ai-post-creator' ) ); ?>
 			</label>
 		</p>
 
@@ -115,6 +167,10 @@ endif;
 		<div class="aipc-card aipc-alert aipc-alert-ok"><p>✅ <?php esc_html_e( 'Connection saved.', 'wp-ai-post-creator' ); ?></p></div>
 	<?php elseif ( 'deleted' === $aipc_msg ) : ?>
 		<div class="aipc-card aipc-alert"><p>🗑 <?php esc_html_e( 'Connection deleted.', 'wp-ai-post-creator' ); ?></p></div>
+	<?php elseif ( 'enabled' === $aipc_msg ) : ?>
+		<div class="aipc-card aipc-alert aipc-alert-ok"><p>▶️ <?php esc_html_e( 'Connection enabled.', 'wp-ai-post-creator' ); ?></p></div>
+	<?php elseif ( 'disabled' === $aipc_msg ) : ?>
+		<div class="aipc-card aipc-alert"><p>⏸ <?php esc_html_e( 'Connection disabled.', 'wp-ai-post-creator' ); ?></p></div>
 	<?php endif; ?>
 
 	<section class="aipc-card">
@@ -133,19 +189,49 @@ endif;
 						<th><?php esc_html_e( 'Endpoint', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Chat model', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Image model', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Purpose', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Priority', 'wp-ai-post-creator' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Default', 'wp-ai-post-creator' ); ?></th>
 						<th><?php esc_html_e( 'Actions', 'wp-ai-post-creator' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
 				<?php foreach ( $aipc_conns as $aipc_conn ) : ?>
-					<tr>
+					<tr class="<?php echo empty( $aipc_conn['enabled'] ) ? 'aipc-conn-off' : ''; ?>">
 						<td><strong><?php echo esc_html( $aipc_conn['name'] ); ?></strong></td>
 						<td class="aipc-code"><?php echo esc_html( $aipc_conn['base_url'] ); ?></td>
 						<td class="aipc-code"><?php echo esc_html( $aipc_conn['chat_model'] ); ?></td>
 						<td class="aipc-code"><?php echo esc_html( $aipc_conn['image_model'] ); ?></td>
+						<td>
+							<?php
+							$aipc_purpose_labels = array(
+								'both'  => __( 'Chat & images', 'wp-ai-post-creator' ),
+								'chat'  => __( 'Chat only', 'wp-ai-post-creator' ),
+								'image' => __( 'Images only', 'wp-ai-post-creator' ),
+							);
+							$aipc_row_purpose    = isset( $aipc_conn['purpose'] ) && isset( $aipc_purpose_labels[ $aipc_conn['purpose'] ] ) ? $aipc_conn['purpose'] : 'both';
+							echo esc_html( $aipc_purpose_labels[ $aipc_row_purpose ] );
+							?>
+						</td>
+						<td><?php echo esc_html( isset( $aipc_conn['priority'] ) ? (int) $aipc_conn['priority'] : 10 ); ?></td>
+						<td><?php
+							if ( empty( $aipc_conn['enabled'] ) ) {
+								echo '⏸ ' . esc_html__( 'Disabled', 'wp-ai-post-creator' );
+							} else {
+								$aipc_health = AIPC_Health::status( $aipc_conn );
+								if ( 'down' === $aipc_health ) {
+									echo '🔴 <span title="' . esc_attr__( 'On cooldown after repeated failures — temporarily moved to the end of every chain.', 'wp-ai-post-creator' ) . '">' . esc_html__( 'Cooling down', 'wp-ai-post-creator' ) . '</span>';
+								} elseif ( 'warn' === $aipc_health ) {
+									echo '🟡 <span title="' . esc_attr__( 'Some calls failed today.', 'wp-ai-post-creator' ) . '">' . esc_html__( 'Unstable today', 'wp-ai-post-creator' ) . '</span>';
+								} else {
+									echo '🟢 ' . esc_html__( 'Active', 'wp-ai-post-creator' );
+								}
+							}
+						?></td>
 						<td><?php echo ! empty( $aipc_conn['is_default'] ) ? '⭐ ' . esc_html__( 'Yes', 'wp-ai-post-creator' ) : '—'; ?></td>
 						<td>
+							<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_toggle_connection&id=' . $aipc_conn['id'] ), 'aipc_toggle_connection' ) ); ?>"><?php echo ! empty( $aipc_conn['enabled'] ) ? esc_html__( 'Disable', 'wp-ai-post-creator' ) : esc_html__( 'Enable', 'wp-ai-post-creator' ); ?></a> ·
 							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'aipc-connections', 'edit' => $aipc_conn['id'] ), admin_url( 'admin.php' ) ) ); ?>"><?php esc_html_e( 'Edit', 'wp-ai-post-creator' ); ?></a> ·
 							<a class="aipc-danger" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_delete_connection&id=' . $aipc_conn['id'] ), 'aipc_delete_connection' ) ); ?>"
 								onclick="return confirm('<?php echo esc_js( __( 'Delete this connection? Steps using it will fall back to the default connection.', 'wp-ai-post-creator' ) ); ?>');"><?php esc_html_e( 'Delete', 'wp-ai-post-creator' ); ?></a>
@@ -180,7 +266,11 @@ endif;
 			https://api.groq.com/openai/v1 (Groq) ·
 			https://api.deepseek.com/v1 (DeepSeek) ·
 			http://localhost:11434/v1 (Ollama) ·
-			http://localhost:1234/v1 (LM Studio)
+			http://localhost:1234/v1 (LM Studio) ·
+			http://localhost:20128/v1 (OmniRoute)
+		</p>
+		<p class="aipc-hint">
+			<?php esc_html_e( 'Self-hosted gateways (OmniRoute, Ollama, LM Studio) run on your own machine — the WordPress server must be able to reach that address. If the gateway runs on another machine in your network, enter its LAN address and enable “Allow private/LAN addresses” under Settings → Advanced.', 'wp-ai-post-creator' ); ?>
 		</p>
 	</section>
 

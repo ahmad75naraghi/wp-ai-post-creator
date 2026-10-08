@@ -152,19 +152,91 @@ final class AIPC_Post_Builder {
 	 * @param array $job Job.
 	 * @return int|WP_Error Post id.
 	 */
+	/**
+	 * Enforce the link policy on final post HTML (v1.12.0):
+	 * - every internal (same-site) URL is linked at most ONCE — later
+	 *   duplicates are unwrapped to plain text;
+	 * - when "source links" is disabled in the settings, links to the
+	 *   configured research source sites are unwrapped too.
+	 *
+	 * @param string $html Post HTML.
+	 * @return string
+	 */
+	public static function clean_links( $html ) {
+		$site_host = strtolower( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) );
+
+		$source_hosts = array();
+		if ( ! AIPC_Settings::get( 'source_links' ) ) {
+			foreach ( preg_split( '/\n+/', (string) AIPC_Settings::get( 'source_sites' ) ) as $line ) {
+				$h = strtolower( (string) wp_parse_url( trim( $line ), PHP_URL_HOST ) );
+				if ( '' !== $h ) {
+					$source_hosts[] = preg_replace( '/^www\./', '', $h );
+				}
+			}
+		}
+
+		$seen  = array();
+		$fixed = preg_replace_callback(
+			'/<a\s[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/is',
+			function ( $m ) use ( $site_host, $source_hosts, &$seen ) {
+				$href = html_entity_decode( $m[1] );
+				$host = strtolower( (string) wp_parse_url( $href, PHP_URL_HOST ) );
+				$bare = preg_replace( '/^www\./', '', $host );
+
+				// Research-source links stripped when disallowed.
+				if ( ! empty( $source_hosts ) && in_array( $bare, $source_hosts, true ) ) {
+					return $m[2];
+				}
+
+				// Internal links: first occurrence wins, duplicates unwrap.
+				if ( '' === $host || $host === $site_host ) {
+					$key = untrailingslashit( strtolower( $href ) );
+					if ( isset( $seen[ $key ] ) ) {
+						return $m[2];
+					}
+					$seen[ $key ] = true;
+				}
+				return $m[0];
+			},
+			(string) $html
+		);
+
+		return null === $fixed ? (string) $html : $fixed;
+	}
+
+	/**
+	 * Post already created by a given job, if any (idempotency, 1.19.0).
+	 *
+	 * @param string $job_id Job id.
+	 * @return int Post id or 0.
+	 */
+	public static function post_for_job( $job_id ) {
+		$ids = get_posts( array(
+			'post_type'        => 'post',
+			'post_status'      => 'any',
+			'numberposts'      => 1,
+			'fields'           => 'ids',
+			'no_found_rows'    => true,
+			'suppress_filters' => true,
+			'meta_key'         => '_aipc_job',
+			'meta_value'       => (string) $job_id,
+		) );
+		return empty( $ids ) ? 0 : (int) $ids[0];
+	}
+
 	public static function create( array $job ) {
 		$d = $job['data'];
 
-		$content = self::build_content( $job );
+		$content = self::clean_links( self::build_content( $job ) );
 		if ( '' === trim( wp_strip_all_tags( $content ) ) ) {
 			return new WP_Error( 'aipc_empty', __( 'Generated content was empty.', 'wp-ai-post-creator' ) );
 		}
 
 		$postarr = array(
-			'post_title'   => sanitize_text_field( $d['plan']['title'] ),
+			'post_title'   => AIPC_Text::fix_zwnj( sanitize_text_field( $d['plan']['title'] ) ),
 			'post_name'    => ! empty( $d['seo']['slug'] ) ? $d['seo']['slug'] : sanitize_title( $d['plan']['title'] ),
-			'post_content' => $content,
-			'post_excerpt' => isset( $d['seo']['excerpt'] ) ? $d['seo']['excerpt'] : '',
+			'post_content' => AIPC_Text::fix_zwnj_html( $content ),
+			'post_excerpt' => AIPC_Text::fix_zwnj( isset( $d['seo']['excerpt'] ) ? $d['seo']['excerpt'] : '' ),
 			'post_status'  => 'draft',
 			'post_type'    => 'post',
 			'post_author'  => get_current_user_id(),
@@ -217,6 +289,10 @@ final class AIPC_Post_Builder {
 		// Markers + FAQ schema.
 		update_post_meta( $post_id, '_aipc_generated', time() );
 		update_post_meta( $post_id, '_aipc_job', $job['id'] );
+		if ( '' !== trim( (string) $job['topic'] ) ) {
+			// Canonical topic key — lets the duplicate guard spot repeats.
+			update_post_meta( $post_id, '_aipc_topic_norm', AIPC_Agent::topic_norm( $job['topic'] ) );
+		}
 		if ( ! empty( $d['faq']['items'] ) ) {
 			update_post_meta( $post_id, '_aipc_faq_schema', self::faq_schema( $d['faq']['items'] ) );
 		}
@@ -240,15 +316,15 @@ final class AIPC_Post_Builder {
 			return new WP_Error( 'aipc_rewrite', __( 'The post to rewrite was not found.', 'wp-ai-post-creator' ) );
 		}
 
-		$content = self::build_content( $job );
+		$content = self::clean_links( self::build_content( $job ) );
 		if ( '' === trim( wp_strip_all_tags( $content ) ) ) {
 			return new WP_Error( 'aipc_empty', __( 'Generated content was empty.', 'wp-ai-post-creator' ) );
 		}
 
 		$postarr = array(
 			'ID'           => $post_id,
-			'post_title'   => sanitize_text_field( $d['plan']['title'] ),
-			'post_content' => $content,
+			'post_title'   => AIPC_Text::fix_zwnj( sanitize_text_field( $d['plan']['title'] ) ),
+			'post_content' => AIPC_Text::fix_zwnj_html( $content ),
 			'post_excerpt' => ! empty( $d['seo']['excerpt'] ) ? $d['seo']['excerpt'] : $post->post_excerpt,
 		);
 
@@ -300,8 +376,8 @@ final class AIPC_Post_Builder {
 	 * @return void
 	 */
 	public static function set_seo_meta( $post_id, $seo ) {
-		$title = isset( $seo['meta_title'] ) ? sanitize_text_field( $seo['meta_title'] ) : '';
-		$desc  = isset( $seo['meta_description'] ) ? sanitize_text_field( $seo['meta_description'] ) : '';
+		$title = AIPC_Text::fix_zwnj( isset( $seo['meta_title'] ) ? sanitize_text_field( $seo['meta_title'] ) : '' );
+		$desc  = AIPC_Text::fix_zwnj( isset( $seo['meta_description'] ) ? sanitize_text_field( $seo['meta_description'] ) : '' );
 
 		if ( '' === $title && '' === $desc ) {
 			return;

@@ -82,7 +82,7 @@ $aipc_msg      = isset( $_GET['aipc_msg'] ) ? sanitize_key( wp_unslash( $_GET['a
 							<label><?php esc_html_e( 'AI connections chain (fallback order)', 'wp-ai-post-creator' ); ?></label>
 							<select class="aipc-select" name="steps[<?php echo esc_attr( $aipc_step ); ?>][connections][]" multiple size="<?php echo min( 4, max( 2, count( $aipc_conns ) + 1 ) ); ?>">
 								<?php foreach ( $aipc_conns as $aipc_conn ) : ?>
-									<option value="<?php echo esc_attr( $aipc_conn['id'] ); ?>" <?php selected( true, in_array( $aipc_conn['id'], $aipc_chain, true ) ); ?>><?php echo esc_html( $aipc_conn['name'] ); ?></option>
+									<option value="<?php echo esc_attr( $aipc_conn['id'] ); ?>" <?php selected( true, in_array( $aipc_conn['id'], $aipc_chain, true ) ); ?>><?php echo esc_html( $aipc_conn['name'] . ( empty( $aipc_conn['enabled'] ) ? ' — ' . __( '(disabled)', 'wp-ai-post-creator' ) : '' ) ); ?></option>
 								<?php endforeach; ?>
 							</select>
 							<p class="description"><?php esc_html_e( 'Hold Ctrl / Cmd to pick several. Each selected connection gets its own retry budget; when one keeps failing the agent automatically switches to the next. Empty = default connection.', 'wp-ai-post-creator' ); ?></p>

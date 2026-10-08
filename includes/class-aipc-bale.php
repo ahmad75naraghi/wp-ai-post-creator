@@ -15,8 +15,10 @@ defined( 'ABSPATH' ) || exit;
 
 final class AIPC_Bale {
 
-	const OPTION   = 'aipc_bale';
-	const API_BASE = 'https://tapi.bale.ai/bot';
+	const OPTION      = 'aipc_bale';
+	const API_BASE    = 'https://tapi.bale.ai/bot';
+	const API_BASE_TG = 'https://api.telegram.org/bot';
+	const MSGMAP      = 'aipc_bale_msgmap'; // chat:message_id → post_id (reply-to scheduling).
 
 	/**
 	 * Hook the post-created notification.
@@ -26,6 +28,9 @@ final class AIPC_Bale {
 	public static function register() {
 		add_action( 'aipc_post_created', array( __CLASS__, 'notify' ), 10, 2 );
 		add_action( 'aipc_post_published', array( __CLASS__, 'notify_published' ), 10, 2 );
+		// Posts scheduled from a Bale chat announce themselves when WP
+		// publishes them at the chosen time.
+		add_action( 'future_to_publish', array( __CLASS__, 'on_future_publish' ) );
 	}
 
 	/**
@@ -38,6 +43,7 @@ final class AIPC_Bale {
 		$cfg = is_array( $cfg ) ? $cfg : array();
 		return wp_parse_args( $cfg, array(
 			'enabled'        => 0,
+			'platform'       => 'bale', // bale|telegram — same Bot API, different endpoint (1.15.0).
 			'token'          => '',
 			'chat_ids'       => array(),
 			'chat_id'        => '', // Legacy single recipient (1.3.0).
@@ -46,7 +52,10 @@ final class AIPC_Bale {
 			'report_day'     => 6, // Weekday for weekly reports (Saturday).
 			'last_report'    => '', // Y-m-d when the last report was sent.
 			'two_way'        => 0, // Accept commands from chats (1.7.0).
+			'webhook'        => 0, // Instant replies via webhook (1.16.0).
+			'webhook_secret' => '', // Random path secret for the webhook route.
 			'last_update_id' => 0, // Last processed getUpdates id.
+			'default_image'  => '', // Fallback picture for posts without a featured image (1.9.2).
 		) );
 	}
 
@@ -58,7 +67,10 @@ final class AIPC_Bale {
 	 * @return array
 	 */
 	public static function recipients( $cfg = null ) {
-		$cfg = null === $cfg ? self::all() : $cfg;
+		// Tolerate partial arrays (e.g. sanitize() with an empty $old).
+		$cfg = null === $cfg
+			? self::all()
+			: wp_parse_args( (array) $cfg, array( 'chat_ids' => array(), 'chat_id' => '' ) );
 
 		$ids = array();
 		foreach ( (array) $cfg['chat_ids'] as $id ) {
@@ -134,8 +146,25 @@ final class AIPC_Bale {
 			$report_day = 6;
 		}
 
+		$default_image = isset( $in['default_image'] ) ? esc_url_raw( trim( (string) $in['default_image'] ) ) : ( isset( $old['default_image'] ) ? $old['default_image'] : '' );
+		if ( '' !== $default_image && 0 !== strpos( $default_image, 'http' ) ) {
+			$default_image = '';
+		}
+
+		$platform = isset( $in['platform'] ) ? sanitize_key( $in['platform'] ) : ( isset( $old['platform'] ) ? $old['platform'] : 'bale' );
+		if ( ! in_array( $platform, array( 'bale', 'telegram' ), true ) ) {
+			$platform = 'bale';
+		}
+
+		$webhook = empty( $in['webhook'] ) ? 0 : 1;
+		$secret  = isset( $old['webhook_secret'] ) ? (string) $old['webhook_secret'] : '';
+		if ( $webhook && '' === $secret ) {
+			$secret = strtolower( wp_generate_password( 32, false, false ) );
+		}
+
 		return array(
 			'enabled'        => empty( $in['enabled'] ) ? 0 : 1,
+			'platform'       => $platform,
 			'token'          => sanitize_text_field( $token ),
 			'chat_ids'       => $chat_ids,
 			'chat_id'        => isset( $old['chat_id'] ) ? $old['chat_id'] : '',
@@ -144,7 +173,10 @@ final class AIPC_Bale {
 			'report_day'     => $report_day,
 			'last_report'    => isset( $old['last_report'] ) ? $old['last_report'] : '',
 			'two_way'        => empty( $in['two_way'] ) ? 0 : 1,
+			'webhook'        => $webhook,
+			'webhook_secret' => $secret,
 			'last_update_id' => isset( $old['last_update_id'] ) ? absint( $old['last_update_id'] ) : 0,
+			'default_image'  => $default_image,
 		);
 	}
 
@@ -164,6 +196,17 @@ final class AIPC_Bale {
 	 * ------------------------------------------------------------------- */
 
 	/**
+	 * The Bot API base URL for the configured platform. Bale and Telegram
+	 * speak the same protocol — only the endpoint differs.
+	 *
+	 * @return string
+	 */
+	public static function api_base() {
+		$cfg = self::all();
+		return 'telegram' === $cfg['platform'] ? self::API_BASE_TG : self::API_BASE;
+	}
+
+	/**
 	 * Call a Bot API method.
 	 *
 	 * @param string $token  Bot token.
@@ -177,7 +220,7 @@ final class AIPC_Bale {
 		}
 
 		$res = wp_remote_post(
-			self::API_BASE . $token . '/' . $method,
+			self::api_base() . $token . '/' . $method,
 			array(
 				'timeout' => 20,
 				'headers' => array( 'Content-Type' => 'application/json; charset=utf-8' ),
@@ -211,31 +254,37 @@ final class AIPC_Bale {
 	/**
 	 * Send a text message.
 	 *
-	 * @param string $token   Bot token.
-	 * @param string $chat_id Chat id.
-	 * @param string $text    Message text.
+	 * @param string     $token   Bot token.
+	 * @param string     $chat_id Chat id.
+	 * @param string     $text    Message text.
+	 * @param array|null $markup  Optional reply_markup (inline keyboard).
 	 * @return array|WP_Error
 	 */
-	public static function send_message( $token, $chat_id, $text ) {
+	public static function send_message( $token, $chat_id, $text, $markup = null ) {
 		if ( '' === (string) $chat_id ) {
 			return new WP_Error( 'aipc_bale', __( 'Bale chat ID is not configured.', 'wp-ai-post-creator' ) );
 		}
-		return self::api( $token, 'sendMessage', array(
+		$body = array(
 			'chat_id' => $chat_id,
 			'text'    => $text,
-		) );
+		);
+		if ( is_array( $markup ) && ! empty( $markup ) ) {
+			$body['reply_markup'] = $markup;
+		}
+		return self::api( $token, 'sendMessage', $body );
 	}
 
 	/**
 	 * Send a photo with a caption.
 	 *
-	 * @param string $token   Bot token.
-	 * @param string $chat_id Chat id.
-	 * @param string $photo   Photo URL.
-	 * @param string $caption Caption.
+	 * @param string     $token   Bot token.
+	 * @param string     $chat_id Chat id.
+	 * @param string     $photo   Photo URL.
+	 * @param string     $caption Caption.
+	 * @param array|null $markup  Optional reply_markup (inline keyboard).
 	 * @return array|WP_Error
 	 */
-	public static function send_photo( $token, $chat_id, $photo, $caption = '' ) {
+	public static function send_photo( $token, $chat_id, $photo, $caption = '', $markup = null ) {
 		$body = array(
 			'chat_id' => $chat_id,
 			'photo'   => $photo,
@@ -243,7 +292,77 @@ final class AIPC_Bale {
 		if ( '' !== $caption ) {
 			$body['caption'] = $caption;
 		}
+		if ( is_array( $markup ) && ! empty( $markup ) ) {
+			$body['reply_markup'] = $markup;
+		}
 		return self::api( $token, 'sendPhoto', $body );
+	}
+
+	/**
+	 * Acknowledge an inline-keyboard button press (dismisses the loading
+	 * state on the button). Errors are irrelevant to the caller.
+	 *
+	 * @param string $token       Bot token.
+	 * @param string $callback_id Callback query id.
+	 * @return array|WP_Error
+	 */
+	public static function answer_callback( $token, $callback_id ) {
+		return self::api( $token, 'answerCallbackQuery', array(
+			'callback_query_id' => $callback_id,
+		) );
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Instant replies — webhook (1.16.0)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Whether instant mode is fully configured (toggle + secret).
+	 *
+	 * @param array|null $cfg Settings (default: stored).
+	 * @return bool
+	 */
+	public static function webhook_active( $cfg = null ) {
+		$cfg = null === $cfg ? self::all() : $cfg;
+		return ! empty( $cfg['webhook'] ) && '' !== (string) $cfg['webhook_secret'];
+	}
+
+	/**
+	 * The public webhook URL the platform pushes updates to.
+	 *
+	 * @param array|null $cfg Settings (default: stored).
+	 * @return string '' when instant mode is not configured.
+	 */
+	public static function webhook_url( $cfg = null ) {
+		$cfg = null === $cfg ? self::all() : $cfg;
+		if ( '' === (string) $cfg['webhook_secret'] ) {
+			return '';
+		}
+		return rest_url( 'aipc/v1/bot-webhook/' . $cfg['webhook_secret'] );
+	}
+
+	/**
+	 * Register the webhook with the platform (setWebhook).
+	 *
+	 * @return array|WP_Error
+	 */
+	public static function set_webhook() {
+		$cfg = self::all();
+		$url = self::webhook_url( $cfg );
+		if ( '' === $url ) {
+			return new WP_Error( 'aipc_bale', __( 'Instant mode is not configured.', 'wp-ai-post-creator' ) );
+		}
+		return self::api( $cfg['token'], 'setWebhook', array( 'url' => $url ) );
+	}
+
+	/**
+	 * Remove the webhook so polling takes over again (deleteWebhook).
+	 *
+	 * @return array|WP_Error
+	 */
+	public static function delete_webhook() {
+		$cfg = self::all();
+		return self::api( $cfg['token'], 'deleteWebhook', array() );
 	}
 
 	/**
@@ -308,6 +427,45 @@ final class AIPC_Bale {
 	}
 
 	/* ---------------------------------------------------------------------
+	 * Notification message ↔ post map (reply-to scheduling, 1.17.0)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Remember which post a sent notification message belongs to, so a
+	 * date sent as a reply to that message schedules exactly that post.
+	 *
+	 * @param string $chat_id    Chat id.
+	 * @param int    $message_id Sent message id.
+	 * @param int    $post_id    Post id.
+	 * @return void
+	 */
+	public static function remember_message( $chat_id, $message_id, $post_id ) {
+		if ( ! $message_id || ! $post_id ) {
+			return;
+		}
+		$map = get_option( self::MSGMAP, array() );
+		$map = is_array( $map ) ? $map : array();
+		$map[ $chat_id . ':' . (int) $message_id ] = (int) $post_id;
+		if ( count( $map ) > 100 ) {
+			$map = array_slice( $map, -100, null, true );
+		}
+		update_option( self::MSGMAP, $map, false );
+	}
+
+	/**
+	 * The post a notification message was about (0 = unknown).
+	 *
+	 * @param string $chat_id    Chat id.
+	 * @param int    $message_id Replied-to message id.
+	 * @return int
+	 */
+	public static function post_for_message( $chat_id, $message_id ) {
+		$map = get_option( self::MSGMAP, array() );
+		$key = $chat_id . ':' . (int) $message_id;
+		return isset( $map[ $key ] ) ? (int) $map[ $key ] : 0;
+	}
+
+	/* ---------------------------------------------------------------------
 	 * Post notification
 	 * ------------------------------------------------------------------- */
 
@@ -331,56 +489,23 @@ final class AIPC_Bale {
 			return;
 		}
 
-		$title = get_the_title( $post );
+		$text   = self::post_message( $post_id );
 
-		$summary = (string) get_post_meta( $post_id, 'rank_math_description', true );
-		if ( '' === $summary ) {
-			$summary = (string) get_post_meta( $post_id, '_aipc_meta_description', true );
-		}
-		if ( '' === $summary ) {
-			$summary = (string) $post->post_excerpt;
-		}
-		$summary = wp_strip_all_tags( $summary );
-		if ( mb_strlen( $summary ) > 400 ) {
-			$summary = mb_substr( $summary, 0, 400 ) . '…';
-		}
-
-		$words  = AIPC_Agent::count_words( $post->post_content );
-		$status = get_post_status( $post_id );
-
-		// Pick the intro line for the run mode and final status.
-		$job = AIPC_Agent::instance()->get_job( $job_id );
-		if ( $job && 'rewrite' === ( isset( $job['mode'] ) ? $job['mode'] : 'new' ) ) {
-			$intro = '♻️ ' . __( 'An existing post was rewritten by the AI', 'wp-ai-post-creator' );
-		} elseif ( 'publish' === $status ) {
-			$intro = '🎉 ' . __( 'A new AI post is published', 'wp-ai-post-creator' );
-		} else {
-			$intro = '✍️ ' . __( 'New AI post is ready', 'wp-ai-post-creator' );
-		}
-
-		$footer = ( 'publish' === $status )
-			? sprintf(
-				/* translators: %d: word count. */
-				__( '%d words · published', 'wp-ai-post-creator' ),
-				$words
-			)
-			: sprintf(
-				/* translators: %d: word count. */
-				__( '%d words · saved as a draft', 'wp-ai-post-creator' ),
-				$words
+		// Quality gate (1.22.0): tell the editor why auto-publish was
+		// cancelled right in the notification.
+		$aipc_qjob = AIPC_Agent::instance()->get_job( $job_id );
+		if ( $aipc_qjob && ! empty( $aipc_qjob['data']['quality']['blocked'] ) ) {
+			$aipc_qd = $aipc_qjob['data']['quality'];
+			$text   .= "\n\n" . '🚦 ' . sprintf(
+				/* translators: 1: score, 2: issue list. */
+				__( 'Quality gate: score %1$d/100 — auto-publish was cancelled, the post stays a draft. Issues: %2$s', 'wp-ai-post-creator' ),
+				(int) $aipc_qd['score'],
+				implode( ' · ', (array) $aipc_qd['issues'] )
 			);
-
-		$text = $intro . "\n\n"
-			. $title . "\n\n"
-			. $summary . "\n\n"
-			. '🔗 ' . get_permalink( $post_id ) . "\n\n"
-			. '📊 ' . $footer;
-
-		$photo = '';
-		$thumb = get_post_thumbnail_id( $post_id );
-		if ( $thumb ) {
-			$photo = (string) wp_get_attachment_url( $thumb );
 		}
+
+		$photo  = self::photo_for( $post_id, $cfg );
+		$markup = self::post_keyboard( $post_id, $cfg );
 
 		$sent        = 0;
 		$first_error = null;
@@ -388,7 +513,7 @@ final class AIPC_Bale {
 		foreach ( $recipients as $chat_id ) {
 			$done = false;
 			if ( '' !== $photo ) {
-				$res = self::send_photo( $cfg['token'], $chat_id, $photo, $text );
+				$res = self::send_photo( $cfg['token'], $chat_id, $photo, $text, $markup );
 				if ( ! is_wp_error( $res ) ) {
 					$done = true;
 				} elseif ( null === $first_error ) {
@@ -396,7 +521,7 @@ final class AIPC_Bale {
 				}
 			}
 			if ( ! $done ) {
-				$res = self::send_message( $cfg['token'], $chat_id, $text );
+				$res = self::send_message( $cfg['token'], $chat_id, $text, $markup );
 				if ( ! is_wp_error( $res ) ) {
 					$done = true;
 				} elseif ( null === $first_error ) {
@@ -405,6 +530,9 @@ final class AIPC_Bale {
 			}
 			if ( $done ) {
 				$sent++;
+				if ( is_array( $res ) && isset( $res['result']['message_id'] ) ) {
+					self::remember_message( $chat_id, (int) $res['result']['message_id'], (int) $post_id );
+				}
 			}
 		}
 
@@ -456,13 +584,133 @@ final class AIPC_Bale {
 			return;
 		}
 
-		$text = '🎉 ' . __( 'A new AI post is published', 'wp-ai-post-creator' ) . "\n\n"
-			. get_the_title( $post ) . "\n\n"
-			. '🔗 ' . get_permalink( $post_id );
+		$text  = self::post_message( $post_id );
+		$photo = self::photo_for( $post_id, $cfg );
 
 		foreach ( $recipients as $chat_id ) {
-			self::send_message( $cfg['token'], $chat_id, $text );
+			$done = false;
+			if ( '' !== $photo ) {
+				$res  = self::send_photo( $cfg['token'], $chat_id, $photo, $text );
+				$done = ! is_wp_error( $res );
+			}
+			if ( ! $done ) {
+				self::send_message( $cfg['token'], $chat_id, $text );
+			}
 		}
+	}
+
+	/**
+	 * The chat message for a post notification:
+	 *
+	 *   🔻Title
+	 *
+	 *   🌱🌱Summary🌱🌱
+	 *   Read the full article at the link below 👇👇👇
+	 *   https://…
+	 *
+	 * @param int $post_id Post id.
+	 * @return string
+	 */
+	private static function post_message( $post_id ) {
+		$post  = get_post( $post_id );
+		$title = get_the_title( $post );
+
+		$summary = (string) get_post_meta( $post_id, 'rank_math_description', true );
+		if ( '' === $summary ) {
+			$summary = (string) get_post_meta( $post_id, '_aipc_meta_description', true );
+		}
+		if ( '' === $summary && $post ) {
+			$summary = (string) $post->post_excerpt;
+		}
+		$summary = wp_strip_all_tags( $summary );
+		if ( mb_strlen( $summary ) > 400 ) {
+			$summary = mb_substr( $summary, 0, 400 ) . '…';
+		}
+
+		return '🔻' . $title . "\n\n"
+			. '🌱🌱' . $summary . '🌱🌱' . "\n"
+			. __( 'Read the full article at the link below', 'wp-ai-post-creator' ) . '👇👇👇' . "\n"
+			. get_permalink( $post_id );
+	}
+
+	/**
+	 * The inline keyboard under a draft notification: a "Publish now" and
+	 * a "Schedule" button. Only unpublished posts get buttons, and only
+	 * when two-way commands are on — pressing a button arrives as a
+	 * callback_query through the same getUpdates poll, so without the
+	 * poller the buttons would be dead.
+	 *
+	 * @param int        $post_id Post id.
+	 * @param array|null $cfg     Bale settings (default: stored).
+	 * @return array|null reply_markup array, or null for no buttons.
+	 */
+	public static function post_keyboard( $post_id, $cfg = null ) {
+		$cfg = null === $cfg ? self::all() : $cfg;
+		if ( ! class_exists( 'AIPC_Bale_Commands' ) || ! AIPC_Bale_Commands::is_enabled( $cfg ) ) {
+			return null;
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post || ! in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) {
+			return null;
+		}
+
+		return array(
+			'inline_keyboard' => array(
+				array(
+					array(
+						'text'          => '🚀 ' . __( 'Publish now', 'wp-ai-post-creator' ),
+						'callback_data' => 'aipc:pub:' . (int) $post_id,
+					),
+					array(
+						'text'          => '⏰ ' . __( 'Schedule', 'wp-ai-post-creator' ),
+						'callback_data' => 'aipc:sch:' . (int) $post_id,
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * When WordPress publishes a post that was scheduled from a Bale chat,
+	 * announce it with the same 🎉 notification as other publishes.
+	 *
+	 * @param WP_Post $post The post that just went future → publish.
+	 * @return void
+	 */
+	public static function on_future_publish( $post ) {
+		$post_id = is_object( $post ) ? (int) $post->ID : (int) $post;
+		if ( ! $post_id || '' === (string) get_post_meta( $post_id, '_aipc_bale_scheduled', true ) ) {
+			return;
+		}
+		delete_post_meta( $post_id, '_aipc_bale_scheduled' );
+
+		$job_id = (string) get_post_meta( $post_id, '_aipc_job', true );
+		if ( '' !== $job_id ) {
+			AIPC_Agent::instance()->append_log( $job_id, __( 'Scheduled post published.', 'wp-ai-post-creator' ), 'success' );
+		}
+
+		/** This action is documented in includes/class-aipc-bale-commands.php */
+		do_action( 'aipc_post_published', $post_id, $job_id );
+	}
+
+	/**
+	 * The picture sent above a post notification: the featured image, or
+	 * the default notification image configured in the Bale settings.
+	 *
+	 * @param int   $post_id Post id.
+	 * @param array $cfg     Bale settings.
+	 * @return string Image URL, or '' when neither exists.
+	 */
+	private static function photo_for( $post_id, $cfg ) {
+		$thumb = get_post_thumbnail_id( $post_id );
+		if ( $thumb ) {
+			$url = (string) wp_get_attachment_url( $thumb );
+			if ( '' !== $url ) {
+				return $url;
+			}
+		}
+		return isset( $cfg['default_image'] ) ? (string) $cfg['default_image'] : '';
 	}
 
 	/* ---------------------------------------------------------------------
@@ -545,6 +793,8 @@ final class AIPC_Bale {
 		$prompt     = 0;
 		$completion = 0;
 		$calls      = 0;
+		$rescued    = 0;
+		$qblocked   = 0;
 		$by_conn    = array();
 
 		foreach ( AIPC_Agent::instance()->get_jobs_since( $since ) as $job ) {
@@ -560,6 +810,14 @@ final class AIPC_Bale {
 			}
 			$prompt     += (int) $job['usage']['prompt'];
 			$completion += (int) $job['usage']['completion'];
+
+			$img_src = isset( $job['data']['image']['prompt'] ) ? (string) $job['data']['image']['prompt'] : '';
+			if ( 0 === strpos( $img_src, 'stock:' ) || 'default' === $img_src ) {
+				$rescued++;
+			}
+			if ( ! empty( $job['data']['quality']['blocked'] ) ) {
+				$qblocked++;
+			}
 
 			foreach ( (array) $job['calls'] as $call ) {
 				$calls++;
@@ -606,6 +864,20 @@ final class AIPC_Bale {
 				__( '%d API calls', 'wp-ai-post-creator' ),
 				$calls
 			);
+			if ( $rescued > 0 ) {
+				$lines[] = '🛟 ' . sprintf(
+					/* translators: %d: count. */
+					__( 'Rescue images used (stock/default): %d', 'wp-ai-post-creator' ),
+					$rescued
+				);
+			}
+			if ( $qblocked > 0 ) {
+				$lines[] = '🚦 ' . sprintf(
+					/* translators: %d: count. */
+					__( 'Quality gate kept %d post(s) as draft', 'wp-ai-post-creator' ),
+					$qblocked
+				);
+			}
 
 			if ( ! empty( $by_conn ) ) {
 				$lines[] = '';
@@ -619,6 +891,20 @@ final class AIPC_Bale {
 						number_format_i18n( $usage['tokens'] )
 					);
 				}
+			}
+		}
+
+		// Connection health (1.22.0): flag providers that failed today.
+		$trouble = AIPC_Health::trouble_today();
+		if ( ! empty( $trouble ) ) {
+			$lines[] = '';
+			foreach ( $trouble as $t ) {
+				$lines[] = '⚠️ ' . sprintf(
+					/* translators: 1: connection name, 2: failure count. */
+					__( '%1$s — %2$d failed calls today', 'wp-ai-post-creator' ),
+					$t['name'],
+					$t['fail']
+				);
 			}
 		}
 

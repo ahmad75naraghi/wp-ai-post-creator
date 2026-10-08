@@ -38,8 +38,10 @@ final class AIPC_REST {
 					'language'        => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_key' ),
 					'language_custom' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
 					'image'           => array( 'type' => 'boolean' ),
+					'force_image'     => array( 'type' => 'boolean' ),
 					'faq'             => array( 'type' => 'boolean' ),
 					'toc'             => array( 'type' => 'boolean' ),
+					'force'           => array( 'type' => 'boolean', 'default' => false ),
 				),
 			)
 		);
@@ -166,13 +168,42 @@ final class AIPC_REST {
 
 		register_rest_route(
 			self::NS,
+			'/bot-webhook/(?P<secret>[A-Za-z0-9]{16,64})',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'bot_webhook' ),
+				// Public by design: the long random path secret is the
+				// credential (validated with hash_equals below).
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/topics/suggest',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'topics_suggest' ),
 				'permission_callback' => array( __CLASS__, 'can_manage' ),
 				'args'                => array(
-					'limit' => array( 'type' => 'integer', 'sanitize_callback' => 'absint' ),
+					'limit'   => array( 'type' => 'integer', 'sanitize_callback' => 'absint' ),
+					'exclude' => array(
+						'type'              => 'array',
+						'sanitize_callback' => array( __CLASS__, 'sanitize_exclude_texts' ),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/topics/dismiss',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'topics_dismiss' ),
+				'permission_callback' => array( __CLASS__, 'can_manage' ),
+				'args'                => array(
+					'text' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
 				),
 			)
 		);
@@ -210,6 +241,24 @@ final class AIPC_REST {
 			}
 		}
 		return array_slice( $out, 0, 30 );
+	}
+
+	/**
+	 * Sanitize the already-on-screen suggestion list (REST arg, 1.23.0).
+	 * Larger cap than topics/add: several "show more" rounds add up.
+	 *
+	 * @param array $texts Raw list.
+	 * @return array
+	 */
+	public static function sanitize_exclude_texts( $texts ) {
+		$out = array();
+		foreach ( (array) $texts as $text ) {
+			$text = sanitize_text_field( (string) $text );
+			if ( '' !== $text ) {
+				$out[] = $text;
+			}
+		}
+		return array_slice( $out, 0, 100 );
 	}
 
 	/**
@@ -371,6 +420,45 @@ final class AIPC_REST {
 	 * @param WP_REST_Request $request Request.
 	 * @return array|WP_Error
 	 */
+	/**
+	 * Instant-mode webhook: Bale/Telegram POSTs every update here the
+	 * moment it happens (message or button press). The long random path
+	 * secret authenticates the platform; unauthorized chats are filtered
+	 * inside process_update() exactly like the poll.
+	 *
+	 * @param WP_REST_Request $request Request (JSON body = one update).
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function bot_webhook( $request ) {
+		$cfg    = AIPC_Bale::all();
+		$secret = (string) $request['secret'];
+
+		if ( ! AIPC_Bale::webhook_active( $cfg )
+			|| ! hash_equals( (string) $cfg['webhook_secret'], $secret ) ) {
+			return new WP_Error(
+				'aipc_forbidden',
+				__( 'Invalid webhook secret.', 'wp-ai-post-creator' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$update = json_decode( (string) $request->get_body(), true );
+		if ( is_array( $update ) ) {
+			AIPC_Bale_Commands::process_update( $update, $cfg );
+
+			// Track the id so a later switch back to polling does not
+			// replay already-handled updates.
+			$uid = isset( $update['update_id'] ) ? (int) $update['update_id'] : 0;
+			if ( $uid > (int) $cfg['last_update_id'] ) {
+				$fresh = AIPC_Bale::all();
+				$fresh['last_update_id'] = $uid;
+				AIPC_Bale::save( $fresh );
+			}
+		}
+
+		return rest_ensure_response( array( 'ok' => true ) );
+	}
+
 	public static function bale_chat_id( $request ) {
 		$cfg = AIPC_Bale::all();
 
@@ -452,10 +540,12 @@ final class AIPC_REST {
 			'language'        => $request->get_param( 'language' ),
 			'language_custom' => $request->get_param( 'language_custom' ),
 			'image'           => $request->get_param( 'image' ),
+			'force_image'     => $request->get_param( 'force_image' ),
 			'faq'             => $request->get_param( 'faq' ),
 			'toc'             => $request->get_param( 'toc' ),
 			'mode'            => $request->get_param( 'mode' ),
 			'post_id'         => $request->get_param( 'post_id' ),
+			'force'           => $request->get_param( 'force' ) ? 1 : 0,
 		);
 
 		// Auto-publishing from the console requires the publish capability.
@@ -558,11 +648,27 @@ final class AIPC_REST {
 	 * @return WP_REST_Response
 	 */
 	public static function topics_suggest( $request ) {
-		$suggestions = AIPC_Topic_Queue::suggest( (int) $request->get_param( 'limit' ) ? (int) $request->get_param( 'limit' ) : 12 );
+		$limit   = (int) $request->get_param( 'limit' ) ? (int) $request->get_param( 'limit' ) : 12;
+		$exclude = (array) $request->get_param( 'exclude' );
+		$result  = AIPC_Topic_Queue::suggest( $limit, $exclude );
 		return rest_ensure_response( array(
-			'suggestions' => $suggestions,
-			'count'       => count( $suggestions ),
+			'suggestions' => $result['suggestions'],
+			'count'       => count( $result['suggestions'] ),
+			'sources'     => $result['sources'],
 			'has_sources' => '' !== trim( (string) AIPC_Settings::get( 'source_sites' ) ),
+		) );
+	}
+
+	/**
+	 * Never show a suggestion again (1.23.0).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function topics_dismiss( $request ) {
+		$ok = AIPC_Topic_Queue::dismiss( (string) $request->get_param( 'text' ) );
+		return rest_ensure_response( array(
+			'dismissed' => (bool) $ok,
 		) );
 	}
 

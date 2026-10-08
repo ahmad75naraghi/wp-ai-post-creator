@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for AI Post Creator **v1.5.2**. Audience: contributors and
+Technical reference for AI Post Creator **v1.23.1**. Audience: contributors and
 AI agents working on the code. For usage, see the user guides
 ([فارسی](USER-GUIDE.fa.md) · [English](USER-GUIDE.en.md)).
 
@@ -11,57 +11,76 @@ AI agents working on the code. For usage, see the user guides
 ## 1. Bootstrap
 
 `wp-ai-post-creator.php` defines `AIPC_VERSION` / `AIPC_PLUGIN_DIR` /
-`AIPC_PLUGIN_URL`, requires all classes from `includes/`, then registers:
+`AIPC_PLUGIN_URL`, requires all classes from `includes/`, then boots on
+`plugins_loaded` (`aipc_boot()`):
 
 | Registration | Purpose |
 |---|---|
-| `AIPC_Agent::register_static()` | cron `aipc_daily_cleanup` (job GC) |
-| `AIPC_Scheduler::register()` | `cron_schedules` filter (`aipc_quarter_hour`, 900 s), `aipc_cron_tick`, **`aipc_publish_post`**, **`aipc_run_job`** (background runner) |
-| `AIPC_Bale::register()` | `aipc_post_created`, `aipc_post_published` |
-| `AIPC_Rest::register()` | REST namespace `aipc/v1` |
-| `AIPC_Admin::register()` | menu + `admin_post_*` handlers + settings |
+| `AIPC_Connections::maybe_migrate()` / `AIPC_Job_Store::maybe_upgrade()` | one-time migrations (legacy connection format; jobs option → `aipc_jobs` table + schema versioning) |
+| `AIPC_Admin::register()` | menu (9 pages) + `admin_post_*` handlers |
 | `AIPC_Assets::register()` | per-screen JS/CSS |
+| `AIPC_Post_Builder::register()` | `the_content` FAQ-schema append + front CSS for generated posts |
+| `AIPC_Scheduler::register()` + `maybe_schedule()` | `cron_schedules` filter (`aipc_quarter_hour`, 900 s), `aipc_cron_tick`, **`aipc_publish_post`**, **`aipc_run_job`** (background runner) |
+| `AIPC_Bale::register()` | `aipc_post_created`, `aipc_post_published` notifications; `future_to_publish` announces Bale-scheduled posts |
+| `AIPC_Bale_Commands::register()` + `maybe_schedule()` | `aipc_bale_5min` interval + `aipc_bale_poll` (two-way commands); also polls on every scheduler tick as a safety net |
+| `add_action( 'rest_api_init', … 'AIPC_REST::register' )` | REST namespace `aipc/v1` |
+| `aipc_daily_cleanup` → `AIPC_Agent::cleanup_static` | daily job GC (retention pruning) |
 
-Activation schedules `aipc_cron_tick` (15 min) and `aipc_daily_cleanup` (daily);
-the admin bar gets "New AI Post" + "Rewrite post" shortcuts for users with
-`edit_posts`.
+Activation seeds `aipc_settings`, creates/upgrades the jobs table and
+schedules `aipc_cron_tick` (15 min) + `aipc_daily_cleanup` (daily); the
+Plugins-screen row gets quick action links (New AI Post, Rewrite post,
+Connections, Prompts & Steps, Logs, Schedule, Settings).
 
 ## 2. Class inventory
 
 | Class (file) | ~LOC | Responsibility |
 |---|---|---|
 | `AIPC_Agent` (`class-aipc-agent.php`) | ~2100 | The heart: job facade over `AIPC_Job_Store`, step manifests, the chain-retry execution loop, every `step_*()` implementation, context helpers (recent posts, link candidates, RSS sources), stats |
-| `AIPC_Bale` (`class-aipc-bale.php`) | ~680 | Bale Bot API client: per-post notify (sendPhoto/sendMessage), publish notify, periodic reports, chat-ID detection, `getUpdates` with offset |
-| `AIPC_Bale_Commands` (`class-aipc-bale-commands.php`) | ~430 | Two-way Bale: 5-min poll (safety net on the scheduler tick), command parsing (نوشتن/وضعیت/آخرین/انتشار/صف/راهنما), authorized-chats-only, daily cap, `last_update_id` persistence |
-| `AIPC_Topic_Queue` (`class-aipc-topic-queue.php`) | ~330 | FIFO topic bank (option-backed, pending/used with dedup memory), RSS suggestions (cleaned headlines, deduped vs queue + recent posts) |
-| `AIPC_Scheduler` (`class-aipc-scheduler.php`) | ~660 | Cron tick, entries (incl. `use_queue`), daily limit, catch-up state, `aipc_publish_post` handler, **background runner** (`aipc_run_job`) |
-| `AIPC_Job_Store` (`class-aipc-job-store.php`) | ~390 | Jobs storage: `{$wpdb->prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
-| `AIPC_Network` (`class-aipc-network.php`) | ~150 | Outbound network guard (SSRF): `is_safe_url()` / `validate_url()`, private-range blocking, allowlist + loopback filters |
-| `AIPC_API_Client` (`class-aipc-api-client.php`) | 491 | OpenAI-compatible HTTP: chat completions (JSON extraction + corrective retries), image generations, model listing; one internal retry on 429/5xx |
-| `AIPC_Steps` (`class-aipc-steps.php`) | 478 | 13-step registry (label, kind, default prompt, placeholders) + per-step config storage |
-| `AIPC_Admin` (`class-aipc-admin.php`) | 464 | Menu (7 pages), `admin_post_*` form handlers, view rendering |
-| `AIPC_Rest` (`class-aipc-rest.php`) | 411 | REST endpoints & permissions |
-| `AIPC_Post_Builder` (`class-aipc-post-builder.php`) | 367 | Assembles the final post: `create()` (new) and `update()` (rewrite), TOC/FAQ HTML, SEO meta, tags, featured image upload |
-| `AIPC_Connections` (`class-aipc-connections.php`) | 303 | Connection CRUD + sanitizing, default connection, write-only keys |
-| `AIPC_Updater` (`class-aipc-updater.php`) | ~430 | Git self-update: repo/branch/token config, version check, connection test, zipball download (codeload or authenticated api.github.com), verification, backup + atomic swap with rollback |
-| `AIPC_Settings` (`class-aipc-settings.php`) | 245+ | Settings (site prompt, source sites, defaults) + option lists (tones, lengths, languages, image sizes) |
-| `AIPC_Assets` (`class-aipc-assets.php`) | 209 | Screen detection, enqueue, inline config for the console JS |
+| `AIPC_Bale` (`class-aipc-bale.php`) | ~780 | Bale/Telegram Bot API client (platform-switchable endpoint): per-post notify (sendPhoto/sendMessage), publish notify, inline publish/schedule keyboard on draft notifications, periodic reports, chat-ID detection, `getUpdates` with offset |
+| `AIPC_Bale_Commands` (`class-aipc-bale-commands.php`) | ~470 | Two-way Bale: 5-min poll (safety net on the scheduler tick), command parsing (نوشتن/وضعیت/آخرین/انتشار/صف/راهنما), callback-button handling (publish now / schedule with Jalali+Gregorian date parsing; interactive menu: new-topic conversation, queue-run buttons, drafts list + action cards), authorized-chats-only, daily cap, `last_update_id` persistence |
+| `AIPC_Topic_Queue` (`class-aipc-topic-queue.php`) | ~370 | FIFO topic bank (option-backed, pending/used with dedup memory), RSS suggestions (cleaned headlines, deduped vs queue + recent posts) |
+| `AIPC_Scheduler` (`class-aipc-scheduler.php`) | ~620 | Cron tick, entries (incl. `use_queue`), daily limit, catch-up state, `aipc_publish_post` handler, **background runner** (`aipc_run_job`) |
+| `AIPC_Job_Store` (`class-aipc-job-store.php`) | ~550 | Jobs storage: `{$wpdb->prefix}aipc_jobs` table (schema versioning, legacy-option migration + fallback), CRUD, light-row queries, retention pruning |
+| `AIPC_Text` (`class-aipc-text.php`) | ~90 | Persian half-space (ZWNJ) repair rules + `&zwnj;` entity armoring for post content (v1.10.0) |
+| `AIPC_Trace` (`class-aipc-trace.php`) | ~220 | Full API trace log (v1.11.0): JSONL request/response capture with job/step context, key redaction, base64 collapsing, 8 MB rotation, protected dir |
+| `AIPC_Network` (`class-aipc-network.php`) | ~260 | Outbound network guard (SSRF): `is_safe_url()` / `validate_url()`, private-range blocking, allowlist + loopback filters |
+| `AIPC_API_Client` (`class-aipc-api-client.php`) | ~500 | OpenAI-compatible HTTP: chat completions (JSON extraction + corrective retries), image generations, model listing; one internal retry on 429/5xx |
+| `AIPC_Steps` (`class-aipc-steps.php`) | ~480 | 13-step registry (label, kind, default prompt, placeholders) + per-step config storage |
+| `AIPC_Admin` (`class-aipc-admin.php`) | ~760 | Menu (9 pages), `admin_post_*` form handlers, view rendering |
+| `AIPC_Rest` (`class-aipc-rest.php`) | ~600 | REST endpoints, permissions & rate limits |
+| `AIPC_Post_Builder` (`class-aipc-post-builder.php`) | ~370 | Assembles the final post: `create()` (new) and `update()` (rewrite), TOC/FAQ HTML, SEO meta, tags, featured image upload |
+| `AIPC_Stock` (`class-aipc-stock.php`) | ~160 | Openverse stock-photo fallback (1.18.0): keyless CC-licensed photo search (`license_type=commercial,modification`), candidate download with content checks, attribution line builder |
+| `AIPC_Connections` (`class-aipc-connections.php`) | ~420 | Connection CRUD + sanitizing, default connection, write-only keys, purpose (chat/image/both) + priority, `for_purpose()` priority-ordered pools |
+| `AIPC_Updater` (`class-aipc-updater.php`) | ~600 | Git self-update: repo/branch/token config, version check, connection test, zipball download (codeload or authenticated api.github.com), verification, backup + atomic swap with rollback |
+| `AIPC_Settings` (`class-aipc-settings.php`) | ~250 | Settings (site prompt, source sites, defaults) + option lists (tones, lengths, languages, image sizes) |
+| `AIPC_Quality` (`class-aipc-quality.php`) | ~180 | Quality gate (1.22.0): zero-cost local checks on the finished HTML (thin content, empty/duplicate H2s, keyword stuffing/absence, machine clichés, broken internal links, duplicate titles, missing promised image) → 0–100 score; below `aipc_quality_threshold` (60) auto-publish downgrades to draft |
+| `AIPC_Health` (`class-aipc-health.php`) | ~190 | Connection circuit breaker (1.22.0): per-connection daily ok/fail counters + failure streaks; a streak of `aipc_health_streak` (5) starts an `aipc_health_cooldown` (30 min) during which `order()` moves the connection to the end of every chain — never removed |
+| `AIPC_Assets` (`class-aipc-assets.php`) | ~260 | Locale-proof screen detection (`screen_for_hook()` parses the page slug after `_page_` — the hook prefix is the *translated* menu title), enqueue, inline config for the console JS |
 
 ## 3. Data model (wp_options)
 
 | Option | Structure |
 |---|---|
-| `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `image_enabled`, `image_size`, `add_toc`, `add_faq`, `system_prompt_extra`, `delete_on_uninstall` |
+| `aipc_settings` | `content_language` (fa default when locale is fa), `default_tone`, `default_length`, `site_prompt` (≤4000), `source_sites` (newline-separated, ≤8, strict http(s), trailing slashes stripped), `image_enabled`, `image_size`, `image_fallback_stock` (Openverse stock fallback, 1.18.0), `image_fallback` (default featured image: media ID or URL, 1.18.0), `add_toc`, `add_faq`, `system_prompt_extra`, `allow_private_hosts` (SSRF-guard opt-in for LAN gateways, default 0), `delete_on_uninstall` |
 | `aipc_connections` | array of `{id (c_*), name, base_url, api_key, chat_model, image_model, temperature (0–2, default 0.7), max_tokens (≤16000), request_timeout (≥15), is_default}` — keys never leave the server |
 | `aipc_steps` | `{step_id: {connections: [conn_id,…] (ordered fallback chain), prompt: '' = default}}` — reads also accept legacy `connection` (string) |
 | `aipc_schema_version` | jobs-table schema version (`AIPC_Job_Store::SCHEMA_VERSION`); bump + migration routine on upgrade |
 | **table `{$wpdb->prefix}aipc_jobs`** | one row per job: `id VARCHAR(40)` PK, `created`/`updated` BIGINT, `status`, `mode`, `source`, `post_id`, `steps_total`, `steps_done`, `calls`, `prompt_tokens`, `completion_tokens` INT, `topic`, `payload` LONGTEXT (full job JSON — the source of truth: `steps[]`, `log[]`, `calls[]`, `timings`, `usage`, `args`, `data`, `notified`); KEY `status`/`created`/`source`. Retention pruning via `aipc_job_retention_days` (default 90, 0 = forever). The legacy `aipc_jobs` option (≤30 jobs / 24 h) is migrated automatically and remains as a fallback when the table is unavailable or `aipc_jobs_table_enabled` returns false |
-| `aipc_stats` (autoload off) | aggregate: jobs, done, calls, tokens, drafts, `by_connection{name: {calls, ok, tokens}}` |
-| `aipc_schedule` | `entries[]` (`{id (sch_*), time HH:MM, days[0–6 Sun=0], enabled, topic, publish (draft/now/delay), publish_delay (15–10080), opts{tone,length,language,image,faq,toc}}`), `state{entry_id: Y-m-d fired}`, `settings{daily_limit}` |
+| `aipc_stats` (autoload off) | aggregate: jobs, done, calls, tokens, drafts, `rescued_images` + `quality_blocked` (1.22.0), `by_connection{name: {calls, ok, tokens}}` |
+| `aipc_schedule` | `entries[]` (`{id (sch_*), kind (new/refresh, 1.22.0), time HH:MM, days[0–6 Sun=0], enabled, topic, publish (draft/now/delay), publish_delay (15–10080), opts{tone,length,language,image,faq,toc}}`), `state{entry_id: Y-m-d fired}`, `settings{daily_limit}` |
+| `aipc_conn_health` (autoload off, 1.22.0) | `{conn_id: {name, day (Y-m-d, daily reset), ok, fail, streak, cooldown_until}}` — written by `AIPC_Health::record()` from the chain-retry loop; feeds the connections-page health light, chain reordering and the Bale report |
 | `aipc_git` (autoload off) | Git self-update configuration: `repo` (`owner/name`, default `ahmad75naraghi/wp-ai-post-creator`), `branch` (default `main`), `token` (write-only PAT — an empty field keeps the stored token) |
-| `aipc_bale` | `enabled`, `token` (write-only), `chat_ids[]`, `report` (''/daily/weekly), `report_time`, `last_report` (Y-m-d) |
+| `aipc_bale` | `enabled`, `token` (write-only), `chat_ids[]`, `report` (''/daily/weekly), `report_time`, `report_day` (weekday for weekly, default 6), `last_report` (Y-m-d), `two_way` (accept commands, 1.7.0), `last_update_id` (getUpdates offset) |
+| `aipc_bale_msgmap` (autoload off) | `{"<chat_id>:<message_id>": post_id}` — sent draft-notification ids captured by `AIPC_Bale::notify()`, capped at 100; lets a Reply containing a date schedule exactly that post (1.17.0) |
+| `aipc_topic_queue` | `items[]` (`{id (tq_*), text (≤400), norm (dedup key), source (manual/rss), added, status (pending/used), job_id, used_at}`) — FIFO bank consumed by schedule entries with `use_queue`; used items are kept as dedup memory and pruned by `AIPC_Topic_Queue::prune()`. Since 1.23.0 also `dismissed{norm: time}` (≤500): headlines the admin ✕-ed in the suggestion list, never suggested again. A consumed queue topic sets the job arg `topic_hint_only=1` — the plan step treats it as a *subject* and crafts its own title |
+| `aipc_feed_cache` (autoload off, 1.23.0) | `{md5(source_url): {url, feed, checked}}` — result of `AIPC_Topic_Queue::discover_feed()` (common paths `/feed/`, `/rss`, `/rss.xml`, `/feed.xml`, `/atom.xml`, `/index.xml`, `/?feed=rss2`, then HTML `<link rel="alternate">` autodiscovery); hits cached 1 week, misses 6 hours, capped at 50 rows |
+| `aipc_image_history` (autoload off, 1.24.0) | `[{p (raw image prompt ≤300 chars, pre style-suffix), t}]` newest first, capped at 30 — written by `AIPC_Agent::remember_image_prompt()` after every successful AI featured image; feeds `{{recent_images}}` and the anti-repeat twist (`diversify_image_prompt()`) |
+| `aipc_claim_<md5>` (autoload off, 1.19.0) | atomic one-winner locks (`AIPC_Agent::claim()`): value = claim timestamp; keys `topic_<norm>` (10 min), `notify_<job>` / `entry_<id>_<date>` (1 day); long-expired rows pruned opportunistically |
 
 Post meta written by the builder: `_aipc_generated`, `_aipc_job`,
+`_aipc_refreshed` (unix time of the last rewrite — rotates the automatic
+content-refresh picks, 1.22.0),
+`_aipc_topic_norm` (canonical topic for the duplicate guard, 1.19.0),
 `_aipc_faq_schema` (FAQPage JSON-LD), `_aipc_meta_title`,
 `_aipc_meta_description` (mirrored to Yoast `_yoast_wpseo_*` and Rank Math
 `rank_math_*` keys + `rank_math_focus_keyword`).
@@ -77,6 +96,26 @@ and the client extracts/repairs JSON), `chat_html` ("raw HTML only"), `image`.
 `AIPC_Steps::get($step)` returns `{connections[], prompt}`; `prompt_for()`
 falls back to the registry default; a stored prompt identical to the default is
 treated as non-custom.
+
+**Editorial-depth pipeline (1.20.0):** `plan` classifies the real
+**search intent** (`search_intent` English token + `structure_hint`, stored in
+`data.plan`) and must never present search-volume/difficulty numbers (KEYWORD
+HONESTY); `outline` mirrors the intent (tutorial → steps, comparison →
+criteria + table, troubleshooting → symptoms/causes/fixes/prevention, …), uses
+technical terms in headings only when necessary, and plans one concrete
+**evidence** element per section (kept in `data.outline[i].evidence`);
+`section` receives it as MUST DELIVER, treats the word target as a ceiling and
+forbids padding and fabricated statistics/benchmarks/case studies; `copywrite`
+is an **Expert Editorial Rewrite** (machine-cliché removal, varied
+sentence/paragraph lengths, no identical section openings, natural
+transitions, keyword de-stuffing, bullets-to-prose, unsupported claims
+stripped — may restructure freely inside sections); `rw_rewrite` carries the
+same HUMAN VOICE + HONESTY rules. The system prompt bans fabricated
+benchmarks/case studies/customer stories/prices globally. Custom prompts must
+keep their routing phrases (first line) for the e2e mock to recognize steps.
+Internal-link candidates (`link_candidates()`) are relevance-ranked by
+normalized token overlap with the topic over a pool of up to 100 recent posts
+(`aipc_link_candidate_pool` filter) instead of newest-first.
 
 ## 5. Job execution
 
@@ -112,8 +151,100 @@ else if still failing: job.status = error (manual retry available)
 
 Each agent attempt may internally double (the API client retries once on
 429/5xx), so an always-failing provider logs **2× attempts** HTTP calls.
-A transient lock (`aipc_lock_<job>`, 600 s) prevents concurrent execution.
-When a job reaches `done`, `aipc_post_created` fires **once** (`notified` flag).
+Exception — **image routes (1.17.1)**: `/images/generations` and the
+chat-image fallback cap their timeout at 180 s (filter
+`aipc_image_timeout`, never above the connection timeout), get **no**
+automatic timeout-retry, and a 15-minute transient circuit breaker
+(`aipc_imgchat_to_<md5(base_url|model)>`) skips the chat fallback after it
+times out once — a hanging gateway can no longer pin the runner for
+`timeout × 2 × attempts`.
+**Image rescue ladder (1.18.0):** a gateway "Invalid image model" reply
+triggers `/models` autodiscovery (image-capable id picked by pattern,
+cached a day in `aipc_img_model_<md5(base_url)>`, one retry); when the
+whole connection chain still fails, `AIPC_Agent::image_fallback()` tries
+an Openverse stock photo (opt-in, query = the image-prompt step's English
+`keywords`, attribution stored on the attachment) and finally the
+site-wide default featured image (`image_fallback` setting; external URLs
+are imported once and reused via the `aipc_image_fallback_cache` option)
+before the step is skipped.
+**Force-image mode (1.21.0, `args.force_image`, global default
+`settings.force_image`):** the job may never finish without a generated
+featured image. On failure the step neither falls back nor skips — the job
+stays `running` with `data.image_retry` `{count, since, next}`, the whole
+connection chain is retried on a growing schedule (60 s → 1 h, exact-time
+runner events; a wait gate makes interim `execute_step` calls free and
+`client_state` exposes `retry_at`) for up to `aipc_force_image_window`
+(default one day). Only then does the rescue ladder run as the last resort;
+if even that fails the job errors out instead of saving an image-less post.
+Since `image` precedes `finalize`, nothing is saved/published/announced
+while waiting. On success `image_retry` is cleared and `image_fallback()`
+is idempotent (an attached image is never replaced).
+An **owner-token lock** (`aipc_lock_<job>`, 1.19.1) prevents concurrent
+execution: the transient stores a token unique to the running process and a
+**heartbeat** refreshes it (TTL 900 s, `AIPC_Agent::LOCK_TTL`) before every
+outbound HTTP request (`pre_http_request` priority 1 — provider calls, image
+downloads, stock photos all pass through the WP HTTP API), so the lock never
+expires while a step is genuinely working, no matter how many retries or
+connections it needs. A runner that nevertheless loses the lock (true process
+freeze beyond the TTL) **discards every local change** — it neither saves the
+stale job copy (which would rewind the cursor and re-run finished steps:
+regenerated images, repeated notifications) nor deletes the new owner's lock;
+mid-step retry-log saves are ownership-checked too.
+**Cancellation is terminal (1.20.1):** `cancel_job()` first *fences* the lock
+(overwrites the transient with a `cancelled-…` token no process owns) so an
+in-flight runner fails its ownership check and discards its stale copy, and
+`save_job()` refuses to overwrite a stored `cancelled` status with a
+`running` copy — a cancelled job can never resurrect itself seconds later.
+When a job reaches `done`, `aipc_post_created` fires **once** (`notified` flag
+guarded by the atomic claim `notify_<job>` since 1.19.0).
+
+### 5.2.2 Duplicate-request guard (1.19.0)
+
+`create_job()` (the single funnel for console/REST/Bale/scheduler) blocks a
+new-mode job with a non-empty topic when `AIPC_Agent::duplicate_of()` finds
+
+1. a **running job** with the same canonical topic,
+2. a **recent post** (`_aipc_topic_norm` meta written by
+   `AIPC_Post_Builder::create()`, window `aipc_duplicate_window` = 30 days,
+   statuses publish/future/draft/pending/private),
+3. a **near-duplicate post** (1.24.0) — `AIPC_Agent::similar_recent()` scans
+   the `aipc_similarity_pool` (150) most recent posts of any status and
+   reports the best `topic_similarity()` match at or above
+   `aipc_similarity_threshold` (0.7); the scorer is token-based with prefix
+   stemming (plural/suffixed variants still match) and falls back to
+   character similarity for very short titles, or
+4. a **pending topic-queue item** — skipped for `source = cron` and for the
+   Bale queue button (`from_queue` arg), because those callers legitimately
+   consume queue items (the scheduler additionally marks a duplicate queue
+   item used so the queue never stalls).
+
+Two more near-duplicate layers run INSIDE the job (1.24.0, skipped when the
+job was forced — `args.allow_duplicate`): the **plan step** scores the
+proposed title plus every `title_options` alternative and throws on a
+near-duplicate (the retry prompt lists the rejected titles via
+`data.rejected_titles`, so the model must change direction; a distinct
+alternative title is swapped in silently when available), and
+**`step_finalize`** re-checks right before `AIPC_Post_Builder::create()` so a
+racing job cannot slip a near-duplicate through. Featured images get the
+same treatment: the last 30 raw image prompts live in `aipc_image_history`,
+the image-prompt step receives the 10 most recent via `{{recent_images}}`
+(appended on the fly to customized templates that predate the placeholder),
+and `AIPC_Agent::diversify_image_prompt()` appends a rotating composition
+twist when the new concept scores ≥ `aipc_image_similarity_threshold` (0.6)
+against a recent one.
+
+Canonicalisation (`AIPC_Agent::topic_norm()`) builds on
+`AIPC_Topic_Queue::normalize_key()` (Arabic ي/ك→Persian, digit styles,
+lowercase) and additionally maps ZWNJ/ZWSP/NBSP to spaces and collapses
+whitespace. Passing `force` (REST flag / "Allow duplicate topic" toggle)
+bypasses the guard. Surviving requests must then win the **atomic claim**
+`topic_<norm>` (10 min) — `AIPC_Agent::claim()` is a one-winner lock built on
+`add_option()`'s unique key (no read-then-write race, unlike transients),
+stored as autoload-off `aipc_claim_<md5>` rows with opportunistic pruning;
+`release()` drops a claim early (done on job failure/cancel so retries are
+never blocked). `step_finalize` is idempotent: if the job already owns a post
+(`AIPC_Post_Builder::post_for_job()` via `_aipc_job` meta) it is reused —
+no duplicate post/publish/notification.
 
 ### 5.2.1 Background runner (since v1.6.0)
 
@@ -144,7 +275,17 @@ Every job is driven **server-side** by a self-rescheduling single cron event on
 - `sanitize_internal_links()` (≤ 4, esc_url_raw) and `internal_links_block()`
   (the "weave these in" instruction for writing prompts)
 
-### 5.4 Finalization & publish modes (`finalize` / `rw_finalize`)
+### 5.4 Finalization & publish modes (`finalize` / `rw_finalize` / `img_finalize`)
+
+Before `finalize` creates a new post, the quality gate (1.22.0) scores the
+built HTML with `AIPC_Quality::check()`; below `aipc_quality_threshold`
+(60) a `now`/`delay` publish mode is downgraded to `draft`, the verdict is
+stored at `data.quality` (`blocked = 1`) and the Bale notification appends
+a 🚦 line with the issues. `rw_finalize` additionally stamps
+`_aipc_refreshed` for the content-refresh rotation. The `image_fix` job
+mode (repair tool, §8) uses a 2-step manifest (`image` → `img_finalize`)
+that only attaches the generated attachment as the featured image and sets
+`notified = 1` so no "post created" Bale message is sent.
 
 `AIPC_Post_Builder::create()`/`update()` saves the post (draft by default;
 rewrite preserves status/author/slug/categories and appends tags). Then:
@@ -160,15 +301,18 @@ rewrite preserves status/author/slug/categories and appends tags). Then:
 
 | Route | Method | Capability | Notes |
 |---|---|---|---|
-| `/start` | POST | `edit_posts` + rate limit | args: `topic, tone, length, language, language_custom, image, faq, toc, mode, post_id`; `publish_mode`/`publish_delay` only forwarded with `publish_posts`; returns `client_state()`; arms the background runner |
+| `/start` | POST | `edit_posts` + rate limit | args: `topic, tone, length, language, language_custom, image, faq, toc, mode, post_id, force` (`force` = bypass the 1.19.0 duplicate-topic guard; a blocked request returns `aipc_duplicate`, HTTP 400); `publish_mode`/`publish_delay` only forwarded with `publish_posts`; returns `client_state()`; arms the background runner |
 | `/step` | POST | `edit_posts` + rate limit | executes the next step synchronously (compat); `job_id`, `since` (log cursor) |
 | `/state` | POST | `edit_posts` + rate limit | **read-only**: returns `client_state()` without executing anything (`job_id`, `since`) |
 | `/cancel` | POST | `edit_posts` | cancels a running job |
 | `/retry` | POST | `edit_posts` | resets the failed step for a manual retry |
-| `/connection/test` | POST | `manage_options` | by saved `id` or raw `base_url`/`api_key`/`chat_model` |
+| `/connection/test` | POST | `manage_options` | by saved `id` or raw `base_url`/`api_key`/`chat_model`; probes the `/v1` variant on failure and returns `fixed_base_url` when it works |
 | `/connection/models` | POST | `manage_options` | lists chat + image models |
 | `/bale/test` | POST | `manage_options` | `token`/`chat_ids` (or stored config) → tests every recipient |
 | `/bale/chat-id` | POST | `manage_options` | `getUpdates` → latest chat id |
+| `/topics/suggest` | POST | `manage_options` | feed headline suggestions from `source_sites` (`limit` default 12, `exclude[]` = headlines already on screen for the "Show more" button; cleaned + deduped vs queue, recent posts and dismissed memory; feeds found via `discover_feed()`, sources mixed round-robin; response includes a per-source `sources[]` report) |
+| `/topics/dismiss` | POST | `manage_options` | never suggest this headline again (`text`); stored in the queue option's `dismissed` map (1.23.0) |
+| `/topics/add` | POST | `manage_options` | adds `texts[]` to the topic queue (`source` manual/rss); returns added/skipped/pending counts |
 
 `client_state()` returns the job's public projection: status, progress, steps,
 logs since cursor, usage, result (`post_id/title/edit/view/words/status`).
@@ -195,8 +339,11 @@ image URLs, raw connection-test input) pass the `AIPC_Network` SSRF guard.
 `aipc_save_steps`, `aipc_clear_logs`, `aipc_delete_job`, `aipc_save_schedule`,
 `aipc_delete_schedule`, `aipc_run_now` (redirects to the console with
 `resumeJobId`), `aipc_save_bale`, `aipc_save_schedule_settings`,
-`aipc_publish_draft` (review inbox → publish, `publish_posts`) — all
-nonce-checked and capability-checked.
+`aipc_publish_draft` (review inbox → publish, `publish_posts`),
+`aipc_add_topics` / `aipc_remove_topic` / `aipc_clear_topics` (topic queue),
+`aipc_git_check` / `aipc_git_test` / `aipc_git_update` /
+`aipc_save_update_settings` (Git self-updater) — all nonce-checked and
+capability-checked.
 
 The console (`assets/admin-agent.js`) is driven by an inline `CFG` object
 (REST URL, nonce, i18n strings, defaults, `resumeJobId`, `extraArgs`). Since
@@ -214,14 +361,33 @@ controls.
   (3) retry failed jobs (≤ 3 ticks, 1-day window) → (4) daily-limit check →
   (5) fire the earliest due entry (`entry_due()`: time window, weekday,
   `state[id] != today`; the fired date is recorded → no double-firing,
-  same-day catch-up included).
+  same-day catch-up included; since 1.19.0 the atomic claim
+  `entry_<id>_<date>` additionally stops two overlapping ticks that both
+  read the pre-mark state from firing the same entry twice).
 - Firing an entry = `create_job(topic, opts + publish_mode/publish_delay,
   'cron')` driven synchronously within the tick (the runner event keeps it
   going if the tick budget runs out).
+- Entries with `use_queue` take the oldest **pending** topic from
+  `AIPC_Topic_Queue::peek()` (marked used with the job id afterwards) and
+  fall back to the entry's fixed topic — or the site prompt — when the
+  queue is empty. A consumed queue topic is passed as a *subject hint*
+  (`topic_hint_only=1`, 1.23.0): the plan step decides the angle and
+  crafts its own title instead of copying the queued text.
+- Entries with `kind = refresh` (1.22.0) ignore the topic fields:
+  `pick_refresh_target()` returns the oldest published post whose
+  `post_modified_gmt` **and** `_aipc_refreshed` meta are both older than
+  `aipc_refresh_min_age` (90 days) and the entry fires a `rewrite` job on
+  it (same title/URL, fresh copy + SEO).
+- The image-repair tool (`AIPC_Agent::repair_missing_images()`, Jobs & Cron
+  page, 1.22.0) scans posts without `_thumbnail_id`, claims
+  `imgfix_<post_id>` for 1 hour and starts up to `aipc_image_repair_batch`
+  (10) staggered `image_fix` jobs through the background runner.
 - Daily limit counts cron-source jobs created today (0 = unlimited)
   (`AIPC_Job_Store::count_since`).
 - The tick also re-arms lost `aipc_run_job` events for every `running` job
-  (runner safety net, see §5.2.1).
+  (runner safety net, see §5.2.1) and runs the Bale command poll
+  (`AIPC_Bale_Commands::poll`, priority 20) as a safety net for lost
+  `aipc_bale_poll` events.
 
 ## 9. Bale integration
 
@@ -233,9 +399,33 @@ job log; `aipc_post_created` → notify (image + summary + link, with
 rewritten/published variants), `aipc_post_published` → 🎉 publish notify,
 periodic report per `aipc_bale.report`.
 
+Since v1.7.0 the bot is also **two-way** (`AIPC_Bale_Commands`): when
+`two_way` is enabled, a 5-minute cron (`aipc_bale_poll`, safety-netted by the
+scheduler tick) reads `getUpdates` past `last_update_id` and answers the
+**configured chats only** — `نوشتن: <topic>` starts a background draft run
+(source `bale`, capped at 20/day), plus `وضعیت` / `آخرین` / `انتشار [n]` /
+`صف` / `راهنما`. Unknown chats are ignored silently; every reply starts with
+a stable emoji (✍️📊📄🚀📋🤖) so tests can match it across translations.
+
+**One-step scheduling (1.17.0).** The «زمان‌بندی» prompt ships four one-tap
+presets (`aipc:when:<post>:<tonight|tom_am|tom_pm|d2_am>` — see
+`preset_ts()`, site timezone, «tonight» rolls to tomorrow when past). A bare
+parseable date with no pending question schedules the newest AI draft; a
+date sent as a **Reply** to a draft notification schedules that exact post
+via the `aipc_bale_msgmap` option (§3). `schedule_post()` refuses posts that
+are already published.
+
+**Jobs & Cron page (1.17.0).** `aipc-cron` submenu
+(`AIPC_Admin::cron_overview()`): unfinished jobs (running/queued/error, per-job
+Cancel → `AIPC_Agent::cancel_job()`, plus Cancel-all), pending
+`aipc_publish_post` events (Cancel → `AIPC_Admin::unschedule_publish()`),
+scheduled future AI posts (Back to draft), and the plugin's recurring cron
+events read-only. admin-post actions: `aipc_cancel_job`,
+`aipc_cancel_all_jobs`, `aipc_unschedule_publish`, `aipc_revert_future`.
+
 ## 10. Internationalization
 
-540 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
+830 msgids (`languages/wp-ai-post-creator-fa_IR.po`), fully translated,
 including 3 `_n()` plural entries. Tooling (in-repo):
 `tests/e2e/make-translations.py` extracts → validates → rebuilds pot/po and
 hand-compiles the binary `.mo` (little-endian uint32 tables; plural originals
@@ -247,8 +437,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 46 result
-groups / 441 assertions green at v1.7.0, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 83 result
+groups / 621 assertions green at v1.24.0, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference
@@ -256,7 +446,7 @@ runs on GitHub Actions (`.github/workflows/ci.yml`).
 **Actions:** `aipc_post_created($post_id, $job_id)` ·
 `aipc_post_published($post_id, $job_id)` · `aipc_cron_tick` ·
 `aipc_publish_post($post_id, $job_id)` · `aipc_daily_cleanup` ·
-`aipc_run_job($job_id)`
+`aipc_run_job($job_id)` · `aipc_bale_poll` (5-min two-way command poll)
 
 **Filters:** `aipc_git_version_ttl($ttl, $repo, $branch)` · `aipc_git_request_args($args, $url)` · `aipc_step_connections($chain, $step)` ·
 `aipc_step_connection($primary_conn, $step)` (legacy) ·
@@ -265,4 +455,12 @@ runs on GitHub Actions (`.github/workflows/ci.yml`).
 `aipc_system_prompt($system, $job)` · `aipc_post_args($post_args, $job)` ·
 `aipc_outbound_allowlist($hosts)` · `aipc_allow_private_hosts($bool)` ·
 `aipc_allow_loopback($bool)` · `aipc_rest_rate_limit($limit, $route)` ·
-`aipc_job_retention_days($days)` · `aipc_jobs_table_enabled($bool)`
+`aipc_job_retention_days($days)` · `aipc_jobs_table_enabled($bool)` ·
+`aipc_image_timeout($seconds)` (default 180, 1.17.1) ·
+`aipc_duplicate_window($days)` (default 30, duplicate-topic guard, 1.19.0) ·
+`aipc_link_candidate_pool($count)` (default 100, internal-link relevance pool, 1.20.0) ·
+`aipc_force_image_window($seconds)` (default DAY_IN_SECONDS, force-image retry window, 1.21.0) ·
+`aipc_quality_threshold($score, $job)` (default 60, quality gate, 1.22.0) ·
+`aipc_health_streak($n, $conn)` / `aipc_health_cooldown($seconds, $conn)` (defaults 5 / 30 min, circuit breaker, 1.22.0) ·
+`aipc_refresh_min_age($seconds)` (default 90 days, content refresh, 1.22.0) ·
+`aipc_image_repair_batch($n)` (default 10, image-repair scan size, 1.22.0)

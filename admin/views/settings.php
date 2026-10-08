@@ -109,7 +109,7 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 		<section class="aipc-card">
 <div class="aipc-heading">
 						<h2>🖼 <?php esc_html_e( 'Featured images', 'wp-ai-post-creator' ); ?></h2>
-			<?php aipc_help( 'settings-images', __( 'The global switch and size for AI featured images. The image model is set per connection; if image generation fails on every provider, the post is still saved — just without an image.', 'wp-ai-post-creator' ) ); ?>
+			<?php aipc_help( 'settings-images', __( 'The global switch and size for AI featured images. The image model is set per connection. When generation fails on every provider, the rescue ladder kicks in: a rejected model id is swapped for one the gateway actually offers, then the Openverse stock fallback (if enabled), then the default featured image — so posts need never go out without a picture.', 'wp-ai-post-creator' ) ); ?>
 		</div>
 			<table class="form-table" role="presentation">
 				<tr>
@@ -124,13 +124,59 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 				<tr>
 					<th scope="row"><label for="aipc-image-size"><?php esc_html_e( 'Image size', 'wp-ai-post-creator' ); ?></label></th>
 					<td>
+						<?php $aipc_size_known = in_array( $aipc['image_size'], AIPC_Settings::image_sizes(), true ); ?>
 						<select id="aipc-image-size" class="aipc-select"
-							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[image_size]">
+							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[image_size_select]">
 							<?php foreach ( AIPC_Settings::image_sizes() as $size ) : ?>
-								<option value="<?php echo esc_attr( $size ); ?>" <?php selected( $aipc['image_size'], $size ); ?>><?php echo esc_html( $size ); ?></option>
+								<option value="<?php echo esc_attr( $size ); ?>" <?php selected( $aipc_size_known && $aipc['image_size'] === $size ); ?>><?php echo esc_html( $size ); ?></option>
 							<?php endforeach; ?>
+							<option value="custom" <?php selected( ! $aipc_size_known ); ?>><?php esc_html_e( 'Custom…', 'wp-ai-post-creator' ); ?></option>
 						</select>
-						<p class="description"><?php esc_html_e( '1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024. The image model itself is set per connection.', 'wp-ai-post-creator' ); ?></p>
+						<input type="text" class="aipc-input" style="max-width:140px" dir="ltr"
+							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[image_size_custom]"
+							value="<?php echo esc_attr( $aipc_size_known ? '' : $aipc['image_size'] ); ?>"
+							placeholder="800x600" />
+						<p class="description"><?php esc_html_e( '1792×1024 is a good wide header for DALL·E 3; gpt-image-1 uses 1536×1024. The image model itself is set per connection.', 'wp-ai-post-creator' ); ?>
+							<?php esc_html_e( 'Pick “Custom…” and type width×height (e.g. 800x600) for any other size — if the provider rejects it, the request is automatically retried without a size.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="aipc-image-prompt-default"><?php esc_html_e( 'Default image prompt', 'wp-ai-post-creator' ); ?></label></th>
+					<td>
+						<textarea id="aipc-image-prompt-default" class="aipc-textarea" rows="3" dir="ltr"
+							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[image_prompt_default]"
+							placeholder="<?php esc_attr_e( 'e.g. flat vector illustration, soft green palette, no text, 16:9', 'wp-ai-post-creator' ); ?>"><?php echo esc_textarea( $aipc['image_prompt_default'] ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Appended to every generated image prompt — use it for a consistent style (art direction, palette, mood) across all featured images. Leave empty to use the generated prompt as-is.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Force image generation', 'wp-ai-post-creator' ); ?></th>
+					<td>
+						<label class="aipc-check">
+							<input type="checkbox" name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[force_image]" value="1" <?php checked( $aipc['force_image'] ); ?> />
+							<?php esc_html_e( 'Never finish a post without a featured image (default for all new runs)', 'wp-ai-post-creator' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'The post is only saved, published and announced on Bale after a featured image really exists. When generation fails, the agent retries every image connection at growing intervals (1 minute up to 1 hour) for up to 24 hours; only then are the stock/default rescue images used as the final resort. Each manual run and schedule entry can override this.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Stock photo fallback', 'wp-ai-post-creator' ); ?></th>
+					<td>
+						<label class="aipc-check">
+							<input type="checkbox" name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[image_fallback_stock]" value="1" <?php checked( $aipc['image_fallback_stock'] ); ?> />
+							<?php esc_html_e( 'If every AI image connection fails, fetch a free CC-licensed photo from Openverse that matches the article subject', 'wp-ai-post-creator' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Openverse (a WordPress project) needs no API key. The photo credit is saved in the attachment caption, as Creative Commons licenses require.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="aipc-image-fallback"><?php esc_html_e( 'Default featured image', 'wp-ai-post-creator' ); ?></label></th>
+					<td>
+						<input type="text" id="aipc-image-fallback" class="aipc-input code" dir="ltr"
+							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[image_fallback]"
+							placeholder="<?php echo esc_attr( '123  —  https://example.com/wp-content/uploads/cover.jpg' ); ?>"
+							value="<?php echo esc_attr( $aipc['image_fallback'] ); ?>" />
+						<p class="description"><?php esc_html_e( 'The guaranteed last resort: used when AI generation and the stock fallback both fail, so every post still gets a featured image. Paste a media-library image ID or URL (an external URL is imported once and reused). Leave empty to allow posts without an image.', 'wp-ai-post-creator' ); ?></p>
 					</td>
 				</tr>
 			</table>
@@ -149,6 +195,46 @@ https://blog.example.org"><?php echo esc_textarea( $aipc['source_sites'] ); ?></
 							name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[system_prompt_extra]"
 							placeholder="<?php esc_attr_e( 'e.g. Always address the reader as “you” and include practical examples.', 'wp-ai-post-creator' ); ?>"><?php echo esc_textarea( $aipc['system_prompt_extra'] ); ?></textarea>
 						<p class="description"><?php esc_html_e( 'Appended to every agent request (the {{extra}} placeholder of the system prompt).', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Local & LAN providers', 'wp-ai-post-creator' ); ?></th>
+					<td>
+						<label class="aipc-check">
+							<input type="checkbox" name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[allow_private_hosts]" value="1" <?php checked( $aipc['allow_private_hosts'] ); ?> />
+							<?php esc_html_e( 'Allow private/LAN addresses (e.g. a self-hosted gateway like OmniRoute or Ollama on another machine in your network)', 'wp-ai-post-creator' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'localhost is always allowed. Only enable this when the AI gateway really runs inside your own network — it relaxes the outbound request guard (SSRF protection) for private addresses.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Source links', 'wp-ai-post-creator' ); ?></th>
+					<td>
+						<label class="aipc-check">
+							<input type="checkbox" name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[source_links]" value="1" <?php checked( $aipc['source_links'] ); ?> />
+							<?php esc_html_e( 'Allow linking to the research source sites inside articles', 'wp-ai-post-creator' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When disabled, the model never receives the source URLs and any source link that still appears is removed from the final article — the research sources are then used for facts and inspiration only.', 'wp-ai-post-creator' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'API trace log', 'wp-ai-post-creator' ); ?></th>
+					<td>
+						<label class="aipc-check">
+							<input type="checkbox" name="<?php echo esc_attr( AIPC_Settings::OPTION ); ?>[debug_log]" value="1" <?php checked( $aipc['debug_log'] ); ?> />
+							<?php esc_html_e( 'Record every AI request and response (full debug trace)', 'wp-ai-post-creator' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Writes every prompt, model reply, error body, HTTP status and timing — with the job, step, connection and attempt — to a protected log file, so you can see exactly why a step or the image generation fails. API keys are removed and base64 image data is collapsed. Turn it off again after debugging to keep the file small.', 'wp-ai-post-creator' ); ?></p>
+						<?php $aipc_trace_size = AIPC_Trace::size(); ?>
+						<p>
+							<?php if ( $aipc_trace_size > 0 ) : ?>
+								<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_download_trace' ), 'aipc_download_trace' ) ); ?>">⬇ <?php esc_html_e( 'Download trace log', 'wp-ai-post-creator' ); ?></a>
+								<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aipc_clear_trace' ), 'aipc_clear_trace' ) ); ?>">🗑 <?php esc_html_e( 'Clear trace log', 'wp-ai-post-creator' ); ?></a>
+								<span class="description"><?php echo esc_html( sprintf( /* translators: %s: file size. */ __( 'Current size: %s', 'wp-ai-post-creator' ), size_format( $aipc_trace_size ) ) ); ?></span>
+							<?php else : ?>
+								<span class="description">— <?php esc_html_e( 'The trace log is empty — enable it and run a job first.', 'wp-ai-post-creator' ); ?></span>
+							<?php endif; ?>
+						</p>
 					</td>
 				</tr>
 				<tr>

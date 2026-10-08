@@ -112,54 +112,109 @@
 		el.className = 'aipc-inline-status' + (cls ? ' ' + cls : '');
 	}
 
-	function bindSuggest() {
-		var btn = document.getElementById('aipc-tq-suggest-btn');
-		if (!btn) { return; }
-		btn.addEventListener('click', function () {
-			var list = document.getElementById('aipc-tq-suggest-list');
-			var actions = document.getElementById('aipc-tq-suggest-actions');
-			tqStatus(t('suggesting'));
-			api('topics/suggest', { limit: 12 }).then(function (r) {
-				if (!r.ok || !r.json) {
-					tqStatus(t('suggestFail') + ' HTTP error', 'is-err');
-					return;
-				}
-				if (r.json.has_sources === false) {
-					tqStatus(t('noSources'), 'is-err');
-					return;
-				}
-				var items = r.json.suggestions || [];
-				if (!items.length) {
-					list.hidden = true;
-					actions.hidden = true;
-					tqStatus(t('noneFound'));
-					return;
-				}
-				while (list.firstChild) { list.removeChild(list.firstChild); }
-				items.forEach(function (item) {
-					var label = document.createElement('label');
-					label.className = 'aipc-tq-item';
-					var box = document.createElement('input');
-					box.type = 'checkbox';
-					box.checked = true;
-					box.value = item.text;
-					label.appendChild(box);
-					label.appendChild(document.createTextNode(' ' + item.text));
-					if (item.source) {
-						var badge = document.createElement('span');
-						badge.className = 'aipc-badge';
-						badge.textContent = item.source;
-						label.appendChild(badge);
-					}
-					list.appendChild(label);
-				});
-				list.hidden = false;
-				actions.hidden = false;
-				tqStatus('', '');
+	function shownTexts() {
+		var list = document.getElementById('aipc-tq-suggest-list');
+		var texts = [];
+		if (list) {
+			list.querySelectorAll('input[type=checkbox]').forEach(function (box) {
+				texts.push(box.value);
+			});
+		}
+		return texts;
+	}
+
+	function renderSuggestionRow(list, item) {
+		var row = document.createElement('div');
+		row.className = 'aipc-tq-item';
+
+		var label = document.createElement('label');
+		var box = document.createElement('input');
+		box.type = 'checkbox';
+		box.checked = true;
+		box.value = item.text;
+		label.appendChild(box);
+		label.appendChild(document.createTextNode(' ' + item.text));
+		if (item.source) {
+			var badge = document.createElement('span');
+			badge.className = 'aipc-badge';
+			badge.textContent = item.source;
+			label.appendChild(badge);
+		}
+		row.appendChild(label);
+
+		// ✕ — never show this headline again.
+		var del = document.createElement('button');
+		del.type = 'button';
+		del.className = 'button-link aipc-tq-dismiss';
+		del.textContent = '✕';
+		del.title = t('dismissTitle');
+		del.setAttribute('aria-label', t('dismissTitle'));
+		del.addEventListener('click', function () {
+			api('topics/dismiss', { text: item.text }).then(function () {
+				if (row.parentNode) { row.parentNode.removeChild(row); }
+				tqStatus(t('dismissed'), 'is-ok');
 			}).catch(function (err) {
-				tqStatus(t('suggestFail') + ' ' + (err && err.message ? err.message : ''), 'is-err');
+				tqStatus(t('dismissFail') + ' ' + (err && err.message ? err.message : ''), 'is-err');
 			});
 		});
+		row.appendChild(del);
+
+		list.appendChild(row);
+	}
+
+	function sourceReport(sources) {
+		var parts = [];
+		(sources || []).forEach(function (s) {
+			parts.push(s.host + ': ' + (s.status === 'ok' ? s.found : t('noFeed')));
+		});
+		return parts.length ? ' — ' + parts.join(' · ') : '';
+	}
+
+	function fetchSuggestions(append) {
+		var list = document.getElementById('aipc-tq-suggest-list');
+		var actions = document.getElementById('aipc-tq-suggest-actions');
+		tqStatus(t('suggesting'));
+		var payload = { limit: 12 };
+		if (append) { payload.exclude = shownTexts(); }
+		api('topics/suggest', payload).then(function (r) {
+			if (!r.ok || !r.json) {
+				tqStatus(t('suggestFail') + ' HTTP error', 'is-err');
+				return;
+			}
+			if (r.json.has_sources === false) {
+				tqStatus(t('noSources'), 'is-err');
+				return;
+			}
+			var items = r.json.suggestions || [];
+			if (!items.length) {
+				if (!append) {
+					list.hidden = true;
+					actions.hidden = true;
+				}
+				tqStatus(t('noneFound') + sourceReport(r.json.sources));
+				return;
+			}
+			if (!append) {
+				while (list.firstChild) { list.removeChild(list.firstChild); }
+			}
+			items.forEach(function (item) { renderSuggestionRow(list, item); });
+			list.hidden = false;
+			actions.hidden = false;
+			tqStatus(sourceReport(r.json.sources).replace(/^ — /, ''), 'is-ok');
+		}).catch(function (err) {
+			tqStatus(t('suggestFail') + ' ' + (err && err.message ? err.message : ''), 'is-err');
+		});
+	}
+
+	function bindSuggest() {
+		var btn = document.getElementById('aipc-tq-suggest-btn');
+		if (btn) {
+			btn.addEventListener('click', function () { fetchSuggestions(false); });
+		}
+		var more = document.getElementById('aipc-tq-more-btn');
+		if (more) {
+			more.addEventListener('click', function () { fetchSuggestions(true); });
+		}
 	}
 
 	function bindAddSelected() {

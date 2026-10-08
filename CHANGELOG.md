@@ -3,6 +3,915 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.24.0] — 2026-10-08
+
+### Added
+- **Hard near-duplicate guard for topics.** The 1.19 guard only caught the
+  *exact* same topic; now a similarity engine (`AIPC_Agent::topic_similarity()`,
+  token-based with prefix stemming, so plural/suffixed variants like
+  «راهکار» vs «راهکارهای» still match) blocks topics that are *almost* the
+  same, at three independent layers:
+  1. **Before the job starts** — `duplicate_of()` scans the 150 most recent
+     posts of ANY status (drafts and scheduled posts count too) and rejects a
+     requested topic ≥ 70 % similar to an existing article.
+  2. **At the plan step** — the AI's proposed title and every alternative it
+     offered are scored; a near-duplicate NEVER passes. The best distinct
+     alternative is used when available, otherwise the step fails and the
+     retry explicitly lists the rejected titles so the model must pick a
+     genuinely different topic.
+  3. **Right before saving** — a last-line check stops the job if a nearly
+     identical post appeared while writing (racing jobs, manual publishes):
+     the duplicate is prevented, nothing is created.
+  "Allow duplicate topic" (force) bypasses all three layers, as before.
+  Tunable via the `aipc_similarity_threshold` (default 0.7) and
+  `aipc_similarity_pool` (default 150) filters.
+- **Anti-repeat featured images.** The prompts of the last 30 generated
+  images are remembered (`aipc_image_history`); every new image prompt is
+  (a) steered away from the 10 most recent concepts right in the
+  image-prompt request (new `{{recent_images}}` placeholder — customized
+  templates saved before this version get the block appended automatically),
+  and (b) hard-checked afterwards: a concept ≥ 60 % similar to a recent image
+  gets a rotating composition twist (flat-lay / wide-angle / macro / low-key /
+  negative-space / low-angle) so the result cannot look like a repeat.
+  Tunable via the `aipc_image_similarity_threshold` filter.
+
+### Improved
+- The plan step now sees the last 40 existing articles **including drafts,
+  scheduled, pending and private posts** (previously: 30 published only), and
+  the prompt states a hard rule: a title sharing most of its meaningful words
+  with an existing article is rejected automatically.
+
+### Tests
+- New e2e group `near_duplicate` (12 checks: similarity scoring + stemming,
+  draft/published matching, `duplicate_of` type `similar`, blocked vs forced
+  job creation, image history and composition twisting).
+
+## [1.23.1] — 2026-10-04
+
+### Improved
+- **Actionable transport-error hints** (`AIPC_API_Client::transport_hint()`):
+  a failed connection no longer stops at the raw cURL message. The usual
+  codes now carry concrete advice — cURL 7 (connection refused: gateway
+  bound to 127.0.0.1 instead of 0.0.0.0, closed firewall port, hosting
+  that blocks outbound non-standard ports, or "use http://127.0.0.1:PORT/v1
+  when the gateway runs on the same server"), cURL 28 (silently dropping
+  firewall / wrong IP), cURL 6 (DNS typo) and cURL 35/51/60 (TLS on a
+  plain-HTTP port / invalid certificate). Shown in the connection test
+  and every runtime provider error.
+
+### Tests
+- New e2e group `transport_hints` (hint mapping for all four families +
+  the full connection-test path surfaces the hint).
+
+## [1.23.0] — 2026-10-04
+
+Research sources that actually deliver, and a queue that behaves like an
+ideas bank.
+
+### Added
+- **Professional feed discovery** (`AIPC_Topic_Queue::discover_feed()`):
+  a research source no longer needs its feed at `/feed/`. The agent now
+  tries the URL itself (when it already looks like a feed), the common
+  locations (`/feed/`, `/rss`, `/rss.xml`, `/feed.xml`, `/atom.xml`,
+  `/index.xml`, `/?feed=rss2`) and finally the page's own
+  `<link rel="alternate" type="application/rss+xml">` declaration —
+  Atom and RSS alike. The verdict is cached per site in the
+  `aipc_feed_cache` option (1 week for hits, 6 hours for misses).
+- **Fair source mixing**: suggestions are now collected from *every*
+  configured source (up to 20 headlines each) and interleaved
+  round-robin, so one busy news site no longer crowds out the others;
+  the status line reports each source (`host: 12 · other: no feed
+  found`) so dead sources are visible at a glance.
+- **Dismissible suggestions**: every suggestion row has a ✕ — dismissed
+  headlines are remembered (up to 500) and never suggested again. New
+  REST endpoint `POST /topics/dismiss`.
+- **"Show more" button**: fetches the next batch of fresh headlines,
+  excluding everything already on screen.
+- **Queue topics are a subject, not a headline**: a topic consumed from
+  the queue is passed to the plan step as a *theme* — the agent decides
+  the angle and crafts its own sharper, search-friendly title instead
+  of copying the queued text verbatim. Manually typed topics keep the
+  strict behaviour.
+
+### Tests
+- 3 new e2e groups (`feed_discovery` with autodiscovery/Atom/no-feed
+  fixtures, `suggest_dismiss`, `topic_hint`).
+
+## [1.22.0] — 2026-10-04
+
+Five autonomy features: image repair, quality gate, connection health,
+automatic content refresh and a richer report/dashboard.
+
+### Added
+- **Image repair** (`image_fix` job mode): "Repair missing images" on
+  the Jobs & Cron page scans posts without a featured image (max 10 per
+  scan, `aipc_image_repair_batch` filter) and runs one quiet image-only
+  job per post — the content is never touched, no Bale "post created"
+  message is sent, and a 1-hour claim prevents duplicate repairs.
+- **Quality gate** (`AIPC_Quality`): zero-cost local checks on every
+  finished article (thin content, empty/duplicate H2s, keyword stuffing
+  or absence, machine-cliché phrases, broken internal links, duplicate
+  title, missing promised image) produce a 0–100 score stored on the
+  job. Below the threshold (`aipc_quality_threshold`, default 60)
+  auto-publishing is cancelled and the post stays a draft for review;
+  the Bale notification explains why.
+- **Connection health / circuit breaker** (`AIPC_Health`): every
+  provider attempt is recorded; 5 consecutive failures
+  (`aipc_health_streak`) put the connection on a 30-minute cooldown
+  (`aipc_health_cooldown`) during which it moves to the end of every
+  chain — never removed, healthy connections are just tried first. The
+  connections page shows a 🟢/🟡/🔴 health light per connection.
+- **Automatic content refresh**: schedule entries have a new type —
+  "Refresh an old post". When it fires, the oldest published post not
+  modified or refreshed for 90+ days (`aipc_refresh_min_age`) is
+  rewritten in place (same title and URL); `_aipc_refreshed` post meta
+  rotates the picks so the whole archive cycles over time.
+- **Richer report & dashboard**: the daily/weekly Bale report counts
+  rescue images (🛟), quality-gated drafts (🚦) and lists connections
+  with failed calls today (⚠️); the Logs page gains "rescue images" and
+  "quality-gated drafts" stat cards.
+
+### Tests
+- 5 new e2e groups (`image_fix`, `quality_gate`, `conn_health`,
+  `refresh_cycle`, `report_rich`).
+
+## [1.21.1] — 2026-10-04
+
+Full-pipeline bug audit of the force-image feature.
+
+### Fixed
+- **Schedule entries silently lost the force-image option**: the entry
+  sanitizer whitelists the run options and did not keep `force_image`,
+  so the checkbox on a schedule row never reached the saved entry (the
+  global default still applied). The sanitizer now preserves it.
+- **A retry after the exhausted 24-hour window errored out instantly**:
+  the spent retry window stayed in the job data, so "Retry" (manual or
+  the cron auto-retry) hit the exhausted check on the first failure
+  instead of retrying for a fresh window. The window is now dropped on
+  exhaustion and cleared again by `retry_job()`.
+
+### Tests
+- 3 new assertions in the `force_image` group: the schedule-entry
+  sanitizer keeps `force_image`, the spent window is dropped on
+  exhaustion, and a retry starts fresh — 73 groups / 561 assertions
+  green.
+
+## [1.21.0] — 2026-10-04
+
+### Added
+- **Force image generation** (`force_image`): a checkbox on the manual
+  run form, on every schedule entry, and as a global default in
+  Settings → featured image (inherited by Bale and every other path).
+  When enabled, the post may never finish without a generated featured
+  image:
+  - a failed image step no longer falls back or skips — the job stays
+    alive and retries the **whole image-connection chain** at growing
+    intervals (1 min → 2 → 5 → 10 → 15 → 30 → 60 min) for up to 24
+    hours (`aipc_force_image_window` filter), driven by exact-time
+    background-runner events (no polling, no wasted provider calls: a
+    wait gate returns immediately between rounds);
+  - since the image step runs before `finalize`, the post is only
+    saved, published and announced on Bale after the image exists;
+  - after the window the stock/default rescue images are the agreed
+    last resort; if even those are unavailable the job becomes an
+    error (retryable) instead of saving an image-less post;
+  - once an image exists the retry machinery is dismantled and
+    `image_fallback()` is idempotent — nothing ever replaces a
+    generated image.
+
+### Tests
+- New e2e group `force_image` (8 assertions): waiting state instead of
+  skip, image step kept pending, zero provider calls through the wait
+  gate, runner re-armed for the exact retry time, recovery finishes the
+  job with a real thumbnail, retry state cleared, exhausted window +
+  no rescue image → hard error.
+
+## [1.20.1] — 2026-10-03
+
+### Fixed
+- **Cancel now kills the job at the root.** Cancelling a job on *Jobs &
+  Cron* while a background runner was mid-step only removed it for a few
+  seconds: when the in-flight step finished, the runner saved its stale
+  in-memory copy (`status: running`) back over the cancellation and its
+  step loop kept building the article. Two guards close this:
+  - `cancel_job()` **fences the runner lock** first (overwrites the
+    `aipc_lock_<job>` transient with a token no process owns), so the
+    in-flight runner fails its 1.19.1 ownership check at every save
+    point, discards its stale copy and stops as soon as it reloads the
+    fresh (cancelled) job.
+  - `save_job()` treats cancellation as **terminal**: a `running` copy
+    can never overwrite a stored `cancelled` status, closing the last
+    race window.
+
+### Tests
+- New e2e group `cancel_root` (5 assertions): snapshot of a mid-step
+  runner copy, cancel, fence present, stale save blocked, runner cron
+  event gone, scheduler keeps the job dead — 72 groups / 550 assertions
+  green.
+
+## [1.20.0] — 2026-10-03
+
+Editorial-depth package, driven by an external content-quality review
+(the applicable items of an n8n-workflow audit, adapted to this plugin).
+
+### Added
+- **Search-intent analysis before structure** (review P0): the plan step
+  now classifies the real search intent (`search_intent` token:
+  tutorial / comparison / troubleshooting / buying-guide / definition /
+  selection-guide / informational + a `structure_hint`), and the outline
+  step must mirror it — tutorials become ordered steps, comparisons get
+  criteria + a table section, troubleshooting gets symptoms → causes →
+  fixes → prevention, buying guides get needs/criteria/trade-offs.
+- **Evidence plan per section** (review P0 "depth, not word count"):
+  every outline section now declares the ONE concrete element it will
+  deliver (real example, actionable steps, configuration sample, common
+  mistake + fix, comparison, trade-offs or table); the writer prompt
+  receives it as MUST DELIVER and treats the word target as a ceiling —
+  "if you have nothing genuinely useful left to say, end the section
+  early; padding and generic filler are forbidden".
+- **Expert Editorial Rewrite** (review P0 human-like writing): the
+  copywriting pass became a real human-voice edit — delete machine
+  clichés and stock AI phrasing (with concrete examples), no two
+  sections may open with the same pattern, varied sentence/paragraph
+  lengths, natural transitions, practitioner-style terminology, keyword
+  de-stuffing, bullet lists that hide explanations become prose, padding
+  sentences and unsupported statistics/benchmarks/case studies are
+  removed; it may restructure freely inside sections. The rewrite-mode
+  pass got the same HUMAN VOICE + HONESTY rules.
+- **Honest keywords** (review P0): the plan step now states it has no
+  search-volume/difficulty data and must never present such numbers;
+  the system prompt forbids fabricated benchmarks, case studies,
+  customer stories and prices outright.
+- **Entity sanity** (review P0): headings may use technical terms ONLY
+  when necessary to answer the query — no forced terminology.
+- **Relevance-ranked internal links** (review P1): link candidates are
+  now scored by normalized word overlap against the topic over a pool
+  of up to 100 recent posts (`aipc_link_candidate_pool` filter) instead
+  of "the 20 most recent" — older but related articles now beat fresh
+  but unrelated ones.
+
+### Tests / i18n
+- New e2e group `editorial` (6 assertions): prompt rules present, intent
+  + evidence survive into job data and into the actual provider
+  requests, relevance-ranked links — 71 groups / 545 assertions green.
+- 3 new strings translated (824 msgids).
+
+## [1.19.1] — 2026-10-03
+
+### Fixed
+- **Image churn + repeated notifications on one article** (field report:
+  a post arrived with an image, then its image changed with another
+  notification, then it went out image-less). Root cause: the runner
+  lock was a fixed-TTL transient, but one step can legitimately run
+  longer than any fixed TTL (3 retries × connection chain × slow
+  provider calls). When it expired mid-step a second runner re-ran the
+  step (new featured image), and the frozen first runner later **saved
+  its stale copy of the job, rewinding the cursor** — so steps ran yet
+  again: image regenerated, notification repeated, and an eventual
+  image failure produced the image-less final state.
+- The runner lock is now an **owner-token lock with a heartbeat**: it
+  stores a token unique to the running process and is refreshed before
+  every outbound HTTP request (`pre_http_request`, priority 1 — covers
+  provider calls, image downloads and stock photos alike), so it never
+  expires while the step is actually working. If a runner nevertheless
+  loses the lock (true process freeze), it now **discards all local
+  changes** instead of saving them — no cursor rewind, no re-run steps,
+  no stolen locks (release and mid-step saves are ownership-checked).
+
+### Tests
+- New e2e group `runner_lock` (4 assertions): busy guard, token
+  heartbeat on real HTTP, stale-runner discard (lock stolen mid-step →
+  no save, owner's lock untouched), clean continuation afterwards —
+  70 groups / 539 assertions green.
+
+## [1.19.0] — 2026-10-03
+
+### Added
+- **Duplicate-request guard — the same article can never be written
+  twice.** Before a new job starts, the plugin now checks (on every
+  path: admin console, REST, Bale bot and the scheduler) that the
+  topic is not
+  1. already being written by a running job,
+  2. the subject of an article created in the last 30 days (filter
+     `aipc_duplicate_window`; every new post stores a canonical
+     `_aipc_topic_norm` meta key — ZWNJ/half-space, Arabic «ي/ك»,
+     digit style, letter case and extra whitespace are all unified
+     via `AIPC_Agent::topic_norm()`), or
+  3. still pending in the topic queue (manual/bot starts only — the
+     scheduler itself legitimately consumes queue items).
+  Blocked requests return a clear `aipc_duplicate` error naming the
+  conflicting job/post/queue item.
+- **Race-proof claims** (`AIPC_Agent::claim()` / `release()`): an
+  atomic one-winner lock built on `add_option()`'s unique key. Used to
+  shield against double-clicks and parallel identical requests (topic
+  claim, 10 min — released automatically when a job fails or is
+  cancelled), duplicate done-notifications, and overlapping scheduler
+  cron ticks firing the same entry twice on the same day.
+- New-post console gained an **"Allow duplicate topic"** toggle
+  (REST `force` flag) to deliberately rewrite a topic again.
+
+### Fixed
+- **Double-published posts.** A hanging provider request could outlive
+  the 600-second runner lock; a second (cron re-armed) runner then
+  re-ran the finalize step and created + published the same article a
+  second time. The runner lock now lasts 900 s and the finalize step is
+  idempotent: when the job already owns a post (`_aipc_job` meta), it
+  is reused instead of created again — no duplicate post, no duplicate
+  publish, no duplicate Bale notification.
+- A queued topic that turns out to be a duplicate no longer stalls the
+  queue: the scheduler marks it consumed and moves on next tick.
+
+### Tests / i18n
+- New e2e group `dedup` (12 assertions): normalisation variants, atomic
+  claim/expiry/release, running-job + recent-post + queue blocking,
+  cron queue exemption, `force` bypass, twin-request claim shield,
+  `_aipc_topic_norm` persistence and `post_for_job()` lookup —
+  69 groups / 535 assertions green.
+- 7 new strings translated (821 msgids).
+
+## [1.18.0] — 2026-10-03
+
+### Added
+- **Image rescue ladder — posts need never go out without a featured
+  image.** Driven by a field trace (gateway 400 "Invalid image model" +
+  a hanging chat-image route), the agent now climbs four rungs:
+  1. **Model autodiscovery** — when the gateway rejects the configured
+     image model id, the plugin reads its `/models` list, picks an
+     image-capable model (`gpt-image` → `dall-e` → `flux` → `imagen` →
+     `stable-diffusion` → `*image*`) and retries once; the discovery is
+     cached per gateway for a day (`aipc_img_model_<md5>`).
+  2. The existing connection chain + chat-image fallback (with the
+     1.17.1 timeout guards).
+  3. **Openverse stock photos** (new opt-in setting) — no API key
+     needed; searches CC-licensed photos by the article's subject
+     (the image-prompt step now also returns English `keywords`),
+     downloads the first working candidate and stores the required
+     attribution in the attachment caption +
+     `_aipc_stock_attribution` / `_aipc_stock_source` meta.
+     New `AIPC_Stock` class.
+  4. **Default featured image** (new setting) — a media-library ID or
+     URL used as the guaranteed last resort; an external URL is
+     imported once and reused (`aipc_image_fallback_cache`).
+- Settings → Content & images gained "Stock photo fallback" and
+  "Default featured image"; 18 new strings translated (814 msgids).
+
+### Tests
+- New `image_rescue` group (10): model picking + bad-model detection,
+  end-to-end autodiscovery with caching, Openverse search/fetch with a
+  broken first candidate, agent stock fallback with attribution,
+  default image by ID and by URL (imported once, reused), nothing-set
+  behaviour, settings sanitize — **68 groups / 523 assertions total**.
+
+## [1.17.1] — 2026-10-03
+
+### Fixed
+- **Jobs no longer hang for an hour on a broken image gateway.** Field
+  report: an image connection with a 600 s timeout against a gateway
+  whose `/images/generations` rejected the model (400) while its
+  chat-completions image route hung until the timeout — every attempt
+  burned 600 s × 2 (automatic timeout-retry), × 3 step attempts, so
+  jobs sat at "running 12/14" for an hour. Three defenses:
+  - image-generation requests cap their timeout at **180 s**
+    (filter `aipc_image_timeout`) instead of inheriting huge chat
+    timeouts;
+  - image routes no longer earn the automatic timeout-retry (a
+    hanging gateway would just double the stall — the step-level
+    connection chain still retries);
+  - a 15-minute **circuit breaker** per gateway+model skips the
+    chat-image fallback after it times out once, so follow-up
+    attempts fail fast instead of hanging again.
+
+### Tests
+- New `image_timeouts` group (6): endpoint error surfaced, 180 s cap,
+  exactly one call per route (no timeout-retry), breaker transient
+  set, breaker skipping the chat fallback, plain chat keeping the
+  full user timeout + retry — **67 groups / 513 assertions total**.
+
+## [1.17.0] — 2026-10-03
+
+### Added
+- **One-step scheduling from chat.** Three ways to skip the old
+  "press Schedule → wait → send date" roundtrip:
+  - the «زمان‌بندی» prompt now carries four one-tap presets
+    (`aipc:when:<post>:<code>` — tonight 21:00, tomorrow 09:00,
+    tomorrow 18:00, in two days 09:00) that schedule immediately;
+  - a bare date sent to the bot (`فردا 18:30`, `1404/07/20 18:30`,
+    `2026-10-12 18:30`) with no pending question schedules the newest
+    AI draft directly;
+  - replying to a draft notification with a date schedules **that
+    very post** — `notify()` remembers each sent `message_id` in the
+    `aipc_bale_msgmap` option (capped at 100 entries) and
+    `process_update()` resolves `reply_to_message` against it.
+- **Jobs & Cron admin page** (`aipc-cron`): unfinished agent jobs
+  (running / queued / error) with per-job Cancel and a Cancel-all
+  button, pending delayed publishes (`aipc_publish_post` events) with
+  Cancel-publish, scheduled ("future") AI posts with Back-to-draft,
+  and a read-only list of the plugin's recurring cron events — so
+  nothing piles up unseen in the background.
+
+### Changed
+- `schedule_post()` refuses to reschedule an already-published post.
+- Bot help mentions the reply-with-a-date shortcut.
+  47 new strings translated (797 msgids).
+
+### Tests
+- New `bale_quick_schedule` group (10): msgmap capture + trim, preset
+  keyboard/timestamps, one-tap scheduling, bare-date scheduling of
+  the newest draft, past-date rejection, reply-targeted scheduling
+  through `process_update()`, published-post guard. New
+  `jobs_cron_page` group (9): overview listing (jobs, delayed
+  publishes, future posts, recurring events), page rendering with all
+  stop controls, `unschedule_publish()`, `cancel_job()`, screen map —
+  **66 groups / 507 assertions total**.
+
+## [1.16.0] — 2026-10-03
+
+### Added
+- **Instant replies (webhook).** The reported "pressed the button and
+  nothing happened" was polling latency: button presses only reach the
+  site with the WP-Cron `getUpdates` poll. New checkbox on the
+  Bale / Telegram page registers a webhook (`setWebhook`) pointing at
+  a secret public REST route (`aipc/v1/bot-webhook/<32-char secret>`,
+  `hash_equals` validation) — the platform then pushes every message
+  and button press immediately and the bot answers within seconds.
+  Turning it off calls `deleteWebhook` and polling resumes; save
+  shows success/failure notices with the exact platform error.
+- `process_update()` — the per-update handler shared by the poll loop
+  and the webhook; webhook processing also advances `last_update_id`
+  so switching back to polling never replays handled updates.
+
+### Changed
+- Polling fallback interval: **5 minutes → 1 minute**; stale scheduled
+  events are migrated automatically; the poll is paused entirely while
+  the webhook is active (avoids getUpdates/webhook conflicts).
+  13 new strings translated (752 msgids).
+
+### Tests
+- New `bale_webhook` group (10): secret generation/stability, webhook
+  URL, the `setWebhook` call, paused polling, 403 on a wrong secret,
+  instant message + instant button-press publishing through the real
+  REST dispatcher, `last_update_id` tracking, and the 1-minute
+  interval — 64 groups / 488 assertions total.
+
+## [1.15.0] — 2026-10-03
+
+### Added
+- **Dedicated “Bale / Telegram” admin page** (`aipc-bot`): a six-step
+  setup guide (create the bot, paste the token, say hello, detect the
+  chat ID, enable + test, send «منو»), the bot settings card (moved
+  from the Schedule page, which now shows a link card instead), a
+  “what the bot can do” overview and a troubleshooting reference.
+  The test-message / detect-chat-ID buttons work there too.
+- **Telegram support.** A Platform selector (Bale / Telegram) switches
+  the Bot API endpoint (`tapi.bale.ai` ↔ `api.telegram.org`) — the
+  protocol is identical, so notifications, the interactive menu,
+  inline buttons and chat scheduling all work on either platform.
+  34 new strings translated (743 msgids).
+
+### Fixed
+- `AIPC_Bale::recipients()` warned (`Undefined array key`) when handed
+  a partial settings array (e.g. `sanitize()` with an empty `$old`).
+
+### Tests
+- New `bot_platform` group (8): endpoint routing per platform,
+  platform sanitize (accept/reject/keep), default, and the new page's
+  form + guide markers. `admin_pages` now covers the bot page (6) and
+  the schedule page's link card; help-toggle expectations moved with
+  the section — 63 groups / 478 assertions total.
+
+## [1.14.0] — 2026-10-03
+
+### Added
+- **Interactive Bale menu.** «منو» / `/menu` — and the buttons now
+  attached to `/start` and «راهنما» — open a tappable menu:
+  - **✍️ New topic** — the bot asks for the topic in chat; the next
+    message starts a background draft run («لغو» cancels).
+  - **📋 Topic queue** — the pending topics, each with its own button
+    that starts writing it immediately and marks it used in the queue.
+  - **📑 Drafts** — the 5 newest AI drafts, each opening an action
+    card (title, date, link, status) with the publish-now / schedule
+    buttons from 1.13.0.
+  - **📊 Status** and **❓ Help** as buttons.
+- Unknown input replies with the hint *plus* the menu, so nobody is
+  ever stuck. Replies can now carry inline keyboards everywhere
+  (`reply_parts` in the poll loop). The pending-question store
+  handles both modes (publish date / topic). 13 new strings
+  translated (710 msgids).
+
+### Tests
+- New `bale_menu` group (13 assertions): menu composition, unknown
+  fallback, the full new-topic conversation (job really created),
+  queue buttons → job + marked used, missing-topic safety, drafts
+  list buttons, action card wiring, and menu-on-help — 62 groups /
+  464 assertions total.
+
+## [1.13.0] — 2026-10-03
+
+### Added
+- **Publish-now / Schedule buttons in Bale.** Every draft notification
+  now carries an inline keyboard (when two-way commands are on):
+  - **🚀 Publish now** — publishes immediately, stamped with the
+    current date/time, and sends the 🎉 notice.
+  - **⏰ Schedule** — the bot asks for a date in the chat; the next
+    message is parsed as Jalali (`1404/07/20 18:30`), Gregorian
+    (`2026-10-12 18:30`), Persian digits, or «فردا 18:30» /
+    «امروز 22:00» (time optional, defaults to 09:00). The post is
+    scheduled with WordPress's native `future` status, published on
+    time by WP itself, and announced via `future_to_publish` →
+    `aipc_post_published`. «لغو» cancels; requests expire after 30
+    minutes; past dates are rejected.
+- `callback_query` handling in the Bale poll (authorized chats only,
+  with `answerCallbackQuery`); pending date requests live in the
+  `aipc_bale_pending` option. 12 new strings translated (697 msgids).
+
+### Tests
+- New `bale_buttons` group (17 assertions): date parsing (Jalali ↔
+  Gregorian conversion, Persian digits, relative days, invalid input),
+  keyboard construction and gating, notification body carrying
+  `reply_markup`, publish-now date stamping, the full schedule
+  conversation (past rejected, bad format hint, cancel), and the
+  future-publish hook — 61 groups / 451 assertions total.
+
+## [1.12.1] — 2026-10-01
+
+### Added
+- **Custom image size.** Settings → Featured images now has a
+  "Custom…" choice with a free width×height field (e.g. `800x600`,
+  `×`/spaces normalized, strict `\d{2,4}x\d{2,4}` validation). The
+  API client already retries without a size when a provider rejects
+  it. 2 new strings translated (685 msgids).
+
+### Verified
+- **ZWNJ forensic pipeline test** (`zwnj_pipeline`, 10 assertions):
+  provider JSON with `\u200c` and with raw bytes, `wp_kses_post` on
+  the raw character and the `&zwnj;` entity, DB insert/read for title
+  and content, `the_content` front-end filters, an editor-style
+  re-save with kses filters active, and the entity armoring — all
+  preserve the half-space. Conclusion: disappearing half-spaces
+  originate in the provider output (fixed by the 1.12.0 glued-word
+  repair), not in transit or on save.
+
+### Tests
+- New `zwnj_pipeline` (10) and `image_size_custom` (4) groups
+  (60 groups / 434 assertions total).
+
+## [1.12.0] — 2026-10-01
+
+### Added
+- **Source-links switch** (Settings → Advanced, default on). When
+  disabled, `source_context()` omits the research-source URLs from the
+  prompts (the model cannot link what it never sees) and
+  `AIPC_Post_Builder::clean_links()` strips any remaining link to a
+  configured source host from the final article.
+- **One internal link per target.** `clean_links()` (applied on create
+  and rewrite) keeps only the first `<a>` for each internal URL —
+  later duplicates are unwrapped to their anchor text. External links
+  are untouched.
+
+### Improved
+- **Half-space repair for glued words.** Some providers strip the ZWNJ
+  entirely («حرفهای», «خانوادهها», «علاقهمندان»). `AIPC_Text` now
+  repairs glued «ها/های/هایی» after joining letters and «ه + ای/مند/
+  مندان/سازی/گذاری/بندی/ریزی», with an exception list (تنها، بها،
+  اشتها، رها، بهسازی …) and a curated ه-stem dictionary for the
+  ambiguous «…های» ending (حرفه‌ای vs حرف‌های). 3 new strings
+  translated (683 msgids).
+
+### Tests
+- `text_zwnj` grew to 18 assertions (glued repairs + exceptions); new
+  `link_policy` group (8 assertions)
+  (58 groups / 420 assertions total).
+
+## [1.11.0] — 2026-09-30
+
+### Added
+- **Full API trace log.** New `AIPC_Trace` class + "API trace log"
+  switch under Settings → Advanced: every request/response exchanged
+  with the AI providers is appended as a JSON line — prompt messages,
+  model reply, complete error body, HTTP status, duration, and the
+  job / step / connection / attempt context set by the agent's retry
+  loop (image downloads are logged too). Secrets never leak: API keys
+  and Bearer tokens are redacted, long base64 runs are collapsed to
+  `[base64 omitted: N chars]`, single fields cap at 20 k chars. The
+  file lives under `wp-content/uploads/aipc-logs/` with a random name
+  and `.htaccess` protection, rotates at 8 MB (one older generation
+  kept) and can be **downloaded** (both generations streamed
+  chronologically) or **cleared** from the settings page. 8 new
+  strings translated (680 msgids).
+
+### Tests
+- New `api_trace` e2e group (10 assertions): capture, context,
+  redaction, no-key-leak, off-means-off, protected dir, clear
+  (57 groups / 404 assertions total).
+
+## [1.10.0] — 2026-09-30
+
+### Added
+- **Persian half-space (نیم‌فاصله) preservation.** New `AIPC_Text`
+  helper: rule-based ZWNJ repair (a space after «می/نمی» and before
+  «ها/های/هایی/تر/ترین» becomes a half-space; existing half-spaces are
+  never touched, non-Persian text passes through). Applied to titles,
+  content, excerpts and SEO meta on create/update — and in post
+  content the character is stored as the `&zwnj;` HTML entity, which
+  survives every editor round-trip (the classic editor is known to
+  strip the raw U+200C character).
+- **Default image prompt** (Settings → Featured images): a style
+  suffix appended to every generated image prompt — art direction,
+  palette, mood — for consistent featured images. Deduplicated when
+  the model already echoes it.
+- **Regenerate AI image** row action in the posts list: one click
+  builds a fresh featured image for any post — title + SEO summary →
+  image prompt (chat-capable chain) → picture (image-capable chain),
+  with a success/error notice. New `AIPC_Agent::regenerate_thumbnail()`
+  runs outside a job. 9 new strings translated (672 msgids).
+
+### Tests
+- New `text_zwnj` (10) and `image_defaults` (9) e2e groups; the
+  rewrite content assertion now expects the `&zwnj;` entity
+  (56 groups / 394 assertions total).
+
+## [1.9.3] — 2026-09-30
+
+### Added
+- **Disable a connection without deleting it.** New "Enabled
+  (participates in runs)" checkbox in the connection form, a Status
+  column and a one-click **Enable/Disable** action in the connections
+  list (disabled rows are dimmed). Disabled connections are skipped
+  everywhere: the automatic purpose pools, explicit step fallback
+  chains and the default-connection choice. Existing connections are
+  treated as enabled after the update; the Prompts page marks disabled
+  entries in the chain selector. 8 new strings translated (663 msgids).
+
+### Fixed
+- `all_for_ui()` no longer assumes every stored connection row has
+  model fields (defensive `isset`).
+
+### Tests
+- New `conn_disable` e2e group (8 assertions): legacy backfill, pool /
+  chain / default skipping, disable-all → no default, sanitize
+  keep-vs-toggle semantics, UI flag exposure
+  (54 groups / 375 assertions total).
+
+## [1.9.2] — 2026-09-30
+
+### Changed
+- **Bale post notifications: channel-ready format.** Messages now read
+  `🔻title` / blank line / `🌱🌱summary🌱🌱` / "Read the full article at
+  the link below👇👇👇" / permalink — replacing the status intro/word
+  count footer. The featured image is still sent above as the photo;
+  the delayed-publish notification uses the same format (and can carry
+  the image) too.
+
+### Added
+- **Default notification image** (Bale settings): a URL sent above the
+  message when a post has no featured image — so notifications are
+  never image-less unless you want them to be. Sanitized to http(s)
+  only. 3 new strings translated (655 msgids).
+
+### Tests
+- New `bale_format` e2e group (8 assertions): format shape, read-more
+  line, default-image fallback with caption, URL sanitizing; the
+  `bale_traffic` expectations migrated to the new format
+  (53 groups / 367 assertions total).
+
+## [1.9.1] — 2026-09-30
+
+### Improved
+- **Attribution headers on every API request.** `HTTP-Referer` (site
+  URL) and `X-Title` (site name) are now sent as recommended by
+  OpenRouter — WAFs that distrust anonymous datacenter traffic get a
+  proper identity. Note: a 403 "Access denied by security policy" from
+  a provider's edge (Cloudflare) is an IP/geo policy decision on their
+  side; if headers don't help, the WordPress server needs an allowed
+  egress IP (host/proxy) or an accessible relay gateway.
+
+### Added
+- **`aipc_api_headers` filter** — add custom headers (organization ids,
+  proxy auth, WAF tokens …) to every AI request. Receives the headers,
+  the full URL and the connection data with the API key stripped.
+
+### Tests
+- New `api_headers` e2e group (4 assertions): Referer/X-Title/Bearer
+  present, key never leaked to the filter (52 groups / 359 assertions).
+
+## [1.9.0] — 2026-09-30
+
+### Added
+- **Second image-generation route: chat completions (Gemini/OpenRouter
+  style).** Gemini-style gateways don't implement `/images/generations`
+  (typical errors: "No credentials for image provider: openai",
+  "returned no image data") — they generate pictures through a chat
+  completion and return them as base64 `data:` URIs. New per-connection
+  **Image route** option:
+  - *Automatic* (default): images endpoint first, then the chat route
+    by itself — existing setups keep working and gain the fallback;
+  - *Images endpoint*: classic OpenAI behaviour only;
+  - *Chat completions*: for Gemini-style gateways, with an
+    image-capable model (e.g. `gemini-2.5-flash-image`) as Image model.
+  The chat route (`AIPC_API_Client::image_via_chat()`) sends
+  `modalities: ["image","text"]` (with a compatibility retry without
+  it) and parses OpenRouter `message.images[]`, multimodal content
+  parts, Gemini `inline_data` and `data:` URI content strings — all
+  decoded locally, so it pairs naturally with *Force base64*.
+  6 new strings translated (657 msgids).
+
+### Tests
+- `image_delivery` grew to 12 assertions: chat route returns bytes,
+  the auto cascade (link-only endpoint → refused by Force base64 →
+  chat route → bytes) and `image_api` sanitizing
+  (51 groups / 355 assertions total).
+
+## [1.8.2] — 2026-09-30
+
+Robustness audit of the 1.8.x line — every failure path of the new
+routing/delivery features was traced end-to-end (form → sanitize →
+storage → agent chain → API client → media library).
+
+### Fixed
+- **URL-image download failures now fail over.** In *Automatic* delivery
+  mode a failed download of a link-returned image silently skipped the
+  featured image; it now throws into the step's retry/failover loop, so
+  the next attempt or the next image connection gets its chance first.
+  (When the whole chain fails, the step still skips gracefully — a run
+  never dies because of the image.)
+- **Model picker: re-loading models rebinds the search filter.** The
+  filter listener kept closing over the first loaded list; a second
+  "Load models" (e.g. after changing the base URL) now filters the
+  fresh list.
+- **Null-safe job composition**: a missing default connection can no
+  longer trigger a PHP error when reading its chat model.
+
+### Verified (no changes needed)
+- Connection save handler forwards all new fields; `image_prompt` is
+  correctly routed to the chat pool; explicit per-step chains still win;
+  pre-1.8 connections normalize on read; e2e suite is deterministic
+  across back-to-back runs (2× 51 groups / 352 assertions, zero PHP
+  warnings); no wrong textdomains.
+
+## [1.8.1] — 2026-09-30
+
+### Added
+- **"Image delivery" per connection: Force base64 mode.** Providers can
+  return generated images as base64 (`b64_json`) or as temporary links.
+  The new *Force base64* option demands the bytes inside the API
+  response and decodes them locally (`AIPC_API_Client::decode_b64_image()`)
+  — nothing depends on downloading expiring URLs, making image creation
+  deterministic. A link-only response in this mode fails the attempt so
+  the 3-strike priority failover (1.8.0) moves to the next image
+  connection. Default stays *Automatic* (base64 or link, unchanged).
+
+### Improved
+- Base64 payloads are decoded defensively in every mode: `data:` URIs
+  (also when returned in the `url` field), embedded whitespace/newlines,
+  strict-then-lenient decoding. 5 new strings translated (651 msgids).
+
+### Tests
+- New `image_delivery` e2e group (9 assertions): sanitizing, decoder
+  edge cases, force-b64 gets bytes from the mock, refuses a URL-only
+  provider, auto mode still accepts URLs (51 groups / 352 assertions).
+
+## [1.8.0] — 2026-09-30
+
+### Added
+- **Connection purposes: separate chat and image servers.** Every
+  connection now carries a `purpose` — *chat & images* (default), *chat
+  only* or *images only* — plus a numeric `priority` (1–999, lower =
+  tried first). The featured-image step automatically uses the
+  image-capable connections and every text step the chat-capable ones,
+  so images no longer have to come from the same server as the text.
+- **Priority failover.** Steps without an explicit connection chain
+  (Prompts page) get an automatic chain: all matching connections in
+  priority order. Each entry keeps its own retry budget (3 attempts,
+  `aipc_step_attempts` filter) — after 3 consecutive failures the run
+  switches to the next connection. New `AIPC_Connections::for_purpose()`
+  + `aipc_connections_for_purpose` filter.
+- Connections page: Purpose select + Priority field (with help
+  tooltips), new Purpose/Priority columns in the list. 7 new strings
+  translated to Persian (646 msgids).
+
+### Compatibility
+- Stored pre-1.8.0 connections are normalized on read (purpose
+  `both`, priority `10`) — nothing to migrate, explicit per-step chains
+  still take precedence over the automatic pools.
+
+### Tests
+- New `conn_routing` e2e group (7 assertions): sanitizing, pool
+  filtering + ordering, agent auto-chains for image vs plan steps,
+  legacy defaults (50 groups / 343 assertions total).
+
+## [1.7.5] — 2026-09-30
+
+### Improved
+- **"Load models from the provider" now shows a visible model picker.**
+  The models used to be poured only into an invisible `<datalist>` — with
+  a success message saying "pick one in the list", users saw no list at
+  all. A searchable, scrollable picker now opens under the Chat model
+  field: type to filter, click to select (the datalist autocomplete is
+  kept as a bonus). New strings translated to Persian (639 msgids).
+
+### Tests
+- `admin_pages.connections` gained a `model_picker` markup assertion
+  (49 groups / 336 assertions total).
+
+## [1.7.4] — 2026-09-30
+
+### Fixed
+- **Pasting a full endpoint URL as the base URL no longer breaks the
+  connection.** Entering `…/v1/chat/completions` made every request hit
+  `…/v1/chat/completions/models` (→ "Unknown API route" 404s).
+  `AIPC_API_Client::base_url()` now strips well-known OpenAI endpoint paths
+  (`/chat/completions`, `/completions`, `/responses`, `/models`,
+  `/embeddings`, `/images/generations`) off the end, and a successful
+  connection test returns `fixed_base_url` whenever normalization changed
+  the typed URL — the Connections form auto-corrects the field.
+
+### Tests
+- New `base_url_normalize` e2e group (8 assertions): endpoint-path
+  stripping incl. repeated suffixes, bare-host `/v1` append, legit custom
+  paths kept, `fixed_base_url` reported on fix and absent on clean input
+  (49 groups / 335 assertions total).
+
+## [1.7.3] — 2026-09-30
+
+### Fixed
+- **Localized admins (fa_IR & co.) lost all plugin CSS/JS on every subpage.**
+  WordPress builds submenu hooks from `sanitize_title()` of the *translated*
+  top-level menu title, so the hardcoded English hook names in
+  `AIPC_Assets::enqueue()` never matched on a Persian site — Connections,
+  Settings, Rewrite, Review, Prompts, Logs and Schedule rendered without
+  styles and their scripts (including the "Test connection" button) never
+  loaded. Screen detection now parses the stable page slug after `_page_`
+  (`AIPC_Assets::screen_for_hook()`), which is locale-proof.
+- The **Update page** (`aipc-update`) was missing from the enqueue map
+  entirely and never received the admin stylesheet, in any language.
+
+### Tests
+- New `assets_enqueue` e2e group (7 assertions): Persian-localized hook
+  enqueues `aipc-admin` CSS + `aipc-connections` JS, English and toplevel
+  hooks still work, the update page gets CSS, and foreign hooks enqueue
+  nothing (48 groups / 327 assertions total).
+
+## [1.7.2] — 2026-09-30
+
+### Fixed
+- **Connecting to AI gateways/routers (e.g. OmniRoute) no longer fails
+  confusingly.** A base URL without a path now gets `/v1` appended
+  automatically for every host (previously only `api.openai.com`); the
+  connection test probes the `/v1` variant when the first attempt fails and
+  auto-corrects the field (`fixed_base_url` in the REST response); and when
+  an address returns a web page instead of an API response, the error says
+  exactly that ("looks like a website URL, not an API base URL") instead of
+  dumping HTML fragments.
+
+### Added
+- **"Allow private/LAN addresses" setting** (Settings → Advanced): lets a
+  self-hosted gateway (OmniRoute, Ollama, LM Studio on another machine)
+  be reached without writing a filter. Default off; loopback stays always
+  allowed; the `aipc_allow_private_hosts` filter still has the final word.
+- OmniRoute (`http://localhost:20128/v1`) added to the example endpoints,
+  with a note about self-hosted gateways and LAN addresses.
+
+### Changed — admin UI polish
+- The Schedule page got the same header (logo + title + subtitle) as every
+  other page instead of a bare `<h1>`.
+- Field alignment unified: the grid/toggle gutters now apply only inside the
+  boxed "Options" panels, so forms rendered directly in cards line up with
+  the card edge (Connections, Prompts, Schedule, Update).
+- Tables restyled consistently (soft header row, hover, rounded corners);
+  key-value tables get their own class instead of inline widths.
+- Day-of-week checkboxes on the Schedule form became selectable pills;
+  topic-queue and contextual-help ("?") elements now follow the plugin's
+  design tokens instead of WP-gray one-offs.
+- All inline `style="…"` attributes removed from the views; every input,
+  select and textarea got a consistent focus ring; responsive tweaks for
+  narrow screens.
+- fa_IR translation updated (637 msgids).
+
+## [1.7.1] — 2026-09-30
+
+### Documentation
+- **Architecture reference** brought up to the current code: real bootstrap
+  flow (`aipc_boot()` registrations, Plugins-screen quick links instead of the
+  non-existent admin-bar shortcuts), 9 admin pages, refreshed class sizes,
+  `aipc_topic_queue` option + new `aipc_bale` fields (`two_way`, `report_day`,
+  `last_update_id`) in the data model, `/topics/*` REST routes, the complete
+  `admin_post_*` handler list (topics + Git updater), the topic-queue
+  consumption and Bale-poll safety net in the scheduler design, a two-way
+  commands section and the `aipc_bale_poll` action in the hooks reference.
+- **REST API reference**: documented `POST /aipc/v1/topics/suggest` and
+  `POST /aipc/v1/topics/add` (params, responses, capability).
+- **Roadmap**: status moved to v1.7.0, topic queue and two-way Bale commands
+  marked shipped, 1.7.0 history row added.
+- **README (Persian)**: the topic queue and Bale-commands bullets moved from
+  the 1.6.0 section into their own 1.7.0 section.
+- **User guides (fa/en)**: version headers updated; the stale FAQ answer
+  claiming background execution was still "on the 1.6 roadmap" corrected.
+- **AGENTS.md**: project summary updated to v1.7.x, current branch/PR state
+  corrected (PR #1 and #2 merged), e2e contract numbers refreshed
+  (46 groups / 441 assertions).
+
+No functional changes.
+
 ## [1.7.0] — 2026-09-29
 
 ### Added

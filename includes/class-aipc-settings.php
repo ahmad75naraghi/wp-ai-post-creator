@@ -30,9 +30,16 @@ final class AIPC_Settings {
 			'source_sites'       => '',
 			'image_enabled'       => 1,
 			'image_size'          => '1792x1024',
+			'image_prompt_default' => '',
+			'image_fallback_stock' => 0,  // Openverse stock photo when AI fails (1.18.0).
+			'force_image'         => 0,  // Default for "force image generation" (1.21.0).
+			'image_fallback'      => '',  // Default featured image: media ID or URL (1.18.0).
 			'add_toc'             => 1,
 			'add_faq'             => 1,
 			'system_prompt_extra' => '',
+			'allow_private_hosts' => 0,
+			'debug_log'           => 0,
+			'source_links'        => 1,
 			'delete_on_uninstall' => 0,
 		);
 	}
@@ -232,18 +239,35 @@ final class AIPC_Settings {
 		$out['source_sites'] = implode( "\n", array_slice( array_values( array_unique( $aipc_sources ) ), 0, 8 ) );
 
 
-		$out['image_size'] = isset( $in['image_size'] ) ? sanitize_text_field( $in['image_size'] ) : $old['image_size'];
-		if ( ! in_array( $out['image_size'], self::image_sizes(), true ) ) {
+		// v1.12.1: a free-form WxH size is accepted besides the presets.
+		$aipc_size = isset( $in['image_size_select'] ) ? (string) $in['image_size_select'] : ( isset( $in['image_size'] ) ? (string) $in['image_size'] : (string) $old['image_size'] );
+		if ( 'custom' === $aipc_size ) {
+			$aipc_size = isset( $in['image_size_custom'] ) ? (string) $in['image_size_custom'] : '';
+		}
+		$aipc_size = strtolower( str_replace( array( '×', ' ' ), array( 'x', '' ), sanitize_text_field( $aipc_size ) ) );
+		if ( in_array( $aipc_size, self::image_sizes(), true ) || preg_match( '/^\d{2,4}x\d{2,4}$/', $aipc_size ) ) {
+			$out['image_size'] = $aipc_size;
+		} else {
 			$out['image_size'] = $old['image_size'];
 		}
 
-				$bools = array( 'image_enabled', 'add_toc', 'add_faq', 'delete_on_uninstall' );
+				$bools = array( 'image_enabled', 'add_toc', 'add_faq', 'allow_private_hosts', 'delete_on_uninstall', 'debug_log', 'source_links', 'image_fallback_stock', 'force_image' );
 		foreach ( $bools as $bool ) {
 			$out[ $bool ] = empty( $in[ $bool ] ) ? 0 : 1;
 		}
 
 		$extra = isset( $in['system_prompt_extra'] ) ? sanitize_textarea_field( $in['system_prompt_extra'] ) : '';
 		$out['system_prompt_extra'] = mb_substr( $extra, 0, 2000 );
+
+		$img_default = isset( $in['image_prompt_default'] ) ? sanitize_textarea_field( $in['image_prompt_default'] ) : $old['image_prompt_default'];
+		$out['image_prompt_default'] = mb_substr( $img_default, 0, 600 );
+
+		// Default featured image: a media-library attachment ID or an image URL.
+		$fb = isset( $in['image_fallback'] ) ? trim( sanitize_text_field( $in['image_fallback'] ) ) : (string) $old['image_fallback'];
+		if ( '' !== $fb && ! ctype_digit( $fb ) ) {
+			$fb = esc_url_raw( $fb );
+		}
+		$out['image_fallback'] = $fb;
 
 		return $out;
 	}

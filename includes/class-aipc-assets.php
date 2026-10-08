@@ -28,21 +28,10 @@ final class AIPC_Assets {
 	 * @return void
 	 */
 	public static function enqueue( $hook ) {
-		$plugin_pages = array(
-			'toplevel_page_aipc'                    => 'agent',
-			'ai-post-creator_page_aipc-rewrite'     => 'rewrite',
-			'ai-post-creator_page_aipc-review'      => 'review',
-			'ai-post-creator_page_aipc-connections' => 'connections',
-			'ai-post-creator_page_aipc-prompts'     => 'prompts',
-			'ai-post-creator_page_aipc-logs'        => 'logs',
-			'ai-post-creator_page_aipc-schedule'    => 'schedule',
-			'ai-post-creator_page_aipc-settings'    => 'settings',
-		);
-
-		if ( ! isset( $plugin_pages[ $hook ] ) ) {
+		$screen = self::screen_for_hook( $hook );
+		if ( '' === $screen ) {
 			return;
 		}
-		$screen = $plugin_pages[ $hook ];
 
 		wp_enqueue_style(
 			'aipc-admin',
@@ -70,7 +59,9 @@ final class AIPC_Assets {
 				true
 			);
 			self::inline_data( 'aipc-connections', self::data_for_connections() );
-		} elseif ( 'schedule' === $screen ) {
+		} elseif ( 'schedule' === $screen || 'bot' === $screen ) {
+			// The bot page reuses the schedule driver (Bale/Telegram test
+			// message + chat-ID detection buttons).
 			wp_enqueue_script(
 				'aipc-schedule',
 				AIPC_PLUGIN_URL . 'assets/admin-schedule.js',
@@ -80,6 +71,45 @@ final class AIPC_Assets {
 			);
 			self::inline_data( 'aipc-schedule', self::data_for_schedule() );
 		}
+	}
+
+	/**
+	 * Resolve the plugin screen from an admin page hook — locale-proof.
+	 *
+	 * The part of a submenu hook before "_page_" is sanitize_title() of the
+	 * *translated* top-level menu title (e.g. percent-encoded Persian on a
+	 * fa_IR site), so hardcoded English hook names silently stop matching on
+	 * localized admins — which used to leave every subpage without CSS/JS.
+	 * Match the stable page slug after "_page_" instead.
+	 *
+	 * @param string $hook Admin page hook suffix.
+	 * @return string Screen key, or '' when this is not a plugin page.
+	 */
+	public static function screen_for_hook( $hook ) {
+		$screens = array(
+			'aipc'             => 'agent',
+			'aipc-rewrite'     => 'rewrite',
+			'aipc-review'      => 'review',
+			'aipc-connections' => 'connections',
+			'aipc-prompts'     => 'prompts',
+			'aipc-logs'        => 'logs',
+			'aipc-schedule'    => 'schedule',
+			'aipc-bot'         => 'bot',
+			'aipc-cron'        => 'cron',
+			'aipc-settings'    => 'settings',
+			'aipc-update'      => 'update',
+		);
+
+		$hook = (string) $hook;
+		if ( 'toplevel_page_aipc' === $hook ) {
+			return $screens['aipc'];
+		}
+		$pos = strpos( $hook, '_page_' );
+		if ( false === $pos ) {
+			return '';
+		}
+		$slug = substr( $hook, $pos + strlen( '_page_' ) );
+		return isset( $screens[ $slug ] ) ? $screens[ $slug ] : '';
 	}
 
 	/**
@@ -139,7 +169,8 @@ final class AIPC_Assets {
 				'tone'     => $s['default_tone'],
 				'length'   => $s['default_length'],
 				'language' => $s['content_language'],
-				'image'    => (bool) $s['image_enabled'],
+				'image'       => (bool) $s['image_enabled'],
+				'force_image' => (bool) $s['force_image'],
 				'faq'      => (bool) $s['add_faq'],
 				'toc'      => (bool) $s['add_toc'],
 			),
@@ -190,6 +221,10 @@ final class AIPC_Assets {
 				'adding'     => __( 'Adding…', 'wp-ai-post-creator' ),
 				'added'      => __( 'Added! Reloading…', 'wp-ai-post-creator' ),
 				'addFail'    => __( 'Could not add the topics:', 'wp-ai-post-creator' ),
+				'dismissTitle' => __( 'Never suggest this again', 'wp-ai-post-creator' ),
+				'dismissed'  => __( 'Dismissed — it will not be suggested again.', 'wp-ai-post-creator' ),
+				'dismissFail'=> __( 'Could not dismiss the suggestion:', 'wp-ai-post-creator' ),
+				'noFeed'     => __( 'no feed found', 'wp-ai-post-creator' ),
 			),
 		);
 	}
@@ -207,11 +242,13 @@ final class AIPC_Assets {
 				'testing'       => __( 'Testing connection…', 'wp-ai-post-creator' ),
 				'ok'            => __( 'Connection successful!', 'wp-ai-post-creator' ),
 				'okNoModels'    => __( 'Connection successful (model list not supported by this provider).', 'wp-ai-post-creator' ),
+				'fixedBase'     => __( 'Connected via %s — the base URL was missing /v1, so the field was corrected. Save the connection to keep it.', 'wp-ai-post-creator' ),
 				'okModels'      => __( 'Connection successful — %d models found.', 'wp-ai-post-creator' ),
 				'failed'        => __( 'Connection failed:', 'wp-ai-post-creator' ),
 				'loadingModels' => __( 'Loading models…', 'wp-ai-post-creator' ),
 				'modelsOk'      => __( '%d models loaded — pick one in the list.', 'wp-ai-post-creator' ),
 				'modelsFail'    => __( 'Could not load the model list:', 'wp-ai-post-creator' ),
+				'noMatch'       => __( 'No models match your filter.', 'wp-ai-post-creator' ),
 			),
 		);
 	}

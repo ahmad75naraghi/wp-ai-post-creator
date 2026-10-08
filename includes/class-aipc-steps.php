@@ -32,7 +32,7 @@ final class AIPC_Steps {
 				'label' => __( 'System prompt (all steps)', 'wp-ai-post-creator' ),
 				'kind'  => 'system',
 				'desc'  => __( 'Base identity sent with every request, before the step prompt.', 'wp-ai-post-creator' ),
-				'prompt' => 'You are an expert blog writer, copywriter and SEO specialist. You produce original, accurate, engaging and well-structured content. Never mention that you are an AI. Never invent statistics, quotes or sources. Write in {{lang}}. Overall tone: {{tone}}.{{site_prompt}} {{extra}}',
+				'prompt' => 'You are an expert blog writer, copywriter and SEO specialist. You produce original, accurate, engaging and well-structured content. Never mention that you are an AI. Never invent statistics, quotes or sources. Never fabricate benchmarks, case studies, customer stories, prices or "real-world" numbers — when you lack verified data, explain qualitatively or leave it out. Write like an experienced human expert: natural rhythm, varied sentence and paragraph lengths, no formulaic AI phrasing. Write in {{lang}}. Overall tone: {{tone}}.{{site_prompt}} {{extra}}',
 				'placeholders' => array(
 					'{{lang}}'        => __( 'Content language name', 'wp-ai-post-creator' ),
 					'{{tone}}'        => __( 'Selected tone label', 'wp-ai-post-creator' ),
@@ -53,6 +53,7 @@ CATEGORIES (existing post categories of this website):
 EXISTING ARTICLES ALREADY PUBLISHED HERE:
 {{recent_posts}}
 Do NOT pick a topic that duplicates or closely resembles one of these — the new article must cover fresh ground or a clearly different angle.
+HARD RULE: any title sharing most of its meaningful words with one of the articles above will be REJECTED automatically and the whole plan fails. When the obvious topic already exists, pick a different subtopic, a different audience, a different problem or a clearly different format instead — never a rephrasing of an existing article.
 
 RESEARCH SOURCES provided by the site owner (titles, links and summaries):
 {{sources}}
@@ -63,7 +64,9 @@ Use them for inspiration and grounding; you may reference at most 1-2 of them la
 You are planning a blog article (~{{words}} words) written in {{lang}}.
 STEP 1: choose the ONE best-fitting category from the list above — you MUST use its exact name.
 STEP 2: decide the topic and a compelling SEO title for it.
-STEP 3: from the internal linking candidates below, pick the ones genuinely relevant to this topic (max 4, or an empty list).
+STEP 3: identify the REAL search intent behind this topic — what is the searcher actually trying to do (learn step-by-step, compare options, fix a problem, decide what to buy, understand a concept, choose between variants)? The article structure must answer that intent.
+STEP 4: from the internal linking candidates below, pick the ones genuinely relevant to this topic (max 4, or an empty list).
+KEYWORD HONESTY: your keywords are editorial suggestions from language knowledge — you have NO search-volume or keyword-difficulty data, so never present such numbers anywhere.
 INTERNAL LINKING CANDIDATES:
 {{link_candidates}}
 
@@ -75,6 +78,8 @@ Return ONLY this JSON object (values in {{lang}} unless noted):
   "topic_brief": "2-3 sentences describing what the article will cover, in {{lang}}",
   "audience": "target audience, one sentence, in {{lang}}",
   "intent": "the main search intent, in {{lang}}",
+  "search_intent": "ONE English token: tutorial | comparison | troubleshooting | buying-guide | definition | selection-guide | informational",
+  "structure_hint": "one sentence, in {{lang}}: the article structure that answers this intent best",
   "primary_keyword": "main keyword, in {{lang}}",
   "secondary_keywords": ["4-8 related keywords, in {{lang}}"],
   "angle": "a unique angle that makes this article stand out, one sentence, in {{lang}}",
@@ -102,17 +107,28 @@ Return ONLY this JSON object (values in {{lang}} unless noted):
 Topic brief: {{topic_brief}}
 Primary keyword: {{primary_keyword}}
 Angle: {{angle}}
+Search intent: {{search_intent}}
+Structure hint: {{structure_hint}}
 
 Create the outline for a ~{{words}} word article with exactly {{sections}} main sections.
 The introduction and conclusion are handled separately — do NOT include them.
-Order sections logically for the reader.
+STRUCTURE BY INTENT — the outline must mirror how this query is best answered:
+- tutorial → ordered steps the reader actually follows
+- comparison → decision criteria first, then a head-to-head section (plan a table)
+- troubleshooting → symptoms, causes, fixes, prevention
+- buying-guide / selection-guide → needs, decision criteria, trade-offs, recommendation
+- definition / informational → the concept first, then practical context and uses
+Use technical terms or product names in headings ONLY when they are necessary to answer the query — never force unrelated terminology in.
+Fewer, deeper sections beat many shallow ones; order sections logically for the reader.
 Return ONLY this JSON object:
-{"sections": [{"heading": "section heading (H2 level, in {{lang}}, no numbering)", "brief": "2-3 sentences describing exactly what this section must cover"}]}',
+{"sections": [{"heading": "section heading (H2 level, in {{lang}}, no numbering)", "brief": "2-3 sentences describing exactly what this section must cover", "evidence": "the ONE concrete element this section will deliver: a real example, actionable steps, a configuration sample, a common mistake and its fix, a comparison, trade-offs, or a table"}]}',
 				'placeholders' => array(
 					'{{title}}'           => __( 'Working title', 'wp-ai-post-creator' ),
 					'{{topic_brief}}'     => __( 'Topic brief from the plan step', 'wp-ai-post-creator' ),
 					'{{primary_keyword}}' => __( 'Primary keyword', 'wp-ai-post-creator' ),
 					'{{angle}}'           => __( 'Unique angle from the plan step', 'wp-ai-post-creator' ),
+					'{{search_intent}}'   => __( 'Search-intent token from the plan step', 'wp-ai-post-creator' ),
+					'{{structure_hint}}'  => __( 'Recommended structure from the plan step', 'wp-ai-post-creator' ),
 					'{{words}}'           => __( 'Target word count', 'wp-ai-post-creator' ),
 					'{{sections}}'        => __( 'Planned section count', 'wp-ai-post-creator' ),
 					'{{lang}}'            => __( 'Content language name', 'wp-ai-post-creator' ),
@@ -152,14 +168,19 @@ HTML fragment only.',
 
 SECTION HEADING: {{section_heading}}
 WHAT TO COVER: {{section_brief}}
-TARGET LENGTH: about {{per_words}} words
+MUST DELIVER (the concrete element planned for this section): {{section_evidence}}
+TARGET LENGTH: about {{per_words}} words — treat it as a ceiling, not a quota
 PRIMARY KEYWORD (use once, naturally): {{primary_keyword}}
 {{keywords_block}}{{prev_block}}{{internal_links}}
 RULES:
 - Do NOT repeat the section heading — start directly with the content
+- DEPTH OVER LENGTH: deliver the planned concrete element properly (correct, specific, usable) — depth comes from evidence, not word count
+- Never fabricate statistics, benchmarks, case studies, customer stories or exact prices; without verified data, explain qualitatively instead
+- If you have nothing genuinely useful left to say, end the section early — padding and generic filler are forbidden
+- Vary sentence and paragraph lengths; do not open this section the way the previous section opened
+- Prefer explanatory prose; use a list only when a list is genuinely clearer (at most one list in this section)
 - You may use <h3>/<h4> subheadings, <p>, <ul>, <ol>, <table>, <blockquote>, <strong>, <em>
 - If the internal-links list above is present, weave at most 1-2 of those links naturally into the text where they genuinely help the reader
-- Be specific and useful; no filler, no generic fluff
 HTML fragment only.',
 				'placeholders' => array(
 					'{{index}}'           => __( 'Current section number (1-based)', 'wp-ai-post-creator' ),
@@ -167,6 +188,7 @@ HTML fragment only.',
 					'{{title}}'           => __( 'Working title', 'wp-ai-post-creator' ),
 					'{{section_heading}}' => __( 'This section’s heading', 'wp-ai-post-creator' ),
 					'{{section_brief}}'   => __( 'What this section must cover', 'wp-ai-post-creator' ),
+					'{{section_evidence}}' => __( 'Concrete element planned for this section in the outline (or a generic fallback)', 'wp-ai-post-creator' ),
 					'{{per_words}}'       => __( 'Word target for this section', 'wp-ai-post-creator' ),
 					'{{primary_keyword}}' => __( 'Primary keyword', 'wp-ai-post-creator' ),
 					'{{keywords_block}}'  => __( 'Secondary keywords line (or empty)', 'wp-ai-post-creator' ),
@@ -199,18 +221,26 @@ HTML fragment only.',
 				'label' => __( 'Copywriting & SEO pass', 'wp-ai-post-creator' ),
 				'kind'  => 'chat_html',
 				'desc'  => __( 'Revises the whole draft for copy quality, SEO and originality.', 'wp-ai-post-creator' ),
-				'prompt' => 'COPYWRITING & SEO REVISION PASS.
-Below is the draft body of the article "{{title}}". Improve it as a professional copywriter and SEO editor:
-- COPYWRITING: sharper hooks, clearer flow, more persuasive and specific wording, remove filler and repetition.
-- SEO: natural use of the primary keyword \'{{primary_keyword}}\', better subheading phrasing, stronger topic sentences.
-- ORIGINALITY: rephrase anything that reads like generic boilerplate or copied phrasing — the final text must be original and pass as human-written.
+				'prompt' => 'COPYWRITING & SEO REVISION PASS — EXPERT EDITORIAL REWRITE.
+Below is the draft body of the article "{{title}}". Edit it like a senior human editor and technical writer — not a paraphraser. Inside each section you may restructure freely: merge, split, reorder or completely rewrite paragraphs whenever that makes the text better.
+HUMAN VOICE:
+- Delete machine clichés and stock AI phrasing (e.g. "In today\'s fast-paced world", "It is important to note that", "this comprehensive guide", "در دنیای امروز", "همان‌طور که می‌دانید", "جامع و کامل") — replace them with something a human expert would actually say, or with nothing.
+- No two sections may open with the same pattern; vary sentence and paragraph lengths — mix short, punchy sentences with longer explanatory ones.
+- Write natural transitions between sections so the article reads as one piece, not stitched blocks.
+- Use terminology the way a practitioner does — naturally, never as keyword decoration; remove keyword repetition (synonyms and pronouns exist).
+- Where a bullet list hides real explanation, turn it into proper prose; keep lists only where a list is genuinely clearer.
+SUBSTANCE:
+- Remove sentences that exist only to fill space.
+- Remove or soften any statistic, benchmark or case study the draft cannot support — no fabricated-sounding claims may survive this pass.
+- COPYWRITING: sharper hooks, clearer flow, specific and persuasive wording.
+- SEO: natural use of the primary keyword \'{{primary_keyword}}\', better subheading phrasing — never at the cost of natural prose.
 - LINKS: keep every <a href> link that exists in the draft (internal and external) — you may reposition or rephrase the anchor text, but never drop a link.
 {{internal_links}}
 STRICT FORMAT RULES (the pipeline breaks without them):
 - Return ONLY the article body as raw HTML.
 - Structure: an introduction with NO <h2> heading, then exactly {{sections}} main sections each starting with its own <h2> heading, then ONE final <h2> conclusion block.
 - Do not add or remove sections, do not merge them; no TOC, no FAQ, no title tag.
-- Keep the same language and overall meaning; keep it approximately the same length.
+- Keep the same language and overall meaning; the length may shrink or grow where depth genuinely requires it — never pad.
 
 DRAFT:
 {{draft}}',
@@ -263,15 +293,19 @@ Return ONLY this JSON object:
 				'label' => __( 'Image prompt', 'wp-ai-post-creator' ),
 				'kind'  => 'chat_json',
 				'desc'  => __( 'Turns the topic + Rank Math summary into an image-generation prompt.', 'wp-ai-post-creator' ),
-				'prompt' => 'Create a JSON object with one key "prompt": a detailed image-generation prompt (max 60 words) for a professional featured/hero blog image.
+				'prompt' => 'Create a JSON object with one key "prompt": a detailed image-generation prompt (max 60 words) for a professional featured/hero blog image. Also include a key "keywords": 2-4 short English stock-photo search words naming the main visible subject.
 Article title: "{{title}}".
 Article summary: "{{summary}}".
 Style: modern, editorial, visually striking, high quality.
+RECENT featured images already used on this site (their generation prompts):
+{{recent_images}}
+The new scene MUST look clearly different from every one of them — different subject matter, different composition, different setting, different lighting and a different color palette. Repeating a recent visual concept is a failure.
 CRITICAL: the image must contain NO text, NO words, NO letters, NO watermarks.
 Describe the scene only. JSON only.',
 				'placeholders' => array(
-					'{{title}}'   => __( 'Working title', 'wp-ai-post-creator' ),
-					'{{summary}}' => __( 'Rank Math summary (meta description)', 'wp-ai-post-creator' ),
+					'{{title}}'         => __( 'Working title', 'wp-ai-post-creator' ),
+					'{{summary}}'       => __( 'Rank Math summary (meta description)', 'wp-ai-post-creator' ),
+					'{{recent_images}}' => __( 'Prompts of recent featured images (the new scene must differ from them)', 'wp-ai-post-creator' ),
 				),
 			),
 
@@ -333,10 +367,12 @@ IMPROVEMENT NOTES from the analysis:
 RESEARCH SOURCES provided by the site owner:
 {{sources}}
 
-Rewrite the existing article below as a professional copywriter and SEO editor:
+Rewrite the existing article below as a senior human editor and technical writer:
 - COPYWRITING: sharper hooks, clearer flow, more persuasive and specific wording, remove filler and repetition.
-- SEO: natural use of the primary keyword \'{{primary_keyword}}\', better subheading phrasing, stronger topic sentences.
+- HUMAN VOICE: delete machine clichés and stock AI phrasing; vary sentence and paragraph lengths; no two sections may open with the same pattern; write natural transitions; use terminology the way a practitioner does.
+- SEO: natural use of the primary keyword \'{{primary_keyword}}\', better subheading phrasing, stronger topic sentences — never at the cost of natural prose.
 - ORIGINALITY: rephrase every sentence that reads like generic boilerplate — the final text must be original and pass as human-written; keep all facts from the original that are still valid.
+- HONESTY: never add statistics, benchmarks, case studies or prices that the original does not support; remove or soften unsupported claims.
 - LINKS: keep every <a href> link from the original content, and weave in the internal links listed below where they genuinely help.
 {{internal_links}}
 

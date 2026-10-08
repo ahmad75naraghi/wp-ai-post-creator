@@ -131,6 +131,12 @@ final class AIPC_Scheduler {
 			return;
 		}
 		if ( isset( $state['status'] ) && 'running' === $state['status'] ) {
+			if ( ! empty( $state['retry_at'] ) ) {
+				// Force-image wait (1.21.0): wake up exactly when the
+				// next image attempt is due instead of spinning.
+				self::schedule_runner( $job_id, max( 30, (int) $state['retry_at'] - time() ) );
+				return;
+			}
 			self::schedule_runner( $job_id, 30 ); // Budget exhausted — continue.
 			return;
 		}
@@ -251,8 +257,14 @@ final class AIPC_Scheduler {
 			$delay = 10080;
 		}
 
+		$kind = isset( $in['kind'] ) ? sanitize_key( $in['kind'] ) : 'new';
+		if ( ! in_array( $kind, array( 'new', 'refresh' ), true ) ) {
+			$kind = 'new';
+		}
+
 		return array(
 			'id'            => isset( $in['id'] ) ? sanitize_key( $in['id'] ) : '',
+			'kind'          => $kind,
 			'time'          => $time,
 			'days'          => $days,
 			'enabled'       => empty( $in['enabled'] ) ? 0 : 1,
@@ -265,6 +277,7 @@ final class AIPC_Scheduler {
 				'length'   => $length,
 				'language' => $language,
 				'image'    => empty( $opts['image'] ) ? 0 : 1,
+				'force_image' => empty( $opts['force_image'] ) ? 0 : 1,
 				'faq'      => empty( $opts['faq'] ) ? 0 : 1,
 				'toc'      => empty( $opts['toc'] ) ? 0 : 1,
 			),
@@ -495,6 +508,12 @@ final class AIPC_Scheduler {
 		$cfg['state'][ $due['id'] ] = wp_date( 'Y-m-d', $now );
 		self::persist( $cfg );
 
+		// Atomic per-day claim (1.19.0): when two cron ticks overlap they
+		// both read the old state above — only one may fire the entry.
+		if ( ! AIPC_Agent::claim( 'entry_' . $due['id'] . '_' . wp_date( 'Y-m-d', $now ), DAY_IN_SECONDS ) ) {
+			return;
+		}
+
 		$job = self::start_job_for_entry( $due['id'], 'cron' );
 		if ( is_wp_error( $job ) ) {
 			return;
@@ -519,6 +538,18 @@ final class AIPC_Scheduler {
 		$opts['publish_mode']  = isset( $entry['publish'] ) ? $entry['publish'] : 'draft';
 		$opts['publish_delay'] = isset( $entry['publish_delay'] ) ? $entry['publish_delay'] : 60;
 
+		// Content-refresh entry (1.22.0): instead of writing something
+		// new, pick the most outdated published post and rewrite it.
+		if ( isset( $entry['kind'] ) && 'refresh' === $entry['kind'] ) {
+			$target = self::pick_refresh_target();
+			if ( ! $target ) {
+				return new WP_Error( 'aipc_refresh', __( 'No post is old enough to need refreshing right now.', 'wp-ai-post-creator' ) );
+			}
+			$opts['mode']    = 'rewrite';
+			$opts['post_id'] = (int) $target->ID;
+			return AIPC_Agent::instance()->create_job( $target->post_title, $opts, $source );
+		}
+
 		// Take the topic from the queue when the entry wants that; the
 		// fixed topic (or the site prompt) stays the fallback.
 		$topic = isset( $entry['topic'] ) ? $entry['topic'] : '';
@@ -527,17 +558,65 @@ final class AIPC_Scheduler {
 			$queue_item = AIPC_Topic_Queue::peek();
 			if ( $queue_item ) {
 				$topic = $queue_item['text'];
+				// Queue topics are a SUBJECT, not a fixed headline
+				// (1.23.0): the plan step crafts its own SEO title.
+				$opts['topic_hint_only'] = 1;
 			}
 		}
 
 		$job = AIPC_Agent::instance()->create_job( $topic, $opts, $source );
 
-		// Consume the queued topic only when the run actually started.
+		// Consume the queued topic only when the run actually started —
+		// or when the duplicate guard rejected it (an article about it
+		// already exists), so the queue never stalls on that item.
 		if ( ! is_wp_error( $job ) && $queue_item ) {
 			AIPC_Topic_Queue::mark_used( $queue_item['id'], $job['id'] );
+		} elseif ( is_wp_error( $job ) && 'aipc_duplicate' === $job->get_error_code() && $queue_item ) {
+			AIPC_Topic_Queue::mark_used( $queue_item['id'], '' );
 		}
 
 		return $job;
+	}
+
+	/**
+	 * Pick the published post most in need of a refresh: not modified
+	 * and not refreshed within `aipc_refresh_min_age` (default 90 days),
+	 * oldest modification first (1.22.0).
+	 *
+	 * @return WP_Post|null
+	 */
+	public static function pick_refresh_target() {
+		/**
+		 * Filter the minimum age (seconds since last modification or
+		 * refresh) before a post qualifies for an automatic refresh.
+		 *
+		 * @param int $age Default 90 days.
+		 */
+		$age    = (int) apply_filters( 'aipc_refresh_min_age', 90 * DAY_IN_SECONDS );
+		$cutoff = time() - $age;
+
+		$posts = get_posts( array(
+			'post_type'      => 'post',
+			'post_status'    => 'publish',
+			'posts_per_page' => 10,
+			'orderby'        => 'modified',
+			'order'          => 'ASC',
+			'date_query'     => array(
+				array(
+					'column' => 'post_modified_gmt',
+					'before' => gmdate( 'Y-m-d H:i:s', $cutoff ),
+				),
+			),
+		) );
+
+		foreach ( $posts as $post ) {
+			$last = (int) get_post_meta( $post->ID, '_aipc_refreshed', true );
+			if ( $last >= $cutoff ) {
+				continue; // Refreshed recently — rotate to the next one.
+			}
+			return $post;
+		}
+		return null;
 	}
 
 	/**
@@ -558,6 +637,9 @@ final class AIPC_Scheduler {
 			}
 			if ( ! isset( $state['status'] ) || 'running' !== $state['status'] ) {
 				return $state;
+			}
+			if ( ! empty( $state['retry_at'] ) ) {
+				return $state; // Force-image wait — re-armed for that exact time.
 			}
 			if ( ! empty( $state['busy'] ) ) {
 				sleep( 2 );

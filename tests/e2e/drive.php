@@ -21,6 +21,14 @@ require $root . '/wp-load.php';
 
 $out = array();
 
+// Neutralise the connection circuit breaker for the legacy groups: they
+// produce long failure streaks on purpose and must keep their original
+// chain order. The conn_health group restores the real threshold locally.
+add_filter( 'aipc_health_streak', 'aipc_e2e_health_streak_off' );
+function aipc_e2e_health_streak_off() {
+	return 100000;
+}
+
 /* ------------------------------------------------------------------ *
  * Unit checks: JSON extraction
  * ------------------------------------------------------------------ */
@@ -294,6 +302,7 @@ $html = ob_get_clean();
 $out['admin_pages']['connections'] = array(
 	'rendered'      => false !== strpos( $html, 'aipc-conn-form' ),
 	'shows_conns'   => false !== strpos( $html, 'Chat Mock' ) && false !== strpos( $html, 'Image Mock' ),
+	'model_picker'  => false !== strpos( $html, 'aipc-model-picker' ) && false !== strpos( $html, 'aipc-model-list' ),
 );
 
 ob_start();
@@ -570,7 +579,7 @@ $out['rewrite'] = array(
 	'same_post'     => isset( $aipc_rw_state['result']['post_id'] ) && (int) $aipc_rw_state['result']['post_id'] === (int) $aipc_old_pid,
 	'title'         => $aipc_rw_post && 'عنوان بازنویسی‌شدهٔ بهتر و سئوپسند' === $aipc_rw_post->post_title,
 	'status_kept'   => $aipc_rw_post && 'publish' === $aipc_rw_post->post_status,
-	'content_new'   => $aipc_rw_post && false !== strpos( $aipc_rw_post->post_content, 'بخش بازنویسی‌شده 1' ),
+	'content_new'   => $aipc_rw_post && false !== strpos( $aipc_rw_post->post_content, 'بخش بازنویسی&zwnj;شده 1' ), // ZWNJ stored as entity since v1.10.0.
 	'old_link_kept' => $aipc_rw_post && false !== strpos( $aipc_rw_post->post_content, 'https://example.com/old' ),
 	'internal_link' => $aipc_rw_post && false !== strpos( $aipc_rw_post->post_content, $aipc_ref_url ),
 	'h2_count'      => $aipc_rw_post ? substr_count( $aipc_rw_post->post_content, '<h2' ) : null,
@@ -809,22 +818,250 @@ $out['sanitize_v130'] = array(
 	'limit_clamped' => $aipc_limit_clamped,
 );
 
-// Schedule admin page renders.
+// Schedule admin page renders (since 1.15.0 the Bale/Telegram settings
+// live on their own page — the schedule page links to it instead).
 ob_start();
 AIPC_Admin::render_schedule();
 $aipc_sched_html = ob_get_clean();
+ob_start();
+AIPC_Admin::render_bot();
+$aipc_bot_html = ob_get_clean();
 $out['admin_pages']['schedule'] = array(
-	'rendered'     => false !== strpos( $aipc_sched_html, 'aipc-btn-bale-test' ),
+	'rendered'     => false !== strpos( $aipc_sched_html, 'aipc-sch-publish' ),
 	'shows_entry'  => false !== strpos( $aipc_sched_html, 'شروع کاشت قارچ در خانه' ),
-	'shows_bale'   => false !== strpos( $aipc_sched_html, 'aipc_save_bale' ),
+	'links_bot'    => false !== strpos( $aipc_sched_html, 'page=aipc-bot' ),
 	'shows_limit'  => false !== strpos( $aipc_sched_html, __( 'Max scheduled posts per day', 'wp-ai-post-creator' ) ),
-	'shows_report' => false !== strpos( $aipc_sched_html, __( 'Periodic report', 'wp-ai-post-creator' ) ),
 	'publish_sel'  => false !== strpos( $aipc_sched_html, 'aipc-sch-publish' ),
 	'delay_field'  => false !== strpos( $aipc_sched_html, 'publish_delay' ),
 	'publish_col'  => false !== strpos( $aipc_sched_html, '⏱' ) || false !== strpos( $aipc_sched_html, '🚀' ),
 	'shows_queue'  => false !== strpos( $aipc_sched_html, 'aipc-tq-suggest-btn' ) && false !== strpos( $aipc_sched_html, 'aipc_add_topics' ),
 	'shows_use_queue' => false !== strpos( $aipc_sched_html, 'name="use_queue"' ),
-	'shows_two_way'   => false !== strpos( $aipc_sched_html, 'name="two_way"' ),
+);
+$out['admin_pages']['bot'] = array(
+	'rendered'     => false !== strpos( $aipc_bot_html, 'aipc-btn-bale-test' ),
+	'shows_bale'   => false !== strpos( $aipc_bot_html, 'aipc_save_bale' ),
+	'shows_report' => false !== strpos( $aipc_bot_html, __( 'Periodic report', 'wp-ai-post-creator' ) ),
+	'shows_two_way'   => false !== strpos( $aipc_bot_html, 'name="two_way"' ),
+	'shows_platform'  => false !== strpos( $aipc_bot_html, 'name="platform"' ),
+	'shows_guide'     => false !== strpos( $aipc_bot_html, __( 'Setup guide', 'wp-ai-post-creator' ) ),
+);
+
+/* ------------------------------------------------------------------ *
+ * Base URL normalization (v1.7.4): pasted endpoint paths are stripped
+ * and a successful test reports the corrected URL for the UI.
+ * ------------------------------------------------------------------ */
+$aipc_burl = function ( $u ) {
+	$c = new AIPC_API_Client( array( 'base_url' => $u ) );
+	return $c->base_url();
+};
+$aipc_fix_test = ( new AIPC_API_Client( array( 'base_url' => 'https://mock.invalid/v1/chat/completions', 'api_key' => 'sk-chat-key' ) ) )->test();
+$aipc_ok_test  = ( new AIPC_API_Client( array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-chat-key' ) ) )->test();
+
+$out['base_url_normalize'] = array(
+	'strip_chat_completions' => 'https://x.invalid/v1' === $aipc_burl( 'https://x.invalid/v1/chat/completions' ),
+	'strip_trailing_slash'   => 'https://x.invalid/v1' === $aipc_burl( 'https://x.invalid/v1/chat/completions/' ),
+	'strip_models'           => 'https://x.invalid/v1' === $aipc_burl( 'https://x.invalid/v1/models' ),
+	'strip_repeated'         => 'https://x.invalid/v1' === $aipc_burl( 'https://x.invalid/v1/chat/completions/models' ),
+	'bare_host_gets_v1'      => 'http://localhost:20128/v1' === $aipc_burl( 'http://localhost:20128' ),
+	'custom_path_kept'       => 'https://api.groq.com/openai/v1' === $aipc_burl( 'https://api.groq.com/openai/v1' ),
+	'test_reports_fix'       => is_array( $aipc_fix_test ) && ! empty( $aipc_fix_test['ok'] ) && 'https://mock.invalid/v1' === ( $aipc_fix_test['fixed_base_url'] ?? '' ),
+	'test_clean_no_fix'      => is_array( $aipc_ok_test ) && ! empty( $aipc_ok_test['ok'] ) && ! isset( $aipc_ok_test['fixed_base_url'] ),
+);
+
+/* ------------------------------------------------------------------ *
+ * API request headers (v1.9.1): attribution headers + filter.
+ * ------------------------------------------------------------------ */
+$aipc_seen_headers = null;
+$aipc_hdr_filter   = function ( $headers, $url, $conn_no_key ) use ( &$aipc_seen_headers ) {
+	$aipc_seen_headers = array( 'headers' => $headers, 'has_key' => isset( $conn_no_key['api_key'] ) );
+	$headers['X-AIPC-Test'] = 'on';
+	return $headers;
+};
+add_filter( 'aipc_api_headers', $aipc_hdr_filter, 10, 3 );
+( new AIPC_API_Client( array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-chat-key' ) ) )->models();
+remove_filter( 'aipc_api_headers', $aipc_hdr_filter, 10 );
+
+$out['api_headers'] = array(
+	'referer_sent'   => is_array( $aipc_seen_headers ) && ! empty( $aipc_seen_headers['headers']['HTTP-Referer'] ),
+	'title_sent'     => is_array( $aipc_seen_headers ) && isset( $aipc_seen_headers['headers']['X-Title'] ),
+	'auth_sent'      => is_array( $aipc_seen_headers ) && 0 === strpos( (string) $aipc_seen_headers['headers']['Authorization'], 'Bearer ' ),
+	'key_not_leaked' => is_array( $aipc_seen_headers ) && false === $aipc_seen_headers['has_key'],
+);
+
+/* ------------------------------------------------------------------ *
+ * Purpose-based connection routing (v1.8.0): chat vs image pools,
+ * priority order, agent auto-chains when a step has no explicit chain.
+ * ------------------------------------------------------------------ */
+$aipc_cr_ok  = AIPC_Connections::sanitize( array( 'name' => 'Img srv', 'base_url' => 'https://mock.invalid/v1', 'purpose' => 'image', 'priority' => '2' ), array() );
+$aipc_cr_bad = AIPC_Connections::sanitize( array( 'name' => 'Weird', 'base_url' => 'https://mock.invalid/v1', 'purpose' => 'sound', 'priority' => '5000' ), array() );
+
+$aipc_cr_conn_backup  = get_option( 'aipc_connections' );
+$aipc_cr_steps_backup = get_option( 'aipc_steps' );
+update_option( 'aipc_connections', array(
+	array( 'id' => 'img2',   'name' => 'Image slow', 'base_url' => 'https://img2.invalid/v1', 'purpose' => 'image', 'priority' => 20 ),
+	array( 'id' => 'chat1',  'name' => 'Chat main',  'base_url' => 'https://chat.invalid/v1', 'purpose' => 'chat',  'priority' => 1 ),
+	array( 'id' => 'img1',   'name' => 'Image fast', 'base_url' => 'https://img1.invalid/v1', 'purpose' => 'image', 'priority' => 5 ),
+	array( 'id' => 'any',    'name' => 'Universal',  'base_url' => 'https://both.invalid/v1', 'purpose' => 'both',  'priority' => 7, 'is_default' => 1 ),
+	array( 'id' => 'legacy', 'name' => 'Old-style',  'base_url' => 'https://old.invalid/v1' ), // pre-1.8.0: no purpose/priority.
+), false );
+update_option( 'aipc_steps', array(), false ); // No explicit chains on any step.
+
+$aipc_ids = function ( $pool ) {
+	return implode( ',', array_map( function ( $c ) { return $c['id']; }, $pool ) );
+};
+$aipc_pool_img  = AIPC_Connections::for_purpose( 'image' );
+$aipc_pool_chat = AIPC_Connections::for_purpose( 'chat' );
+
+$aipc_rc = new ReflectionMethod( 'AIPC_Agent', 'resolve_connections' );
+$aipc_rc->setAccessible( true );
+$aipc_chain_img  = $aipc_rc->invoke( AIPC_Agent::instance(), 'image' );
+$aipc_chain_plan = $aipc_rc->invoke( AIPC_Agent::instance(), 'plan' );
+
+$out['conn_routing'] = array(
+	'sanitize_purpose'   => 'image' === $aipc_cr_ok['purpose'] && 2 === $aipc_cr_ok['priority'],
+	'sanitize_fallbacks' => 'both' === $aipc_cr_bad['purpose'] && 999 === $aipc_cr_bad['priority'],
+	'image_pool_order'   => 'img1,any,legacy,img2' === $aipc_ids( $aipc_pool_img ),
+	'chat_pool_order'    => 'chat1,any,legacy' === $aipc_ids( $aipc_pool_chat ),
+	'agent_image_chain'  => 'img1,any,legacy,img2' === $aipc_ids( $aipc_chain_img ),
+	'agent_chat_chain'   => 'chat1,any,legacy' === $aipc_ids( $aipc_chain_plan ),
+	'legacy_defaults'    => 'both' === $aipc_pool_img[2]['purpose'] && 10 === $aipc_pool_img[2]['priority'],
+);
+
+update_option( 'aipc_connections', $aipc_cr_conn_backup, false );
+update_option( 'aipc_steps', $aipc_cr_steps_backup, false );
+
+/* ------------------------------------------------------------------ *
+ * Disabling connections (v1.9.3): disabled entries are skipped by the
+ * purpose pools, the default choice and explicit step chains; the
+ * flag survives partial saves and legacy rows default to enabled.
+ * ------------------------------------------------------------------ */
+$aipc_cd_conn_backup  = get_option( 'aipc_connections' );
+$aipc_cd_steps_backup = get_option( 'aipc_steps' );
+update_option( 'aipc_connections', array(
+	array( 'id' => 'on1',  'name' => 'A on',   'base_url' => 'https://a.invalid/v1', 'purpose' => 'both', 'priority' => 1, 'enabled' => 1 ),
+	array( 'id' => 'off1', 'name' => 'B off',  'base_url' => 'https://b.invalid/v1', 'purpose' => 'both', 'priority' => 2, 'enabled' => 0, 'is_default' => 1 ),
+	array( 'id' => 'leg',  'name' => 'Legacy', 'base_url' => 'https://c.invalid/v1', 'purpose' => 'chat', 'priority' => 3 ), // pre-1.9.3: no enabled flag.
+), false );
+update_option( 'aipc_steps', array( 'plan' => array( 'connections' => array( 'off1', 'on1' ) ) ), false );
+
+$aipc_cd_all   = AIPC_Connections::all();
+$aipc_cd_pool  = AIPC_Connections::for_purpose( 'chat' );
+$aipc_cd_chain = $aipc_rc->invoke( AIPC_Agent::instance(), 'plan' );
+
+$aipc_cd_keep = AIPC_Connections::sanitize( array( 'name' => 'B off' ), array( 'enabled' => 0, 'base_url' => 'https://b.invalid/v1' ) );
+$aipc_cd_on   = AIPC_Connections::sanitize( array( 'enabled' => '1' ), array( 'enabled' => 0, 'name' => 'X', 'base_url' => 'https://b.invalid/v1' ) );
+$aipc_cd_off  = AIPC_Connections::sanitize( array( 'enabled' => '0' ), array( 'enabled' => 1, 'name' => 'X', 'base_url' => 'https://b.invalid/v1' ) );
+
+$aipc_cd_default = AIPC_Connections::get_default();
+$aipc_cd_ui      = AIPC_Connections::all_for_ui();
+
+update_option( 'aipc_connections', array(
+	array( 'id' => 'off1', 'name' => 'B off', 'base_url' => 'https://b.invalid/v1', 'enabled' => 0, 'is_default' => 1 ),
+), false );
+$aipc_cd_none = AIPC_Connections::get_default();
+
+$out['conn_disable'] = array(
+	'legacy_enabled'    => 1 === $aipc_cd_all[2]['enabled'],
+	'pool_skips_off'    => 'on1,leg' === $aipc_ids( $aipc_cd_pool ),
+	'chain_skips_off'   => 'on1' === $aipc_ids( $aipc_cd_chain ),
+	'default_skips_off' => is_array( $aipc_cd_default ) && 'on1' === $aipc_cd_default['id'],
+	'default_none_left' => null === $aipc_cd_none,
+	'sanitize_keeps'    => 0 === $aipc_cd_keep['enabled'],
+	'sanitize_toggles'  => 1 === $aipc_cd_on['enabled'] && 0 === $aipc_cd_off['enabled'],
+	'ui_exposes_flag'   => isset( $aipc_cd_ui[0]['enabled'], $aipc_cd_ui[1]['enabled'] ) && 1 === $aipc_cd_ui[0]['enabled'] && 0 === $aipc_cd_ui[1]['enabled'],
+);
+
+update_option( 'aipc_connections', $aipc_cd_conn_backup, false );
+update_option( 'aipc_steps', $aipc_cd_steps_backup, false );
+
+/* ------------------------------------------------------------------ *
+ * Image delivery (v1.8.1): force-b64 mode + defensive base64 decoding.
+ * ------------------------------------------------------------------ */
+$aipc_if_ok   = AIPC_Connections::sanitize( array( 'name' => 'B64', 'base_url' => 'https://mock.invalid/v1', 'image_format' => 'b64' ), array() );
+$aipc_if_bad  = AIPC_Connections::sanitize( array( 'name' => 'Odd', 'base_url' => 'https://mock.invalid/v1', 'image_format' => 'jpeg' ), array() );
+
+$aipc_png_b64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+$aipc_png     = base64_decode( $aipc_png_b64 );
+
+$aipc_b64_conn  = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-image', 'image_format' => 'b64', 'image_api' => 'images' );
+$aipc_auto_conn = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-image', 'image_api' => 'images' );
+
+$aipc_img_b64      = ( new AIPC_API_Client( $aipc_b64_conn ) )->image( 'A tiny test image' );
+$aipc_img_refused  = ( new AIPC_API_Client( $aipc_b64_conn ) )->image( 'URLONLY please' );
+$aipc_img_auto_url = ( new AIPC_API_Client( $aipc_auto_conn ) )->image( 'URLONLY please' );
+
+/* Chat-completions image route (v1.9.0) — Gemini/OpenRouter style. */
+$aipc_chat_conn    = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-gemini-image', 'image_api' => 'chat' );
+$aipc_cascade_conn = array( 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'image_model' => 'mock-image', 'image_format' => 'b64' ); // image_api auto.
+
+$aipc_img_chat    = ( new AIPC_API_Client( $aipc_chat_conn ) )->image( 'A tiny test image' );
+$aipc_img_cascade = ( new AIPC_API_Client( $aipc_cascade_conn ) )->image( 'URLONLY please' );
+$aipc_if_api_ok   = AIPC_Connections::sanitize( array( 'name' => 'ChatImg', 'base_url' => 'https://mock.invalid/v1', 'image_api' => 'chat' ), array() );
+$aipc_if_api_bad  = AIPC_Connections::sanitize( array( 'name' => 'OddApi', 'base_url' => 'https://mock.invalid/v1', 'image_api' => 'fax' ), array() );
+
+$out['image_delivery'] = array(
+	'sanitize_kept'    => 'b64' === $aipc_if_ok['image_format'],
+	'sanitize_default' => 'auto' === $aipc_if_bad['image_format'],
+	'decode_plain'     => AIPC_API_Client::decode_b64_image( $aipc_png_b64 ) === $aipc_png,
+	'decode_data_uri'  => AIPC_API_Client::decode_b64_image( 'data:image/png;base64,' . $aipc_png_b64 ) === $aipc_png,
+	'decode_wrapped'   => AIPC_API_Client::decode_b64_image( substr( $aipc_png_b64, 0, 20 ) . "\n  " . substr( $aipc_png_b64, 20 ) ) === $aipc_png,
+	'decode_invalid'   => false === AIPC_API_Client::decode_b64_image( '' ) && false === AIPC_API_Client::decode_b64_image( 'data:image/png;base64' ),
+	'b64_gets_bits'    => is_array( $aipc_img_b64 ) && ! empty( $aipc_img_b64['bits'] ) && $aipc_img_b64['bits'] === $aipc_png,
+	'b64_refuses_url'  => is_wp_error( $aipc_img_refused ) && false !== strpos( $aipc_img_refused->get_error_message(), 'Base64' ),
+	'auto_accepts_url' => is_array( $aipc_img_auto_url ) && ! empty( $aipc_img_auto_url['url'] ),
+	'chat_route_bits'  => is_array( $aipc_img_chat ) && ! empty( $aipc_img_chat['bits'] ) && $aipc_img_chat['bits'] === $aipc_png,
+	'cascade_to_chat'  => is_array( $aipc_img_cascade ) && ! empty( $aipc_img_cascade['bits'] ) && $aipc_img_cascade['bits'] === $aipc_png,
+	'api_sanitized'    => 'chat' === $aipc_if_api_ok['image_api'] && 'auto' === $aipc_if_api_bad['image_api'],
+);
+
+/* ------------------------------------------------------------------ *
+ * Assets: locale-proof screen detection (v1.7.3)
+ * The submenu hook prefix is sanitize_title() of the TRANSLATED menu
+ * title (percent-encoded Persian on fa_IR), so matching must key off the
+ * stable page slug after "_page_".
+ * ------------------------------------------------------------------ */
+$aipc_fa_prefix = '%d8%b3%d8%a7%d8%b2%d9%86%d8%af%d9%87-%d9%be%d8%b3%d8%aa'; // sanitize_title of a Persian menu title.
+
+$aipc_assets_reset = function () {
+	wp_dequeue_style( 'aipc-admin' );
+	foreach ( array( 'aipc-agent', 'aipc-connections', 'aipc-schedule' ) as $aipc_handle ) {
+		wp_dequeue_script( $aipc_handle );
+	}
+};
+
+$aipc_assets_reset();
+AIPC_Assets::enqueue( $aipc_fa_prefix . '_page_aipc-connections' );
+$aipc_assets_fa_conn_css = wp_style_is( 'aipc-admin', 'enqueued' );
+$aipc_assets_fa_conn_js  = wp_script_is( 'aipc-connections', 'enqueued' );
+
+$aipc_assets_reset();
+AIPC_Assets::enqueue( 'ai-post-creator_page_aipc-schedule' );
+$aipc_assets_en_sched_js = wp_script_is( 'aipc-schedule', 'enqueued' );
+
+$aipc_assets_reset();
+AIPC_Assets::enqueue( 'toplevel_page_aipc' );
+$aipc_assets_top_js = wp_script_is( 'aipc-agent', 'enqueued' );
+
+$aipc_assets_reset();
+AIPC_Assets::enqueue( $aipc_fa_prefix . '_page_aipc-update' );
+$aipc_assets_update_css = wp_style_is( 'aipc-admin', 'enqueued' );
+
+$aipc_assets_reset();
+AIPC_Assets::enqueue( 'edit.php' );
+AIPC_Assets::enqueue( $aipc_fa_prefix . '_page_some-other-plugin' );
+$aipc_assets_foreign_off = ! wp_style_is( 'aipc-admin', 'enqueued' );
+$aipc_assets_reset();
+
+$out['assets_enqueue'] = array(
+	'fa_connections_css' => $aipc_assets_fa_conn_css,
+	'fa_connections_js'  => $aipc_assets_fa_conn_js,
+	'en_schedule_js'     => $aipc_assets_en_sched_js,
+	'toplevel_agent_js'  => $aipc_assets_top_js,
+	'fa_update_css'      => $aipc_assets_update_css,
+	'foreign_hooks_off'  => $aipc_assets_foreign_off,
+	'screen_map'         => 'connections' === AIPC_Assets::screen_for_hook( $aipc_fa_prefix . '_page_aipc-connections' )
+		&& 'settings' === AIPC_Assets::screen_for_hook( 'anything_page_aipc-settings' )
+		&& '' === AIPC_Assets::screen_for_hook( 'toplevel_page_other' ),
 );
 
 /* ------------------------------------------------------------------ *
@@ -979,10 +1216,12 @@ $out['bale_traffic'] = array(
 		return 'getUpdates' !== $r['method'] && ! in_array( (string) $r['chat_id'], array( '12345', '67890' ), true );
 	} ),
 	// v1.5.0: publish "now" → 🎉 message to every chat
-	'publish_now_chats'  => array( '12345', '67890' ) === $aipc_msgs_with_all( array( 'تست انتشار فوری', '🎉' ) ),
-	// v1.5.0: publish "delay" → draft notification (✍️) + published notification (🎉)
-	'delay_draft_chats'  => array( '12345', '67890' ) === $aipc_msgs_with_all( array( 'تست انتشار با تأخیر', '✍️' ) ),
-	'delay_pub_chats'    => array( '12345', '67890' ) === $aipc_msgs_with_all( array( 'تست انتشار با تأخیر', '🎉' ) ),
+	'publish_now_chats'  => array( '12345', '67890' ) === $aipc_msgs_with_all( array( 'تست انتشار فوری', '🔻' ) ),
+	// v1.5.0/1.9.2: publish "delay" → draft + published notification (same 🔻 format, 2 per chat)
+	'delay_draft_chats'  => array( '12345', '67890' ) === array_values( array_unique( $aipc_msgs_with_all( array( 'تست انتشار با تأخیر', '🔻' ) ) ) ),
+	'delay_pub_chats'    => 4 === count( array_filter( $aipc_msg_calls, function ( $r ) {
+		return false !== strpos( (string) $r['text'], 'تست انتشار با تأخیر' ) && false !== strpos( (string) $r['text'], '🔻' );
+	} ) ),
 	// v1.5.0: rewrite → ♻️ photo notification to every chat
 	'rewrite_photo_chats'=> ( function () use ( $aipc_photos_with ) {
 		$chats = $aipc_photos_with( 'بازنویسی' );
@@ -997,6 +1236,1992 @@ $out['bale_traffic'] = array(
 		return true;
 	} )(),
 );
+
+/* ------------------------------------------------------------------ *
+ * Bale notification format (v1.9.2): 🔻title / 🌱🌱summary🌱🌱 / read-more
+ * line / link — and the default notification image for posts without
+ * a featured image.
+ * ------------------------------------------------------------------ */
+$aipc_fmt_msg = '';
+foreach ( $aipc_msg_calls as $aipc_r ) {
+	if ( false !== strpos( (string) $aipc_r['text'], 'شروع کاشت قارچ در خانه' ) ) {
+		$aipc_fmt_msg = (string) $aipc_r['text'];
+		break;
+	}
+}
+
+$aipc_bale_cfg_bak = AIPC_Bale::all();
+AIPC_Bale::save( array_merge( $aipc_bale_cfg_bak, array( 'default_image' => 'https://mock.invalid/default.png' ) ) );
+$aipc_noimg_post = wp_insert_post( array( 'post_title' => 'پست بدون تصویر برای بله', 'post_content' => '<p>متن آزمایشی.</p>', 'post_status' => 'publish' ) );
+update_post_meta( $aipc_noimg_post, '_aipc_meta_description', 'خلاصهٔ آزمایشی برای پیام بله' );
+AIPC_Bale::notify( $aipc_noimg_post, 'job_none' );
+AIPC_Bale::save( $aipc_bale_cfg_bak );
+
+$aipc_default_photo = null;
+if ( file_exists( $log_file ) ) {
+	foreach ( file( $log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $line ) {
+		$aipc_row = json_decode( $line, true );
+		if ( $aipc_row && 'bale' === $aipc_row['host'] && 'sendPhoto' === $aipc_row['method']
+			&& false !== strpos( (string) $aipc_row['caption'], 'پست بدون تصویر برای بله' ) ) {
+			$aipc_default_photo = $aipc_row;
+		}
+	}
+}
+
+$aipc_fmt_sane_ok  = AIPC_Bale::sanitize( array( 'default_image' => 'https://example.com/img.png' ), $aipc_bale_cfg_bak );
+$aipc_fmt_sane_bad = AIPC_Bale::sanitize( array( 'default_image' => 'javascript:alert(1)' ), $aipc_bale_cfg_bak );
+
+$out['bale_format'] = array(
+	'starts_with_marker' => 0 === strpos( $aipc_fmt_msg, '🔻' ),
+	'summary_wrapped'    => 2 === substr_count( $aipc_fmt_msg, '🌱🌱' ),
+	'read_more_line'     => false !== strpos( $aipc_fmt_msg, 'ادامه مطلب در لینک زیر' ) && false !== strpos( $aipc_fmt_msg, '👇👇👇' ),
+	'has_link'           => false !== strpos( $aipc_fmt_msg, 'http://localhost' ),
+	'default_img_used'   => is_array( $aipc_default_photo ) && 'https://mock.invalid/default.png' === $aipc_default_photo['photo'],
+	'default_img_format' => is_array( $aipc_default_photo ) && false !== strpos( (string) $aipc_default_photo['caption'], '🌱🌱خلاصهٔ آزمایشی برای پیام بله🌱🌱' ),
+	'sanitize_url'       => 'https://example.com/img.png' === $aipc_fmt_sane_ok['default_image'],
+	'sanitize_blocks_js' => '' === $aipc_fmt_sane_bad['default_image'],
+);
+wp_delete_post( $aipc_noimg_post, true );
+
+/* ------------------------------------------------------------------ *
+ * Persian half-space preservation (v1.10.0): rule-based ZWNJ fixing
+ * + &zwnj; armoring for post content.
+ * ------------------------------------------------------------------ */
+$out['text_zwnj'] = array(
+	'prefix_mi'        => 'می‌شود' === AIPC_Text::fix_zwnj( 'می شود' ),
+	'prefix_nemi'      => 'نمی‌تواند' === AIPC_Text::fix_zwnj( 'نمی تواند' ),
+	'mid_sentence'     => 'او می‌رود' === AIPC_Text::fix_zwnj( 'او می رود' ),
+	'suffix_ha'        => 'کتاب‌ها' === AIPC_Text::fix_zwnj( 'کتاب ها' ),
+	'suffix_tar'       => 'سریع‌تر است' === AIPC_Text::fix_zwnj( 'سریع تر است' ),
+	'suffix_tarin'     => 'مهم‌ترین نکته' === AIPC_Text::fix_zwnj( 'مهم ترین نکته' ),
+	'keeps_existing'   => 'می‌شود' === AIPC_Text::fix_zwnj( 'می‌شود' ),
+	'word_untouched'   => 'این ترکیب خوب است' === AIPC_Text::fix_zwnj( 'این ترکیب خوب است' ),
+	'latin_untouched'  => 'hello world' === AIPC_Text::fix_zwnj( 'hello world' ),
+	'entity_armor'     => '<p>می&zwnj;شود</p>' === AIPC_Text::fix_zwnj_html( '<p>می شود</p>' ),
+	// v1.12.0 — glued suffixes (ZWNJ stripped entirely by the provider).
+	'glued_hay'        => 'نوشیدنی‌های گرم' === AIPC_Text::fix_zwnj( 'نوشیدنیهای گرم' ),
+	'glued_ha'         => 'خانواده‌ها' === AIPC_Text::fix_zwnj( 'خانوادهها' ),
+	'glued_eh_i'       => 'موکاچینو خانگی حرفه‌ای' === AIPC_Text::fix_zwnj( 'موکاچینو خانگی حرفهای' ),
+	'glued_mand'       => 'علاقه‌مندان' === AIPC_Text::fix_zwnj( 'علاقهمندان' ),
+	'glued_sazi'       => 'آماده‌سازی' === AIPC_Text::fix_zwnj( 'آمادهسازی' ),
+	'exception_tanha'  => 'او تنها بود' === AIPC_Text::fix_zwnj( 'او تنها بود' ),
+	'exception_baha'   => 'بهای کالا' === AIPC_Text::fix_zwnj( 'بهای کالا' ),
+	'nonjoin_safe'     => 'بارها گفتم' === AIPC_Text::fix_zwnj( 'بارها گفتم' ),
+);
+
+/* ------------------------------------------------------------------ *
+ * Default image prompt + thumbnail regeneration (v1.10.0).
+ * ------------------------------------------------------------------ */
+$aipc_rt_set_bak  = get_option( 'aipc_settings' );
+$aipc_rt_conn_bak = get_option( 'aipc_connections' );
+
+$aipc_rt_base = is_array( $aipc_rt_set_bak ) ? $aipc_rt_set_bak : array();
+update_option( 'aipc_settings', array_merge( $aipc_rt_base, array( 'image_prompt_default' => '' ) ), false );
+$aipc_rt_empty = AIPC_Agent::apply_image_prompt_default( 'A cat on a roof' );
+
+update_option( 'aipc_settings', array_merge( $aipc_rt_base, array( 'image_prompt_default' => 'flat vector style, no text' ) ), false );
+$aipc_rt_applied = AIPC_Agent::apply_image_prompt_default( 'A cat on a roof' );
+$aipc_rt_nodup   = AIPC_Agent::apply_image_prompt_default( 'A cat, flat vector style, no text' );
+$aipc_rt_sane    = AIPC_Settings::sanitize( array( 'image_prompt_default' => '  spacious  ' . str_repeat( 'x', 700 ) ) );
+
+update_option( 'aipc_connections', array(
+	array( 'id' => 'mockrt', 'name' => 'Mock RT', 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-image-key', 'chat_model' => 'mock-chat', 'image_model' => 'mock-image', 'purpose' => 'both', 'priority' => 1, 'enabled' => 1, 'image_api' => 'images', 'image_format' => 'auto', 'is_default' => 1 ),
+), false );
+
+$aipc_rt_post = wp_insert_post( array( 'post_title' => 'عنوان تست تصویر شاخص', 'post_content' => '<p>متن آزمایشی.</p>', 'post_status' => 'publish' ) );
+update_post_meta( $aipc_rt_post, '_aipc_meta_description', 'خلاصهٔ آزمایشی برای تصویر.' );
+$aipc_rt_res = AIPC_Agent::regenerate_thumbnail( $aipc_rt_post );
+
+$aipc_rt_prompt = '';
+if ( file_exists( $log_file ) ) {
+	foreach ( file( $log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $line ) {
+		$aipc_row = json_decode( $line, true );
+		if ( $aipc_row && isset( $aipc_row['url'] ) && false !== strpos( (string) $aipc_row['url'], '/images/generations' )
+			&& false !== strpos( (string) $aipc_row['prompt'], 'flat vector style' ) ) {
+			$aipc_rt_prompt = (string) $aipc_row['prompt'];
+		}
+	}
+}
+
+update_option( 'aipc_connections', array(), false );
+$aipc_rt_noconn = AIPC_Agent::regenerate_thumbnail( $aipc_rt_post );
+$aipc_rt_nopost = AIPC_Agent::regenerate_thumbnail( 999999 );
+
+$out['image_defaults'] = array(
+	'empty_no_change'  => 'A cat on a roof' === $aipc_rt_empty,
+	'suffix_appended'  => 'A cat on a roof. flat vector style, no text' === $aipc_rt_applied,
+	'no_duplicate'     => 'A cat, flat vector style, no text' === $aipc_rt_nodup,
+	'sanitize_caps'    => 600 === mb_strlen( $aipc_rt_sane['image_prompt_default'] ),
+	'regen_attachment' => is_int( $aipc_rt_res ) && $aipc_rt_res > 0,
+	'regen_thumb_set'  => (int) get_post_thumbnail_id( $aipc_rt_post ) === (int) $aipc_rt_res,
+	'regen_uses_suffix' => '' !== $aipc_rt_prompt && false !== strpos( $aipc_rt_prompt, 'balcony' ),
+	'regen_no_conn'    => is_wp_error( $aipc_rt_noconn ),
+	'regen_no_post'    => is_wp_error( $aipc_rt_nopost ),
+);
+
+wp_delete_post( $aipc_rt_post, true );
+update_option( 'aipc_settings', $aipc_rt_set_bak, false );
+update_option( 'aipc_connections', $aipc_rt_conn_bak, false );
+
+/* ------------------------------------------------------------------ *
+ * Full API trace log (v1.11.0): request/response capture, context,
+ * redaction, rotation plumbing, enable/disable + clear semantics.
+ * ------------------------------------------------------------------ */
+$aipc_tl_set_bak = get_option( 'aipc_settings' );
+$aipc_tl_base    = is_array( $aipc_tl_set_bak ) ? $aipc_tl_set_bak : array();
+
+update_option( 'aipc_settings', array_merge( $aipc_tl_base, array( 'debug_log' => 1 ) ), false );
+AIPC_Trace::clear();
+
+$aipc_tl_conn   = array( 'name' => 'TraceConn', 'base_url' => 'https://mock.invalid/v1', 'api_key' => 'sk-chat-key', 'chat_model' => 'mock-chat', 'image_model' => 'mock-image', 'image_api' => 'images', 'request_timeout' => 30, 'temperature' => 0.7, 'max_tokens' => 1000 );
+AIPC_Trace::set_context( array( 'job' => 'job_trace', 'step' => 'unit', 'conn' => 'TraceConn', 'try' => 1 ) );
+$aipc_tl_client = new AIPC_API_Client( $aipc_tl_conn );
+$aipc_tl_client->chat( array( array( 'role' => 'user', 'content' => 'سلام تست ترِیس' ) ) );
+$aipc_tl_client->image( 'A tiny trace test image' );
+AIPC_Trace::clear_context();
+
+$aipc_tl_raw  = file_exists( AIPC_Trace::path() ) ? file_get_contents( AIPC_Trace::path() ) : '';
+$aipc_tl_rows = array();
+foreach ( array_filter( explode( "\n", $aipc_tl_raw ) ) as $aipc_tl_line ) {
+	$aipc_tl_row = json_decode( $aipc_tl_line, true );
+	if ( is_array( $aipc_tl_row ) ) {
+		$aipc_tl_rows[] = $aipc_tl_row;
+	}
+}
+
+$aipc_tl_size_on = AIPC_Trace::size();
+update_option( 'aipc_settings', array_merge( $aipc_tl_base, array( 'debug_log' => 0 ) ), false );
+$aipc_tl_client->chat( array( array( 'role' => 'user', 'content' => 'should not be logged' ) ) );
+$aipc_tl_size_off = AIPC_Trace::size();
+
+$aipc_tl_redacted = AIPC_Trace::redact( array( 'api_key' => 'sk-secret', 'blob' => str_repeat( 'A', 500 ), 'msg' => 'Bearer sk-abcdefgh12345 rest' ) );
+
+$out['api_trace'] = array(
+	'file_created'   => '' !== $aipc_tl_raw && count( $aipc_tl_rows ) >= 2,
+	'request_logged' => false !== strpos( $aipc_tl_raw, 'سلام تست ترِیس' ),
+	'reply_logged'   => false !== strpos( $aipc_tl_raw, '"choices"' ) || false !== strpos( $aipc_tl_raw, '"data"' ),
+	'context_kept'   => isset( $aipc_tl_rows[0]['job'], $aipc_tl_rows[0]['step'], $aipc_tl_rows[0]['try'] ) && 'job_trace' === $aipc_tl_rows[0]['job'],
+	'status_and_ms'  => isset( $aipc_tl_rows[0]['status'], $aipc_tl_rows[0]['ms'] ) && 200 === $aipc_tl_rows[0]['status'],
+	'no_key_leak'    => false === strpos( $aipc_tl_raw, 'sk-chat-key' ),
+	'b64_collapsed'  => '***' === $aipc_tl_redacted['api_key'] && false !== strpos( $aipc_tl_redacted['blob'], '[base64 omitted: 500 chars]' ) && false !== strpos( $aipc_tl_redacted['msg'], 'Bearer ***' ),
+	'off_means_off'  => $aipc_tl_size_off === $aipc_tl_size_on && $aipc_tl_size_on > 0,
+	'dir_protected'  => file_exists( AIPC_Trace::dir() . '/.htaccess' ),
+	'clear_works'    => ( AIPC_Trace::clear() === null ) && 0 === AIPC_Trace::size(),
+);
+
+update_option( 'aipc_settings', $aipc_tl_set_bak, false );
+
+/* ------------------------------------------------------------------ *
+ * Link policy (v1.12.0): one internal link per target URL, and the
+ * optional removal of research-source links.
+ * ------------------------------------------------------------------ */
+$aipc_lp_set_bak = get_option( 'aipc_settings' );
+$aipc_lp_base    = is_array( $aipc_lp_set_bak ) ? $aipc_lp_set_bak : array();
+
+$aipc_lp_html = '<p><a href="http://localhost/a/">اول</a> و <a href="http://localhost/a/">دوم</a> و '
+	. '<a href="http://localhost/b/">دیگر</a> و <a href="https://example.com/x">بیرونی ۱</a> و '
+	. '<a href="https://example.com/x">بیرونی ۲</a> و <a href="https://news.invalid/item-1">منبع</a></p>';
+
+update_option( 'aipc_settings', array_merge( $aipc_lp_base, array( 'source_links' => 1, 'source_sites' => 'https://news.invalid' ) ), false );
+$aipc_lp_on = AIPC_Post_Builder::clean_links( $aipc_lp_html );
+
+update_option( 'aipc_settings', array_merge( $aipc_lp_base, array( 'source_links' => 0, 'source_sites' => 'https://news.invalid' ) ), false );
+$aipc_lp_off = AIPC_Post_Builder::clean_links( $aipc_lp_html );
+
+$aipc_lp_sc = new ReflectionMethod( 'AIPC_Agent', 'source_context' );
+$aipc_lp_sc->setAccessible( true );
+$aipc_lp_ctx_off = (string) $aipc_lp_sc->invoke( AIPC_Agent::instance() );
+update_option( 'aipc_settings', array_merge( $aipc_lp_base, array( 'source_links' => 1, 'source_sites' => 'https://news.invalid' ) ), false );
+$aipc_lp_ctx_on = (string) $aipc_lp_sc->invoke( AIPC_Agent::instance() );
+
+$out['link_policy'] = array(
+	'first_internal_kept'  => false !== strpos( $aipc_lp_on, '<a href="http://localhost/a/">اول</a>' ),
+	'dup_internal_unwrap'  => false !== strpos( $aipc_lp_on, '> و دوم و <' ) || ( false !== strpos( $aipc_lp_on, 'دوم' ) && 1 === substr_count( $aipc_lp_on, 'href="http://localhost/a/"' ) ),
+	'other_internal_kept'  => false !== strpos( $aipc_lp_on, '<a href="http://localhost/b/">دیگر</a>' ),
+	'external_untouched'   => 2 === substr_count( $aipc_lp_on, 'href="https://example.com/x"' ),
+	'source_kept_when_on'  => false !== strpos( $aipc_lp_on, '<a href="https://news.invalid/item-1">منبع</a>' ),
+	'source_cut_when_off'  => false === strpos( $aipc_lp_off, 'href="https://news.invalid' ) && false !== strpos( $aipc_lp_off, 'منبع' ),
+	'prompt_links_on'      => false !== strpos( $aipc_lp_ctx_on, 'https://news.invalid/item-1' ),
+	'prompt_links_off'     => false === strpos( $aipc_lp_ctx_off, 'https://news.invalid/item-1' ) && false !== strpos( $aipc_lp_ctx_off, 'SOURCE: news.invalid' ),
+);
+
+update_option( 'aipc_settings', $aipc_lp_set_bak, false );
+
+/* ------------------------------------------------------------------ *
+ * ZWNJ forensic pipeline (v1.12.1): prove the half-space survives every
+ * single stage — provider bytes (escaped + raw), kses, DB save, read
+ * back, front-end filters, and an editor-style re-save.
+ * ------------------------------------------------------------------ */
+$aipc_zp_zwnj = "\xE2\x80\x8C";
+
+// Stage 1: provider JSON → PHP string (both encodings providers use).
+$aipc_zp_escaped = json_decode( '{"content":"<p>می\u200cشود تست</p>"}', true );
+$aipc_zp_raw     = json_decode( '{"content":"<p>می' . $aipc_zp_zwnj . 'شود تست</p>"}', true );
+
+// Stage 2: the agent's HTML cleanup (wp_kses_post) on both forms.
+$aipc_zp_kses_char   = wp_kses_post( '<p>می' . $aipc_zp_zwnj . 'شود</p>' );
+$aipc_zp_kses_entity = wp_kses_post( '<p>می&zwnj;شود</p>' );
+
+// Stage 3: save → DB → read back (raw char and armored entity).
+$aipc_zp_pid  = wp_insert_post( array(
+	'post_title'   => 'عنوان می' . $aipc_zp_zwnj . 'شود',
+	'post_content' => '<p>خام: می' . $aipc_zp_zwnj . 'شود — زره: می&zwnj;شود</p>',
+	'post_status'  => 'publish',
+) );
+$aipc_zp_post = get_post( $aipc_zp_pid );
+
+// Stage 4: front-end rendering filters.
+$aipc_zp_front = apply_filters( 'the_content', $aipc_zp_post->post_content );
+
+// Stage 5: editor-style re-save WITHOUT unfiltered_html (kses filters
+// active, data slashed exactly like wp-admin does).
+kses_init_filters();
+wp_update_post( wp_slash( array( 'ID' => $aipc_zp_pid, 'post_content' => $aipc_zp_post->post_content ) ) );
+kses_remove_filters();
+$aipc_zp_resaved = get_post( $aipc_zp_pid );
+
+$out['zwnj_pipeline'] = array(
+	'provider_escaped' => is_array( $aipc_zp_escaped ) && false !== strpos( $aipc_zp_escaped['content'], $aipc_zp_zwnj ),
+	'provider_raw'     => is_array( $aipc_zp_raw ) && false !== strpos( $aipc_zp_raw['content'], $aipc_zp_zwnj ),
+	'kses_keeps_char'  => false !== strpos( $aipc_zp_kses_char, $aipc_zp_zwnj ),
+	'kses_keeps_entity' => false !== strpos( $aipc_zp_kses_entity, '&zwnj;' ),
+	'db_keeps_title'   => false !== strpos( $aipc_zp_post->post_title, $aipc_zp_zwnj ),
+	'db_keeps_char'    => false !== strpos( $aipc_zp_post->post_content, $aipc_zp_zwnj ),
+	'db_keeps_entity'  => false !== strpos( $aipc_zp_post->post_content, '&zwnj;' ),
+	'front_renders'    => false !== strpos( $aipc_zp_front, $aipc_zp_zwnj ) && false !== strpos( $aipc_zp_front, '&zwnj;' ),
+	'editor_resave'    => false !== strpos( $aipc_zp_resaved->post_content, '&zwnj;' ) && false !== strpos( $aipc_zp_resaved->post_content, $aipc_zp_zwnj ),
+	'armor_converts'   => 'می&zwnj;شود' === AIPC_Text::fix_zwnj_html( 'می' . $aipc_zp_zwnj . 'شود' ),
+);
+wp_delete_post( $aipc_zp_pid, true );
+
+/* ------------------------------------------------------------------ *
+ * Custom image size (v1.12.1).
+ * ------------------------------------------------------------------ */
+$aipc_cs_ok1 = AIPC_Settings::sanitize( array( 'image_size_select' => 'custom', 'image_size_custom' => '800x600' ) );
+$aipc_cs_ok2 = AIPC_Settings::sanitize( array( 'image_size_select' => '1024x1024' ) );
+$aipc_cs_ok3 = AIPC_Settings::sanitize( array( 'image_size' => '640X480' ) );
+$aipc_cs_bad = AIPC_Settings::sanitize( array( 'image_size_select' => 'custom', 'image_size_custom' => 'huge;drop table' ) );
+$aipc_cs_old = AIPC_Settings::all();
+
+$out['image_size_custom'] = array(
+	'custom_accepted'  => '800x600' === $aipc_cs_ok1['image_size'],
+	'preset_accepted'  => '1024x1024' === $aipc_cs_ok2['image_size'],
+	'direct_normalized' => '640x480' === $aipc_cs_ok3['image_size'],
+	'junk_rejected'    => $aipc_cs_bad['image_size'] === $aipc_cs_old['image_size'],
+);
+
+/* ------------------------------------------------------------------ *
+ * Instant replies via webhook (v1.16.0): secret generation, REST route
+ * auth, instant processing of messages and button presses, paused
+ * polling, 1-minute poll fallback.
+ * ------------------------------------------------------------------ */
+$aipc_wh_old_cfg = get_option( AIPC_Bale::OPTION, array() );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+
+$aipc_wh_reqs = array();
+$aipc_wh_mock = function ( $pre, $args, $url ) use ( &$aipc_wh_reqs ) {
+	if ( false !== strpos( $url, 'tapi.bale.ai' ) || false !== strpos( $url, 'api.telegram.org' ) ) {
+		$aipc_wh_reqs[] = array( 'url' => $url, 'body' => isset( $args['body'] ) ? (string) $args['body'] : '' );
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '{"ok":true,"result":{}}',
+			'cookies'  => array(),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_wh_mock, 4, 3 );
+
+// Secret generation + stability.
+$aipc_wh_c1 = AIPC_Bale::sanitize( array( 'webhook' => 1, 'enabled' => 1, 'two_way' => 1, 'token' => 'wh-token', 'chat_ids' => '77' ), array() );
+$aipc_wh_c2 = AIPC_Bale::sanitize( array( 'webhook' => 1, 'enabled' => 1, 'two_way' => 1, 'chat_ids' => '77' ), $aipc_wh_c1 );
+AIPC_Bale::save( $aipc_wh_c2 );
+$aipc_wh_secret = $aipc_wh_c2['webhook_secret'];
+
+// setWebhook call carries the public URL.
+$aipc_wh_reqs = array();
+AIPC_Bale::set_webhook();
+$aipc_wh_set = ! empty( $aipc_wh_reqs ) ? $aipc_wh_reqs[0] : array( 'url' => '', 'body' => '' );
+
+// Polling pauses while instant mode is active.
+$aipc_wh_reqs = array();
+AIPC_Bale_Commands::poll();
+$aipc_wh_poll_paused = empty( $aipc_wh_reqs );
+
+// REST: wrong secret is rejected.
+$aipc_wh_bad = rest_do_request( new WP_REST_Request( 'POST', '/aipc/v1/bot-webhook/' . str_repeat( 'x', 32 ) ) );
+
+// REST: a message update is processed instantly (reply sent).
+$aipc_wh_reqs = array();
+$aipc_wh_req1 = new WP_REST_Request( 'POST', '/aipc/v1/bot-webhook/' . $aipc_wh_secret );
+$aipc_wh_req1->set_header( 'Content-Type', 'application/json' );
+$aipc_wh_req1->set_body( wp_json_encode( array(
+	'update_id' => 991,
+	'message'   => array( 'chat' => array( 'id' => 77 ), 'text' => 'وضعیت' ),
+) ) );
+$aipc_wh_r1 = rest_do_request( $aipc_wh_req1 );
+$aipc_wh_msg_replied = false;
+foreach ( $aipc_wh_reqs as $aipc_wh_r ) {
+	if ( false !== strpos( $aipc_wh_r['url'], 'sendMessage' ) ) {
+		$aipc_wh_msg_replied = true;
+	}
+}
+
+// REST: a button press publishes instantly.
+$aipc_wh_p = wp_insert_post( array( 'post_title' => 'پست وب‌هوک آنی', 'post_content' => '<p>w</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_wh_p, '_aipc_generated', time() );
+$aipc_wh_reqs = array();
+$aipc_wh_req2 = new WP_REST_Request( 'POST', '/aipc/v1/bot-webhook/' . $aipc_wh_secret );
+$aipc_wh_req2->set_header( 'Content-Type', 'application/json' );
+$aipc_wh_req2->set_body( wp_json_encode( array(
+	'update_id'      => 992,
+	'callback_query' => array(
+		'id'      => 'cbq-1',
+		'data'    => 'aipc:pub:' . $aipc_wh_p,
+		'message' => array( 'chat' => array( 'id' => 77 ) ),
+	),
+) ) );
+$aipc_wh_r2 = rest_do_request( $aipc_wh_req2 );
+$aipc_wh_answered = false;
+foreach ( $aipc_wh_reqs as $aipc_wh_r ) {
+	if ( false !== strpos( $aipc_wh_r['url'], 'answerCallbackQuery' ) ) {
+		$aipc_wh_answered = true;
+	}
+}
+
+$out['bale_webhook'] = array(
+	'secret_generated' => 1 === $aipc_wh_c1['webhook'] && strlen( (string) $aipc_wh_c1['webhook_secret'] ) >= 24,
+	'secret_stable'    => $aipc_wh_c2['webhook_secret'] === $aipc_wh_c1['webhook_secret'],
+	'url_has_secret'   => false !== strpos( AIPC_Bale::webhook_url(), '/aipc/v1/bot-webhook/' . $aipc_wh_secret ),
+	'set_webhook_call' => false !== strpos( $aipc_wh_set['url'], '/setWebhook' )
+		&& false !== strpos( $aipc_wh_set['body'], 'bot-webhook' ),
+	'poll_paused'      => $aipc_wh_poll_paused,
+	'bad_secret_403'   => 403 === $aipc_wh_bad->get_status(),
+	'message_instant'  => 200 === $aipc_wh_r1->get_status() && $aipc_wh_msg_replied,
+	'tracks_update_id' => (int) AIPC_Bale::all()['last_update_id'] >= 992,
+	'callback_instant' => 200 === $aipc_wh_r2->get_status()
+		&& 'publish' === get_post( $aipc_wh_p )->post_status
+		&& $aipc_wh_answered,
+	'poll_interval_1m' => 60 === AIPC_Bale_Commands::POLL_INTERVAL,
+);
+
+remove_filter( 'pre_http_request', $aipc_wh_mock, 4 );
+wp_delete_post( $aipc_wh_p, true );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+update_option( AIPC_Bale::OPTION, $aipc_wh_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
+ * Bot platform (v1.15.0): Bale vs Telegram endpoint, sanitize, and the
+ * dedicated admin page.
+ * ------------------------------------------------------------------ */
+$aipc_bp_old_cfg = get_option( AIPC_Bale::OPTION, array() );
+
+$aipc_bp_urls = array();
+$aipc_bp_mock = function ( $pre, $args, $url ) use ( &$aipc_bp_urls ) {
+	if ( false !== strpos( $url, 'tapi.bale.ai' ) || false !== strpos( $url, 'api.telegram.org' ) ) {
+		$aipc_bp_urls[] = $url;
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '{"ok":true,"result":{}}',
+			'cookies'  => array(),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_bp_mock, 4, 3 );
+
+update_option( AIPC_Bale::OPTION, array( 'token' => 't1', 'platform' => 'bale' ), false );
+AIPC_Bale::send_message( 't1', '7', 'x' );
+update_option( AIPC_Bale::OPTION, array( 'token' => 't1', 'platform' => 'telegram' ), false );
+AIPC_Bale::send_message( 't1', '7', 'x' );
+
+$aipc_bp_s1 = AIPC_Bale::sanitize( array( 'platform' => 'telegram' ), array() );
+$aipc_bp_s2 = AIPC_Bale::sanitize( array( 'platform' => 'whatsapp' ), array() );
+$aipc_bp_s3 = AIPC_Bale::sanitize( array( 'report' => 'daily' ), array( 'platform' => 'telegram' ) );
+
+update_option( AIPC_Bale::OPTION, array( 'token' => 't1' ), false );
+$aipc_bp_default = AIPC_Bale::all();
+
+ob_start();
+AIPC_Admin::render_bot();
+$aipc_bp_view = ob_get_clean();
+
+$out['bot_platform'] = array(
+	'url_bale'         => isset( $aipc_bp_urls[0] ) && 0 === strpos( $aipc_bp_urls[0], AIPC_Bale::API_BASE ),
+	'url_telegram'     => isset( $aipc_bp_urls[1] ) && 0 === strpos( $aipc_bp_urls[1], AIPC_Bale::API_BASE_TG ),
+	'sanitize_accepts' => 'telegram' === $aipc_bp_s1['platform'],
+	'sanitize_rejects' => 'bale' === $aipc_bp_s2['platform'],
+	'sanitize_keeps'   => 'telegram' === $aipc_bp_s3['platform'],
+	'default_is_bale'  => 'bale' === $aipc_bp_default['platform'],
+	'page_has_form'    => false !== strpos( $aipc_bp_view, 'name="platform"' )
+		&& false !== strpos( $aipc_bp_view, 'aipc_save_bale' )
+		&& false !== strpos( $aipc_bp_view, 'api.telegram.org' ),
+	'page_has_guide'   => false !== strpos( $aipc_bp_view, 'data-aipc-help="bot-setup"' )
+		&& false !== strpos( $aipc_bp_view, 'data-aipc-help="bot-trouble"' ),
+);
+
+remove_filter( 'pre_http_request', $aipc_bp_mock, 4 );
+update_option( AIPC_Bale::OPTION, $aipc_bp_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
+ * Bale interactive menu (v1.14.0): main menu keyboard, new-topic
+ * conversation, queue buttons that start a draft, drafts list and
+ * per-draft action cards.
+ * ------------------------------------------------------------------ */
+$aipc_bm_old_cfg   = get_option( AIPC_Bale::OPTION, array() );
+$aipc_bm_old_queue = get_option( AIPC_Topic_Queue::OPTION, array() );
+update_option( AIPC_Bale::OPTION, array(
+	'enabled'  => 1,
+	'token'    => 'test-token',
+	'chat_ids' => array( '88' ),
+	'two_way'  => 1,
+), false );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+
+$aipc_bm_mock2 = function ( $pre, $args, $url ) {
+	if ( false !== strpos( $url, 'tapi.bale.ai' ) ) {
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '{"ok":true,"result":{}}',
+			'cookies'  => array(),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_bm_mock2, 4, 3 );
+
+// Menu command → text + keyboard with every section.
+$aipc_bm_menu    = AIPC_Bale_Commands::handle( '88', 'منو' );
+$aipc_bm_menu_kb = is_array( $aipc_bm_menu ) && isset( $aipc_bm_menu['markup'] ) ? wp_json_encode( $aipc_bm_menu['markup'] ) : '';
+
+// Unknown input falls back to a hint + the same menu.
+$aipc_bm_unknown    = AIPC_Bale_Commands::handle( '88', 'xyzzy nonsense' );
+$aipc_bm_unknown_kb = is_array( $aipc_bm_unknown ) && isset( $aipc_bm_unknown['markup'] ) ? wp_json_encode( $aipc_bm_unknown['markup'] ) : '';
+
+// "New topic" button → conversation → background job.
+$aipc_bm_jobs0     = AIPC_Job_Store::count_since( 'bale', time() - 300 );
+$aipc_bm_ask       = AIPC_Bale_Commands::handle_callback( '88', 'aipc:new' );
+$aipc_bm_started   = AIPC_Bale_Commands::handle( '88', 'موضوع آزمایشی از منوی بله' );
+$aipc_bm_jobs1     = AIPC_Job_Store::count_since( 'bale', time() - 300 );
+
+// Cancel flow: ask again, then «لغو», then a normal command works.
+AIPC_Bale_Commands::handle_callback( '88', 'aipc:new' );
+$aipc_bm_cancel = AIPC_Bale_Commands::handle( '88', 'لغو' );
+$aipc_bm_status = AIPC_Bale_Commands::handle( '88', 'وضعیت' );
+
+// Queue buttons: add a topic, list it, run it from the button.
+$aipc_bm_item     = AIPC_Topic_Queue::add( 'تست اجرای صف از ربات بله' );
+$aipc_bm_qid      = is_array( $aipc_bm_item ) ? $aipc_bm_item['id'] : '';
+$aipc_bm_queue    = AIPC_Bale_Commands::handle( '88', 'صف' );
+$aipc_bm_queue_kb = is_array( $aipc_bm_queue ) && isset( $aipc_bm_queue['markup'] ) ? wp_json_encode( $aipc_bm_queue['markup'] ) : '';
+$aipc_bm_jobs2    = AIPC_Job_Store::count_since( 'bale', time() - 300 );
+$aipc_bm_qrun     = AIPC_Bale_Commands::handle_callback( '88', 'aipc:qrun:' . $aipc_bm_qid );
+$aipc_bm_jobs3    = AIPC_Job_Store::count_since( 'bale', time() - 300 );
+$aipc_bm_qgone    = true;
+foreach ( AIPC_Topic_Queue::pending() as $aipc_bm_it ) {
+	if ( isset( $aipc_bm_it['id'] ) && $aipc_bm_it['id'] === $aipc_bm_qid ) {
+		$aipc_bm_qgone = false;
+	}
+}
+$aipc_bm_qmiss = AIPC_Bale_Commands::handle_callback( '88', 'aipc:qrun:tq_nonexist1' );
+
+// Drafts list + per-draft action card.
+$aipc_bm_p = wp_insert_post( array( 'post_title' => 'منوی بله پیش‌نویس تست', 'post_content' => '<p>z</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_bm_p, '_aipc_generated', time() );
+$aipc_bm_drafts    = AIPC_Bale_Commands::handle( '88', 'drafts' );
+$aipc_bm_drafts_kb = is_array( $aipc_bm_drafts ) && isset( $aipc_bm_drafts['markup'] ) ? wp_json_encode( $aipc_bm_drafts['markup'] ) : '';
+$aipc_bm_card      = AIPC_Bale_Commands::handle_callback( '88', 'aipc:post:' . $aipc_bm_p );
+$aipc_bm_card_kb   = is_array( $aipc_bm_card ) && isset( $aipc_bm_card['markup'] ) ? wp_json_encode( $aipc_bm_card['markup'] ) : '';
+$aipc_bm_help      = AIPC_Bale_Commands::handle( '88', '/start' );
+
+$out['bale_menu'] = array(
+	'menu_has_all_sections' => '' !== $aipc_bm_menu_kb
+		&& false !== strpos( $aipc_bm_menu_kb, 'aipc:new' )
+		&& false !== strpos( $aipc_bm_menu_kb, 'aipc:queue' )
+		&& false !== strpos( $aipc_bm_menu_kb, 'aipc:drafts' )
+		&& false !== strpos( $aipc_bm_menu_kb, 'aipc:status' )
+		&& false !== strpos( $aipc_bm_menu_kb, 'aipc:help' ),
+	'unknown_shows_menu'    => '' !== $aipc_bm_unknown_kb && false !== strpos( $aipc_bm_unknown_kb, 'aipc:new' ),
+	'new_asks_for_topic'    => false !== strpos( (string) $aipc_bm_ask, '✍️' ),
+	'topic_starts_job'      => false !== strpos( (string) $aipc_bm_started, '✍️' ) && $aipc_bm_jobs1 === $aipc_bm_jobs0 + 1,
+	'cancel_then_commands'  => is_string( $aipc_bm_cancel ) && '' !== $aipc_bm_cancel
+		&& is_string( $aipc_bm_status ) && false !== strpos( $aipc_bm_status, '📊' ),
+	'queue_has_buttons'     => '' !== $aipc_bm_queue_kb && false !== strpos( $aipc_bm_queue_kb, 'aipc:qrun:' . $aipc_bm_qid ),
+	'qrun_starts_job'       => false !== strpos( (string) $aipc_bm_qrun, '✍️' ) && $aipc_bm_jobs3 === $aipc_bm_jobs2 + 1,
+	'qrun_marks_used'       => $aipc_bm_qgone,
+	'qrun_missing_is_safe'  => is_string( $aipc_bm_qmiss ) && '' !== $aipc_bm_qmiss && false === strpos( (string) $aipc_bm_qmiss, '✍️' ),
+	'drafts_have_buttons'   => '' !== $aipc_bm_drafts_kb && false !== strpos( $aipc_bm_drafts_kb, 'aipc:post:' . $aipc_bm_p ),
+	'card_has_actions'      => is_array( $aipc_bm_card ) && false !== strpos( (string) $aipc_bm_card['text'], '📄' )
+		&& false !== strpos( $aipc_bm_card_kb, 'aipc:pub:' . $aipc_bm_p )
+		&& false !== strpos( $aipc_bm_card_kb, 'aipc:sch:' . $aipc_bm_p ),
+	'card_missing_is_safe'  => is_string( AIPC_Bale_Commands::handle_callback( '88', 'aipc:post:999999' ) ),
+	'help_carries_menu'     => is_array( $aipc_bm_help ) && isset( $aipc_bm_help['markup']['inline_keyboard'] ),
+);
+
+remove_filter( 'pre_http_request', $aipc_bm_mock2, 4 );
+wp_delete_post( $aipc_bm_p, true );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+update_option( AIPC_Topic_Queue::OPTION, $aipc_bm_old_queue, false );
+update_option( AIPC_Bale::OPTION, $aipc_bm_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
+ * Bale inline buttons (v1.13.0): publish-now / schedule keyboard,
+ * callback handling, Jalali+Gregorian date parsing, native future
+ * scheduling.
+ * ------------------------------------------------------------------ */
+$aipc_bb_old_cfg = get_option( AIPC_Bale::OPTION, array() );
+update_option( AIPC_Bale::OPTION, array(
+	'enabled'  => 1,
+	'token'    => 'test-token',
+	'chat_ids' => array( '99' ),
+	'two_way'  => 1,
+), false );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+
+// Capture every Bale API request instead of hitting the network.
+$aipc_bb_reqs = array();
+$aipc_bb_mock = function ( $pre, $args, $url ) use ( &$aipc_bb_reqs ) {
+	if ( false !== strpos( $url, 'tapi.bale.ai' ) ) {
+		$aipc_bb_reqs[] = array( 'url' => $url, 'body' => isset( $args['body'] ) ? (string) $args['body'] : '' );
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '{"ok":true,"result":{}}',
+			'cookies'  => array(),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_bb_mock, 4, 3 );
+
+$aipc_bb_tz  = wp_timezone();
+$aipc_bb_exp = ( new DateTimeImmutable( '2026-10-12 18:30', $aipc_bb_tz ) )->getTimestamp();
+$aipc_bb_tom = ( new DateTimeImmutable( 'now', $aipc_bb_tz ) )->modify( '+1 day' )->setTime( 10, 0, 0 )->getTimestamp();
+
+// Two draft posts "created by the agent".
+$aipc_bb_p1 = wp_insert_post( array( 'post_title' => 'Bale button post one', 'post_content' => '<p>x</p>', 'post_status' => 'draft' ) );
+$aipc_bb_p2 = wp_insert_post( array( 'post_title' => 'Bale button post two', 'post_content' => '<p>y</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_bb_p1, '_aipc_generated', time() );
+update_post_meta( $aipc_bb_p2, '_aipc_generated', time() );
+
+$aipc_bb_kb = AIPC_Bale::post_keyboard( $aipc_bb_p1 );
+$aipc_bb_kb_json = wp_json_encode( $aipc_bb_kb );
+
+// Notification body carries the keyboard.
+$aipc_bb_reqs = array();
+AIPC_Bale::notify( $aipc_bb_p1, 'no-such-job' );
+$aipc_bb_notify_body = ! empty( $aipc_bb_reqs ) ? $aipc_bb_reqs[0]['body'] : '';
+
+// Publish-now button.
+$aipc_bb_pub_reply = AIPC_Bale_Commands::handle_callback( '99', 'aipc:pub:' . $aipc_bb_p1 );
+$aipc_bb_pub_post  = get_post( $aipc_bb_p1 );
+$aipc_bb_again     = AIPC_Bale_Commands::handle_callback( '99', 'aipc:pub:' . $aipc_bb_p1 );
+
+// Schedule button → pending → date reply.
+$aipc_bb_sch_reply = AIPC_Bale_Commands::handle_callback( '99', 'aipc:sch:' . $aipc_bb_p2 );
+$aipc_bb_pending   = AIPC_Bale_Commands::get_pending( '99' );
+$aipc_bb_past      = AIPC_Bale_Commands::handle( '99', '2020-01-01 10:00' );
+$aipc_bb_past_keep = AIPC_Bale_Commands::get_pending( '99' ) === $aipc_bb_p2;
+$aipc_bb_badfmt    = AIPC_Bale_Commands::handle( '99', 'بلبل' );
+$aipc_bb_sched     = AIPC_Bale_Commands::handle( '99', '۱۴۰۵/۰۷/۲۰ ۱۸:۳۰' );
+$aipc_bb_sch_post  = get_post( $aipc_bb_p2 );
+
+// Cancel flow on a fresh pending.
+AIPC_Bale_Commands::handle_callback( '99', 'aipc:sch:' . $aipc_bb_p2 );
+$aipc_bb_cancel  = AIPC_Bale_Commands::handle( '99', 'لغو' );
+$aipc_bb_cleared = AIPC_Bale_Commands::get_pending( '99' );
+
+// WP publishes the scheduled post → Bale 🎉 hook fires once.
+$aipc_bb_reqs = array();
+AIPC_Bale::on_future_publish( get_post( $aipc_bb_p2 ) );
+$aipc_bb_hook_sent = count( $aipc_bb_reqs ) > 0;
+$aipc_bb_meta_gone = '' === (string) get_post_meta( $aipc_bb_p2, '_aipc_bale_scheduled', true );
+
+$out['bale_buttons'] = array(
+	'parse_gregorian'    => AIPC_Bale_Commands::parse_datetime( '2026-10-12 18:30' ) === $aipc_bb_exp,
+	'parse_jalali'       => AIPC_Bale_Commands::parse_datetime( '1405/07/20 18:30' ) === $aipc_bb_exp,
+	'parse_fa_digits'    => AIPC_Bale_Commands::parse_datetime( '۱۴۰۵/۰۷/۲۰ ۱۸:۳۰' ) === $aipc_bb_exp,
+	'parse_tomorrow'     => AIPC_Bale_Commands::parse_datetime( 'فردا 10:00' ) === $aipc_bb_tom,
+	'parse_default_time' => AIPC_Bale_Commands::parse_datetime( '2026-10-12' ) === $aipc_bb_exp - ( 9 * HOUR_IN_SECONDS + 30 * MINUTE_IN_SECONDS ),
+	'parse_invalid'      => 0 === AIPC_Bale_Commands::parse_datetime( 'بلبل' ) && 0 === AIPC_Bale_Commands::parse_datetime( '2026-13-01 10:00' ),
+	'keyboard_draft'     => is_array( $aipc_bb_kb )
+		&& false !== strpos( $aipc_bb_kb_json, 'aipc:pub:' . $aipc_bb_p1 )
+		&& false !== strpos( $aipc_bb_kb_json, 'aipc:sch:' . $aipc_bb_p1 ),
+	'notify_has_buttons' => false !== strpos( $aipc_bb_notify_body, 'reply_markup' )
+		&& false !== strpos( $aipc_bb_notify_body, 'aipc:pub:' . $aipc_bb_p1 ),
+	'pub_publishes_now'  => 'publish' === $aipc_bb_pub_post->post_status
+		&& abs( strtotime( $aipc_bb_pub_post->post_date_gmt . ' +0000' ) - time() ) < 120
+		&& false !== strpos( (string) $aipc_bb_pub_reply, '🚀' ),
+	'pub_idempotent'     => false !== strpos( (string) $aipc_bb_again, '🔗' )
+		&& 'publish' === get_post( $aipc_bb_p1 )->post_status,
+	'keyboard_published' => null === AIPC_Bale::post_keyboard( $aipc_bb_p1 ),
+	'sch_asks_for_date'  => is_array( $aipc_bb_sch_reply )
+		&& false !== strpos( (string) $aipc_bb_sch_reply['text'], '⏰' )
+		&& false !== strpos( (string) wp_json_encode( $aipc_bb_sch_reply['markup'] ), 'aipc:when:' . $aipc_bb_p2 )
+		&& $aipc_bb_pending === $aipc_bb_p2,
+	'past_rejected'      => is_string( $aipc_bb_past ) && '' !== $aipc_bb_past
+		&& false === strpos( $aipc_bb_past, '⏰' ) && $aipc_bb_past_keep,
+	'badfmt_hint'        => false !== strpos( (string) $aipc_bb_badfmt, '18:30' ),
+	'date_schedules'     => 'future' === $aipc_bb_sch_post->post_status
+		&& '2026-10-12 18:30:00' === wp_date( 'Y-m-d H:i:s', strtotime( $aipc_bb_sch_post->post_date_gmt . ' +0000' ) )
+		&& false !== strpos( (string) $aipc_bb_sched, '⏰' )
+		&& 0 === AIPC_Bale_Commands::get_pending( '99' ),
+	'cancel_clears'      => is_string( $aipc_bb_cancel ) && '' !== $aipc_bb_cancel && 0 === $aipc_bb_cleared,
+	'future_hook_fires'  => $aipc_bb_hook_sent && $aipc_bb_meta_gone,
+);
+
+remove_filter( 'pre_http_request', $aipc_bb_mock, 4 );
+wp_delete_post( $aipc_bb_p1, true );
+wp_delete_post( $aipc_bb_p2, true );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+update_option( AIPC_Bale::OPTION, $aipc_bb_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
+ * v1.17.0 — one-step scheduling from chat (presets, bare dates, reply)
+ * ------------------------------------------------------------------ */
+$aipc_qs_old_cfg = get_option( AIPC_Bale::OPTION, array() );
+update_option( AIPC_Bale::OPTION, array_merge( is_array( $aipc_qs_old_cfg ) ? $aipc_qs_old_cfg : array(), array(
+	'enabled'  => 1,
+	'token'    => 'test-token',
+	'chat_ids' => array( '99' ),
+	'two_way'  => 1,
+) ), false );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+delete_option( AIPC_Bale::MSGMAP );
+
+$aipc_qs_reqs = array();
+$aipc_qs_mock = function ( $pre, $args, $url ) use ( &$aipc_qs_reqs ) {
+	if ( false !== strpos( $url, 'tapi.bale.ai' ) ) {
+		$aipc_qs_reqs[] = array( 'url' => $url, 'body' => isset( $args['body'] ) ? (string) $args['body'] : '' );
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '{"ok":true,"result":{"message_id":4321}}',
+			'cookies'  => array(),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_qs_mock, 4, 3 );
+
+$aipc_qs_tz    = wp_timezone();
+$aipc_qs_tom9  = ( new DateTimeImmutable( 'now', $aipc_qs_tz ) )->modify( '+1 day' )->setTime( 9, 0, 0 )->getTimestamp();
+$aipc_qs_tom18 = ( new DateTimeImmutable( 'now', $aipc_qs_tz ) )->modify( '+1 day' )->setTime( 18, 0, 0 )->getTimestamp();
+$aipc_qs_d2    = ( new DateTimeImmutable( 'now', $aipc_qs_tz ) )->modify( '+2 day' )->setTime( 9, 0, 0 )->getTimestamp();
+$aipc_qs_tom1145 = ( new DateTimeImmutable( 'now', $aipc_qs_tz ) )->modify( '+1 day' )->setTime( 11, 45, 0 )->getTimestamp();
+$aipc_qs_2030  = ( new DateTimeImmutable( '2030-01-01 10:00', $aipc_qs_tz ) )->getTimestamp();
+
+// Post A: oldest draft — the notification about it is "remembered".
+$aipc_qs_pa = wp_insert_post( array( 'post_title' => 'Quick schedule post A', 'post_content' => '<p>a</p>', 'post_status' => 'draft', 'post_date' => wp_date( 'Y-m-d H:i:s', time() - 2 * HOUR_IN_SECONDS ) ) );
+update_post_meta( $aipc_qs_pa, '_aipc_generated', time() );
+
+// notify() captures the sent message id into the msgmap.
+$aipc_qs_reqs = array();
+AIPC_Bale::notify( $aipc_qs_pa, 'no-such-job' );
+$aipc_qs_mapped = AIPC_Bale::post_for_message( '99', 4321 );
+
+// Preset keyboard + one-tap scheduling (no date typing, no pending).
+$aipc_qs_kb  = (string) wp_json_encode( AIPC_Bale_Commands::quick_schedule_keyboard( $aipc_qs_pa ) );
+$aipc_qs_tap = AIPC_Bale_Commands::handle_callback( '99', 'aipc:when:' . $aipc_qs_pa . ':tom_pm' );
+$aipc_qs_pa_post = get_post( $aipc_qs_pa );
+
+// A bare past date with no pending is rejected without side effects.
+$aipc_qs_past = AIPC_Bale_Commands::handle( '99', '2020-01-01 10:00' );
+
+// Post B: newest draft — a bare future date schedules it directly.
+$aipc_qs_pb = wp_insert_post( array( 'post_title' => 'Quick schedule post B', 'post_content' => '<p>b</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_qs_pb, '_aipc_generated', time() );
+$aipc_qs_direct  = AIPC_Bale_Commands::handle( '99', 'فردا 11:45' );
+$aipc_qs_pb_post = get_post( $aipc_qs_pb );
+
+// Post C: replying to its notification with a date schedules C itself,
+// even though it is not the newest draft.
+$aipc_qs_pc = wp_insert_post( array( 'post_title' => 'Quick schedule post C', 'post_content' => '<p>c</p>', 'post_status' => 'draft', 'post_date' => wp_date( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS ) ) );
+update_post_meta( $aipc_qs_pc, '_aipc_generated', time() );
+$aipc_qs_pd = wp_insert_post( array( 'post_title' => 'Quick schedule post D (newest)', 'post_content' => '<p>d</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_qs_pd, '_aipc_generated', time() );
+AIPC_Bale::remember_message( '99', 555, $aipc_qs_pc );
+$aipc_qs_reqs = array();
+AIPC_Bale_Commands::process_update( array(
+	'update_id' => 1,
+	'message'   => array(
+		'message_id'       => 556,
+		'chat'             => array( 'id' => 99 ),
+		'text'             => '2030-01-01 10:00',
+		'reply_to_message' => array( 'message_id' => 555 ),
+	),
+), null );
+$aipc_qs_pc_post = get_post( $aipc_qs_pc );
+$aipc_qs_pd_post = get_post( $aipc_qs_pd );
+$aipc_qs_reply_body = ! empty( $aipc_qs_reqs ) ? $aipc_qs_reqs[ count( $aipc_qs_reqs ) - 1 ]['body'] : '';
+
+// Published posts cannot be (re)scheduled.
+$aipc_qs_pe = wp_insert_post( array( 'post_title' => 'Quick schedule post E', 'post_content' => '<p>e</p>', 'post_status' => 'publish' ) );
+update_post_meta( $aipc_qs_pe, '_aipc_generated', time() );
+$aipc_qs_pub_guard = AIPC_Bale_Commands::schedule_post( $aipc_qs_pe, time() + DAY_IN_SECONDS );
+
+// The msgmap never grows past 100 entries.
+for ( $aipc_qs_i = 0; $aipc_qs_i < 110; $aipc_qs_i++ ) {
+	AIPC_Bale::remember_message( '99', 10000 + $aipc_qs_i, $aipc_qs_pa );
+}
+$aipc_qs_map = get_option( AIPC_Bale::MSGMAP, array() );
+
+$out['bale_quick_schedule'] = array(
+	'notify_remembers'   => $aipc_qs_mapped === (int) $aipc_qs_pa,
+	'preset_keyboard'    => false !== strpos( $aipc_qs_kb, ':tonight' ) && false !== strpos( $aipc_qs_kb, ':tom_am' )
+		&& false !== strpos( $aipc_qs_kb, ':tom_pm' ) && false !== strpos( $aipc_qs_kb, ':d2_am' )
+		&& false !== strpos( $aipc_qs_kb, 'aipc:when:' . $aipc_qs_pa . ':' ),
+	'preset_timestamps'  => AIPC_Bale_Commands::preset_ts( 'tom_am' ) === $aipc_qs_tom9
+		&& AIPC_Bale_Commands::preset_ts( 'tom_pm' ) === $aipc_qs_tom18
+		&& AIPC_Bale_Commands::preset_ts( 'd2_am' ) === $aipc_qs_d2,
+	'preset_tonight'     => AIPC_Bale_Commands::preset_ts( 'tonight' ) > time(),
+	'tap_schedules'      => 'future' === $aipc_qs_pa_post->post_status
+		&& strtotime( $aipc_qs_pa_post->post_date_gmt . ' +0000' ) === $aipc_qs_tom18
+		&& false !== strpos( (string) $aipc_qs_tap, "\xe2\x8f\xb0" )
+		&& 0 === AIPC_Bale_Commands::get_pending( '99' ),
+	'direct_past'        => is_string( $aipc_qs_past ) && '' !== $aipc_qs_past
+		&& false === strpos( $aipc_qs_past, "\xe2\x8f\xb0" ),
+	'direct_date_newest' => 'future' === $aipc_qs_pb_post->post_status
+		&& strtotime( $aipc_qs_pb_post->post_date_gmt . ' +0000' ) === $aipc_qs_tom1145
+		&& false !== strpos( (string) $aipc_qs_direct, "\xe2\x8f\xb0" ),
+	'reply_targets_post' => 'future' === $aipc_qs_pc_post->post_status
+		&& strtotime( $aipc_qs_pc_post->post_date_gmt . ' +0000' ) === $aipc_qs_2030
+		&& 'draft' === $aipc_qs_pd_post->post_status
+		&& false !== strpos( $aipc_qs_reply_body, '2030' ),
+	'published_guard'    => is_string( $aipc_qs_pub_guard )
+		&& false !== strpos( $aipc_qs_pub_guard, "\xf0\x9f\x94\x97" )
+		&& 'publish' === get_post( $aipc_qs_pe )->post_status,
+	'map_trimmed'        => count( $aipc_qs_map ) <= 100
+		&& (int) $aipc_qs_pa === AIPC_Bale::post_for_message( '99', 10109 ),
+);
+
+remove_filter( 'pre_http_request', $aipc_qs_mock, 4 );
+foreach ( array( $aipc_qs_pa, $aipc_qs_pb, $aipc_qs_pc, $aipc_qs_pd, $aipc_qs_pe ) as $aipc_qs_del ) {
+	wp_delete_post( $aipc_qs_del, true );
+}
+delete_option( AIPC_Bale::MSGMAP );
+delete_option( AIPC_Bale_Commands::PENDING_OPTION );
+update_option( AIPC_Bale::OPTION, $aipc_qs_old_cfg, false );
+
+/* ------------------------------------------------------------------ *
+ * v1.17.0 — Jobs & Cron admin page (overview + stop controls)
+ * ------------------------------------------------------------------ */
+$aipc_jc_job = array(
+	'id'      => 'job_qc_1',
+	'created' => time(),
+	'updated' => time(),
+	'status'  => 'running',
+	'mode'    => 'new',
+	'source'  => 'cron',
+	'user'    => 1,
+	'topic'   => 'کار ناتمام تستی',
+	'args'    => array(),
+	'cursor'  => 0,
+	'steps'   => array(
+		array( 'id' => 'plan', 'label' => 'P', 'status' => 'running' ),
+	),
+	'data'    => array(),
+	'usage'   => array( 'prompt' => 0, 'completion' => 0, 'calls' => 0 ),
+	'calls'   => array(),
+	'timings' => array(),
+	'log'     => array(),
+	'post_id' => 0,
+	'error'   => null,
+	'stats_recorded' => 0,
+);
+AIPC_Agent::instance()->save_job( $aipc_jc_job );
+
+$aipc_jc_pub = wp_insert_post( array( 'post_title' => 'Delayed publish target', 'post_content' => '<p>q</p>', 'post_status' => 'draft' ) );
+update_post_meta( $aipc_jc_pub, '_aipc_generated', time() );
+wp_schedule_single_event( time() + HOUR_IN_SECONDS, 'aipc_publish_post', array( $aipc_jc_pub, 'job_qc_1' ) );
+
+$aipc_jc_fut_date = wp_date( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS );
+$aipc_jc_fut = wp_insert_post( array(
+	'post_title'    => 'Future scheduled AI post',
+	'post_content'  => '<p>f</p>',
+	'post_status'   => 'future',
+	'post_date'     => $aipc_jc_fut_date,
+	'post_date_gmt' => get_gmt_from_date( $aipc_jc_fut_date ),
+) );
+update_post_meta( $aipc_jc_fut, '_aipc_generated', time() );
+
+if ( ! wp_next_scheduled( AIPC_Scheduler::CRON_HOOK ) ) {
+	wp_schedule_event( time() + 2 * MINUTE_IN_SECONDS, 'aipc_quarter_hour', AIPC_Scheduler::CRON_HOOK );
+}
+
+$aipc_jc_ov = AIPC_Admin::cron_overview();
+
+$aipc_jc_found_job = false;
+foreach ( $aipc_jc_ov['jobs'] as $aipc_jc_row ) {
+	if ( 'job_qc_1' === $aipc_jc_row['id'] && 'running' === $aipc_jc_row['status'] ) {
+		$aipc_jc_found_job = true;
+	}
+}
+$aipc_jc_found_pub = false;
+foreach ( $aipc_jc_ov['publishes'] as $aipc_jc_row ) {
+	if ( isset( $aipc_jc_row['args'][0] ) && (int) $aipc_jc_row['args'][0] === (int) $aipc_jc_pub
+		&& $aipc_jc_row['ts'] > time() + 50 * MINUTE_IN_SECONDS && '' === $aipc_jc_row['schedule'] ) {
+		$aipc_jc_found_pub = true;
+	}
+}
+$aipc_jc_hooks = wp_list_pluck( $aipc_jc_ov['events'], 'hook' );
+
+ob_start();
+AIPC_Admin::render_cron();
+$aipc_jc_html = ob_get_clean();
+
+$aipc_jc_removed = AIPC_Admin::unschedule_publish( $aipc_jc_pub );
+$aipc_jc_gone    = false === wp_next_scheduled( 'aipc_publish_post', array( $aipc_jc_pub, 'job_qc_1' ) );
+
+$aipc_jc_cancel = AIPC_Agent::instance()->cancel_job( 'job_qc_1' );
+$aipc_jc_still  = false;
+foreach ( AIPC_Admin::cron_overview()['jobs'] as $aipc_jc_row ) {
+	if ( 'job_qc_1' === $aipc_jc_row['id'] ) {
+		$aipc_jc_still = true;
+	}
+}
+
+$out['jobs_cron_page'] = array(
+	'jobs_listed'      => $aipc_jc_found_job,
+	'publish_listed'   => $aipc_jc_found_pub,
+	'future_listed'    => in_array( $aipc_jc_fut, wp_list_pluck( $aipc_jc_ov['future'], 'ID' ), true ),
+	'recurring_listed' => in_array( AIPC_Scheduler::CRON_HOOK, $aipc_jc_hooks, true )
+		&& ! in_array( 'aipc_publish_post', $aipc_jc_hooks, true ),
+	'page_renders'     => false !== strpos( $aipc_jc_html, 'کار ناتمام تستی' )
+		&& false !== strpos( $aipc_jc_html, 'Delayed publish target' )
+		&& false !== strpos( $aipc_jc_html, 'Future scheduled AI post' ),
+	'page_stop_links'  => false !== strpos( $aipc_jc_html, 'aipc_cancel_job' )
+		&& false !== strpos( $aipc_jc_html, 'aipc_cancel_all_jobs' )
+		&& false !== strpos( $aipc_jc_html, 'aipc_unschedule_publish' )
+		&& false !== strpos( $aipc_jc_html, 'aipc_revert_future' ),
+	'unschedule_works' => 1 === $aipc_jc_removed && $aipc_jc_gone,
+	'cancel_stops'     => is_array( $aipc_jc_cancel ) && 'cancelled' === $aipc_jc_cancel['status'] && ! $aipc_jc_still,
+	'screen_mapped'    => 'cron' === AIPC_Assets::screen_for_hook( 'ai-post-creator_page_aipc-cron' ),
+);
+
+AIPC_Agent::instance()->delete_job( 'job_qc_1' );
+wp_delete_post( $aipc_jc_pub, true );
+wp_delete_post( $aipc_jc_fut, true );
+
+/* ------------------------------------------------------------------ *
+ * v1.17.1 — image routes: capped timeout, no timeout-retry, breaker
+ * ------------------------------------------------------------------ */
+$aipc_it_reqs = array();
+$aipc_it_mock = function ( $pre, $args, $url ) use ( &$aipc_it_reqs ) {
+	if ( false === strpos( $url, 'imgslow.invalid' ) ) {
+		return $pre;
+	}
+	$aipc_it_reqs[] = array( 'url' => $url, 'timeout' => isset( $args['timeout'] ) ? (int) $args['timeout'] : 0 );
+	if ( false !== strpos( $url, '/images/generations' ) ) {
+		return array(
+			'headers'  => array(),
+			'cookies'  => array(),
+			'response' => array( 'code' => 400, 'message' => 'Bad Request' ),
+			'body'     => '{"error":{"message":"Invalid image model: bad/model. Use format: provider/model","type":"invalid_request_error"}}',
+		);
+	}
+	return new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out after 180001 milliseconds with 0 bytes received' );
+};
+add_filter( 'pre_http_request', $aipc_it_mock, 4, 3 );
+
+$aipc_it_client = new AIPC_API_Client( array(
+	'base_url'        => 'https://imgslow.invalid/v1',
+	'api_key'         => 'k',
+	'chat_model'      => 'chat-x',
+	'image_model'     => 'bad/model',
+	'request_timeout' => 600,
+) );
+
+// Pin the 1.18.0 model-autodiscovery cache to the failing model itself so
+// discovery is a no-op here — this group tests the timeout behaviour only.
+set_transient( 'aipc_img_model_' . md5( 'https://imgslow.invalid/v1' ), 'bad/model', 300 );
+
+// First image() call: fast 400 on the endpoint, ONE hanging chat fallback.
+$aipc_it_res1   = $aipc_it_client->image( 'an image prompt' );
+$aipc_it_phase1 = $aipc_it_reqs;
+$aipc_it_cb_key = 'aipc_imgchat_to_' . md5( 'https://imgslow.invalid/v1|bad/model' );
+$aipc_it_cb_set = false !== get_transient( $aipc_it_cb_key );
+
+// Second image() call: the circuit breaker must skip the chat fallback.
+$aipc_it_reqs  = array();
+$aipc_it_res2  = $aipc_it_client->image( 'an image prompt' );
+$aipc_it_phase2 = $aipc_it_reqs;
+
+// Plain chat keeps the full user timeout AND the one timeout-retry.
+$aipc_it_reqs = array();
+$aipc_it_chat = $aipc_it_client->chat( array( array( 'role' => 'user', 'content' => 'hi' ) ) );
+$aipc_it_phase3 = $aipc_it_reqs;
+
+$aipc_it_img_calls  = 0;
+$aipc_it_chat_calls = 0;
+$aipc_it_img_to_ok  = true;
+foreach ( $aipc_it_phase1 as $aipc_it_r ) {
+	if ( false !== strpos( $aipc_it_r['url'], '/images/generations' ) ) {
+		$aipc_it_img_calls++;
+	} else {
+		$aipc_it_chat_calls++;
+	}
+	if ( 180 !== $aipc_it_r['timeout'] ) {
+		$aipc_it_img_to_ok = false;
+	}
+}
+
+$out['image_timeouts'] = array(
+	'endpoint_err'    => is_wp_error( $aipc_it_res1 )
+		&& false !== strpos( $aipc_it_res1->get_error_message(), 'Invalid image model' ),
+	'capped_timeout'  => $aipc_it_img_to_ok && count( $aipc_it_phase1 ) >= 2,
+	'no_timeout_retry'=> 1 === $aipc_it_img_calls && 1 === $aipc_it_chat_calls,
+	'breaker_set'     => $aipc_it_cb_set,
+	'breaker_skips'   => is_wp_error( $aipc_it_res2 ) && 1 === count( $aipc_it_phase2 )
+		&& false !== strpos( $aipc_it_phase2[0]['url'], '/images/generations' ),
+	'chat_unaffected' => is_wp_error( $aipc_it_chat ) && 2 === count( $aipc_it_phase3 )
+		&& 600 === $aipc_it_phase3[0]['timeout'] && 600 === $aipc_it_phase3[1]['timeout'],
+);
+
+remove_filter( 'pre_http_request', $aipc_it_mock, 4 );
+delete_transient( $aipc_it_cb_key );
+delete_transient( 'aipc_img_model_' . md5( 'https://imgslow.invalid/v1' ) );
+
+/* ------------------------------------------------------------------ *
+ * v1.18.0 — image rescue ladder: model autodiscovery, Openverse stock
+ * fallback, default featured image
+ * ------------------------------------------------------------------ */
+$aipc_ir_png  = base64_decode( $aipc_png_b64 );
+$aipc_ir_reqs = array();
+$aipc_ir_mock = function ( $pre, $args, $url ) use ( &$aipc_ir_reqs, $aipc_png_b64, $aipc_ir_png ) {
+	$aipc_ir_body = isset( $args['body'] ) ? (string) $args['body'] : '';
+	if ( false !== strpos( $url, 'imgresc.invalid' ) ) {
+		$aipc_ir_reqs[] = array( 'url' => $url, 'body' => $aipc_ir_body );
+		if ( false !== strpos( $url, '/images/generations' ) ) {
+			$aipc_ir_req = json_decode( $aipc_ir_body, true );
+			if ( isset( $aipc_ir_req['model'] ) && 'dall-e-3' === $aipc_ir_req['model'] ) {
+				return array(
+					'headers' => array(), 'cookies' => array(),
+					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'body' => '{"data":[{"b64_json":"' . $aipc_png_b64 . '"}]}',
+				);
+			}
+			return array(
+				'headers' => array(), 'cookies' => array(),
+				'response' => array( 'code' => 400, 'message' => 'Bad Request' ),
+				'body' => '{"error":{"message":"Invalid image model: bad/model. Use format: provider/model"}}',
+			);
+		}
+		if ( false !== strpos( $url, '/models' ) ) {
+			return array(
+				'headers' => array(), 'cookies' => array(),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'body' => '{"data":[{"id":"chat-pro"},{"id":"text-embedding-3"},{"id":"dall-e-3"}]}',
+			);
+		}
+		// Default-image URL download.
+		if ( false !== strpos( $url, '/default.png' ) ) {
+			return array(
+				'headers' => array( 'content-type' => 'image/png' ), 'cookies' => array(),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'body' => str_repeat( $aipc_ir_png, 10 ),
+			);
+		}
+	}
+	if ( false !== strpos( $url, 'api.openverse.org' ) ) {
+		$aipc_ir_reqs[] = array( 'url' => $url, 'body' => '' );
+		return array(
+			'headers' => array(), 'cookies' => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body' => wp_json_encode( array( 'results' => array(
+				array( 'url' => 'https://photos.invalid/broken.jpg', 'title' => 'Broken', 'creator' => 'Nobody', 'license' => 'by', 'license_version' => '4.0', 'foreign_landing_url' => 'https://openverse.org/x' ),
+				array( 'url' => 'https://photos.invalid/good.jpg', 'title' => 'Family', 'creator' => 'Ali Photographer', 'license' => 'by-sa', 'license_version' => '4.0', 'foreign_landing_url' => 'https://openverse.org/y' ),
+			) ) ),
+		);
+	}
+	if ( false !== strpos( $url, 'photos.invalid' ) ) {
+		$aipc_ir_reqs[] = array( 'url' => $url, 'body' => '' );
+		if ( false !== strpos( $url, 'broken.jpg' ) ) {
+			return array(
+				'headers' => array(), 'cookies' => array(),
+				'response' => array( 'code' => 404, 'message' => 'Not Found' ),
+				'body' => 'nope',
+			);
+		}
+		return array(
+			'headers' => array( 'content-type' => 'image/jpeg' ), 'cookies' => array(),
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body' => str_repeat( $aipc_ir_png, 20 ),
+		);
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_ir_mock, 4, 3 );
+
+// --- 1) Model autodiscovery -----------------------------------------
+$aipc_ir_pick = AIPC_API_Client::pick_image_model( array( 'gpt-4o', 'text-embedding-3', 'prov/flux-pro-image', 'dall-e-3' ) );
+$aipc_ir_bad  = AIPC_API_Client::looks_like_bad_model( 'API error 400: Invalid image model: x. Use format: provider/model' );
+$aipc_ir_good = AIPC_API_Client::looks_like_bad_model( 'API error 500: upstream exploded' );
+
+$aipc_ir_client = new AIPC_API_Client( array(
+	'base_url'        => 'https://imgresc.invalid/v1',
+	'api_key'         => 'k',
+	'chat_model'      => 'chat-pro',
+	'image_model'     => 'bad/model',
+	'request_timeout' => 120,
+) );
+$aipc_ir_img = $aipc_ir_client->image( 'a hero image' );
+$aipc_ir_second_model = '';
+foreach ( $aipc_ir_reqs as $aipc_ir_r ) {
+	if ( false !== strpos( $aipc_ir_r['url'], '/images/generations' ) && '' !== $aipc_ir_r['body'] ) {
+		$aipc_ir_dec = json_decode( $aipc_ir_r['body'], true );
+		if ( isset( $aipc_ir_dec['model'] ) ) {
+			$aipc_ir_second_model = $aipc_ir_dec['model']; // last images call wins
+		}
+	}
+}
+$aipc_ir_cached = get_transient( 'aipc_img_model_' . md5( 'https://imgresc.invalid/v1' ) );
+
+// --- 2) Openverse stock search + fetch -------------------------------
+$aipc_ir_stock = AIPC_Stock::fetch( 'iranian family playing' );
+
+// --- 3) Agent fallback: stock path ------------------------------------
+$aipc_ir_old_settings = get_option( AIPC_Settings::OPTION, array() );
+update_option( AIPC_Settings::OPTION, array_merge( is_array( $aipc_ir_old_settings ) ? $aipc_ir_old_settings : array(), array(
+	'image_fallback_stock' => 1,
+	'image_fallback'       => '',
+) ), false );
+
+$aipc_ir_job = array(
+	'id'    => 'job_imgresc1',
+	'data'  => array(
+		'plan'        => array( 'title' => 'تربیت فرزند در عصر دیجیتال' ),
+		'image_query' => 'parent child tablet home',
+	),
+	'log'   => array(),
+	'usage' => array( 'prompt' => 0, 'completion' => 0, 'calls' => 0 ),
+);
+$aipc_ir_fb1   = AIPC_Agent::instance()->image_fallback( $aipc_ir_job );
+$aipc_ir_att1  = isset( $aipc_ir_job['data']['image']['attachment_id'] ) ? (int) $aipc_ir_job['data']['image']['attachment_id'] : 0;
+$aipc_ir_att1_post = $aipc_ir_att1 ? get_post( $aipc_ir_att1 ) : null;
+$aipc_ir_attr  = $aipc_ir_att1 ? (string) get_post_meta( $aipc_ir_att1, '_aipc_stock_attribution', true ) : '';
+
+// --- 4) Agent fallback: default image (media ID) ----------------------
+update_option( AIPC_Settings::OPTION, array_merge( get_option( AIPC_Settings::OPTION, array() ), array(
+	'image_fallback_stock' => 0,
+	'image_fallback'       => (string) $aipc_ir_att1,
+) ), false );
+$aipc_ir_job2 = array(
+	'id'   => 'job_imgresc2',
+	'data' => array( 'plan' => array( 'title' => 'x' ) ),
+	'log'  => array(),
+);
+$aipc_ir_fb2  = AIPC_Agent::instance()->image_fallback( $aipc_ir_job2 );
+$aipc_ir_att2 = isset( $aipc_ir_job2['data']['image']['attachment_id'] ) ? (int) $aipc_ir_job2['data']['image']['attachment_id'] : 0;
+
+// --- 5) Agent fallback: default image (external URL, imported once) ---
+update_option( AIPC_Settings::OPTION, array_merge( get_option( AIPC_Settings::OPTION, array() ), array(
+	'image_fallback' => 'https://imgresc.invalid/media/default.png',
+) ), false );
+$aipc_ir_job3 = array( 'id' => 'job_imgresc3', 'data' => array( 'plan' => array( 'title' => 'y' ) ), 'log' => array() );
+$aipc_ir_job4 = array( 'id' => 'job_imgresc4', 'data' => array( 'plan' => array( 'title' => 'z' ) ), 'log' => array() );
+$aipc_ir_fb3  = AIPC_Agent::instance()->image_fallback( $aipc_ir_job3 );
+$aipc_ir_fb4  = AIPC_Agent::instance()->image_fallback( $aipc_ir_job4 );
+$aipc_ir_att3 = isset( $aipc_ir_job3['data']['image']['attachment_id'] ) ? (int) $aipc_ir_job3['data']['image']['attachment_id'] : 0;
+$aipc_ir_att4 = isset( $aipc_ir_job4['data']['image']['attachment_id'] ) ? (int) $aipc_ir_job4['data']['image']['attachment_id'] : 0;
+
+// --- 6) Nothing configured → false ------------------------------------
+update_option( AIPC_Settings::OPTION, array_merge( get_option( AIPC_Settings::OPTION, array() ), array(
+	'image_fallback_stock' => 0,
+	'image_fallback'       => '',
+) ), false );
+$aipc_ir_job5 = array( 'id' => 'job_imgresc5', 'data' => array( 'plan' => array( 'title' => 'w' ) ), 'log' => array() );
+$aipc_ir_fb5  = AIPC_Agent::instance()->image_fallback( $aipc_ir_job5 );
+
+// --- 7) Settings sanitize ---------------------------------------------
+$aipc_ir_san = AIPC_Settings::sanitize( array( 'image_fallback_stock' => '1', 'image_fallback' => '123' ) );
+$aipc_ir_san2 = AIPC_Settings::sanitize( array( 'image_fallback' => 'https://example.com/img.png' ) );
+
+$out['image_rescue'] = array(
+	'pick_model'       => 'dall-e-3' === $aipc_ir_pick
+		&& '' === AIPC_API_Client::pick_image_model( array( 'text-embedding-3', 'whisper-1' ) ),
+	'bad_model_regex'  => $aipc_ir_bad && ! $aipc_ir_good,
+	'autodiscovery'    => is_array( $aipc_ir_img ) && ! empty( $aipc_ir_img['bits'] )
+		&& 'dall-e-3' === $aipc_ir_second_model,
+	'discovery_cached' => 'dall-e-3' === $aipc_ir_cached,
+	'stock_fetch'      => is_array( $aipc_ir_stock ) && ! empty( $aipc_ir_stock['bits'] )
+		&& false !== strpos( $aipc_ir_stock['attribution'], 'Ali Photographer' )
+		&& false !== strpos( $aipc_ir_stock['attribution'], 'CC BY-SA 4.0' ),
+	'stock_fallback'   => true === $aipc_ir_fb1 && $aipc_ir_att1 > 0
+		&& $aipc_ir_att1_post && false !== strpos( (string) $aipc_ir_att1_post->post_excerpt, 'Openverse' )
+		&& false !== strpos( $aipc_ir_attr, 'Ali Photographer' ),
+	'default_by_id'    => true === $aipc_ir_fb2 && $aipc_ir_att2 === $aipc_ir_att1,
+	'default_by_url'   => true === $aipc_ir_fb3 && $aipc_ir_att3 > 0
+		&& true === $aipc_ir_fb4 && $aipc_ir_att4 === $aipc_ir_att3,
+	'nothing_set'      => false === $aipc_ir_fb5,
+	'sanitize_keys'    => 1 === $aipc_ir_san['image_fallback_stock'] && '123' === $aipc_ir_san['image_fallback']
+		&& 'https://example.com/img.png' === $aipc_ir_san2['image_fallback'],
+);
+
+remove_filter( 'pre_http_request', $aipc_ir_mock, 4 );
+delete_transient( 'aipc_img_model_' . md5( 'https://imgresc.invalid/v1' ) );
+delete_option( 'aipc_image_fallback_cache' );
+foreach ( array_unique( array( $aipc_ir_att1, $aipc_ir_att3 ) ) as $aipc_ir_del ) {
+	if ( $aipc_ir_del ) {
+		wp_delete_attachment( $aipc_ir_del, true );
+	}
+}
+update_option( AIPC_Settings::OPTION, $aipc_ir_old_settings, false );
+
+/* ------------------------------------------------------------------ *
+ * v1.19.0 — duplicate-request guard (topic_norm / claim / duplicate_of)
+ * ------------------------------------------------------------------ */
+$aipc_dd_old_queue = get_option( AIPC_Topic_Queue::OPTION );
+
+// 1) Topic normalisation: ZWNJ/NBSP/extra spaces, Arabic letters, case.
+$aipc_dd_norm = AIPC_Agent::topic_norm( 'آموزش برنامه‌نویسی پایتون' ); // with ZWNJ
+$aipc_dd_norm_ok = $aipc_dd_norm === AIPC_Agent::topic_norm( "آموزش  برنامه نویسی\u{00a0}پایتون " ) // spaces + NBSP
+	&& AIPC_Agent::topic_norm( 'Hello  WORLD' ) === AIPC_Agent::topic_norm( 'hello world' )
+	&& AIPC_Agent::topic_norm( 'علي' ) === AIPC_Agent::topic_norm( 'علی' ); // Arabic ya
+
+// 2) Atomic claim: first caller wins, twin loses, expiry + release reopen it.
+$aipc_dd_c1 = AIPC_Agent::claim( 'e2e_dd_a', 600 );
+$aipc_dd_c2 = AIPC_Agent::claim( 'e2e_dd_a', 600 );
+update_option( 'aipc_claim_' . md5( 'e2e_dd_b' ), time() - 700, false );
+$aipc_dd_c3 = AIPC_Agent::claim( 'e2e_dd_b', 600 ); // expired → wins again
+AIPC_Agent::release( 'e2e_dd_c' );
+$aipc_dd_c4 = AIPC_Agent::claim( 'e2e_dd_c', 600 );
+AIPC_Agent::release( 'e2e_dd_c' );
+$aipc_dd_c5 = AIPC_Agent::claim( 'e2e_dd_c', 600 ); // released → wins again
+
+// 3) A running job blocks the same topic (even written differently).
+$aipc_dd_job = array(
+	'id'      => 'job_dd_run',
+	'created' => time(),
+	'updated' => time(),
+	'status'  => 'running',
+	'mode'    => 'new',
+	'source'  => 'manual',
+	'user'    => 1,
+	'topic'   => 'مزایای کسب‌وکار اینترنتی',
+	'args'    => array(),
+	'cursor'  => 0,
+	'steps'   => array( array( 'id' => 'plan', 'label' => 'P', 'status' => 'running' ) ),
+	'data'    => array(),
+	'usage'   => array( 'prompt' => 0, 'completion' => 0, 'calls' => 0 ),
+	'calls'   => array(),
+	'timings' => array(),
+	'log'     => array(),
+	'post_id' => 0,
+	'error'   => null,
+	'stats_recorded' => 0,
+);
+AIPC_Agent::instance()->save_job( $aipc_dd_job );
+$aipc_dd_hit_job = AIPC_Agent::duplicate_of( 'مزایای کسب وکار اینترنتی', 'manual' ); // no ZWNJ
+$aipc_dd_blocked_job = AIPC_Agent::instance()->create_job( 'مزایای کسب وکار اینترنتی', array() );
+
+// 4) A recently created post blocks the topic; `force` overrides it.
+$aipc_dd_post = wp_insert_post( array(
+	'post_title'   => 'راهنمای خرید لپ‌تاپ',
+	'post_content' => '<p>متن</p>',
+	'post_status'  => 'publish',
+) );
+update_post_meta( $aipc_dd_post, '_aipc_topic_norm', AIPC_Agent::topic_norm( 'راهنمای خرید لپ‌تاپ' ) );
+$aipc_dd_hit_post = AIPC_Agent::duplicate_of( 'راهنمای خرید لپ تاپ', 'manual' );
+$aipc_dd_blocked_post = AIPC_Agent::instance()->create_job( 'راهنمای خرید لپ تاپ', array() );
+$aipc_dd_forced = AIPC_Agent::instance()->create_job( 'راهنمای خرید لپ تاپ', array( 'force' => 1 ) );
+if ( is_array( $aipc_dd_forced ) ) {
+	AIPC_Scheduler::unschedule_runner( $aipc_dd_forced['id'] );
+	AIPC_Agent::instance()->delete_job( $aipc_dd_forced['id'] );
+}
+
+// 5) The topic-claim alone blocks an identical twin request (no job row,
+// no post) — this is the double-click / race shield.
+$aipc_dd_t1 = AIPC_Agent::instance()->create_job( 'موضوع یکتای تستی دوقلو', array() );
+if ( is_array( $aipc_dd_t1 ) ) {
+	AIPC_Scheduler::unschedule_runner( $aipc_dd_t1['id'] );
+	AIPC_Agent::instance()->delete_job( $aipc_dd_t1['id'] ); // job row gone …
+}
+$aipc_dd_t2 = AIPC_Agent::instance()->create_job( 'موضوع یکتای تستی دوقلو', array() ); // … claim still holds
+AIPC_Agent::release( 'topic_' . AIPC_Agent::topic_norm( 'موضوع یکتای تستی دوقلو' ) );
+
+// 6) A pending queue item blocks manual/bot starts but never cron (the
+// scheduler legitimately consumes queue items).
+AIPC_Topic_Queue::add( 'موضوع صف تستی', 'manual' );
+$aipc_dd_hit_q    = AIPC_Agent::duplicate_of( 'موضوع  صف تستی', 'manual' );
+$aipc_dd_hit_qcr  = AIPC_Agent::duplicate_of( 'موضوع صف تستی', 'cron' );
+
+// 7) create() stores _aipc_topic_norm + post_for_job finds the job's post.
+$aipc_dd_bjob = array(
+	'id'      => 'job_dd_build',
+	'created' => time(),
+	'updated' => time(),
+	'status'  => 'running',
+	'mode'    => 'new',
+	'source'  => 'manual',
+	'user'    => 1,
+	'topic'   => 'ساخت پست تستی ددوپ',
+	'args'    => array( 'toc' => false, 'faq' => false, 'image' => false ),
+	'cursor'  => 0,
+	'steps'   => array(),
+	'data'    => array(
+		'plan'    => array( 'title' => 'ساخت پست تستی ددوپ' ),
+		'outline' => array( array( 'heading' => 'بخش اول' ) ),
+		'content' => array( 'intro' => '<p>مقدمه</p>', 'sections' => array( '<p>متن بخش</p>' ) ),
+		'seo'     => array(),
+	),
+	'usage'   => array( 'prompt' => 0, 'completion' => 0, 'calls' => 0 ),
+	'calls'   => array(),
+	'timings' => array(),
+	'log'     => array(),
+	'post_id' => 0,
+	'error'   => null,
+	'stats_recorded' => 0,
+);
+$aipc_dd_built = AIPC_Post_Builder::create( $aipc_dd_bjob );
+$aipc_dd_meta  = is_wp_error( $aipc_dd_built ) ? '' : (string) get_post_meta( $aipc_dd_built, '_aipc_topic_norm', true );
+$aipc_dd_found = AIPC_Post_Builder::post_for_job( 'job_dd_build' );
+
+$out['dedup'] = array(
+	'topic_norm'      => '' !== $aipc_dd_norm && $aipc_dd_norm_ok,
+	'claim_atomic'    => true === $aipc_dd_c1 && false === $aipc_dd_c2,
+	'claim_expiry'    => true === $aipc_dd_c3,
+	'claim_release'   => true === $aipc_dd_c4 && true === $aipc_dd_c5,
+	'blocks_running'  => is_array( $aipc_dd_hit_job ) && 'job' === $aipc_dd_hit_job['type']
+		&& is_wp_error( $aipc_dd_blocked_job ) && 'aipc_duplicate' === $aipc_dd_blocked_job->get_error_code(),
+	'blocks_recent'   => is_array( $aipc_dd_hit_post ) && 'post' === $aipc_dd_hit_post['type']
+		&& (int) $aipc_dd_hit_post['id'] === (int) $aipc_dd_post
+		&& is_wp_error( $aipc_dd_blocked_post ) && 'aipc_duplicate' === $aipc_dd_blocked_post->get_error_code(),
+	'force_bypasses'  => is_array( $aipc_dd_forced ) && ! empty( $aipc_dd_forced['id'] ),
+	'claim_vs_twin'   => is_array( $aipc_dd_t1 )
+		&& is_wp_error( $aipc_dd_t2 ) && 'aipc_duplicate' === $aipc_dd_t2->get_error_code(),
+	'blocks_queued'   => is_array( $aipc_dd_hit_q ) && 'queue' === $aipc_dd_hit_q['type'],
+	'cron_skips_queue' => null === $aipc_dd_hit_qcr,
+	'norm_meta_saved' => ! is_wp_error( $aipc_dd_built )
+		&& $aipc_dd_meta === AIPC_Agent::topic_norm( 'ساخت پست تستی ددوپ' ),
+	'post_for_job'    => (int) $aipc_dd_found === (int) $aipc_dd_built,
+);
+
+// Cleanup: jobs, posts, queue, claim rows.
+AIPC_Agent::instance()->delete_job( 'job_dd_run' );
+wp_delete_post( $aipc_dd_post, true );
+if ( ! is_wp_error( $aipc_dd_built ) ) {
+	wp_delete_post( $aipc_dd_built, true );
+}
+if ( false === $aipc_dd_old_queue ) {
+	delete_option( AIPC_Topic_Queue::OPTION );
+} else {
+	update_option( AIPC_Topic_Queue::OPTION, $aipc_dd_old_queue, false );
+}
+foreach ( array( 'e2e_dd_a', 'e2e_dd_b', 'e2e_dd_c',
+	'topic_' . AIPC_Agent::topic_norm( 'مزایای کسب وکار اینترنتی' ),
+	'topic_' . AIPC_Agent::topic_norm( 'راهنمای خرید لپ تاپ' ),
+	'topic_' . AIPC_Agent::topic_norm( 'موضوع یکتای تستی دوقلو' ) ) as $aipc_dd_k ) {
+	AIPC_Agent::release( $aipc_dd_k );
+}
+
+/* ------------------------------------------------------------------ *
+ * v1.19.1 — owner-token runner lock (heartbeat + stale-runner discard)
+ * ------------------------------------------------------------------ */
+$aipc_rl2_job = AIPC_Agent::instance()->create_job( 'تست قفل اجراکننده', array( 'length' => 'short', 'language' => 'fa' ) );
+$aipc_rl2_id  = $aipc_rl2_job['id'];
+$aipc_rl2_lk  = 'aipc_lock_' . $aipc_rl2_id;
+
+// 1) A held lock (any owner) makes execute_step return busy, untouched.
+set_transient( $aipc_rl2_lk, 'someone-else', 60 );
+$aipc_rl2_busy  = AIPC_Agent::instance()->execute_step( $aipc_rl2_id );
+$aipc_rl2_after = AIPC_Agent::instance()->get_job( $aipc_rl2_id );
+$aipc_rl2_busy_ok = ! empty( $aipc_rl2_busy['busy'] ) && 0 === (int) $aipc_rl2_after['cursor'];
+delete_transient( $aipc_rl2_lk );
+
+// 2) Heartbeat: before every outbound HTTP call the lock holds this
+// runner's unique token and gets refreshed (observer at priority 0 runs
+// before the heartbeat at priority 1 — it sees the PREVIOUS refresh).
+$aipc_rl2_seen = array();
+$aipc_rl2_spy  = function ( $pre, $args = array(), $url = '' ) use ( $aipc_rl2_lk, &$aipc_rl2_seen ) {
+	$aipc_rl2_seen[] = get_transient( $aipc_rl2_lk );
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_rl2_spy, 0, 3 );
+AIPC_Agent::instance()->execute_step( $aipc_rl2_id ); // plan step via mock host
+remove_filter( 'pre_http_request', $aipc_rl2_spy, 0 );
+$aipc_rl2_j2 = AIPC_Agent::instance()->get_job( $aipc_rl2_id );
+$aipc_rl2_hb_ok = count( $aipc_rl2_seen ) >= 1
+	&& is_string( $aipc_rl2_seen[0] ) && 0 === strpos( $aipc_rl2_seen[0], 'r' )
+	&& '1' !== $aipc_rl2_seen[0]
+	&& 1 === (int) $aipc_rl2_j2['cursor']
+	&& false === get_transient( $aipc_rl2_lk ); // released after the step
+
+// 3) Stolen lock mid-step (simulates a runner that froze past the TTL
+// while another one took over): the loser must DISCARD its copy — no
+// save, no cursor rewind, and the new owner's lock stays untouched.
+$aipc_rl2_cursor_before = (int) $aipc_rl2_j2['cursor'];
+$aipc_rl2_log_before    = count( $aipc_rl2_j2['log'] );
+$aipc_rl2_theft = function ( $pre, $args = array(), $url = '' ) use ( $aipc_rl2_lk ) {
+	set_transient( $aipc_rl2_lk, 'stolen-by-new-runner', 300 );
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_rl2_theft, 0, 3 );
+$aipc_rl2_stale = AIPC_Agent::instance()->execute_step( $aipc_rl2_id ); // outline step runs, then must be discarded
+remove_filter( 'pre_http_request', $aipc_rl2_theft, 0 );
+$aipc_rl2_j3 = AIPC_Agent::instance()->get_job( $aipc_rl2_id );
+$aipc_rl2_stale_ok = ! empty( $aipc_rl2_stale['busy'] )
+	&& $aipc_rl2_cursor_before === (int) $aipc_rl2_j3['cursor']           // no rewind / no advance saved
+	&& $aipc_rl2_log_before === count( $aipc_rl2_j3['log'] )              // nothing written
+	&& 'stolen-by-new-runner' === get_transient( $aipc_rl2_lk );          // owner's lock untouched
+
+// 4) Once the other lock is gone the job simply continues from where
+// the stored copy stands.
+delete_transient( $aipc_rl2_lk );
+$aipc_rl2_cont = AIPC_Agent::instance()->execute_step( $aipc_rl2_id );
+$aipc_rl2_j4 = AIPC_Agent::instance()->get_job( $aipc_rl2_id );
+$aipc_rl2_cont_ok = empty( $aipc_rl2_cont['busy'] )
+	&& (int) $aipc_rl2_j4['cursor'] === $aipc_rl2_cursor_before + 1
+	&& false === get_transient( $aipc_rl2_lk );
+
+$out['runner_lock'] = array(
+	'busy_guard'    => $aipc_rl2_busy_ok,
+	'heartbeat'     => $aipc_rl2_hb_ok,
+	'stale_discard' => $aipc_rl2_stale_ok,
+	'recovers'      => $aipc_rl2_cont_ok,
+);
+
+// Cleanup.
+AIPC_Scheduler::unschedule_runner( $aipc_rl2_id );
+AIPC_Agent::instance()->delete_job( $aipc_rl2_id );
+AIPC_Agent::release( 'topic_' . AIPC_Agent::topic_norm( 'تست قفل اجراکننده' ) );
+delete_transient( $aipc_rl2_lk );
+
+/* ------------------------------------------------------------------ *
+ * v1.20.0 — editorial depth: intent analysis, evidence plan,
+ * human-voice rewrite, honest keywords, relevance-ranked links
+ * ------------------------------------------------------------------ */
+$aipc_ed_reg = AIPC_Steps::registry();
+
+// 1) The default prompts carry the new editorial rules.
+$aipc_ed_prompts_ok = false !== strpos( $aipc_ed_reg['system']['prompt'], 'Never fabricate benchmarks' )
+	&& false !== strpos( $aipc_ed_reg['plan']['prompt'], '"search_intent"' )
+	&& false !== strpos( $aipc_ed_reg['plan']['prompt'], 'KEYWORD HONESTY' )
+	&& false !== strpos( $aipc_ed_reg['outline']['prompt'], 'STRUCTURE BY INTENT' )
+	&& false !== strpos( $aipc_ed_reg['outline']['prompt'], '"evidence"' )
+	&& false !== strpos( $aipc_ed_reg['outline']['prompt'], 'never force unrelated terminology' )
+	&& false !== strpos( $aipc_ed_reg['section']['prompt'], 'DEPTH OVER LENGTH' )
+	&& false !== strpos( $aipc_ed_reg['section']['prompt'], 'padding and generic filler are forbidden' )
+	&& false !== strpos( $aipc_ed_reg['copywrite']['prompt'], 'EXPERT EDITORIAL REWRITE' )
+	&& false !== strpos( $aipc_ed_reg['copywrite']['prompt'], 'machine clich' )
+	&& false !== strpos( $aipc_ed_reg['copywrite']['prompt'], 'never pad' )
+	&& false !== strpos( $aipc_ed_reg['rw_rewrite']['prompt'], 'HUMAN VOICE' );
+
+// 2) The plan step stored the intent fields from the model.
+$aipc_ed_main = AIPC_Agent::instance()->get_job( $job_id );
+$aipc_ed_plan_ok = is_array( $aipc_ed_main )
+	&& isset( $aipc_ed_main['data']['plan']['search_intent'] )
+	&& 'tutorial' === $aipc_ed_main['data']['plan']['search_intent'];
+
+// 3) The outline kept the per-section evidence plan.
+$aipc_ed_outline_ok = isset( $aipc_ed_main['data']['outline'][0]['evidence'] )
+	&& false !== strpos( (string) $aipc_ed_main['data']['outline'][0]['evidence'], 'مثال واقعی' );
+
+// 4) + 5) The actual provider requests: the outline prompt carried the
+// intent, and the writer prompt carried the planned evidence.
+$aipc_ed_reqs = array();
+if ( file_exists( WP_CONTENT_DIR . '/mock-api-log.jsonl' ) ) {
+	foreach ( file( WP_CONTENT_DIR . '/mock-api-log.jsonl', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $aipc_ed_line ) {
+		$aipc_ed_reqs[] = json_decode( $aipc_ed_line, true );
+	}
+}
+$aipc_ed_outline_req = null;
+$aipc_ed_sec_req     = null;
+foreach ( $aipc_ed_reqs as $aipc_ed_r ) {
+	$aipc_ed_p = isset( $aipc_ed_r['prompt'] ) ? (string) $aipc_ed_r['prompt'] : '';
+	if ( ! $aipc_ed_outline_req && false !== strpos( $aipc_ed_p, 'Create the outline' ) ) {
+		$aipc_ed_outline_req = $aipc_ed_p;
+	}
+	if ( ! $aipc_ed_sec_req && false !== strpos( $aipc_ed_p, 'You are writing section 1' ) ) {
+		$aipc_ed_sec_req = $aipc_ed_p;
+	}
+}
+$aipc_ed_intent_sent   = $aipc_ed_outline_req && false !== strpos( $aipc_ed_outline_req, 'Search intent: tutorial' );
+$aipc_ed_evidence_sent = $aipc_ed_sec_req && false !== strpos( $aipc_ed_sec_req, 'MUST DELIVER' )
+	&& false !== strpos( $aipc_ed_sec_req, 'مثال واقعی و گام‌های اجرایی شماره 1' );
+
+// 6) Internal-link candidates are relevance-ranked, not just recent:
+// an older related post must beat two fresher unrelated ones.
+$aipc_ed_rel  = wp_insert_post( array( 'post_title' => 'راهنمای پرورش زنبور عسل برای مبتدیان', 'post_content' => '<p>x</p>', 'post_status' => 'publish', 'post_date' => wp_date( 'Y-m-d H:i:s', time() - 5 * DAY_IN_SECONDS ) ) );
+$aipc_ed_ir1  = wp_insert_post( array( 'post_title' => 'یادداشت نامرتبط دربارهٔ آشپزی ایتالیایی', 'post_content' => '<p>x</p>', 'post_status' => 'publish' ) );
+$aipc_ed_ir2  = wp_insert_post( array( 'post_title' => 'گزارش نامرتبط از نمایشگاه خودرو', 'post_content' => '<p>x</p>', 'post_status' => 'publish' ) );
+$aipc_ed_ref  = new ReflectionMethod( 'AIPC_Agent', 'link_candidates' );
+$aipc_ed_ref->setAccessible( true );
+$aipc_ed_list = (string) $aipc_ed_ref->invoke( AIPC_Agent::instance(), 0, 2, 'پرورش زنبور عسل در شهر' );
+$aipc_ed_lines = preg_split( '/\n/', $aipc_ed_list );
+$aipc_ed_links_ok = false !== strpos( $aipc_ed_lines[0], 'زنبور عسل' )     // related post ranked FIRST although 2 posts are fresher
+	&& false === strpos( $aipc_ed_list, 'آشپزی ایتالیایی' );                 // an unrelated fresh post fell out of the top-2
+
+$out['editorial'] = array(
+	'prompts_human'     => $aipc_ed_prompts_ok,
+	'plan_intent_saved' => $aipc_ed_plan_ok,
+	'outline_evidence'  => $aipc_ed_outline_ok,
+	'intent_sent'       => (bool) $aipc_ed_intent_sent,
+	'evidence_sent'     => (bool) $aipc_ed_evidence_sent,
+	'links_relevance'   => $aipc_ed_links_ok,
+);
+
+foreach ( array( $aipc_ed_rel, $aipc_ed_ir1, $aipc_ed_ir2 ) as $aipc_ed_del ) {
+	wp_delete_post( $aipc_ed_del, true );
+}
+
+/* ------------------------------------------------------------------ *
+ * v1.20.1 — cancel kills the job at the root: an in-flight runner may
+ * never resurrect a cancelled job by saving its stale 'running' copy.
+ * ------------------------------------------------------------------ */
+$aipc_cx_job = AIPC_Agent::instance()->create_job( 'موضوع تست لغو ریشه‌ای', array( 'length' => 'short', 'language' => 'fa', 'force' => 1 ) );
+AIPC_Agent::instance()->execute_step( $aipc_cx_job['id'], 0 ); // plan step runs → still 'running'.
+
+// Snapshot what a runner that is mid-step right now holds in memory.
+$aipc_cx_stale = AIPC_Agent::instance()->get_job( $aipc_cx_job['id'] );
+$aipc_cx_was_running = is_array( $aipc_cx_stale ) && 'running' === $aipc_cx_stale['status'];
+
+// User clicks انصراف while that runner is still working.
+AIPC_Agent::instance()->cancel_job( $aipc_cx_job['id'] );
+$aipc_cx_fence = get_transient( 'aipc_lock_' . $aipc_cx_job['id'] );
+
+// The stale runner finishes its step and tries to save its old copy.
+AIPC_Agent::instance()->save_job( $aipc_cx_stale );
+$aipc_cx_after_save = AIPC_Agent::instance()->get_job( $aipc_cx_job['id'] );
+
+// The background scheduler must treat the job as finished business.
+AIPC_Scheduler::run_job( $aipc_cx_job['id'] );
+$aipc_cx_after_cron = AIPC_Agent::instance()->get_job( $aipc_cx_job['id'] );
+
+$out['cancel_root'] = array(
+	'was_running'        => $aipc_cx_was_running,
+	'lock_fenced'        => is_string( $aipc_cx_fence ) && 0 === strpos( $aipc_cx_fence, 'cancelled-' ),
+	'stale_save_blocked' => is_array( $aipc_cx_after_save ) && 'cancelled' === $aipc_cx_after_save['status'],
+	'runner_unscheduled' => false === wp_next_scheduled( 'aipc_run_job', array( (string) $aipc_cx_job['id'] ) ),
+	'cron_keeps_dead'    => is_array( $aipc_cx_after_cron ) && 'cancelled' === $aipc_cx_after_cron['status'],
+);
+delete_transient( 'aipc_lock_' . $aipc_cx_job['id'] );
+
+/* ------------------------------------------------------------------ *
+ * v1.21.0 — force image generation: the post may never finish without
+ * a generated featured image; failed image steps retry on a growing
+ * schedule instead of falling back or skipping.
+ * ------------------------------------------------------------------ */
+update_option( 'aipc_settings', array_merge( get_option( 'aipc_settings', array() ), array(
+	'image_enabled'        => 1,
+	'image_fallback_stock' => 0,
+	'image_fallback'       => '',
+	'force_image'          => 0,
+) ), false );
+
+$GLOBALS['aipc_fi_fail'] = false;
+$GLOBALS['aipc_fi_hits'] = 0;
+add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
+	if ( ! empty( $GLOBALS['aipc_fi_fail'] ) && false !== strpos( $url, 'images.invalid' ) ) {
+		$GLOBALS['aipc_fi_hits']++;
+		return array(
+			'body'     => json_encode( array( 'error' => array( 'message' => 'mock image provider down' ) ) ),
+			'response' => array( 'code' => 500, 'message' => 'Server Error' ),
+		);
+	}
+	return $pre;
+}, 4, 3 );
+
+$GLOBALS['aipc_fi_fail'] = true;
+$aipc_fi_job   = AIPC_Agent::instance()->create_job( 'موضوع تست عکس اجباری', array( 'length' => 'short', 'language' => 'fa', 'image' => 1, 'force_image' => 1, 'force' => 1 ) );
+$aipc_fi_state = null;
+for ( $aipc_fi_i = 0; $aipc_fi_i < 40; $aipc_fi_i++ ) {
+	$aipc_fi_state = AIPC_Agent::instance()->execute_step( $aipc_fi_job['id'], 0 );
+	if ( ! is_array( $aipc_fi_state ) || 'running' !== $aipc_fi_state['status'] || ! empty( $aipc_fi_state['retry_at'] ) ) {
+		break;
+	}
+}
+$aipc_fi_mid = AIPC_Agent::instance()->get_job( $aipc_fi_job['id'] );
+
+// The wait gate must not touch the provider while the next try is in the future.
+$aipc_fi_h0     = (int) $GLOBALS['aipc_fi_hits'];
+$aipc_fi_gate   = AIPC_Agent::instance()->execute_step( $aipc_fi_job['id'], 0 );
+$aipc_fi_gated  = ( (int) $GLOBALS['aipc_fi_hits'] === $aipc_fi_h0 ) && ! empty( $aipc_fi_gate['retry_at'] );
+$aipc_fi_runner = wp_next_scheduled( 'aipc_run_job', array( (string) $aipc_fi_job['id'] ) );
+
+// Provider recovers → the due retry generates the image and the job finishes.
+$GLOBALS['aipc_fi_fail'] = false;
+$aipc_fi_j = AIPC_Agent::instance()->get_job( $aipc_fi_job['id'] );
+$aipc_fi_j['data']['image_retry']['next'] = time() - 1;
+AIPC_Agent::instance()->save_job( $aipc_fi_j );
+for ( $aipc_fi_i = 0; $aipc_fi_i < 10; $aipc_fi_i++ ) {
+	$aipc_fi_state = AIPC_Agent::instance()->execute_step( $aipc_fi_job['id'], 0 );
+	if ( ! is_array( $aipc_fi_state ) || 'running' !== $aipc_fi_state['status'] ) {
+		break;
+	}
+}
+$aipc_fi_fin = AIPC_Agent::instance()->get_job( $aipc_fi_job['id'] );
+
+// Second job: retry window exhausted + no rescue image → hard error, never an image-less post.
+$GLOBALS['aipc_fi_fail'] = true;
+$aipc_fi_job2 = AIPC_Agent::instance()->create_job( 'موضوع تست عکس اجباری دوم', array( 'length' => 'short', 'language' => 'fa', 'image' => 1, 'force_image' => 1, 'force' => 1 ) );
+for ( $aipc_fi_i = 0; $aipc_fi_i < 40; $aipc_fi_i++ ) {
+	$aipc_fi_state = AIPC_Agent::instance()->execute_step( $aipc_fi_job2['id'], 0 );
+	if ( ! is_array( $aipc_fi_state ) || 'running' !== $aipc_fi_state['status'] || ! empty( $aipc_fi_state['retry_at'] ) ) {
+		break;
+	}
+}
+$aipc_fi_j2 = AIPC_Agent::instance()->get_job( $aipc_fi_job2['id'] );
+$aipc_fi_j2['data']['image_retry']['since'] = time() - DAY_IN_SECONDS - 10;
+$aipc_fi_j2['data']['image_retry']['next']  = time() - 1;
+AIPC_Agent::instance()->save_job( $aipc_fi_j2 );
+AIPC_Agent::instance()->execute_step( $aipc_fi_job2['id'], 0 );
+$aipc_fi_j2 = AIPC_Agent::instance()->get_job( $aipc_fi_job2['id'] );
+$GLOBALS['aipc_fi_fail'] = false;
+
+// Bug guard: the schedule-entry sanitizer must keep the force_image opt.
+$aipc_fi_entry = AIPC_Scheduler::save_entry( array( 'time' => '10:30', 'opts' => array( 'image' => 1, 'force_image' => 1 ) ) );
+$aipc_fi_entry_ok = ! empty( $aipc_fi_entry['opts']['force_image'] );
+AIPC_Scheduler::delete_entry( $aipc_fi_entry['id'] );
+
+// Bug guard: a retry after the exhausted window starts a FRESH window.
+$aipc_fi_rt = AIPC_Agent::instance()->retry_job( $aipc_fi_job2['id'] );
+$aipc_fi_rt_fresh = is_array( $aipc_fi_rt ) && 'running' === $aipc_fi_rt['status'] && ! isset( $aipc_fi_rt['data']['image_retry'] );
+AIPC_Agent::instance()->cancel_job( $aipc_fi_job2['id'] );
+
+$out['force_image'] = array(
+	'args_saved'       => is_array( $aipc_fi_mid ) && 1 === (int) $aipc_fi_mid['args']['force_image'],
+	'waiting_not_skip' => is_array( $aipc_fi_mid ) && 'running' === $aipc_fi_mid['status'] && ! empty( $aipc_fi_mid['data']['image_retry']['next'] ) && empty( $aipc_fi_mid['post_id'] ),
+	'step_kept'        => is_array( $aipc_fi_mid ) && isset( $aipc_fi_mid['steps'][ $aipc_fi_mid['cursor'] ] ) && 'image' === $aipc_fi_mid['steps'][ $aipc_fi_mid['cursor'] ]['id'] && 'pending' === $aipc_fi_mid['steps'][ $aipc_fi_mid['cursor'] ]['status'],
+	'gate_no_call'     => $aipc_fi_gated,
+	'runner_rearmed'   => false !== $aipc_fi_runner && $aipc_fi_runner > time() + 20,
+	'done_with_image'  => is_array( $aipc_fi_fin ) && 'done' === $aipc_fi_fin['status'] && $aipc_fi_fin['post_id'] > 0 && has_post_thumbnail( (int) $aipc_fi_fin['post_id'] ),
+	'retry_cleared'    => is_array( $aipc_fi_fin ) && ! isset( $aipc_fi_fin['data']['image_retry'] ),
+	'exhausted_error'  => is_array( $aipc_fi_j2 ) && 'error' === $aipc_fi_j2['status'] && empty( $aipc_fi_j2['post_id'] ),
+	'window_dropped'   => is_array( $aipc_fi_j2 ) && ! isset( $aipc_fi_j2['data']['image_retry'] ),
+	'entry_keeps_force' => $aipc_fi_entry_ok,
+	'retry_fresh_window' => $aipc_fi_rt_fresh,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.22.0 — image repair: scan posts without a featured image and run
+ * quiet image-only jobs that never touch the content.
+ * ------------------------------------------------------------------ */
+$aipc_ix_post = wp_insert_post( array(
+	'post_title'   => 'پست بدون عکس برای ترمیم',
+	'post_content' => '<p>محتوای دست‌نخوردنی این پست.</p>',
+	'post_status'  => 'publish',
+	'post_type'    => 'post',
+) );
+$aipc_ix_before = get_post_field( 'post_content', $aipc_ix_post );
+
+$aipc_ix_n = AIPC_Agent::instance()->repair_missing_images();
+
+// Find OUR repair job among the created batch.
+$aipc_ix_job = null;
+foreach ( AIPC_Agent::instance()->get_all_jobs() as $aipc_ix_row ) {
+	if ( 'image_fix' === $aipc_ix_row['mode'] && (int) $aipc_ix_row['post_id'] === (int) $aipc_ix_post ) {
+		$aipc_ix_job = AIPC_Agent::instance()->get_job( $aipc_ix_row['id'] );
+		break;
+	}
+}
+if ( $aipc_ix_job ) {
+	for ( $aipc_ix_i = 0; $aipc_ix_i < 10; $aipc_ix_i++ ) {
+		$aipc_ix_state = AIPC_Agent::instance()->execute_step( $aipc_ix_job['id'], 0 );
+		if ( ! is_array( $aipc_ix_state ) || 'running' !== $aipc_ix_state['status'] ) {
+			break;
+		}
+	}
+	$aipc_ix_job = AIPC_Agent::instance()->get_job( $aipc_ix_job['id'] );
+}
+
+// A second scan must never start a duplicate repair for the same post.
+AIPC_Agent::instance()->repair_missing_images();
+$aipc_ix_count = 0;
+foreach ( AIPC_Agent::instance()->get_all_jobs() as $aipc_ix_row ) {
+	if ( 'image_fix' === $aipc_ix_row['mode'] && (int) $aipc_ix_row['post_id'] === (int) $aipc_ix_post ) {
+		$aipc_ix_count++;
+	}
+}
+
+$out['image_fix'] = array(
+	'scanner_started'   => $aipc_ix_n >= 1,
+	'job_found'         => is_array( $aipc_ix_job ),
+	'done_with_thumb'   => is_array( $aipc_ix_job ) && 'done' === $aipc_ix_job['status'] && has_post_thumbnail( (int) $aipc_ix_post ),
+	'content_untouched' => get_post_field( 'post_content', $aipc_ix_post ) === $aipc_ix_before,
+	'quiet_no_bale'     => is_array( $aipc_ix_job ) && ! empty( $aipc_ix_job['notified'] ),
+	'no_duplicate_scan' => 1 === $aipc_ix_count,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.22.0 — quality gate: zero-cost pre-publish checks; a low score
+ * cancels auto-publishing and the post stays a draft.
+ * ------------------------------------------------------------------ */
+$aipc_qg_bad  = AIPC_Quality::check(
+	'<h2>عنوان تکراری</h2><p>در دنیای امروز متن کوتاه تست تست تست تست تست تست تست تست.</p><h2>عنوان تکراری</h2><h2></h2>',
+	array( 'data' => array( 'plan' => array( 'title' => '', 'primary_keyword' => 'تست' ) ), 'args' => array( 'image' => 0 ) )
+);
+$aipc_qg_good_body = '<h2>بخش نخست</h2><p>' . implode( ' ', array_fill( 0, 220, 'واژه' ) ) . '</p><h2>بخش دوم</h2><p>' . implode( ' ', array_fill( 0, 220, 'نوشتار' ) ) . ' موضوع اصلی مقاله همین است.</p>';
+$aipc_qg_good = AIPC_Quality::check(
+	$aipc_qg_good_body,
+	array( 'data' => array( 'plan' => array( 'title' => 'عنوانی که وجود ندارد ' . wp_rand(), 'primary_keyword' => 'موضوع اصلی' ) ), 'args' => array( 'image' => 0 ) )
+);
+
+// Integration: an impossible threshold blocks auto-publish for review.
+$aipc_qg_thr = function () { return 101; };
+add_filter( 'aipc_quality_threshold', $aipc_qg_thr );
+$aipc_qg_job = AIPC_Agent::instance()->create_job( 'موضوع تست دروازه کیفیت', array( 'length' => 'short', 'language' => 'fa', 'image' => 0, 'publish_mode' => 'now', 'force' => 1 ) );
+for ( $aipc_qg_i = 0; $aipc_qg_i < 40; $aipc_qg_i++ ) {
+	$aipc_qg_state = AIPC_Agent::instance()->execute_step( $aipc_qg_job['id'], 0 );
+	if ( ! is_array( $aipc_qg_state ) || 'running' !== $aipc_qg_state['status'] ) {
+		break;
+	}
+}
+remove_filter( 'aipc_quality_threshold', $aipc_qg_thr );
+$aipc_qg_fin   = AIPC_Agent::instance()->get_job( $aipc_qg_job['id'] );
+$aipc_qg_stats = AIPC_Agent::stats();
+
+$out['quality_gate'] = array(
+	'bad_scored_low'   => $aipc_qg_bad['score'] < 60 && count( $aipc_qg_bad['issues'] ) >= 3,
+	'good_scored_high' => $aipc_qg_good['score'] >= 90,
+	'blocked_is_draft' => is_array( $aipc_qg_fin ) && 'done' === $aipc_qg_fin['status'] && 'draft' === get_post_status( (int) $aipc_qg_fin['post_id'] ),
+	'blocked_flagged'  => is_array( $aipc_qg_fin ) && ! empty( $aipc_qg_fin['data']['quality']['blocked'] ) && isset( $aipc_qg_fin['data']['quality']['score'] ),
+	'stats_counted'    => (int) $aipc_qg_stats['quality_blocked'] >= 1,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.22.0 — connection health / circuit breaker.
+ * ------------------------------------------------------------------ */
+delete_option( 'aipc_conn_health' );
+remove_filter( 'aipc_health_streak', 'aipc_e2e_health_streak_off' ); // Real default (5) applies here.
+$aipc_hc_bad  = array( 'id' => 'hc_bad', 'name' => 'Health Test' );
+$aipc_hc_good = array( 'id' => 'hc_good', 'name' => 'Healthy One' );
+for ( $aipc_hc_i = 0; $aipc_hc_i < 5; $aipc_hc_i++ ) {
+	AIPC_Health::record( $aipc_hc_bad, false );
+}
+$aipc_hc_down    = AIPC_Health::on_cooldown( $aipc_hc_bad ) && 'down' === AIPC_Health::status( $aipc_hc_bad );
+$aipc_hc_ordered = AIPC_Health::order( array( $aipc_hc_bad, $aipc_hc_good ) );
+$aipc_hc_demoted = isset( $aipc_hc_ordered[0]['id'], $aipc_hc_ordered[1]['id'] )
+	&& 'hc_good' === $aipc_hc_ordered[0]['id'] && 'hc_bad' === $aipc_hc_ordered[1]['id'];
+$aipc_hc_trouble = AIPC_Health::trouble_today();
+$aipc_hc_listed  = false;
+foreach ( $aipc_hc_trouble as $aipc_hc_t ) {
+	if ( 'Health Test' === $aipc_hc_t['name'] && 5 === (int) $aipc_hc_t['fail'] ) {
+		$aipc_hc_listed = true;
+	}
+}
+AIPC_Health::record( $aipc_hc_bad, true ); // One success heals the breaker.
+$aipc_hc_all = AIPC_Health::all();
+add_filter( 'aipc_health_streak', 'aipc_e2e_health_streak_off' );
+
+$out['conn_health'] = array(
+	'streak_cooldown' => $aipc_hc_down,
+	'order_demotes'   => $aipc_hc_demoted,
+	'trouble_listed'  => $aipc_hc_listed,
+	'success_heals'   => ! AIPC_Health::on_cooldown( $aipc_hc_bad ) && 'warn' === AIPC_Health::status( $aipc_hc_bad ),
+	'daily_counts'    => isset( $aipc_hc_all['hc_bad'] ) && 5 === (int) $aipc_hc_all['hc_bad']['fail'] && 1 === (int) $aipc_hc_all['hc_bad']['ok'],
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.22.0 — automatic content refresh: a schedule entry of kind
+ * "refresh" rewrites the most outdated published post.
+ * ------------------------------------------------------------------ */
+$aipc_rf_post = wp_insert_post( array(
+	'post_title'   => 'مقالهٔ قدیمی برای تازه‌سازی خودکار',
+	'post_content' => '<h2>بخش قدیمی</h2><p>' . implode( ' ', array_fill( 0, 150, 'متن' ) ) . '</p>',
+	'post_status'  => 'publish',
+	'post_type'    => 'post',
+) );
+$aipc_rf_old = gmdate( 'Y-m-d H:i:s', time() - 200 * DAY_IN_SECONDS );
+$GLOBALS['wpdb']->update(
+	$GLOBALS['wpdb']->posts,
+	array( 'post_date' => $aipc_rf_old, 'post_date_gmt' => $aipc_rf_old, 'post_modified' => $aipc_rf_old, 'post_modified_gmt' => $aipc_rf_old ),
+	array( 'ID' => $aipc_rf_post )
+);
+clean_post_cache( $aipc_rf_post );
+
+$aipc_rf_target = AIPC_Scheduler::pick_refresh_target();
+$aipc_rf_entry  = AIPC_Scheduler::save_entry( array( 'time' => '11:00', 'kind' => 'refresh', 'opts' => array( 'image' => 0 ) ) );
+$aipc_rf_job    = AIPC_Scheduler::start_job_for_entry( $aipc_rf_entry['id'], 'cron' );
+if ( ! is_wp_error( $aipc_rf_job ) ) {
+	for ( $aipc_rf_i = 0; $aipc_rf_i < 40; $aipc_rf_i++ ) {
+		$aipc_rf_state = AIPC_Agent::instance()->execute_step( $aipc_rf_job['id'], 0 );
+		if ( ! is_array( $aipc_rf_state ) || 'running' !== $aipc_rf_state['status'] ) {
+			break;
+		}
+	}
+	$aipc_rf_job = AIPC_Agent::instance()->get_job( $aipc_rf_job['id'] );
+}
+$aipc_rf_next = AIPC_Scheduler::pick_refresh_target();
+AIPC_Scheduler::delete_entry( $aipc_rf_entry['id'] );
+
+$out['refresh_cycle'] = array(
+	'target_picked'  => $aipc_rf_target instanceof WP_Post && (int) $aipc_rf_target->ID === (int) $aipc_rf_post,
+	'entry_kind'     => isset( $aipc_rf_entry['kind'] ) && 'refresh' === $aipc_rf_entry['kind'],
+	'job_is_rewrite' => is_array( $aipc_rf_job ) && 'rewrite' === $aipc_rf_job['mode'] && (int) $aipc_rf_job['post_id'] === (int) $aipc_rf_post,
+	'job_done'       => is_array( $aipc_rf_job ) && 'done' === $aipc_rf_job['status'],
+	'meta_stamped'   => (int) get_post_meta( $aipc_rf_post, '_aipc_refreshed', true ) > 0,
+	'rotation_moves' => ! ( $aipc_rf_next instanceof WP_Post ) || (int) $aipc_rf_next->ID !== (int) $aipc_rf_post,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.22.0 — enriched Bale report: rescue images, quality gate and
+ * connection-health lines.
+ * ------------------------------------------------------------------ */
+$aipc_rr_job = AIPC_Agent::instance()->get_job( $aipc_qg_job['id'] );
+$aipc_rr_job['data']['image'] = array( 'attachment_id' => 1, 'prompt' => 'stock: تست گزارش' );
+AIPC_Agent::instance()->save_job( $aipc_rr_job );
+
+$aipc_rr_rm = new ReflectionMethod( 'AIPC_Bale', 'build_report' );
+$aipc_rr_rm->setAccessible( true );
+$aipc_rr_txt = (string) $aipc_rr_rm->invoke( null, 'daily', current_time( 'timestamp' ) );
+
+$out['report_rich'] = array(
+	'report_built' => false !== strpos( $aipc_rr_txt, '🧾' ),
+	'rescue_line'  => false !== strpos( $aipc_rr_txt, '🛟' ),
+	'quality_line' => false !== strpos( $aipc_rr_txt, '🚦' ),
+	'health_line'  => false !== strpos( $aipc_rr_txt, '⚠️' ) && false !== strpos( $aipc_rr_txt, 'Health Test' ),
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.23.0 — professional feed discovery: common paths, Atom, HTML
+ * autodiscovery, per-source report, round-robin mixing, cache.
+ * ------------------------------------------------------------------ */
+update_option( 'aipc_settings', array_merge( AIPC_Settings::all(), array(
+	'source_sites' => "https://news.invalid\nhttps://rssdeep.invalid\nhttps://atomsite.invalid\nhttps://nofeed.invalid",
+) ), false );
+delete_option( 'aipc_feed_cache' );
+
+$aipc_fd = AIPC_Topic_Queue::suggest( 20 );
+$aipc_fd_hosts = array();
+$aipc_fd_texts = array();
+foreach ( $aipc_fd['suggestions'] as $aipc_fd_s ) {
+	$aipc_fd_hosts[ $aipc_fd_s['source'] ] = 1;
+	$aipc_fd_texts[] = $aipc_fd_s['text'];
+}
+$aipc_fd_src = array();
+foreach ( $aipc_fd['sources'] as $aipc_fd_s ) {
+	$aipc_fd_src[ $aipc_fd_s['host'] ] = $aipc_fd_s['status'];
+}
+$aipc_fd_joined = implode( ' | ', $aipc_fd_texts );
+
+// Round-robin: with two 2-item feeds both hosts must appear in the
+// first 4 suggestions instead of one site crowding the list.
+$aipc_fd_first4 = array();
+foreach ( array_slice( $aipc_fd['suggestions'], 0, 4 ) as $aipc_fd_s ) {
+	$aipc_fd_first4[ $aipc_fd_s['source'] ] = 1;
+}
+
+// Cache: every source got a discovery verdict; found feeds remembered.
+$aipc_fd_cache = get_option( 'aipc_feed_cache', array() );
+$aipc_fd_cached_ok = 0;
+foreach ( (array) $aipc_fd_cache as $aipc_fd_row ) {
+	if ( ! empty( $aipc_fd_row['feed'] ) ) {
+		$aipc_fd_cached_ok++;
+	}
+}
+
+$out['feed_discovery'] = array(
+	'autodiscovery_html' => isset( $aipc_fd_src['rssdeep.invalid'] ) && 'ok' === $aipc_fd_src['rssdeep.invalid'] && false !== strpos( $aipc_fd_joined, 'قارچ صدفی' ),
+	'atom_candidate'     => isset( $aipc_fd_src['atomsite.invalid'] ) && 'ok' === $aipc_fd_src['atomsite.invalid'] && false !== strpos( $aipc_fd_joined, 'آبیاری قطره' ),
+	'wordpress_feed'     => isset( $aipc_fd_src['news.invalid'] ) && 'ok' === $aipc_fd_src['news.invalid'],
+	'no_feed_reported'   => isset( $aipc_fd_src['nofeed.invalid'] ) && 'no_feed' === $aipc_fd_src['nofeed.invalid'],
+	'round_robin_mix'    => isset( $aipc_fd_first4['rssdeep.invalid'], $aipc_fd_first4['atomsite.invalid'] ),
+	'cache_written'      => count( (array) $aipc_fd_cache ) >= 4 && $aipc_fd_cached_ok >= 3,
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.23.0 — dismissible suggestions ("never show again") + the
+ * exclude list that powers the "Show more" button.
+ * ------------------------------------------------------------------ */
+$aipc_v123_queue_snapshot = get_option( AIPC_Topic_Queue::OPTION ); // Restored after the topic_hint group.
+$aipc_ds_target = '';
+foreach ( $aipc_fd['suggestions'] as $aipc_ds_s ) {
+	if ( 'rssdeep.invalid' === $aipc_ds_s['source'] ) {
+		$aipc_ds_target = $aipc_ds_s['text'];
+		break;
+	}
+}
+
+// REST dismiss (admin) + anonymous rejection.
+$aipc_ds_req = new WP_REST_Request( 'POST', '/aipc/v1/topics/dismiss' );
+$aipc_ds_req->set_param( 'text', $aipc_ds_target );
+$aipc_ds_res = rest_do_request( $aipc_ds_req );
+wp_set_current_user( 0 );
+$aipc_ds_anon_req = new WP_REST_Request( 'POST', '/aipc/v1/topics/dismiss' );
+$aipc_ds_anon_req->set_param( 'text', 'هر چیزی' );
+$aipc_ds_anon = rest_do_request( $aipc_ds_anon_req );
+wp_set_current_user( 1 );
+
+// Dismissed headlines never come back.
+$aipc_ds_again = AIPC_Topic_Queue::suggest( 20 );
+$aipc_ds_texts2 = array();
+foreach ( $aipc_ds_again['suggestions'] as $aipc_ds_s ) {
+	$aipc_ds_texts2[] = $aipc_ds_s['text'];
+}
+
+// The dismissed memory survives ordinary queue writes (add/remove).
+AIPC_Topic_Queue::add( 'موضوع موقتی برای آزمون حافظهٔ حذف', 'manual' );
+$aipc_ds_mem = AIPC_Topic_Queue::dismissed();
+$aipc_ds_norm = AIPC_Topic_Queue::normalize_key( AIPC_Topic_Queue::normalize_text( $aipc_ds_target ) );
+
+// "Show more": excluding the on-screen batch returns only new items.
+$aipc_ds_more = AIPC_Topic_Queue::suggest( 20, $aipc_ds_texts2 );
+$aipc_ds_overlap = 0;
+foreach ( $aipc_ds_more['suggestions'] as $aipc_ds_s ) {
+	if ( in_array( $aipc_ds_s['text'], $aipc_ds_texts2, true ) ) {
+		$aipc_ds_overlap++;
+	}
+}
+
+$out['suggest_dismiss'] = array(
+	'rest_dismissed'  => 200 === $aipc_ds_res->get_status() && ! empty( $aipc_ds_res->get_data()['dismissed'] ),
+	'anon_rejected'   => 401 === $aipc_ds_anon->get_status() || 403 === $aipc_ds_anon->get_status(),
+	'never_again'     => '' !== $aipc_ds_target && ! in_array( $aipc_ds_target, $aipc_ds_texts2, true ),
+	'memory_survives' => isset( $aipc_ds_mem[ $aipc_ds_norm ] ),
+	'exclude_works'   => 0 === $aipc_ds_overlap,
+	'ui_more_button'  => false !== strpos( (string) file_get_contents( AIPC_PLUGIN_DIR . 'admin/views/schedule.php' ), 'aipc-tq-more-btn' ),
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.23.0 — queue topics are a SUBJECT hint, not the final headline.
+ * ------------------------------------------------------------------ */
+AIPC_Topic_Queue::clear_pending(); // The entry below must consume OUR topic.
+AIPC_Topic_Queue::add( 'سوژهٔ آزمایشی برای تیتر آزاد', 'manual' );
+$aipc_th_entry = AIPC_Scheduler::save_entry( array( 'time' => '12:00', 'use_queue' => 1, 'opts' => array( 'image' => 0 ) ) );
+$aipc_th_job   = AIPC_Scheduler::start_job_for_entry( $aipc_th_entry['id'], 'cron' );
+$aipc_th_flag  = ! is_wp_error( $aipc_th_job ) && ! empty( $aipc_th_job['args']['topic_hint_only'] );
+if ( ! is_wp_error( $aipc_th_job ) ) {
+	AIPC_Agent::instance()->cancel_job( $aipc_th_job['id'] );
+	AIPC_Scheduler::unschedule_runner( $aipc_th_job['id'] );
+}
+AIPC_Scheduler::delete_entry( $aipc_th_entry['id'] );
+
+// A manual run keeps the strict behaviour (flag off by default).
+$aipc_th_manual = AIPC_Agent::instance()->create_job( 'موضوع دستی با تیتر دقیق', array( 'image' => 0, 'force' => 1 ) );
+$aipc_th_manual_off = ! is_wp_error( $aipc_th_manual ) && empty( $aipc_th_manual['args']['topic_hint_only'] );
+if ( ! is_wp_error( $aipc_th_manual ) ) {
+	AIPC_Agent::instance()->cancel_job( $aipc_th_manual['id'] );
+}
+
+$out['topic_hint'] = array(
+	'queue_sets_flag' => $aipc_th_flag,
+	'queue_topic'     => ! is_wp_error( $aipc_th_job ) && 'سوژهٔ آزمایشی برای تیتر آزاد' === $aipc_th_job['topic'],
+	'manual_strict'   => $aipc_th_manual_off,
+	'ui_explains'     => false !== strpos( (string) file_get_contents( AIPC_PLUGIN_DIR . 'admin/views/schedule.php' ), 'not a fixed headline' ),
+);
+
+/* ------------------------------------------------------------------ *
+ * v1.23.1 — actionable hints for transport failures (cURL 7/28/6/35)
+ * ------------------------------------------------------------------ */
+$aipc_tr_h7  = AIPC_API_Client::transport_hint( "cURL error 7: Failed to connect to 181.41.194.8 port 4000 after 0 ms: Couldn't connect to server" );
+$aipc_tr_h28 = AIPC_API_Client::transport_hint( 'cURL error 28: Operation timed out after 15001 milliseconds' );
+$aipc_tr_h6  = AIPC_API_Client::transport_hint( 'cURL error 6: Could not resolve host: ai.exmaple.com' );
+$aipc_tr_h35 = AIPC_API_Client::transport_hint( 'cURL error 35: error:0A00010B:SSL routines::wrong version number' );
+$aipc_tr_ok  = AIPC_API_Client::transport_hint( 'some other failure' );
+
+// Full path: the connection test must surface the hint to the admin.
+$aipc_tr_mock = function ( $pre, $args, $url ) {
+	if ( false !== strpos( $url, 'refused.invalid' ) ) {
+		return new WP_Error( 'http_request_failed', "cURL error 7: Failed to connect to refused.invalid port 4000 after 0 ms: Couldn't connect to server" );
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_tr_mock, 3, 3 );
+$aipc_tr_client = new AIPC_API_Client( array(
+	'name'       => 'Refused Gateway',
+	'base_url'   => 'http://refused.invalid:4000/v1',
+	'api_key'    => 'k',
+	'chat_model' => 'gpt-test',
+) );
+$aipc_tr_res = $aipc_tr_client->test();
+remove_filter( 'pre_http_request', $aipc_tr_mock, 3 );
+$aipc_tr_msg = is_wp_error( $aipc_tr_res ) ? $aipc_tr_res->get_error_message() : '';
+
+$out['transport_hints'] = array(
+	'refused_hint'  => false !== strpos( $aipc_tr_h7, '0.0.0.0' ) && false !== strpos( $aipc_tr_h7, '127.0.0.1' ),
+	'timeout_hint'  => '' !== $aipc_tr_h28 && false === strpos( $aipc_tr_h28, '0.0.0.0' ),
+	'dns_hint'      => '' !== $aipc_tr_h6 && $aipc_tr_h6 !== $aipc_tr_h28,
+	'ssl_hint'      => false !== strpos( $aipc_tr_h35, 'http://' ),
+	'unknown_empty' => '' === $aipc_tr_ok,
+	'test_surfaces' => is_wp_error( $aipc_tr_res ) && false !== strpos( $aipc_tr_msg, 'cURL error 7' ) && false !== strpos( $aipc_tr_msg, '127.0.0.1' ),
+);
+
+// Restore the queue and the single mock source for the later groups
+// (the historical topic_queue group expects an empty pending queue).
+if ( false === $aipc_v123_queue_snapshot ) {
+	delete_option( AIPC_Topic_Queue::OPTION );
+} else {
+	update_option( AIPC_Topic_Queue::OPTION, $aipc_v123_queue_snapshot, false );
+}
+update_option( 'aipc_settings', array_merge( AIPC_Settings::all(), array(
+	'source_sites' => 'https://news.invalid',
+) ), false );
+
+/* ------------------------------------------------------------------ *
+ * v1.24.0 — hard near-duplicate guard: topics AND images.
+ * ------------------------------------------------------------------ */
+// Similarity engine.
+$aipc_nd_sim_high = AIPC_Agent::topic_similarity( '10 راهکار افزایش فروش آنلاین', 'راهکارهای افزایش فروش آنلاین در 1405' );
+$aipc_nd_sim_low  = AIPC_Agent::topic_similarity( 'آموزش نصب وردپرس', 'بهترین دوربین های 2025' );
+$aipc_nd_sim_stem = AIPC_Agent::topic_similarity( 'راهکار افزایش فروش آینده', 'راهکارهای افزایش فروش آینده' );
+
+// Near matches against real posts — drafts count too.
+$aipc_nd_pub = wp_insert_post( array(
+	'post_title'  => 'راهنمای کامل خرید گوشی هوشمند',
+	'post_content' => '<p>متن آزمایشی.</p>',
+	'post_status' => 'publish',
+) );
+$aipc_nd_dft = wp_insert_post( array(
+	'post_title'  => 'مقایسه میزبانی ابری و میزبانی اشتراکی',
+	'post_content' => '<p>متن آزمایشی.</p>',
+	'post_status' => 'draft',
+) );
+
+$aipc_nd_hit_pub = AIPC_Agent::similar_recent( 'راهنمای خرید گوشی هوشمند در سال جدید' );
+$aipc_nd_hit_dft = AIPC_Agent::similar_recent( 'مقایسه میزبانی ابری با میزبانی اشتراکی' );
+$aipc_nd_miss    = AIPC_Agent::similar_recent( 'دستور پخت کیک شکلاتی خانگی' );
+
+// duplicate_of() reports the near match…
+$aipc_nd_dup = AIPC_Agent::duplicate_of( 'راهنمای خرید گوشی هوشمند ارزان' );
+
+// …and create_job blocks it (while force/allow-duplicate passes).
+$aipc_nd_blocked = AIPC_Agent::instance()->create_job( 'راهنمای خرید گوشی هوشمند ارزان', array( 'image' => 0 ) );
+$aipc_nd_forced  = AIPC_Agent::instance()->create_job( 'راهنمای خرید گوشی هوشمند ارزان', array( 'image' => 0, 'force' => 1 ) );
+if ( ! is_wp_error( $aipc_nd_forced ) ) {
+	AIPC_Agent::instance()->cancel_job( $aipc_nd_forced['id'] );
+}
+
+// Image anti-repeat: history + rotating composition twist.
+delete_option( 'aipc_image_history' );
+AIPC_Agent::remember_image_prompt( 'A modern laptop on a wooden desk, warm morning light, minimalist editorial scene' );
+AIPC_Agent::remember_image_prompt( 'Fresh green basil plants in terracotta pots on a sunny balcony' );
+$aipc_nd_hist = AIPC_Agent::image_history();
+
+$aipc_nd_twisted = AIPC_Agent::diversify_image_prompt(
+	'A modern laptop on a wooden desk with warm morning light, minimalist editorial scene',
+	$aipc_nd_hist
+);
+$aipc_nd_kept = AIPC_Agent::diversify_image_prompt(
+	'Aerial view of a terraced rice field at sunset with a farmer walking along the ridge',
+	$aipc_nd_hist
+);
+
+$out['near_duplicate'] = array(
+	'sim_high'        => $aipc_nd_sim_high >= 0.7,
+	'sim_low'         => $aipc_nd_sim_low < 0.3,
+	'sim_stemming'    => $aipc_nd_sim_stem >= 0.9,
+	'finds_published' => is_array( $aipc_nd_hit_pub ) && (int) $aipc_nd_hit_pub['id'] === (int) $aipc_nd_pub,
+	'finds_draft'     => is_array( $aipc_nd_hit_dft ) && (int) $aipc_nd_hit_dft['id'] === (int) $aipc_nd_dft,
+	'distinct_passes' => null === $aipc_nd_miss,
+	'dup_reports'     => is_array( $aipc_nd_dup ) && 'similar' === $aipc_nd_dup['type'] && (int) $aipc_nd_dup['id'] === (int) $aipc_nd_pub,
+	'create_blocked'  => is_wp_error( $aipc_nd_blocked ) && 'aipc_duplicate' === $aipc_nd_blocked->get_error_code(),
+	'force_passes'    => ! is_wp_error( $aipc_nd_forced ) && ! empty( $aipc_nd_forced['args']['allow_duplicate'] ),
+	'history_kept'    => 2 === count( $aipc_nd_hist ) && false !== strpos( $aipc_nd_hist[0]['p'], 'basil' ),
+	'repeat_twisted'  => false !== strpos( $aipc_nd_twisted, 'Composition requirement' ),
+	'fresh_untouched' => false === strpos( $aipc_nd_kept, 'Composition requirement' ),
+);
+
+// Clean up so later groups see the same post set as before.
+wp_delete_post( $aipc_nd_pub, true );
+wp_delete_post( $aipc_nd_dft, true );
+delete_option( 'aipc_image_history' );
+
+
+
 
 /* ------------------------------------------------------------------ *
  * v1.6 — outbound network guard (SSRF protection)
@@ -1438,6 +3663,10 @@ AIPC_Admin::render_schedule();
 $aipc_help_pages['schedule'] = ob_get_clean();
 
 ob_start();
+AIPC_Admin::render_bot();
+$aipc_help_pages['bot'] = ob_get_clean();
+
+ob_start();
 AIPC_Admin::render_settings();
 $aipc_help_pages['settings'] = ob_get_clean();
 
@@ -1462,7 +3691,8 @@ $aipc_help_expected = array(
 	'review'      => 1,
 	'connections' => 3,
 	'prompts'     => 2,
-	'schedule'    => 7,
+	'schedule'    => 5,
+	'bot'         => 4,
 	'settings'    => 4,
 	'logs'        => 2,
 	'log_detail'  => 4,
@@ -1486,10 +3716,10 @@ $out['help_tooltips'] += array(
 	'slug_review'     => false !== strpos( $aipc_help_pages['review'], 'data-aipc-help="review-inbox"' ),
 	'slug_conn_form'  => false !== strpos( $aipc_help_pages['connections'], 'data-aipc-help="conn-form"' ),
 	'slug_chain'      => false !== strpos( $aipc_help_pages['prompts'], 'data-aipc-help="pr-chains"' ),
-	'slug_bale'       => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-bale"' ),
+	'slug_bale'       => false !== strpos( $aipc_help_pages['bot'], 'data-aipc-help="sched-bale"' ),
 	'slug_queue'      => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-queue"' ),
 	'slug_use_queue'  => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-use-queue"' ),
-	'slug_two_way'    => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="bale-two-way"' ),
+	'slug_two_way'    => false !== strpos( $aipc_help_pages['bot'], 'data-aipc-help="bale-two-way"' ),
 	'slug_limit'      => false !== strpos( $aipc_help_pages['schedule'], 'data-aipc-help="sched-limit"' ),
 	'slug_settings'   => false !== strpos( $aipc_help_pages['settings'], 'data-aipc-help="settings-site-prompt"' ),
 	'slug_logs'       => false !== strpos( $aipc_help_pages['logs'], 'data-aipc-help="logs-jobs"' ),
@@ -1774,7 +4004,7 @@ delete_option( 'aipc_mock_bale_updates' );
 
 $out['bale_commands'] = array(
 	'poll_event'     => false !== $aipc_bc_event_on,
-	'interval'       => isset( wp_get_schedules()['aipc_bale_5min'] ) && 300 === (int) wp_get_schedules()['aipc_bale_5min']['interval'],
+	'interval'       => isset( wp_get_schedules()['aipc_bale_5min'] ) && AIPC_Bale_Commands::POLL_INTERVAL === (int) wp_get_schedules()['aipc_bale_5min']['interval'],
 	'job_created'    => ! empty( $aipc_bc_job ) && 'موضوع تست فرمان بله' === $aipc_bc_job['topic'],
 	'job_source'     => ! empty( $aipc_bc_job ) && 'bale' === $aipc_bc_job['source'],
 	'job_is_draft'   => ! empty( $aipc_bc_job ) && 'draft' === ( isset( $aipc_bc_job['args']['publish_mode'] ) ? $aipc_bc_job['args']['publish_mode'] : '' ),

@@ -20,9 +20,11 @@ defined( 'ABSPATH' ) || exit;
 
 final class AIPC_Topic_Queue {
 
-	const OPTION      = 'aipc_topic_queue';
-	const MAX_PENDING = 100; // Queue length cap.
-	const MAX_ITEMS   = 300; // Pending + used history cap.
+	const OPTION        = 'aipc_topic_queue';
+	const FEED_CACHE    = 'aipc_feed_cache';
+	const MAX_PENDING   = 100; // Queue length cap.
+	const MAX_ITEMS     = 300; // Pending + used history cap.
+	const MAX_DISMISSED = 500; // Dismissed-suggestions memory cap.
 
 	/**
 	 * Full stored queue.
@@ -42,7 +44,9 @@ final class AIPC_Topic_Queue {
 	 * @return void
 	 */
 	private static function persist( $items ) {
-		update_option( self::OPTION, array( 'items' => array_values( $items ) ), false );
+		$cfg          = self::all(); // Keep the dismissed-suggestions memory.
+		$cfg['items'] = array_values( $items );
+		update_option( self::OPTION, $cfg, false );
 	}
 
 	/**
@@ -250,7 +254,7 @@ final class AIPC_Topic_Queue {
 	 * @param int $limit Maximum suggestions.
 	 * @return array[] {text, source, url}
 	 */
-	public static function suggest( $limit = 12 ) {
+	public static function suggest( $limit = 12, $exclude = array() ) {
 		$limit = max( 1, min( 30, (int) $limit ) );
 
 		$urls = array();
@@ -261,17 +265,27 @@ final class AIPC_Topic_Queue {
 			}
 		}
 		if ( empty( $urls ) ) {
-			return array();
+			return array( 'suggestions' => array(), 'sources' => array() );
 		}
 		if ( ! function_exists( 'fetch_feed' ) ) {
 			include_once ABSPATH . WPINC . '/feed.php';
 		}
 
-		// Known topics: everything ever queued + recent post titles.
+		// Known topics: everything ever queued + recent post titles +
+		// dismissed suggestions + the batch already on screen (exclude).
 		$known = array();
 		foreach ( self::all()['items'] as $item ) {
 			if ( isset( $item['norm'] ) ) {
 				$known[ $item['norm'] ] = true;
+			}
+		}
+		foreach ( self::dismissed() as $norm => $ts ) {
+			$known[ $norm ] = true;
+		}
+		foreach ( (array) $exclude as $text ) {
+			$norm = self::normalize_key( self::normalize_text( (string) $text ) );
+			if ( '' !== $norm ) {
+				$known[ $norm ] = true;
 			}
 		}
 		foreach ( get_posts( array(
@@ -283,14 +297,24 @@ final class AIPC_Topic_Queue {
 			$known[ self::normalize_key( $post->post_title ) ] = true;
 		}
 
-		$suggestions = array();
-		foreach ( array_slice( $urls, 0, 5 ) as $url ) {
-			$feed = fetch_feed( rtrim( $url, '/' ) . '/feed/' );
-			if ( is_wp_error( $feed ) || ! method_exists( $feed, 'get_item_quantity' ) || ! $feed->get_item_quantity() ) {
+		// Collect fresh headlines per source, then interleave round-robin
+		// so one busy site never crowds out the others.
+		$per_source = array();
+		$sources    = array();
+		foreach ( $urls as $url ) {
+			$host     = (string) wp_parse_url( $url, PHP_URL_HOST );
+			$feed_url = self::discover_feed( $url );
+			if ( '' === $feed_url ) {
+				$sources[] = array( 'host' => $host, 'status' => 'no_feed', 'found' => 0 );
 				continue;
 			}
-			$host = (string) wp_parse_url( $url, PHP_URL_HOST );
-			foreach ( $feed->get_items( 0, 8 ) as $item ) {
+			$feed = fetch_feed( $feed_url );
+			if ( is_wp_error( $feed ) || ! method_exists( $feed, 'get_item_quantity' ) || ! $feed->get_item_quantity() ) {
+				$sources[] = array( 'host' => $host, 'status' => 'no_feed', 'found' => 0 );
+				continue;
+			}
+			$fresh = array();
+			foreach ( $feed->get_items( 0, 20 ) as $item ) {
 				$title = self::clean_title( (string) $item->get_title() );
 				if ( '' === $title ) {
 					continue;
@@ -300,17 +324,226 @@ final class AIPC_Topic_Queue {
 					continue;
 				}
 				$known[ $norm ] = true;
-				$suggestions[]  = array(
+				$fresh[]        = array(
 					'text'   => $title,
 					'source' => $host,
 					'url'    => esc_url_raw( (string) $item->get_permalink() ),
 				);
-				if ( count( $suggestions ) >= $limit ) {
-					break 2;
+			}
+			$sources[]    = array( 'host' => $host, 'status' => 'ok', 'found' => count( $fresh ) );
+			$per_source[] = $fresh;
+		}
+
+		$suggestions = array();
+		$round       = 0;
+		while ( count( $suggestions ) < $limit ) {
+			$any = false;
+			foreach ( $per_source as $list ) {
+				if ( isset( $list[ $round ] ) ) {
+					$any           = true;
+					$suggestions[] = $list[ $round ];
+					if ( count( $suggestions ) >= $limit ) {
+						break;
+					}
+				}
+			}
+			if ( ! $any ) {
+				break;
+			}
+			$round++;
+		}
+
+		return array( 'suggestions' => $suggestions, 'sources' => $sources );
+	}
+
+	/**
+	 * Find the working feed URL for a source site (1.23.0).
+	 *
+	 * Tries the URL itself when it already looks like a feed, then the
+	 * common feed paths (/feed/, /rss, /rss.xml, /atom.xml, …) and
+	 * finally HTML `<link rel="alternate">` autodiscovery on the page.
+	 * The result (also a miss) is cached in the `aipc_feed_cache` option.
+	 *
+	 * @param string $url Source site URL.
+	 * @return string Feed URL, or '' when none was found.
+	 */
+	public static function discover_feed( $url ) {
+		$url   = trim( (string) $url );
+		$key   = md5( self::normalize_key( rtrim( $url, '/' ) ) );
+		$cache = get_option( self::FEED_CACHE, array() );
+		$cache = is_array( $cache ) ? $cache : array();
+
+		if ( isset( $cache[ $key ]['checked'] ) ) {
+			$hit = $cache[ $key ];
+			$ttl = '' !== (string) $hit['feed'] ? WEEK_IN_SECONDS : 6 * HOUR_IN_SECONDS;
+			if ( time() - (int) $hit['checked'] < $ttl ) {
+				return (string) $hit['feed'];
+			}
+		}
+
+		if ( ! function_exists( 'fetch_feed' ) ) {
+			include_once ABSPATH . WPINC . '/feed.php';
+		}
+
+		$found = '';
+		foreach ( self::feed_candidates( $url ) as $candidate ) {
+			if ( self::feed_works( $candidate ) ) {
+				$found = $candidate;
+				break;
+			}
+		}
+
+		// Last resort: read the page HTML and honor its own
+		// <link rel="alternate" type="application/rss+xml"> declaration.
+		if ( '' === $found ) {
+			foreach ( self::feeds_from_html( $url ) as $candidate ) {
+				if ( self::feed_works( $candidate ) ) {
+					$found = $candidate;
+					break;
 				}
 			}
 		}
-		return $suggestions;
+
+		$cache[ $key ] = array( 'url' => $url, 'feed' => $found, 'checked' => time() );
+		if ( count( $cache ) > 50 ) { // Settings cap sources at 8 — stay tidy.
+			$cache = array_slice( $cache, -50, null, true );
+		}
+		update_option( self::FEED_CACHE, $cache, false );
+
+		return $found;
+	}
+
+	/**
+	 * Common feed locations for a site URL, most likely first.
+	 *
+	 * @param string $url Source site URL.
+	 * @return string[]
+	 */
+	private static function feed_candidates( $url ) {
+		$base = rtrim( $url, '/' );
+		$path = strtolower( (string) wp_parse_url( $url, PHP_URL_PATH ) );
+
+		$candidates = array();
+		if ( preg_match( '/(feed|rss|atom|\.xml)/', $path ) ) {
+			$candidates[] = $url; // The configured URL is the feed itself.
+		}
+		$candidates[] = $base . '/feed/';
+		$candidates[] = $base . '/feed';
+		$candidates[] = $base . '/rss';
+		$candidates[] = $base . '/rss.xml';
+		$candidates[] = $base . '/feed.xml';
+		$candidates[] = $base . '/atom.xml';
+		$candidates[] = $base . '/index.xml';
+		$candidates[] = $base . '/?feed=rss2';
+		return array_values( array_unique( $candidates ) );
+	}
+
+	/**
+	 * Does this URL serve a non-empty RSS/Atom feed?
+	 *
+	 * @param string $url Candidate feed URL.
+	 * @return bool
+	 */
+	private static function feed_works( $url ) {
+		if ( class_exists( 'AIPC_Network' ) && ! AIPC_Network::is_safe_url( $url ) ) {
+			return false;
+		}
+		// SimplePie logs every miss straight through error_log() (gated
+		// only by error_reporting) — probing candidate URLs would spam
+		// the log, so silence user-level messages for this one call.
+		$er = error_reporting(); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+		error_reporting( $er & ~E_USER_NOTICE & ~E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+		$feed = fetch_feed( $url );
+		error_reporting( $er ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+		return ! is_wp_error( $feed )
+			&& method_exists( $feed, 'get_item_quantity' )
+			&& $feed->get_item_quantity() > 0;
+	}
+
+	/**
+	 * Feed URLs declared by the page's own HTML head
+	 * (`<link rel="alternate" type="application/rss+xml" href="…">`).
+	 *
+	 * @param string $url Page URL.
+	 * @return string[] Absolute feed URLs (max 3).
+	 */
+	private static function feeds_from_html( $url ) {
+		if ( class_exists( 'AIPC_Network' ) && ! AIPC_Network::is_safe_url( $url ) ) {
+			return array();
+		}
+		$res = wp_remote_get( $url, array( 'timeout' => 10, 'redirection' => 3 ) );
+		if ( is_wp_error( $res ) || 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
+			return array();
+		}
+		$html = (string) wp_remote_retrieve_body( $res );
+		$html = substr( $html, 0, 100000 ); // The <head> is all we need.
+
+		$scheme = (string) wp_parse_url( $url, PHP_URL_SCHEME );
+		$host   = (string) wp_parse_url( $url, PHP_URL_HOST );
+		$origin = $scheme . '://' . $host;
+
+		$found = array();
+		if ( preg_match_all( '/<link\b[^>]*>/i', $html, $tags ) ) {
+			foreach ( $tags[0] as $tag ) {
+				if ( ! preg_match( '/type=["\']application\/(?:rss|atom)\+xml["\']/i', $tag ) ) {
+					continue;
+				}
+				if ( ! preg_match( '/href=["\']([^"\']+)["\']/i', $tag, $m ) ) {
+					continue;
+				}
+				$href = html_entity_decode( trim( $m[1] ), ENT_QUOTES );
+				if ( 0 === strpos( $href, '//' ) ) {
+					$href = $scheme . ':' . $href;
+				} elseif ( 0 === strpos( $href, '/' ) ) {
+					$href = $origin . $href;
+				} elseif ( ! preg_match( '#^https?://#i', $href ) ) {
+					$href = rtrim( $url, '/' ) . '/' . ltrim( $href, '/' );
+				}
+				$found[] = esc_url_raw( $href );
+				if ( count( $found ) >= 3 ) {
+					break;
+				}
+			}
+		}
+		return array_values( array_filter( array_unique( $found ) ) );
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Dismissed suggestions (1.23.0)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Dismissed suggestion keys: {norm: unix_time}.
+	 *
+	 * @return array
+	 */
+	public static function dismissed() {
+		$cfg = self::all();
+		return isset( $cfg['dismissed'] ) && is_array( $cfg['dismissed'] ) ? $cfg['dismissed'] : array();
+	}
+
+	/**
+	 * Never suggest this headline again.
+	 *
+	 * @param string $text Suggestion text.
+	 * @return bool Whether it was recorded.
+	 */
+	public static function dismiss( $text ) {
+		$text = self::normalize_text( $text );
+		$norm = self::normalize_key( $text );
+		if ( '' === $norm ) {
+			return false;
+		}
+		$cfg                       = self::all();
+		$dismissed                 = isset( $cfg['dismissed'] ) && is_array( $cfg['dismissed'] ) ? $cfg['dismissed'] : array();
+		$dismissed[ $norm ]        = time();
+		if ( count( $dismissed ) > self::MAX_DISMISSED ) {
+			asort( $dismissed ); // Oldest first…
+			$dismissed = array_slice( $dismissed, -1 * self::MAX_DISMISSED, null, true ); // …keep the newest.
+		}
+		$cfg['dismissed'] = $dismissed;
+		update_option( self::OPTION, $cfg, false );
+		return true;
 	}
 
 	/**

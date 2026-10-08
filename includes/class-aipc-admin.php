@@ -23,10 +23,21 @@ final class AIPC_Admin {
 
 		add_action( 'admin_post_aipc_save_connection', array( __CLASS__, 'handle_save_connection' ) );
 		add_action( 'admin_post_aipc_delete_connection', array( __CLASS__, 'handle_delete_connection' ) );
+		add_action( 'admin_post_aipc_toggle_connection', array( __CLASS__, 'handle_toggle_connection' ) );
+		add_action( 'admin_post_aipc_regen_thumb', array( __CLASS__, 'handle_regen_thumb' ) );
+		add_action( 'admin_post_aipc_download_trace', array( __CLASS__, 'handle_download_trace' ) );
+		add_action( 'admin_post_aipc_clear_trace', array( __CLASS__, 'handle_clear_trace' ) );
+		add_filter( 'post_row_actions', array( __CLASS__, 'thumb_row_action' ), 10, 2 );
+		add_action( 'admin_notices', array( __CLASS__, 'thumb_notices' ) );
 		add_action( 'admin_post_aipc_publish_draft', array( __CLASS__, 'handle_publish_draft' ) );
 		add_action( 'admin_post_aipc_save_steps', array( __CLASS__, 'handle_save_steps' ) );
 		add_action( 'admin_post_aipc_clear_logs', array( __CLASS__, 'handle_clear_logs' ) );
 		add_action( 'admin_post_aipc_delete_job', array( __CLASS__, 'handle_delete_job' ) );
+		add_action( 'admin_post_aipc_cancel_job', array( __CLASS__, 'handle_cancel_job' ) );
+		add_action( 'admin_post_aipc_cancel_all_jobs', array( __CLASS__, 'handle_cancel_all_jobs' ) );
+		add_action( 'admin_post_aipc_repair_images', array( __CLASS__, 'handle_repair_images' ) );
+		add_action( 'admin_post_aipc_unschedule_publish', array( __CLASS__, 'handle_unschedule_publish' ) );
+		add_action( 'admin_post_aipc_revert_future', array( __CLASS__, 'handle_revert_future' ) );
 		add_action( 'admin_post_aipc_save_schedule', array( __CLASS__, 'handle_save_schedule' ) );
 		add_action( 'admin_post_aipc_delete_schedule', array( __CLASS__, 'handle_delete_schedule' ) );
 		add_action( 'admin_post_aipc_run_now', array( __CLASS__, 'handle_run_now' ) );
@@ -118,6 +129,24 @@ final class AIPC_Admin {
 			'manage_options',
 			'aipc-schedule',
 			array( __CLASS__, 'render_schedule' )
+		);
+
+		add_submenu_page(
+			'aipc',
+			__( 'Bale / Telegram Bot', 'wp-ai-post-creator' ),
+			__( 'Bale / Telegram', 'wp-ai-post-creator' ),
+			'manage_options',
+			'aipc-bot',
+			array( __CLASS__, 'render_bot' )
+		);
+
+		add_submenu_page(
+			'aipc',
+			__( 'Jobs & Cron', 'wp-ai-post-creator' ),
+			__( 'Jobs & Cron', 'wp-ai-post-creator' ),
+			'manage_options',
+			'aipc-cron',
+			array( __CLASS__, 'render_cron' )
 		);
 
 		add_submenu_page(
@@ -255,6 +284,100 @@ final class AIPC_Admin {
 		require AIPC_PLUGIN_DIR . 'admin/views/settings.php';
 	}
 
+	public static function render_bot() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
+		}
+		require AIPC_PLUGIN_DIR . 'admin/views/bot.php';
+	}
+
+	public static function render_cron() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-ai-post-creator' ) );
+		}
+		require AIPC_PLUGIN_DIR . 'admin/views/cron.php';
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Jobs & Cron overview (1.17.0)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Everything unfinished or scheduled, in one structure.
+	 *
+	 * @return array {jobs, publishes, events, future}
+	 */
+	public static function cron_overview() {
+		$jobs = array();
+		foreach ( AIPC_Job_Store::all( 200 ) as $aipc_job ) {
+			if ( in_array( $aipc_job['status'], array( 'running', 'queued', 'error' ), true ) ) {
+				$jobs[] = $aipc_job;
+			}
+		}
+
+		$publishes = array();
+		$events    = array();
+		$crons     = function_exists( '_get_cron_array' ) ? _get_cron_array() : array();
+		foreach ( (array) $crons as $ts => $hooks ) {
+			if ( ! is_array( $hooks ) ) {
+				continue;
+			}
+			foreach ( $hooks as $hook => $entries ) {
+				if ( 0 !== strpos( (string) $hook, 'aipc' ) ) {
+					continue;
+				}
+				foreach ( (array) $entries as $entry ) {
+					$row = array(
+						'hook'     => (string) $hook,
+						'ts'       => (int) $ts,
+						'args'     => isset( $entry['args'] ) ? (array) $entry['args'] : array(),
+						'schedule' => isset( $entry['schedule'] ) && $entry['schedule'] ? (string) $entry['schedule'] : '',
+					);
+					if ( 'aipc_publish_post' === $hook ) {
+						$publishes[] = $row;
+					} else {
+						$events[] = $row;
+					}
+				}
+			}
+		}
+
+		$future = get_posts( array(
+			'post_type'        => 'post',
+			'post_status'      => 'future',
+			'numberposts'      => 50,
+			'meta_key'         => '_aipc_generated',
+			'suppress_filters' => true,
+		) );
+
+		return compact( 'jobs', 'publishes', 'events', 'future' );
+	}
+
+	/**
+	 * Remove every pending delayed-publish cron event for one post.
+	 *
+	 * @param int $post_id Post id.
+	 * @return int Number of events removed.
+	 */
+	public static function unschedule_publish( $post_id ) {
+		$post_id = (int) $post_id;
+		$removed = 0;
+		$crons   = function_exists( '_get_cron_array' ) ? _get_cron_array() : array();
+		foreach ( (array) $crons as $ts => $hooks ) {
+			if ( empty( $hooks['aipc_publish_post'] ) ) {
+				continue;
+			}
+			foreach ( (array) $hooks['aipc_publish_post'] as $entry ) {
+				$args = isset( $entry['args'] ) ? (array) $entry['args'] : array();
+				if ( isset( $args[0] ) && (int) $args[0] === $post_id ) {
+					wp_unschedule_event( (int) $ts, 'aipc_publish_post', $args );
+					$removed++;
+				}
+			}
+		}
+		return $removed;
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Form handlers (admin-post)
 	 * ------------------------------------------------------------------- */
@@ -308,6 +431,141 @@ final class AIPC_Admin {
 
 		wp_safe_redirect( add_query_arg(
 			array( 'page' => 'aipc-connections', 'aipc_msg' => 'deleted' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Stream the API trace log as a download (v1.11.0).
+	 *
+	 * @return void
+	 */
+	public static function handle_download_trace() {
+		self::guard( 'aipc_download_trace' );
+
+		$path = AIPC_Trace::path();
+		if ( ! file_exists( $path ) && ! file_exists( $path . '.1' ) ) {
+			wp_safe_redirect( add_query_arg(
+				array( 'page' => 'aipc-settings', 'aipc_msg' => 'trace_empty' ),
+				admin_url( 'admin.php' )
+			) );
+			exit;
+		}
+
+		nocache_headers();
+		header( 'Content-Type: text/plain; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="aipc-trace-' . gmdate( 'Ymd-His' ) . '.log"' );
+
+		// Rotated generation first, then the live file → chronological order.
+		if ( file_exists( $path . '.1' ) ) {
+			readfile( $path . '.1' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+		}
+		if ( file_exists( $path ) ) {
+			readfile( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+		}
+		exit;
+	}
+
+	/**
+	 * Clear the API trace log (v1.11.0).
+	 *
+	 * @return void
+	 */
+	public static function handle_clear_trace() {
+		self::guard( 'aipc_clear_trace' );
+		AIPC_Trace::clear();
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-settings', 'aipc_msg' => 'trace_cleared' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * "Regenerate AI image" link in the posts-list row actions (v1.10.0).
+	 *
+	 * @param array   $actions Row actions.
+	 * @param WP_Post $post    Post.
+	 * @return array
+	 */
+	public static function thumb_row_action( $actions, $post ) {
+		if ( 'post' !== $post->post_type || ! current_user_can( 'manage_options' ) || ! current_user_can( 'edit_post', $post->ID ) ) {
+			return $actions;
+		}
+		$url = wp_nonce_url(
+			admin_url( 'admin-post.php?action=aipc_regen_thumb&post=' . (int) $post->ID ),
+			'aipc_regen_thumb_' . (int) $post->ID
+		);
+		$actions['aipc_regen_thumb'] = '<a href="' . esc_url( $url ) . '">🖼 ' . esc_html__( 'Regenerate AI image', 'wp-ai-post-creator' ) . '</a>';
+		return $actions;
+	}
+
+	/**
+	 * Generate a fresh AI featured image for one post (v1.10.0).
+	 *
+	 * @return void
+	 */
+	public static function handle_regen_thumb() {
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+		check_admin_referer( 'aipc_regen_thumb_' . $post_id );
+		if ( ! current_user_can( 'manage_options' ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'wp-ai-post-creator' ) );
+		}
+
+		$res  = AIPC_Agent::regenerate_thumbnail( $post_id );
+		$args = array( 'aipc_msg' => is_wp_error( $res ) ? 'thumb_err' : 'thumb_ok' );
+		if ( is_wp_error( $res ) ) {
+			$args['aipc_err'] = rawurlencode( mb_substr( $res->get_error_message(), 0, 200 ) );
+		}
+
+		$back = wp_get_referer();
+		$back = $back ? remove_query_arg( array( 'aipc_msg', 'aipc_err' ), $back ) : admin_url( 'edit.php' );
+		wp_safe_redirect( add_query_arg( $args, $back ) );
+		exit;
+	}
+
+	/**
+	 * Result notice for the thumbnail regeneration (posts list).
+	 *
+	 * @return void
+	 */
+	public static function thumb_notices() {
+		if ( ! isset( $_GET['aipc_msg'] ) ) {
+			return;
+		}
+		$msg = sanitize_key( wp_unslash( $_GET['aipc_msg'] ) );
+		if ( 'thumb_ok' === $msg ) {
+			echo '<div class="notice notice-success is-dismissible"><p>🖼 ' . esc_html__( 'A new AI featured image was generated and set for the post.', 'wp-ai-post-creator' ) . '</p></div>';
+		} elseif ( 'thumb_err' === $msg ) {
+			$err = isset( $_GET['aipc_err'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['aipc_err'] ) ) ) : '';
+			echo '<div class="notice notice-error is-dismissible"><p>⚠️ ' . esc_html__( 'Could not generate a new featured image.', 'wp-ai-post-creator' ) . ( $err ? ' — ' . esc_html( $err ) : '' ) . '</p></div>';
+		} elseif ( 'trace_cleared' === $msg ) {
+			echo '<div class="notice notice-success is-dismissible"><p>🗑 ' . esc_html__( 'Trace log cleared.', 'wp-ai-post-creator' ) . '</p></div>';
+		} elseif ( 'trace_empty' === $msg ) {
+			echo '<div class="notice notice-warning is-dismissible"><p>ℹ️ ' . esc_html__( 'The trace log is empty — enable it and run a job first.', 'wp-ai-post-creator' ) . '</p></div>';
+		}
+	}
+
+	/**
+	 * Enable/disable a connection without opening the edit form (v1.9.3).
+	 *
+	 * @return void
+	 */
+	public static function handle_toggle_connection() {
+		self::guard( 'aipc_toggle_connection' );
+
+		$id   = isset( $_GET['id'] ) ? sanitize_key( wp_unslash( $_GET['id'] ) ) : '';
+		$conn = $id ? AIPC_Connections::get( $id ) : null;
+		$msg  = 'saved';
+		if ( $conn ) {
+			$conn['enabled'] = empty( $conn['enabled'] ) ? 1 : 0;
+			AIPC_Connections::save( $conn );
+			$msg = $conn['enabled'] ? 'enabled' : 'disabled';
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-connections', 'aipc_msg' => $msg ),
 			admin_url( 'admin.php' )
 		) );
 		exit;
@@ -450,6 +708,107 @@ final class AIPC_Admin {
 	}
 
 	/**
+	 * Cancel one unfinished job (Jobs & Cron page).
+	 *
+	 * @return void
+	 */
+	public static function handle_cancel_job() {
+		self::guard( 'aipc_cancel_job' );
+
+		$id = isset( $_GET['id'] ) ? sanitize_key( wp_unslash( $_GET['id'] ) ) : '';
+		if ( $id ) {
+			AIPC_Agent::instance()->cancel_job( $id );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-cron', 'aipc_msg' => 'job_cancelled' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Scan for posts without a featured image and start quiet repair
+	 * jobs (Jobs & Cron page, 1.22.0).
+	 *
+	 * @return void
+	 */
+	public static function handle_repair_images() {
+		self::guard( 'aipc_repair_images' );
+		$count = AIPC_Agent::instance()->repair_missing_images();
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-cron', 'aipc_msg' => 'images_repairing', 'aipc_count' => (int) $count ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Cancel every unfinished job at once (Jobs & Cron page).
+	 *
+	 * @return void
+	 */
+	public static function handle_cancel_all_jobs() {
+		self::guard( 'aipc_cancel_all_jobs' );
+
+		$overview = self::cron_overview();
+		$agent    = AIPC_Agent::instance();
+		foreach ( $overview['jobs'] as $aipc_job ) {
+			$agent->cancel_job( (string) $aipc_job['id'] );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-cron', 'aipc_msg' => 'jobs_cancelled' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Remove a pending delayed-publish cron event (post stays a draft).
+	 *
+	 * @return void
+	 */
+	public static function handle_unschedule_publish() {
+		self::guard( 'aipc_unschedule_publish' );
+
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+		if ( $post_id ) {
+			self::unschedule_publish( $post_id );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-cron', 'aipc_msg' => 'publish_unscheduled' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Move a scheduled ("future") AI post back to draft.
+	 *
+	 * @return void
+	 */
+	public static function handle_revert_future() {
+		self::guard( 'aipc_revert_future' );
+
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+		$post    = $post_id ? get_post( $post_id ) : null;
+		if ( $post && 'future' === $post->post_status && '' !== (string) get_post_meta( $post_id, '_aipc_generated', true ) ) {
+			wp_update_post( array(
+				'ID'          => $post_id,
+				'post_status' => 'draft',
+			) );
+		}
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'aipc-cron', 'aipc_msg' => 'future_reverted' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
 	 * Save (create or update) a schedule entry.
 	 *
 	 * @return void
@@ -468,11 +827,13 @@ final class AIPC_Admin {
 			'topic'         => isset( $_POST['topic'] ) ? wp_unslash( $_POST['topic'] ) : '',
 			'publish'       => isset( $_POST['publish'] ) ? sanitize_key( wp_unslash( $_POST['publish'] ) ) : 'draft',
 			'publish_delay' => isset( $_POST['publish_delay'] ) ? absint( wp_unslash( $_POST['publish_delay'] ) ) : 60,
+			'kind'          => isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : 'new',
 			'opts'          => array(
 				'tone'     => isset( $_POST['tone'] ) ? sanitize_key( wp_unslash( $_POST['tone'] ) ) : '',
 				'length'   => isset( $_POST['length'] ) ? sanitize_key( wp_unslash( $_POST['length'] ) ) : '',
 				'language' => isset( $_POST['language'] ) ? sanitize_key( wp_unslash( $_POST['language'] ) ) : '',
-				'image'    => ! empty( $_POST['image'] ),
+				'image'       => ! empty( $_POST['image'] ),
+				'force_image' => ! empty( $_POST['force_image'] ),
 				'faq'      => ! empty( $_POST['faq'] ),
 				'toc'      => ! empty( $_POST['toc'] ),
 			),
@@ -719,12 +1080,27 @@ final class AIPC_Admin {
 	public static function handle_save_bale() {
 		self::guard( 'aipc_save_bale' );
 
-		$cfg = AIPC_Bale::sanitize( wp_unslash( $_POST ), AIPC_Bale::all() );
+		$old = AIPC_Bale::all();
+		$cfg = AIPC_Bale::sanitize( wp_unslash( $_POST ), $old );
 		AIPC_Bale::save( $cfg );
 		AIPC_Bale_Commands::maybe_schedule();
 
+		// Register / remove the instant-mode webhook with the platform.
+		$msg = 'bale_saved';
+		if ( AIPC_Bale::webhook_active( $cfg ) && '' !== $cfg['token'] ) {
+			$res = AIPC_Bale::set_webhook();
+			if ( is_wp_error( $res ) ) {
+				$msg = 'webhook_fail';
+				set_transient( 'aipc_webhook_error', $res->get_error_message(), 5 * MINUTE_IN_SECONDS );
+			} else {
+				$msg = 'webhook_ok';
+			}
+		} elseif ( ! empty( $old['webhook'] ) && empty( $cfg['webhook'] ) && '' !== $cfg['token'] ) {
+			AIPC_Bale::delete_webhook(); // Back to polling; errors are harmless.
+		}
+
 		wp_safe_redirect( add_query_arg(
-			array( 'page' => 'aipc-schedule', 'aipc_msg' => 'bale_saved' ),
+			array( 'page' => 'aipc-bot', 'aipc_msg' => $msg ),
 			admin_url( 'admin.php' )
 		) );
 		exit;

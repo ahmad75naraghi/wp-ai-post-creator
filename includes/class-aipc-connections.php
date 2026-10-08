@@ -25,7 +25,74 @@ final class AIPC_Connections {
 	 */
 	public static function all() {
 		$conns = get_option( self::OPTION, array() );
-		return is_array( $conns ) ? $conns : array();
+		if ( ! is_array( $conns ) ) {
+			return array();
+		}
+		// Connections stored before 1.8.0 have no purpose/priority.
+		foreach ( $conns as $i => $conn ) {
+			if ( ! isset( $conn['purpose'] ) || ! in_array( $conn['purpose'], array( 'both', 'chat', 'image' ), true ) ) {
+				$conns[ $i ]['purpose'] = 'both';
+			}
+			if ( ! isset( $conn['priority'] ) || (int) $conn['priority'] < 1 ) {
+				$conns[ $i ]['priority'] = 10;
+			}
+			if ( ! isset( $conn['image_format'] ) || ! in_array( $conn['image_format'], array( 'auto', 'b64' ), true ) ) {
+				$conns[ $i ]['image_format'] = 'auto';
+			}
+			if ( ! isset( $conn['image_api'] ) || ! in_array( $conn['image_api'], array( 'auto', 'images', 'chat' ), true ) ) {
+				$conns[ $i ]['image_api'] = 'auto';
+			}
+			// Connections stored before 1.9.3 have no enabled flag.
+			if ( ! isset( $conn['enabled'] ) ) {
+				$conns[ $i ]['enabled'] = 1;
+			}
+		}
+		return $conns;
+	}
+
+	/**
+	 * Connections usable for a purpose ('chat' or 'image'), ordered by
+	 * priority (lower number = tried first), then default flag, then name.
+	 *
+	 * A connection participates when its own purpose matches or is 'both'.
+	 * The agent gives each entry its own retry budget (3 attempts by
+	 * default) and falls back to the next one on repeated failure.
+	 *
+	 * @param string $purpose 'chat' or 'image'.
+	 * @return array[] Ordered connection data (may be empty).
+	 */
+	public static function for_purpose( $purpose ) {
+		$purpose = ( 'image' === $purpose ) ? 'image' : 'chat';
+		$pool    = array();
+		foreach ( self::all() as $conn ) {
+			if ( empty( $conn['base_url'] ) || empty( $conn['enabled'] ) ) {
+				continue;
+			}
+			if ( 'both' === $conn['purpose'] || $purpose === $conn['purpose'] ) {
+				$pool[] = $conn;
+			}
+		}
+		usort( $pool, function ( $a, $b ) {
+			$pa = (int) $a['priority'];
+			$pb = (int) $b['priority'];
+			if ( $pa !== $pb ) {
+				return $pa - $pb;
+			}
+			$da = empty( $a['is_default'] ) ? 1 : 0;
+			$db = empty( $b['is_default'] ) ? 1 : 0;
+			if ( $da !== $db ) {
+				return $da - $db;
+			}
+			return strcasecmp( (string) $a['name'], (string) $b['name'] );
+		} );
+
+		/**
+		 * Filter the priority-ordered connection pool for a purpose.
+		 *
+		 * @param array[] $pool    Ordered connection data.
+		 * @param string  $purpose 'chat' or 'image'.
+		 */
+		return apply_filters( 'aipc_connections_for_purpose', $pool, $purpose );
 	}
 
 	/**
@@ -59,7 +126,9 @@ final class AIPC_Connections {
 	 * @return array|null
 	 */
 	public static function get_default() {
-		$conns = self::all();
+		$conns = array_values( array_filter( self::all(), function ( $conn ) {
+			return ! empty( $conn['enabled'] );
+		} ) );
 		if ( empty( $conns ) ) {
 			return null;
 		}
@@ -253,6 +322,36 @@ final class AIPC_Connections {
 			$timeout = 600;
 		}
 
+		$purpose = isset( $in['purpose'] ) ? sanitize_key( (string) $in['purpose'] ) : ( isset( $old['purpose'] ) ? $old['purpose'] : 'both' );
+		if ( ! in_array( $purpose, array( 'both', 'chat', 'image' ), true ) ) {
+			$purpose = 'both';
+		}
+
+		$priority = isset( $in['priority'] ) ? absint( $in['priority'] ) : ( isset( $old['priority'] ) ? absint( $old['priority'] ) : 10 );
+		if ( $priority < 1 ) {
+			$priority = 10;
+		} elseif ( $priority > 999 ) {
+			$priority = 999;
+		}
+
+		$image_format = isset( $in['image_format'] ) ? sanitize_key( (string) $in['image_format'] ) : ( isset( $old['image_format'] ) ? $old['image_format'] : 'auto' );
+		if ( ! in_array( $image_format, array( 'auto', 'b64' ), true ) ) {
+			$image_format = 'auto';
+		}
+
+		$image_api = isset( $in['image_api'] ) ? sanitize_key( (string) $in['image_api'] ) : ( isset( $old['image_api'] ) ? $old['image_api'] : 'auto' );
+		if ( ! in_array( $image_api, array( 'auto', 'images', 'chat' ), true ) ) {
+			$image_api = 'auto';
+		}
+
+		if ( isset( $in['enabled'] ) ) {
+			$enabled = absint( $in['enabled'] ) ? 1 : 0;
+		} elseif ( isset( $old['enabled'] ) ) {
+			$enabled = empty( $old['enabled'] ) ? 0 : 1;
+		} else {
+			$enabled = 1;
+		}
+
 		$conn = array(
 			'id'              => isset( $old['id'] ) ? $old['id'] : '',
 			'name'            => $name,
@@ -263,6 +362,11 @@ final class AIPC_Connections {
 			'temperature'     => $temp,
 			'max_tokens'      => $max_tokens,
 			'request_timeout' => $timeout,
+			'purpose'         => $purpose,
+			'priority'        => $priority,
+			'image_format'    => $image_format,
+			'image_api'       => $image_api,
+			'enabled'         => $enabled,
 			'is_default'      => empty( $in['is_default'] ) ? ( isset( $old['is_default'] ) ? $old['is_default'] : 0 ) : 1,
 			'created'         => isset( $old['created'] ) ? $old['created'] : 0,
 			'updated'         => time(),
@@ -311,9 +415,10 @@ final class AIPC_Connections {
 				'name'        => $conn['name'],
 				'base_url'    => $conn['base_url'],
 				'host'        => (string) wp_parse_url( $conn['base_url'], PHP_URL_HOST ),
-				'chat_model'  => $conn['chat_model'],
-				'image_model' => $conn['image_model'],
+				'chat_model'  => isset( $conn['chat_model'] ) ? $conn['chat_model'] : '',
+				'image_model' => isset( $conn['image_model'] ) ? $conn['image_model'] : '',
 				'is_default'  => empty( $conn['is_default'] ) ? 0 : 1,
+				'enabled'     => empty( $conn['enabled'] ) ? 0 : 1,
 				'has_key'     => ! empty( $conn['api_key'] ),
 			);
 		}
