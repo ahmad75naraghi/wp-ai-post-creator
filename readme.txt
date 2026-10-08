@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.23.1
+Stable tag: 1.24.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,11 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.24.0 =
+* New: hard near-duplicate guard — topics that are almost the same as an existing article (plural forms, reordered words, small additions) are now blocked at three layers: before the job starts, at the planning step (the model must propose a genuinely different topic) and right before saving; drafts and scheduled posts count too. "Allow duplicate topic" still overrides.
+* New: anti-repeat featured images — recent image concepts are remembered and every new image is steered away from them; a concept too close to a recent image automatically gets a different composition
+* Improved: the planner now sees the last 40 existing articles including drafts and scheduled posts (was: 30 published only)
 
 = 1.23.1 =
 * Improved: connection failures now explain what to check instead of only showing the raw cURL error — connection refused (gateway bound to localhost, closed firewall port, host blocking outbound ports), timeouts, DNS and TLS problems each get concrete advice

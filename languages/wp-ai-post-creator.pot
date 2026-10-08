@@ -1332,6 +1332,10 @@ msgstr ""
 msgid "I did not understand that command. Send «راهنما» (or help) for the list of commands."
 msgstr ""
 
+#: includes/class-aipc-agent.php
+msgid "IMPORTANT — these titles you proposed earlier were REJECTED because they almost duplicate existing articles of this site: %s. Do NOT propose them again or anything close to them. Pick a clearly different topic, subtopic or audience."
+msgstr ""
+
 #: admin/views/settings.php
 msgid "If every AI image connection fails, fetch a free CC-licensed photo from Openverse that matches the article subject"
 msgstr ""
@@ -1562,6 +1566,14 @@ msgstr ""
 
 #: admin/views/connections.php
 msgid "Name"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Near-duplicate blocked: this topic is almost the same as the existing article “%1$s” (post #%2$d). Choose a clearly different topic or angle, or enable “Allow duplicate topic” to write it anyway."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Near-duplicate rejected: the proposed title “%1$s” is almost identical to the existing article “%2$s” (post #%3$d) — asking for a clearly different topic."
 msgstr ""
 
 #: includes/class-aipc-settings.php
@@ -1984,6 +1996,10 @@ msgstr ""
 
 #: admin/views/prompts.php
 msgid "Prompts are the instructions sent to the AI for each step. A prompt left exactly at its default stays in “default” mode and is improved automatically on plugin updates; editing it freezes your own version."
+msgstr ""
+
+#: includes/class-aipc-steps.php
+msgid "Prompts of recent featured images (the new scene must differ from them)"
 msgstr ""
 
 #: admin/views/review.php admin/views/schedule.php
@@ -2496,6 +2512,10 @@ msgstr ""
 msgid "Stock photo fallback failed: %s"
 msgstr ""
 
+#: includes/class-aipc-agent.php
+msgid "Stopped before saving: the finished article “%1$s” is almost identical to the existing post “%2$s” (post #%3$d) — duplicate prevented, nothing was created."
+msgstr ""
+
 #: includes/class-aipc-settings.php
 msgid "Storytelling"
 msgstr ""
@@ -2706,6 +2726,10 @@ msgstr ""
 
 #: includes/class-aipc-api-client.php
 msgid "The image URL was rejected by the outbound network guard."
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "The image concept was too similar to a recent featured image — the composition was changed automatically to keep it distinct."
 msgstr ""
 
 #: includes/class-aipc-agent.php
@@ -2934,6 +2958,10 @@ msgstr ""
 
 #: includes/class-aipc-steps.php
 msgid "Title of the post being rewritten"
+msgstr ""
+
+#: includes/class-aipc-agent.php
+msgid "Title “%1$s” was too close to an existing article — using the distinct alternative “%2$s” instead."
 msgstr ""
 
 #: includes/class-aipc-bale-commands.php

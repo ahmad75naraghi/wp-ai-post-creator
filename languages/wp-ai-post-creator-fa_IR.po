@@ -3531,3 +3531,31 @@ msgstr "نام دامنه قابل تبدیل به IP نبود — نشانی ر
 #: includes/class-aipc-api-client.php
 msgid "The server refused the connection. Usual causes: (1) the gateway only listens on 127.0.0.1 — start it bound to 0.0.0.0 so other machines can reach it; (2) the port is closed in the server firewall or cloud security group — open it for this site's IP; (3) this hosting blocks outbound connections on non-standard ports — ask the host or move the gateway behind port 443. If the gateway runs on the SAME server as WordPress, use http://127.0.0.1:PORT/v1 instead of the public IP."
 msgstr "سرور اتصال را رد کرد. علت‌های رایج: (۱) گیت‌وی فقط روی 127.0.0.1 گوش می‌دهد — آن را روی 0.0.0.0 اجرا کنید تا از بیرون در دسترس باشد؛ (۲) پورت در فایروال سرور یا security group بسته است — آن را برای IP این سایت باز کنید؛ (۳) این هاست اتصال‌های خروجی به پورت‌های غیراستاندارد را می‌بندد — از پشتیبانی هاست بپرسید یا گیت‌وی را پشت پورت 443 ببرید. اگر گیت‌وی روی همان سرورِ وردپرس اجرا می‌شود، به‌جای IP عمومی از http://127.0.0.1:PORT/v1 استفاده کنید."
+
+#: includes/class-aipc-agent.php
+msgid "IMPORTANT — these titles you proposed earlier were REJECTED because they almost duplicate existing articles of this site: %s. Do NOT propose them again or anything close to them. Pick a clearly different topic, subtopic or audience."
+msgstr "مهم — این عنوان‌هایی که قبلاً پیشنهاد دادی رد شدند چون تقریباً تکرارِ مقاله‌های موجود این سایت بودند: %s. آن‌ها یا هر چیز نزدیک به آن‌ها را دوباره پیشنهاد نده. موضوع، زیرموضوع یا مخاطب کاملاً متفاوتی انتخاب کن."
+
+#: includes/class-aipc-agent.php
+msgid "Near-duplicate blocked: this topic is almost the same as the existing article “%1$s” (post #%2$d). Choose a clearly different topic or angle, or enable “Allow duplicate topic” to write it anyway."
+msgstr "درخواست تقریباً تکراری مسدود شد: این موضوع تقریباً همان مقالهٔ موجود «%1$s» (پست #%2$d) است. موضوع یا زاویهٔ کاملاً متفاوتی انتخاب کنید، یا «اجازه موضوع تکراری» را فعال کنید تا به‌هرحال نوشته شود."
+
+#: includes/class-aipc-agent.php
+msgid "Near-duplicate rejected: the proposed title “%1$s” is almost identical to the existing article “%2$s” (post #%3$d) — asking for a clearly different topic."
+msgstr "عنوان تقریباً تکراری رد شد: عنوان پیشنهادی «%1$s» تقریباً همان مقالهٔ موجود «%2$s» (پست #%3$d) است — موضوع کاملاً متفاوتی درخواست می‌شود."
+
+#: includes/class-aipc-steps.php
+msgid "Prompts of recent featured images (the new scene must differ from them)"
+msgstr "پرامپت‌های تصویرهای شاخص اخیر (صحنهٔ جدید باید با آن‌ها متفاوت باشد)"
+
+#: includes/class-aipc-agent.php
+msgid "Stopped before saving: the finished article “%1$s” is almost identical to the existing post “%2$s” (post #%3$d) — duplicate prevented, nothing was created."
+msgstr "پیش از ذخیره متوقف شد: مقالهٔ آمادهٔ «%1$s» تقریباً همان پست موجود «%2$s» (پست #%3$d) است — از تکرار جلوگیری شد و چیزی ساخته نشد."
+
+#: includes/class-aipc-agent.php
+msgid "The image concept was too similar to a recent featured image — the composition was changed automatically to keep it distinct."
+msgstr "ایدهٔ تصویر بیش از حد شبیه یکی از تصویرهای شاخص اخیر بود — ترکیب‌بندی به‌طور خودکار تغییر کرد تا متمایز بماند."
+
+#: includes/class-aipc-agent.php
+msgid "Title “%1$s” was too close to an existing article — using the distinct alternative “%2$s” instead."
+msgstr "عنوان «%1$s» بیش از حد به یک مقالهٔ موجود نزدیک بود — به‌جای آن از گزینهٔ متمایز «%2$s» استفاده شد."

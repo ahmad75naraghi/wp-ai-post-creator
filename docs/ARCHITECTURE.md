@@ -74,6 +74,7 @@ Connections, Prompts & Steps, Logs, Schedule, Settings).
 | `aipc_bale_msgmap` (autoload off) | `{"<chat_id>:<message_id>": post_id}` — sent draft-notification ids captured by `AIPC_Bale::notify()`, capped at 100; lets a Reply containing a date schedule exactly that post (1.17.0) |
 | `aipc_topic_queue` | `items[]` (`{id (tq_*), text (≤400), norm (dedup key), source (manual/rss), added, status (pending/used), job_id, used_at}`) — FIFO bank consumed by schedule entries with `use_queue`; used items are kept as dedup memory and pruned by `AIPC_Topic_Queue::prune()`. Since 1.23.0 also `dismissed{norm: time}` (≤500): headlines the admin ✕-ed in the suggestion list, never suggested again. A consumed queue topic sets the job arg `topic_hint_only=1` — the plan step treats it as a *subject* and crafts its own title |
 | `aipc_feed_cache` (autoload off, 1.23.0) | `{md5(source_url): {url, feed, checked}}` — result of `AIPC_Topic_Queue::discover_feed()` (common paths `/feed/`, `/rss`, `/rss.xml`, `/feed.xml`, `/atom.xml`, `/index.xml`, `/?feed=rss2`, then HTML `<link rel="alternate">` autodiscovery); hits cached 1 week, misses 6 hours, capped at 50 rows |
+| `aipc_image_history` (autoload off, 1.24.0) | `[{p (raw image prompt ≤300 chars, pre style-suffix), t}]` newest first, capped at 30 — written by `AIPC_Agent::remember_image_prompt()` after every successful AI featured image; feeds `{{recent_images}}` and the anti-repeat twist (`diversify_image_prompt()`) |
 | `aipc_claim_<md5>` (autoload off, 1.19.0) | atomic one-winner locks (`AIPC_Agent::claim()`): value = claim timestamp; keys `topic_<norm>` (10 min), `notify_<job>` / `entry_<id>_<date>` (1 day); long-expired rows pruned opportunistically |
 
 Post meta written by the builder: `_aipc_generated`, `_aipc_job`,
@@ -205,11 +206,32 @@ new-mode job with a non-empty topic when `AIPC_Agent::duplicate_of()` finds
 1. a **running job** with the same canonical topic,
 2. a **recent post** (`_aipc_topic_norm` meta written by
    `AIPC_Post_Builder::create()`, window `aipc_duplicate_window` = 30 days,
-   statuses publish/future/draft/pending/private), or
-3. a **pending topic-queue item** — skipped for `source = cron` and for the
+   statuses publish/future/draft/pending/private),
+3. a **near-duplicate post** (1.24.0) — `AIPC_Agent::similar_recent()` scans
+   the `aipc_similarity_pool` (150) most recent posts of any status and
+   reports the best `topic_similarity()` match at or above
+   `aipc_similarity_threshold` (0.7); the scorer is token-based with prefix
+   stemming (plural/suffixed variants still match) and falls back to
+   character similarity for very short titles, or
+4. a **pending topic-queue item** — skipped for `source = cron` and for the
    Bale queue button (`from_queue` arg), because those callers legitimately
    consume queue items (the scheduler additionally marks a duplicate queue
    item used so the queue never stalls).
+
+Two more near-duplicate layers run INSIDE the job (1.24.0, skipped when the
+job was forced — `args.allow_duplicate`): the **plan step** scores the
+proposed title plus every `title_options` alternative and throws on a
+near-duplicate (the retry prompt lists the rejected titles via
+`data.rejected_titles`, so the model must change direction; a distinct
+alternative title is swapped in silently when available), and
+**`step_finalize`** re-checks right before `AIPC_Post_Builder::create()` so a
+racing job cannot slip a near-duplicate through. Featured images get the
+same treatment: the last 30 raw image prompts live in `aipc_image_history`,
+the image-prompt step receives the 10 most recent via `{{recent_images}}`
+(appended on the fly to customized templates that predate the placeholder),
+and `AIPC_Agent::diversify_image_prompt()` appends a rotating composition
+twist when the new concept scores ≥ `aipc_image_similarity_threshold` (0.6)
+against a recent one.
 
 Canonicalisation (`AIPC_Agent::topic_norm()`) builds on
 `AIPC_Topic_Queue::normalize_key()` (Arabic ي/ك→Persian, digit styles,
@@ -415,8 +437,8 @@ until translations are added to its `NEW_TRANSLATIONS` dict.
 See [`tests/e2e/README.md`](../tests/e2e/README.md) for the full recipe:
 real WordPress 6.7.1 + SQLite (wp-sqlite-db) running under php-wasm, driven
 through the genuine REST stack against a mock OpenAI-compatible provider, a
-mock Bale Bot API, mock RSS feeds and an always-failing provider. 82 result
-groups / 609 assertions green at v1.23.1, zero PHP warnings. The same suite
+mock Bale Bot API, mock RSS feeds and an always-failing provider. 83 result
+groups / 621 assertions green at v1.24.0, zero PHP warnings. The same suite
 runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 12. Hooks reference

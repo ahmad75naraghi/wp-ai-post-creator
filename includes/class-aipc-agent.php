@@ -446,6 +446,7 @@ final class AIPC_Agent {
 			'faq'             => empty( $args['faq'] ) ? 0 : 1,
 			'toc'             => empty( $args['toc'] ) ? 0 : 1,
 			'topic_hint_only' => empty( $args['topic_hint_only'] ) ? 0 : 1,
+			'allow_duplicate' => empty( $args['force'] ) ? 0 : 1,
 			'mode'            => $mode,
 			'post_id'         => isset( $args['post_id'] ) ? absint( $args['post_id'] ) : 0,
 			'publish_mode'    => $publish_mode,
@@ -466,6 +467,216 @@ final class AIPC_Agent {
 		$t = preg_replace( '/[\x{200c}\x{200b}\x{00a0}]/u', ' ', $t );
 		$t = preg_replace( '/\s+/u', ' ', (string) $t );
 		return trim( (string) $t );
+	}
+
+	/**
+	 * Normalized meaningful tokens of a title/topic (1.24.0 — public
+	 * static so the near-duplicate guard and tests share one tokenizer).
+	 *
+	 * @param string $text Input text.
+	 * @return string[]
+	 */
+	public static function topic_tokens( $text ) {
+		$norm = self::topic_norm( $text );
+		if ( '' === $norm ) {
+			return array();
+		}
+		$tokens = array();
+		foreach ( preg_split( '/[^\p{L}\p{N}]+/u', $norm ) as $tok ) {
+			if ( mb_strlen( $tok ) >= 3 ) {
+				$tokens[ $tok ] = true;
+			}
+		}
+		return array_keys( $tokens );
+	}
+
+	/**
+	 * Similarity score between two titles/topics: 0 (unrelated) … 1
+	 * (practically the same). Token-based with light prefix stemming —
+	 * "راهکار" matches "راهکارهای", "guide" matches "guides" — so plural
+	 * or suffixed variants cannot sneak a near-duplicate past the guard.
+	 * Short inputs (fewer than two meaningful tokens) fall back to a
+	 * character-level comparison (1.24.0).
+	 *
+	 * @param string $a First title.
+	 * @param string $b Second title.
+	 * @return float 0..1.
+	 */
+	public static function topic_similarity( $a, $b ) {
+		$ta = self::topic_tokens( $a );
+		$tb = self::topic_tokens( $b );
+		if ( count( $ta ) < 2 || count( $tb ) < 2 ) {
+			$na = self::topic_norm( $a );
+			$nb = self::topic_norm( $b );
+			if ( '' === $na || '' === $nb ) {
+				return 0.0;
+			}
+			$pct = 0.0;
+			similar_text( $na, $nb, $pct );
+			return (float) $pct / 100;
+		}
+		// Greedy one-to-one matching with prefix stemming.
+		$used    = array();
+		$overlap = 0;
+		foreach ( $ta as $x ) {
+			foreach ( $tb as $j => $y ) {
+				if ( isset( $used[ $j ] ) ) {
+					continue;
+				}
+				$match = ( $x === $y );
+				if ( ! $match && mb_strlen( $x ) >= 4 && mb_strlen( $y ) >= 4 ) {
+					$match = ( 0 === mb_strpos( $x, $y ) || 0 === mb_strpos( $y, $x ) );
+				}
+				if ( $match ) {
+					$overlap++;
+					$used[ $j ] = true;
+					break;
+				}
+			}
+		}
+		if ( 0 === $overlap ) {
+			return 0.0;
+		}
+		$jaccard = $overlap / ( count( $ta ) + count( $tb ) - $overlap );
+		$contain = $overlap / min( count( $ta ), count( $tb ) );
+		return (float) max( $jaccard, $contain );
+	}
+
+	/**
+	 * Find the most similar existing post for a candidate title (1.24.0).
+	 * Scans the most recent posts of ANY status (drafts and scheduled
+	 * posts count too — a near-duplicate of a draft is still a
+	 * duplicate) and returns the best match at or above the threshold.
+	 *
+	 * @param string $title   Candidate title/topic.
+	 * @param int[]  $exclude Post ids to ignore (e.g. the post being rewritten).
+	 * @return array|null {id, title, score} or null when nothing is close.
+	 */
+	public static function similar_recent( $title, $exclude = array() ) {
+		$title = trim( (string) $title );
+		if ( '' === $title ) {
+			return null;
+		}
+
+		/**
+		 * Filter the similarity score (0..1) at which a candidate title
+		 * counts as a near-duplicate of an existing post.
+		 *
+		 * @param float $threshold Default 0.7.
+		 */
+		$thr = (float) apply_filters( 'aipc_similarity_threshold', 0.7 );
+
+		/**
+		 * Filter how many recent posts the near-duplicate guard scans.
+		 *
+		 * @param int $pool Default 150.
+		 */
+		$pool = max( 10, (int) apply_filters( 'aipc_similarity_pool', 150 ) );
+
+		$posts = get_posts( array(
+			'post_type'        => 'post',
+			'post_status'      => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+			'numberposts'      => $pool,
+			'orderby'          => 'date',
+			'order'            => 'DESC',
+			'no_found_rows'    => true,
+			'suppress_filters' => true,
+		) );
+
+		$exclude = array_map( 'intval', (array) $exclude );
+		$best    = null;
+		foreach ( $posts as $post ) {
+			if ( in_array( (int) $post->ID, $exclude, true ) ) {
+				continue;
+			}
+			$score = self::topic_similarity( $title, $post->post_title );
+			if ( $score >= $thr && ( null === $best || $score > $best['score'] ) ) {
+				$best = array(
+					'id'    => (int) $post->ID,
+					'title' => (string) $post->post_title,
+					'score' => $score,
+				);
+			}
+		}
+		return $best;
+	}
+
+	/**
+	 * Rolling history of AI featured-image prompts (1.24.0) — lets the
+	 * image step steer every new image away from recent visual concepts.
+	 *
+	 * @return array[] Newest first: {p: prompt, t: timestamp}.
+	 */
+	public static function image_history() {
+		$h = get_option( 'aipc_image_history', array() );
+		return is_array( $h ) ? $h : array();
+	}
+
+	/**
+	 * Remember a generated image prompt (newest first, capped at 30).
+	 *
+	 * @param string $prompt Raw model prompt (before the global style suffix).
+	 * @return void
+	 */
+	public static function remember_image_prompt( $prompt ) {
+		$prompt = trim( (string) $prompt );
+		if ( '' === $prompt ) {
+			return;
+		}
+		$h = self::image_history();
+		array_unshift( $h, array( 'p' => mb_substr( $prompt, 0, 300 ), 't' => time() ) );
+		update_option( 'aipc_image_history', array_slice( $h, 0, 30 ), false );
+	}
+
+	/**
+	 * Force a visually distinct image prompt (1.24.0): when the model's
+	 * scene is still too similar to a recently used featured image, a
+	 * rotating composition twist is appended so the result cannot look
+	 * like a repeat. Public static for testability.
+	 *
+	 * @param string        $prompt  Raw model image prompt.
+	 * @param array[]       $history Image history rows ({p, t}).
+	 * @param callable|null $log     Optional logger for the warn line.
+	 * @return string Possibly adjusted prompt.
+	 */
+	public static function diversify_image_prompt( $prompt, $history, $log = null ) {
+		$prompt = (string) $prompt;
+		if ( '' === trim( $prompt ) || empty( $history ) ) {
+			return $prompt;
+		}
+
+		/**
+		 * Filter the similarity score (0..1) at which a new image prompt
+		 * counts as a repeat of a recent featured image.
+		 *
+		 * @param float $threshold Default 0.6.
+		 */
+		$thr  = (float) apply_filters( 'aipc_image_similarity_threshold', 0.6 );
+		$near = false;
+		foreach ( array_slice( (array) $history, 0, 10 ) as $row ) {
+			if ( ! empty( $row['p'] ) && self::topic_similarity( $prompt, (string) $row['p'] ) >= $thr ) {
+				$near = true;
+				break;
+			}
+		}
+		if ( ! $near ) {
+			return $prompt;
+		}
+
+		$twists = array(
+			'overhead flat-lay composition, completely different arrangement',
+			'wide-angle environmental scene with the subject small in the frame',
+			'extreme close-up on one single telling detail',
+			'dramatic low-key side lighting against a dark background',
+			'bright airy minimalist scene with generous negative space',
+			'dynamic diagonal composition shot from a low angle',
+		);
+		$twist = $twists[ count( (array) $history ) % count( $twists ) ];
+
+		if ( is_callable( $log ) ) {
+			call_user_func( $log, __( 'The image concept was too similar to a recent featured image — the composition was changed automatically to keep it distinct.', 'wp-ai-post-creator' ) );
+		}
+		return rtrim( $prompt, " \t." ) . '. Composition requirement: ' . $twist . '.';
 	}
 
 	/**
@@ -549,6 +760,18 @@ final class AIPC_Agent {
 			}
 		}
 
+		// 2b) NEAR duplicate (1.24.0): an existing post is almost the
+		// same topic — plural forms, reordered words or small additions
+		// no longer slip past the exact-match check above.
+		$sim = self::similar_recent( $topic );
+		if ( $sim ) {
+			return array(
+				'type'  => 'similar',
+				'id'    => (int) $sim['id'],
+				'title' => (string) $sim['title'],
+			);
+		}
+
 		// 3) Waiting in the topic queue (manual/bot starts only).
 		if ( 'cron' !== $source && ! $skip_queue ) {
 			$cfg = AIPC_Topic_Queue::all();
@@ -584,6 +807,14 @@ final class AIPC_Agent {
 				/* translators: %s: topic. */
 				__( 'Duplicate request blocked: “%s” is already waiting in the topic queue and will be written on schedule.', 'wp-ai-post-creator' ),
 				$dup['title']
+			);
+		}
+		if ( 'similar' === $dup['type'] ) {
+			return sprintf(
+				/* translators: 1: post title, 2: post id. */
+				__( 'Near-duplicate blocked: this topic is almost the same as the existing article “%1$s” (post #%2$d). Choose a clearly different topic or angle, or enable “Allow duplicate topic” to write it anyway.', 'wp-ai-post-creator' ),
+				$dup['title'],
+				(int) $dup['id']
 			);
 		}
 		return sprintf(
@@ -1451,10 +1682,13 @@ final class AIPC_Agent {
 	 * @param int $limit Maximum titles.
 	 * @return string Bullet list.
 	 */
-	private function recent_posts_context( $limit = 30 ) {
+	private function recent_posts_context( $limit = 40 ) {
+		// Drafts, scheduled and pending posts count too (1.24.0): a
+		// topic that is already written but not yet published is still
+		// a duplicate.
 		$posts = get_posts( array(
 			'post_type'        => 'post',
-			'post_status'      => 'publish',
+			'post_status'      => array( 'publish', 'future', 'draft', 'pending', 'private' ),
 			'numberposts'      => $limit,
 			'orderby'          => 'date',
 			'order'            => 'DESC',
@@ -1536,17 +1770,7 @@ final class AIPC_Agent {
 	 * @return string[]
 	 */
 	private function title_tokens( $text ) {
-		$norm = self::topic_norm( $text );
-		if ( '' === $norm ) {
-			return array();
-		}
-		$tokens = array();
-		foreach ( preg_split( '/[^\p{L}\p{N}]+/u', $norm ) as $tok ) {
-			if ( mb_strlen( $tok ) >= 3 ) {
-				$tokens[ $tok ] = true;
-			}
-		}
-		return array_keys( $tokens );
+		return self::topic_tokens( $text );
 	}
 
 	/**
@@ -1678,6 +1902,17 @@ final class AIPC_Agent {
 			);
 		}
 
+		// Near-duplicate feedback loop (1.24.0): titles rejected in an
+		// earlier attempt are spelled out so the retry cannot circle
+		// back to the same idea.
+		if ( ! empty( $job['data']['rejected_titles'] ) && is_array( $job['data']['rejected_titles'] ) ) {
+			$topic_hint .= "\n" . sprintf(
+				/* translators: %s: quoted list of rejected titles. */
+				__( 'IMPORTANT — these titles you proposed earlier were REJECTED because they almost duplicate existing articles of this site: %s. Do NOT propose them again or anything close to them. Pick a clearly different topic, subtopic or audience.', 'wp-ai-post-creator' ),
+				'"' . implode( '", "', array_map( 'strval', $job['data']['rejected_titles'] ) ) . '"'
+			);
+		}
+
 		$args = array(
 			'{{site_context}}'    => $site_context,
 			'{{categories}}'      => trim( $cat_lines ),
@@ -1694,6 +1929,61 @@ final class AIPC_Agent {
 
 		if ( empty( $data['title'] ) || ! is_string( $data['title'] ) ) {
 			throw new Exception( __( 'The plan did not include a title. Please retry.', 'wp-ai-post-creator' ) );
+		}
+
+		// HARD near-duplicate gate (1.24.0): the proposed title — and
+		// every alternative the model offered — is scored against the
+		// existing posts. A near-duplicate NEVER passes: the best
+		// distinct alternative is used, otherwise the step fails and the
+		// retry asks for a fresh topic with the rejects spelled out.
+		if ( empty( $job['args']['allow_duplicate'] ) ) {
+			$candidates = array( (string) $data['title'] );
+			if ( ! empty( $data['title_options'] ) && is_array( $data['title_options'] ) ) {
+				foreach ( $data['title_options'] as $alt ) {
+					if ( is_string( $alt ) && '' !== trim( $alt ) ) {
+						$candidates[] = trim( $alt );
+					}
+				}
+			}
+			$picked   = '';
+			$sim_hit  = null;
+			foreach ( $candidates as $cand ) {
+				$hit = self::similar_recent( $cand );
+				if ( ! $hit ) {
+					$picked = $cand;
+					break;
+				}
+				if ( null === $sim_hit ) {
+					$sim_hit = $hit;
+				}
+			}
+			if ( '' === $picked ) {
+				$rejected = isset( $job['data']['rejected_titles'] ) && is_array( $job['data']['rejected_titles'] )
+					? $job['data']['rejected_titles']
+					: array();
+				foreach ( $candidates as $cand ) {
+					if ( ! in_array( $cand, $rejected, true ) ) {
+						$rejected[] = $cand;
+					}
+				}
+				$job['data']['rejected_titles'] = array_slice( $rejected, -10 );
+				throw new Exception( sprintf(
+					/* translators: 1: proposed title, 2: existing post title, 3: existing post id. */
+					__( 'Near-duplicate rejected: the proposed title “%1$s” is almost identical to the existing article “%2$s” (post #%3$d) — asking for a clearly different topic.', 'wp-ai-post-creator' ),
+					(string) $data['title'],
+					$sim_hit['title'],
+					(int) $sim_hit['id']
+				) );
+			}
+			if ( $picked !== (string) $data['title'] ) {
+				$this->log( $job, sprintf(
+					/* translators: 1: rejected title, 2: replacement title. */
+					__( 'Title “%1$s” was too close to an existing article — using the distinct alternative “%2$s” instead.', 'wp-ai-post-creator' ),
+					(string) $data['title'],
+					$picked
+				), 'warn' );
+				$data['title'] = $picked;
+			}
 		}
 
 		$chosen_id = 0;
@@ -2170,10 +2460,39 @@ final class AIPC_Agent {
 		$plan    = $job['data']['plan'];
 		$summary = isset( $job['data']['seo']['meta_description'] ) ? $job['data']['seo']['meta_description'] : '';
 
+		// Anti-repeat context (1.24.0): the prompts of the most recent
+		// featured images, so the model steers the new scene away from
+		// every concept the site has used lately.
+		$aipc_hist  = self::image_history();
+		$aipc_lines = '';
+		foreach ( array_slice( $aipc_hist, 0, 10 ) as $aipc_h ) {
+			if ( ! empty( $aipc_h['p'] ) ) {
+				$aipc_lines .= '- ' . mb_substr( (string) $aipc_h['p'], 0, 160 ) . "\n";
+			}
+		}
+		if ( '' === $aipc_lines ) {
+			$aipc_lines = '- (none yet)';
+		}
+
 		$args = array(
-			'{{title}}'   => $plan['title'],
-			'{{summary}}' => $summary,
+			'{{title}}'         => $plan['title'],
+			'{{summary}}'       => $summary,
+			'{{recent_images}}' => trim( $aipc_lines ),
 		);
+
+		// Back-compat (1.24.0): users who saved a customized image_prompt
+		// template before {{recent_images}} existed still get the
+		// anti-repeat block — it is appended to their template on the fly.
+		$aipc_compat = null;
+		if ( false === strpos( (string) AIPC_Steps::prompt_for( 'image_prompt' ), '{{recent_images}}' ) ) {
+			$aipc_compat = function ( $tpl, $step ) {
+				if ( 'image_prompt' === $step ) {
+					$tpl .= "\n\nRECENT featured images already used on this site (their generation prompts):\n{{recent_images}}\nThe new scene MUST look clearly different from every one of them — different subject matter, composition, setting, lighting and color palette.";
+				}
+				return $tpl;
+			};
+			add_filter( 'aipc_step_prompt', $aipc_compat, 10, 2 );
+		}
 
 		// The image prompt is a chat call — give it its own connection chain.
 		$ip_data = null;
@@ -2186,11 +2505,21 @@ final class AIPC_Agent {
 				$ip_err = $e->getMessage();
 			}
 		}
+		if ( null !== $aipc_compat ) {
+			remove_filter( 'aipc_step_prompt', $aipc_compat, 10 );
+		}
 		if ( null === $ip_data ) {
 			throw new Exception( $ip_err ? $ip_err : __( 'The image prompt step failed.', 'wp-ai-post-creator' ) );
 		}
 		$data    = $ip_data;
 		$iprompt = ! empty( $data['prompt'] ) ? (string) $data['prompt'] : $plan['title'];
+
+		// Hard anti-repeat check (1.24.0): when the model's scene is
+		// still too close to a recent featured image, a rotating
+		// composition twist forces a visibly different result.
+		$iprompt = self::diversify_image_prompt( $iprompt, $aipc_hist, function ( $msg ) use ( &$job ) {
+			$this->log( $job, $msg, 'warn' );
+		} );
 
 		// Stock-photo search seed (1.18.0): prefer the model's explicit
 		// keywords; otherwise the first words of the raw English prompt
@@ -2203,6 +2532,11 @@ final class AIPC_Agent {
 			$kw = implode( ' ', array_slice( preg_split( '/\s+/', $iprompt ), 0, 8 ) );
 		}
 		$job['data']['image_query'] = mb_substr( trim( $kw ), 0, 160 );
+
+		// Keep the raw concept for the anti-repeat history — the global
+		// style suffix below is identical on every image and would
+		// poison the similarity comparison (1.24.0).
+		$aipc_raw_prompt = $iprompt;
 
 		$iprompt = self::apply_image_prompt_default( $iprompt );
 
@@ -2260,6 +2594,8 @@ final class AIPC_Agent {
 			'attachment_id' => (int) $attach_id,
 			'prompt'        => $iprompt,
 		);
+		// Remember the concept so future images steer away from it (1.24.0).
+		self::remember_image_prompt( $aipc_raw_prompt );
 		$this->log( $job, sprintf(
 			/* translators: %d: attachment id. */
 			__( 'Featured image saved to the media library (#%d)', 'wp-ai-post-creator' ),
@@ -2882,6 +3218,23 @@ final class AIPC_Agent {
 				__( 'Quality score: %d/100.', 'wp-ai-post-creator' ),
 				$aipc_q['score']
 			), $aipc_q['score'] < $aipc_thr ? 'warn' : 'info' );
+		}
+
+		// Last-line near-duplicate net (1.24.0): if a nearly identical
+		// post appeared while this job was writing (e.g. a racing job or
+		// a manual publish), stop BEFORE saving — a duplicate must never
+		// reach the site.
+		if ( empty( $job['args']['allow_duplicate'] ) ) {
+			$aipc_sim = self::similar_recent( (string) $job['data']['plan']['title'] );
+			if ( $aipc_sim ) {
+				throw new Exception( sprintf(
+					/* translators: 1: finished article title, 2: existing post title, 3: existing post id. */
+					__( 'Stopped before saving: the finished article “%1$s” is almost identical to the existing post “%2$s” (post #%3$d) — duplicate prevented, nothing was created.', 'wp-ai-post-creator' ),
+					(string) $job['data']['plan']['title'],
+					$aipc_sim['title'],
+					(int) $aipc_sim['id']
+				) );
+			}
 		}
 
 		$post_id = AIPC_Post_Builder::create( $job );

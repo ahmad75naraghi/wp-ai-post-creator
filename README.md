@@ -1,7 +1,7 @@
 # 🤖 AI Post Creator — Agent-Style AI Post Generator for WordPress
 
 **Plugin Name:** AI Post Creator
-**Version:** 1.23.1 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
+**Version:** 1.24.0 · **Requires:** WordPress 5.7+ · PHP 7.4+ · **License:** GPL v2 or later ([LICENSE](LICENSE))
 
 ---
 
@@ -164,7 +164,8 @@ AI Post Creator turns the WordPress admin into an AI content agent. Set a **site
 * **Automatic internal linking** — links to your existing related posts are woven into the content while writing (planned in the topic step, max 4)
 * **Scheduled auto-publishing** — drafts stay the default, but any run can publish immediately or after a delay (15–10080 minutes)
 * **Connection fallback chains** — several connections per step, each with its own retry budget; the agent switches to the next automatically (text and image steps)
-* **Existing-post awareness** — the topic step sees your recent published titles and avoids duplicates
+* **Existing-post awareness** — the topic step sees your recent articles (drafts and scheduled posts included) and avoids duplicates
+* **Hard near-duplicate guard** (1.24.0) — topics that are *almost* the same as an existing article are blocked at three layers (before the job, at planning, right before saving), and featured images are steered away from recent visual concepts so neither the text nor the image repeats
 * **Research source sites** — up to 8 URLs; their RSS feeds ground the topic and facts during planning
 
 **New in 1.4.0 — multiple recipients, periodic reports, daily limit:**

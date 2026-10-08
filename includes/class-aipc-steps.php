@@ -53,6 +53,7 @@ CATEGORIES (existing post categories of this website):
 EXISTING ARTICLES ALREADY PUBLISHED HERE:
 {{recent_posts}}
 Do NOT pick a topic that duplicates or closely resembles one of these — the new article must cover fresh ground or a clearly different angle.
+HARD RULE: any title sharing most of its meaningful words with one of the articles above will be REJECTED automatically and the whole plan fails. When the obvious topic already exists, pick a different subtopic, a different audience, a different problem or a clearly different format instead — never a rephrasing of an existing article.
 
 RESEARCH SOURCES provided by the site owner (titles, links and summaries):
 {{sources}}
@@ -296,11 +297,15 @@ Return ONLY this JSON object:
 Article title: "{{title}}".
 Article summary: "{{summary}}".
 Style: modern, editorial, visually striking, high quality.
+RECENT featured images already used on this site (their generation prompts):
+{{recent_images}}
+The new scene MUST look clearly different from every one of them — different subject matter, different composition, different setting, different lighting and a different color palette. Repeating a recent visual concept is a failure.
 CRITICAL: the image must contain NO text, NO words, NO letters, NO watermarks.
 Describe the scene only. JSON only.',
 				'placeholders' => array(
-					'{{title}}'   => __( 'Working title', 'wp-ai-post-creator' ),
-					'{{summary}}' => __( 'Rank Math summary (meta description)', 'wp-ai-post-creator' ),
+					'{{title}}'         => __( 'Working title', 'wp-ai-post-creator' ),
+					'{{summary}}'       => __( 'Rank Math summary (meta description)', 'wp-ai-post-creator' ),
+					'{{recent_images}}' => __( 'Prompts of recent featured images (the new scene must differ from them)', 'wp-ai-post-creator' ),
 				),
 			),
 

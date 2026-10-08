@@ -3,6 +3,49 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.24.0] — 2026-10-08
+
+### Added
+- **Hard near-duplicate guard for topics.** The 1.19 guard only caught the
+  *exact* same topic; now a similarity engine (`AIPC_Agent::topic_similarity()`,
+  token-based with prefix stemming, so plural/suffixed variants like
+  «راهکار» vs «راهکارهای» still match) blocks topics that are *almost* the
+  same, at three independent layers:
+  1. **Before the job starts** — `duplicate_of()` scans the 150 most recent
+     posts of ANY status (drafts and scheduled posts count too) and rejects a
+     requested topic ≥ 70 % similar to an existing article.
+  2. **At the plan step** — the AI's proposed title and every alternative it
+     offered are scored; a near-duplicate NEVER passes. The best distinct
+     alternative is used when available, otherwise the step fails and the
+     retry explicitly lists the rejected titles so the model must pick a
+     genuinely different topic.
+  3. **Right before saving** — a last-line check stops the job if a nearly
+     identical post appeared while writing (racing jobs, manual publishes):
+     the duplicate is prevented, nothing is created.
+  "Allow duplicate topic" (force) bypasses all three layers, as before.
+  Tunable via the `aipc_similarity_threshold` (default 0.7) and
+  `aipc_similarity_pool` (default 150) filters.
+- **Anti-repeat featured images.** The prompts of the last 30 generated
+  images are remembered (`aipc_image_history`); every new image prompt is
+  (a) steered away from the 10 most recent concepts right in the
+  image-prompt request (new `{{recent_images}}` placeholder — customized
+  templates saved before this version get the block appended automatically),
+  and (b) hard-checked afterwards: a concept ≥ 60 % similar to a recent image
+  gets a rotating composition twist (flat-lay / wide-angle / macro / low-key /
+  negative-space / low-angle) so the result cannot look like a repeat.
+  Tunable via the `aipc_image_similarity_threshold` filter.
+
+### Improved
+- The plan step now sees the last 40 existing articles **including drafts,
+  scheduled, pending and private posts** (previously: 30 published only), and
+  the prompt states a hard rule: a title sharing most of its meaningful words
+  with an existing article is rejected automatically.
+
+### Tests
+- New e2e group `near_duplicate` (12 checks: similarity scoring + stemming,
+  draft/published matching, `duplicate_of` type `similar`, blocked vs forced
+  job creation, image history and composition twisting).
+
 ## [1.23.1] — 2026-10-04
 
 ### Improved

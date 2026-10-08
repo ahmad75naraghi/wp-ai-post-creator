@@ -3151,6 +3151,75 @@ update_option( 'aipc_settings', array_merge( AIPC_Settings::all(), array(
 	'source_sites' => 'https://news.invalid',
 ) ), false );
 
+/* ------------------------------------------------------------------ *
+ * v1.24.0 — hard near-duplicate guard: topics AND images.
+ * ------------------------------------------------------------------ */
+// Similarity engine.
+$aipc_nd_sim_high = AIPC_Agent::topic_similarity( '10 راهکار افزایش فروش آنلاین', 'راهکارهای افزایش فروش آنلاین در 1405' );
+$aipc_nd_sim_low  = AIPC_Agent::topic_similarity( 'آموزش نصب وردپرس', 'بهترین دوربین های 2025' );
+$aipc_nd_sim_stem = AIPC_Agent::topic_similarity( 'راهکار افزایش فروش آینده', 'راهکارهای افزایش فروش آینده' );
+
+// Near matches against real posts — drafts count too.
+$aipc_nd_pub = wp_insert_post( array(
+	'post_title'  => 'راهنمای کامل خرید گوشی هوشمند',
+	'post_content' => '<p>متن آزمایشی.</p>',
+	'post_status' => 'publish',
+) );
+$aipc_nd_dft = wp_insert_post( array(
+	'post_title'  => 'مقایسه میزبانی ابری و میزبانی اشتراکی',
+	'post_content' => '<p>متن آزمایشی.</p>',
+	'post_status' => 'draft',
+) );
+
+$aipc_nd_hit_pub = AIPC_Agent::similar_recent( 'راهنمای خرید گوشی هوشمند در سال جدید' );
+$aipc_nd_hit_dft = AIPC_Agent::similar_recent( 'مقایسه میزبانی ابری با میزبانی اشتراکی' );
+$aipc_nd_miss    = AIPC_Agent::similar_recent( 'دستور پخت کیک شکلاتی خانگی' );
+
+// duplicate_of() reports the near match…
+$aipc_nd_dup = AIPC_Agent::duplicate_of( 'راهنمای خرید گوشی هوشمند ارزان' );
+
+// …and create_job blocks it (while force/allow-duplicate passes).
+$aipc_nd_blocked = AIPC_Agent::instance()->create_job( 'راهنمای خرید گوشی هوشمند ارزان', array( 'image' => 0 ) );
+$aipc_nd_forced  = AIPC_Agent::instance()->create_job( 'راهنمای خرید گوشی هوشمند ارزان', array( 'image' => 0, 'force' => 1 ) );
+if ( ! is_wp_error( $aipc_nd_forced ) ) {
+	AIPC_Agent::instance()->cancel_job( $aipc_nd_forced['id'] );
+}
+
+// Image anti-repeat: history + rotating composition twist.
+delete_option( 'aipc_image_history' );
+AIPC_Agent::remember_image_prompt( 'A modern laptop on a wooden desk, warm morning light, minimalist editorial scene' );
+AIPC_Agent::remember_image_prompt( 'Fresh green basil plants in terracotta pots on a sunny balcony' );
+$aipc_nd_hist = AIPC_Agent::image_history();
+
+$aipc_nd_twisted = AIPC_Agent::diversify_image_prompt(
+	'A modern laptop on a wooden desk with warm morning light, minimalist editorial scene',
+	$aipc_nd_hist
+);
+$aipc_nd_kept = AIPC_Agent::diversify_image_prompt(
+	'Aerial view of a terraced rice field at sunset with a farmer walking along the ridge',
+	$aipc_nd_hist
+);
+
+$out['near_duplicate'] = array(
+	'sim_high'        => $aipc_nd_sim_high >= 0.7,
+	'sim_low'         => $aipc_nd_sim_low < 0.3,
+	'sim_stemming'    => $aipc_nd_sim_stem >= 0.9,
+	'finds_published' => is_array( $aipc_nd_hit_pub ) && (int) $aipc_nd_hit_pub['id'] === (int) $aipc_nd_pub,
+	'finds_draft'     => is_array( $aipc_nd_hit_dft ) && (int) $aipc_nd_hit_dft['id'] === (int) $aipc_nd_dft,
+	'distinct_passes' => null === $aipc_nd_miss,
+	'dup_reports'     => is_array( $aipc_nd_dup ) && 'similar' === $aipc_nd_dup['type'] && (int) $aipc_nd_dup['id'] === (int) $aipc_nd_pub,
+	'create_blocked'  => is_wp_error( $aipc_nd_blocked ) && 'aipc_duplicate' === $aipc_nd_blocked->get_error_code(),
+	'force_passes'    => ! is_wp_error( $aipc_nd_forced ) && ! empty( $aipc_nd_forced['args']['allow_duplicate'] ),
+	'history_kept'    => 2 === count( $aipc_nd_hist ) && false !== strpos( $aipc_nd_hist[0]['p'], 'basil' ),
+	'repeat_twisted'  => false !== strpos( $aipc_nd_twisted, 'Composition requirement' ),
+	'fresh_untouched' => false === strpos( $aipc_nd_kept, 'Composition requirement' ),
+);
+
+// Clean up so later groups see the same post set as before.
+wp_delete_post( $aipc_nd_pub, true );
+wp_delete_post( $aipc_nd_dft, true );
+delete_option( 'aipc_image_history' );
+
 
 
 
