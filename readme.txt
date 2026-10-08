@@ -4,7 +4,7 @@ Tags: openai, ai, content-generator, seo, gpt, dall-e, multi-provider
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.23.0
+Stable tag: 1.23.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,9 @@ Keys are stored in your own WordPress database and sent only to the provider you
 They were migrated automatically into a default connection under "AI Post Creator → Connections". Nothing needs to be re-entered.
 
 == Changelog ==
+
+= 1.23.1 =
+* Improved: connection failures now explain what to check instead of only showing the raw cURL error — connection refused (gateway bound to localhost, closed firewall port, host blocking outbound ports), timeouts, DNS and TLS problems each get concrete advice
 
 = 1.23.0 =
 * New: research-source feeds are discovered professionally — common feed paths (/feed/, /rss, /rss.xml, /atom.xml, …), Atom support and HTML link-tag autodiscovery, with a per-site cache; every configured source is read (not just the first five) and headlines are mixed fairly across sources

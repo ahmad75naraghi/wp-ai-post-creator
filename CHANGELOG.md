@@ -3,6 +3,23 @@
 All notable changes to AI Post Creator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — versions follow the plugin header.
 
+## [1.23.1] — 2026-10-04
+
+### Improved
+- **Actionable transport-error hints** (`AIPC_API_Client::transport_hint()`):
+  a failed connection no longer stops at the raw cURL message. The usual
+  codes now carry concrete advice — cURL 7 (connection refused: gateway
+  bound to 127.0.0.1 instead of 0.0.0.0, closed firewall port, hosting
+  that blocks outbound non-standard ports, or "use http://127.0.0.1:PORT/v1
+  when the gateway runs on the same server"), cURL 28 (silently dropping
+  firewall / wrong IP), cURL 6 (DNS typo) and cURL 35/51/60 (TLS on a
+  plain-HTTP port / invalid certificate). Shown in the connection test
+  and every runtime provider error.
+
+### Tests
+- New e2e group `transport_hints` (hint mapping for all four families +
+  the full connection-test path surfaces the hint).
+
 ## [1.23.0] — 2026-10-04
 
 Research sources that actually deliver, and a queue that behaves like an

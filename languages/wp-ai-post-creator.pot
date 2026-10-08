@@ -2512,6 +2512,10 @@ msgstr ""
 msgid "System prompt (all steps)"
 msgstr ""
 
+#: includes/class-aipc-api-client.php
+msgid "TLS/SSL problem — the certificate is invalid/self-signed or the port does not speak HTTPS at all. For a plain local gateway use http:// instead of https://."
+msgstr ""
+
 #: admin/views/new-post.php admin/views/rewrite.php admin/views/schedule.php includes/class-aipc-post-builder.php
 msgid "Table of contents"
 msgstr ""
@@ -2644,6 +2648,10 @@ msgstr ""
 msgid "The chat route returned no image — the model may not support image output."
 msgstr ""
 
+#: includes/class-aipc-api-client.php
+msgid "The connection timed out — a firewall is probably dropping the packets silently (open the port for this site's IP), the IP is wrong, or the service is down."
+msgstr ""
+
 #: admin/views/new-post.php
 msgid "The console is a live viewer: the job runs on the server, so you can close this tab and it keeps going. Steps, logs and progress update automatically while the agent works — and if a step fails after all retries, the Retry button re-runs only that step."
 msgstr ""
@@ -2686,6 +2694,10 @@ msgstr ""
 
 #: admin/views/settings.php
 msgid "The guaranteed last resort: used when AI generation and the stock fallback both fail, so every post still gets a featured image. Paste a media-library image ID or URL (an external URL is imported once and reused). Leave empty to allow posts without an image."
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "The hostname could not be resolved — check the address for typos, or use the server IP directly."
 msgstr ""
 
 #: admin/views/log-detail.php
@@ -2822,6 +2834,10 @@ msgstr ""
 
 #: admin/views/schedule.php
 msgid "The scheduler runs every 15 minutes. Next tick: %1$s (site timezone: %2$s)."
+msgstr ""
+
+#: includes/class-aipc-api-client.php
+msgid "The server refused the connection. Usual causes: (1) the gateway only listens on 127.0.0.1 — start it bound to 0.0.0.0 so other machines can reach it; (2) the port is closed in the server firewall or cloud security group — open it for this site's IP; (3) this hosting blocks outbound connections on non-standard ports — ask the host or move the gateway behind port 443. If the gateway runs on the SAME server as WordPress, use http://127.0.0.1:PORT/v1 instead of the public IP."
 msgstr ""
 
 #: includes/class-aipc-assets.php

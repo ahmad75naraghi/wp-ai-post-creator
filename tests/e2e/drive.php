@@ -3104,6 +3104,42 @@ $out['topic_hint'] = array(
 	'ui_explains'     => false !== strpos( (string) file_get_contents( AIPC_PLUGIN_DIR . 'admin/views/schedule.php' ), 'not a fixed headline' ),
 );
 
+/* ------------------------------------------------------------------ *
+ * v1.23.1 — actionable hints for transport failures (cURL 7/28/6/35)
+ * ------------------------------------------------------------------ */
+$aipc_tr_h7  = AIPC_API_Client::transport_hint( "cURL error 7: Failed to connect to 181.41.194.8 port 4000 after 0 ms: Couldn't connect to server" );
+$aipc_tr_h28 = AIPC_API_Client::transport_hint( 'cURL error 28: Operation timed out after 15001 milliseconds' );
+$aipc_tr_h6  = AIPC_API_Client::transport_hint( 'cURL error 6: Could not resolve host: ai.exmaple.com' );
+$aipc_tr_h35 = AIPC_API_Client::transport_hint( 'cURL error 35: error:0A00010B:SSL routines::wrong version number' );
+$aipc_tr_ok  = AIPC_API_Client::transport_hint( 'some other failure' );
+
+// Full path: the connection test must surface the hint to the admin.
+$aipc_tr_mock = function ( $pre, $args, $url ) {
+	if ( false !== strpos( $url, 'refused.invalid' ) ) {
+		return new WP_Error( 'http_request_failed', "cURL error 7: Failed to connect to refused.invalid port 4000 after 0 ms: Couldn't connect to server" );
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $aipc_tr_mock, 3, 3 );
+$aipc_tr_client = new AIPC_API_Client( array(
+	'name'       => 'Refused Gateway',
+	'base_url'   => 'http://refused.invalid:4000/v1',
+	'api_key'    => 'k',
+	'chat_model' => 'gpt-test',
+) );
+$aipc_tr_res = $aipc_tr_client->test();
+remove_filter( 'pre_http_request', $aipc_tr_mock, 3 );
+$aipc_tr_msg = is_wp_error( $aipc_tr_res ) ? $aipc_tr_res->get_error_message() : '';
+
+$out['transport_hints'] = array(
+	'refused_hint'  => false !== strpos( $aipc_tr_h7, '0.0.0.0' ) && false !== strpos( $aipc_tr_h7, '127.0.0.1' ),
+	'timeout_hint'  => '' !== $aipc_tr_h28 && false === strpos( $aipc_tr_h28, '0.0.0.0' ),
+	'dns_hint'      => '' !== $aipc_tr_h6 && $aipc_tr_h6 !== $aipc_tr_h28,
+	'ssl_hint'      => false !== strpos( $aipc_tr_h35, 'http://' ),
+	'unknown_empty' => '' === $aipc_tr_ok,
+	'test_surfaces' => is_wp_error( $aipc_tr_res ) && false !== strpos( $aipc_tr_msg, 'cURL error 7' ) && false !== strpos( $aipc_tr_msg, '127.0.0.1' ),
+);
+
 // Restore the queue and the single mock source for the later groups
 // (the historical topic_queue group expects an empty pending queue).
 if ( false === $aipc_v123_queue_snapshot ) {

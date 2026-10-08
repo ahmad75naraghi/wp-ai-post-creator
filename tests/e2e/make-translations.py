@@ -43,6 +43,11 @@ def poesc(s):
 # key = English msgid; value = Persian msgstr, or a dict of plural forms
 # {'0': singular-form, '1': plural-form} for _n() strings.
 NEW_TRANSLATIONS = {
+    # --- v1.23.1: actionable transport-error hints -------------------
+    "The server refused the connection. Usual causes: (1) the gateway only listens on 127.0.0.1 — start it bound to 0.0.0.0 so other machines can reach it; (2) the port is closed in the server firewall or cloud security group — open it for this site's IP; (3) this hosting blocks outbound connections on non-standard ports — ask the host or move the gateway behind port 443. If the gateway runs on the SAME server as WordPress, use http://127.0.0.1:PORT/v1 instead of the public IP.": 'سرور اتصال را رد کرد. علت\u200cهای رایج: (۱) گیت\u200cوی فقط روی 127.0.0.1 گوش می\u200cدهد — آن را روی 0.0.0.0 اجرا کنید تا از بیرون در دسترس باشد؛ (۲) پورت در فایروال سرور یا security group بسته است — آن را برای IP این سایت باز کنید؛ (۳) این هاست اتصال\u200cهای خروجی به پورت\u200cهای غیراستاندارد را می\u200cبندد — از پشتیبانی هاست بپرسید یا گیت\u200cوی را پشت پورت 443 ببرید. اگر گیت\u200cوی روی همان سرورِ وردپرس اجرا می\u200cشود، به\u200cجای IP عمومی از http://127.0.0.1:PORT/v1 استفاده کنید.',
+    "The connection timed out — a firewall is probably dropping the packets silently (open the port for this site's IP), the IP is wrong, or the service is down.": 'اتصال به پایان زمان رسید — احتمالاً فایروال بسته\u200cها را بی\u200cصدا دور می\u200cریزد (پورت را برای IP این سایت باز کنید)، IP اشتباه است یا سرویس خاموش است.',
+    'The hostname could not be resolved — check the address for typos, or use the server IP directly.': 'نام دامنه قابل تبدیل به IP نبود — نشانی را از نظر غلط تایپی بررسی کنید یا مستقیماً IP سرور را بگذارید.',
+    'TLS/SSL problem — the certificate is invalid/self-signed or the port does not speak HTTPS at all. For a plain local gateway use http:// instead of https://.': 'مشکل TLS/SSL — گواهی نامعتبر یا خودامضاست، یا این پورت اصلاً HTTPS صحبت نمی\u200cکند. برای گیت\u200cوی محلی ساده از http:// به\u200cجای https:// استفاده کنید.',
     # --- v1.23.0: feed discovery + suggestions UX --------------------
     'Show more': 'بیشتر',
     'Never suggest this again': 'دیگر این را پیشنهاد نکن',

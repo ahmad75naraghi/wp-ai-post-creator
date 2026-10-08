@@ -180,11 +180,18 @@ final class AIPC_API_Client {
 			if ( 0 === $attempt && $retry_timeouts && false !== stripos( $message, 'timed out' ) ) {
 				return $this->request_after_delay( $path, $body, $timeout, $attempt, $message );
 			}
-			return new WP_Error( 'aipc_http', sprintf(
+			$err = sprintf(
 				/* translators: %s: cURL/HTTP error message. */
 				__( 'Could not reach the AI provider: %s', 'wp-ai-post-creator' ),
 				$message
-			) );
+			);
+			// Transport failures (1.23.1): say what to actually check
+			// instead of leaving the raw cURL error alone.
+			$hint = self::transport_hint( $message );
+			if ( '' !== $hint ) {
+				$err .= ' — ' . $hint;
+			}
+			return new WP_Error( 'aipc_http', $err );
 		}
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
@@ -773,6 +780,42 @@ final class AIPC_API_Client {
 	 *
 	 * @return array|WP_Error {ok, models}
 	 */
+	/**
+	 * Actionable advice for the common cURL transport failures (1.23.1).
+	 *
+	 * The raw message ("cURL error 7: Failed to connect …") tells a
+	 * sysadmin everything and a site owner nothing — translate the usual
+	 * codes into what to actually check.
+	 *
+	 * @param string $message Raw WP_Http/cURL error message.
+	 * @return string Hint, or '' when the message is not recognized.
+	 */
+	public static function transport_hint( $message ) {
+		$m = strtolower( (string) $message );
+
+		// Connection refused / failed instantly (cURL 7).
+		if ( false !== strpos( $m, 'curl error 7' ) || false !== strpos( $m, 'failed to connect' ) || false !== strpos( $m, 'connection refused' ) ) {
+			return __( 'The server refused the connection. Usual causes: (1) the gateway only listens on 127.0.0.1 — start it bound to 0.0.0.0 so other machines can reach it; (2) the port is closed in the server firewall or cloud security group — open it for this site\'s IP; (3) this hosting blocks outbound connections on non-standard ports — ask the host or move the gateway behind port 443. If the gateway runs on the SAME server as WordPress, use http://127.0.0.1:PORT/v1 instead of the public IP.', 'wp-ai-post-creator' );
+		}
+
+		// Silent timeout (cURL 28).
+		if ( false !== strpos( $m, 'curl error 28' ) || false !== strpos( $m, 'timed out' ) ) {
+			return __( 'The connection timed out — a firewall is probably dropping the packets silently (open the port for this site\'s IP), the IP is wrong, or the service is down.', 'wp-ai-post-creator' );
+		}
+
+		// DNS (cURL 6).
+		if ( false !== strpos( $m, 'curl error 6' ) || false !== strpos( $m, 'could not resolve' ) ) {
+			return __( 'The hostname could not be resolved — check the address for typos, or use the server IP directly.', 'wp-ai-post-creator' );
+		}
+
+		// TLS/SSL (cURL 35/51/60).
+		if ( false !== strpos( $m, 'curl error 35' ) || false !== strpos( $m, 'curl error 51' ) || false !== strpos( $m, 'curl error 60' ) || false !== strpos( $m, 'ssl' ) ) {
+			return __( 'TLS/SSL problem — the certificate is invalid/self-signed or the port does not speak HTTPS at all. For a plain local gateway use http:// instead of https://.', 'wp-ai-post-creator' );
+		}
+
+		return '';
+	}
+
 	public function test() {
 		$models = $this->models();
 		if ( is_wp_error( $models ) ) {
